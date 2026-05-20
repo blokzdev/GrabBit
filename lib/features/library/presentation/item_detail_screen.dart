@@ -4,7 +4,9 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
 
 class ItemDetailScreen extends ConsumerWidget {
@@ -55,11 +57,66 @@ class _ItemBody extends StatelessWidget {
                 'Saved ${item.createdAt.toLocal()}',
                 style: theme.textTheme.bodySmall,
               ),
+              const SizedBox(height: 16),
+              _ExportButton(item: item),
             ],
           ),
         ),
       ],
     );
+  }
+}
+
+class _ExportButton extends ConsumerStatefulWidget {
+  const _ExportButton({required this.item});
+  final MediaItem item;
+
+  @override
+  ConsumerState<_ExportButton> createState() => _ExportButtonState();
+}
+
+class _ExportButtonState extends ConsumerState<_ExportButton> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.item.storageState == 'exported') {
+      return Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green.shade600, size: 18),
+          const SizedBox(width: 8),
+          const Text('Saved to device'),
+        ],
+      );
+    }
+    return FilledButton.icon(
+      onPressed: _busy ? null : _export,
+      icon: _busy
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.save_alt),
+      label: const Text('Save to device'),
+    );
+  }
+
+  Future<void> _export() async {
+    setState(() => _busy = true);
+    final settings = ref.read(settingsControllerProvider).asData?.value;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(libraryRepositoryProvider)
+          .export(widget.item, treeUri: settings?.exportFolder);
+      ref.invalidate(mediaItemByIdProvider(widget.item.id));
+      messenger.showSnackBar(const SnackBar(content: Text('Saved to device')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 }
 

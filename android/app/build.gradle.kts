@@ -73,4 +73,6 @@ dependencies {
 
     // NotificationCompat / ContextCompat for the download foreground service.
     implementation("androidx.core:core-ktx:1.13.1")
+    // DocumentFile for SAF folder export.
+    implementation("androidx.documentfile:documentfile:1.0.1")
 }

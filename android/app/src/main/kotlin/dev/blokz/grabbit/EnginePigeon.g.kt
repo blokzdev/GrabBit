@@ -749,3 +749,91 @@ class ServiceFlutterApi(private val binaryMessenger: BinaryMessenger, private va
     }
   }
 }
+/**
+ * Export a private library file to the device. [type] is video|audio|image.
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface StorageHostApi {
+  /** Launches the SAF folder picker; returns the persisted tree URI or null. */
+  fun pickExportFolder(callback: (Result<String?>) -> Unit)
+  /** Copies the file into a user-picked SAF tree; returns the saved doc URI. */
+  fun exportToTree(filePath: String, treeUri: String, type: String, subdir: String?, callback: (Result<String>) -> Unit)
+  /** Copies the file into the public MediaStore (gallery-visible, API 29+). */
+  fun exportToMediaStore(filePath: String, type: String, subdir: String?, callback: (Result<String>) -> Unit)
+
+  companion object {
+    /** The codec used by StorageHostApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+    /** Sets up an instance of `StorageHostApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: StorageHostApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.StorageHostApi.pickExportFolder$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.pickExportFolder{ result: Result<String?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.StorageHostApi.exportToTree$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val filePathArg = args[0] as String
+            val treeUriArg = args[1] as String
+            val typeArg = args[2] as String
+            val subdirArg = args[3] as String?
+            api.exportToTree(filePathArg, treeUriArg, typeArg, subdirArg) { result: Result<String> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.StorageHostApi.exportToMediaStore$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val filePathArg = args[0] as String
+            val typeArg = args[1] as String
+            val subdirArg = args[2] as String?
+            api.exportToMediaStore(filePathArg, typeArg, subdirArg) { result: Result<String> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}
