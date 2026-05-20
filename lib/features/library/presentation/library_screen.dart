@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
@@ -8,6 +9,11 @@ class LibraryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Library')),
       body: const _EmptyLibrary(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/add'),
+        icon: const Icon(Icons.add),
+        label: const Text('Add'),
+      ),
     );
   }
 }
