@@ -14,6 +14,10 @@ class WindowsProcessEngine implements DownloadEngine {
       throw UnimplementedError(_unimplemented);
 
   @override
+  Future<PlaylistInfo> expand(String url) =>
+      throw UnimplementedError(_unimplemented);
+
+  @override
   Stream<DownloadProgress> download(DownloadRequest request) =>
       throw UnimplementedError(_unimplemented);
 

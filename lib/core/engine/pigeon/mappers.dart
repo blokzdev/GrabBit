@@ -27,6 +27,8 @@ extension MediaInfoDtoMapper on MediaInfoDto {
     durationSec: durationSec,
     thumbnailUrl: thumbnailUrl,
     site: site,
+    description: description,
+    uploadDate: uploadDate,
   );
 }
 

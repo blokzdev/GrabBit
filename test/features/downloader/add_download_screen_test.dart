@@ -16,6 +16,11 @@ class _FakeEngine implements DownloadEngine {
   Future<MediaInfo> probe(String url) async => info;
 
   @override
+  Future<PlaylistInfo> expand(String url) async => PlaylistInfo(
+    entries: [MediaEntry(url: url, title: info.title)],
+  );
+
+  @override
   Stream<DownloadProgress> download(DownloadRequest request) =>
       const Stream.empty();
 

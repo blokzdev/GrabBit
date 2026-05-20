@@ -6,6 +6,7 @@ import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/error_mapping.dart';
 import 'package:grabbit/core/engine/pigeon/engine.pigeon.dart';
 import 'package:grabbit/core/engine/pigeon/mappers.dart';
+import 'package:grabbit/core/engine/playlist_parser.dart';
 
 /// Android engine backed by youtubedl-android via Pigeon → Kotlin. Progress is
 /// pushed back through [YtDlpFlutterApi.onProgress] and fanned out to a
@@ -29,6 +30,22 @@ class AndroidYtDlpEngine implements DownloadEngine, YtDlpFlutterApi {
         e.message ?? 'Failed to read media info',
         cause: e,
       );
+    }
+  }
+
+  @override
+  Future<PlaylistInfo> expand(String url) async {
+    try {
+      final raw = await _host.expandRaw(url);
+      return parsePlaylistJson(raw);
+    } on PlatformException catch (e) {
+      throw DownloadException(
+        classifyEngineError(e.message),
+        e.message ?? 'Failed to expand link',
+        cause: e,
+      );
+    } on FormatException catch (e) {
+      throw DownloadException(DownloadErrorCode.unknown, e.message, cause: e);
     }
   }
 
