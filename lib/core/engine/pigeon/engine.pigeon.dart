@@ -207,6 +207,8 @@ class MediaInfoDto {
     this.durationSec,
     this.thumbnailUrl,
     this.site,
+    this.description,
+    this.uploadDate,
     required this.formats,
   });
 
@@ -220,10 +222,23 @@ class MediaInfoDto {
 
   String? site;
 
+  String? description;
+
+  String? uploadDate;
+
   List<FormatDto> formats;
 
   List<Object?> _toList() {
-    return <Object?>[title, uploader, durationSec, thumbnailUrl, site, formats];
+    return <Object?>[
+      title,
+      uploader,
+      durationSec,
+      thumbnailUrl,
+      site,
+      description,
+      uploadDate,
+      formats,
+    ];
   }
 
   Object encode() {
@@ -238,7 +253,9 @@ class MediaInfoDto {
       durationSec: result[2] as int?,
       thumbnailUrl: result[3] as String?,
       site: result[4] as String?,
-      formats: (result[5]! as List<Object?>).cast<FormatDto>(),
+      description: result[5] as String?,
+      uploadDate: result[6] as String?,
+      formats: (result[7]! as List<Object?>).cast<FormatDto>(),
     );
   }
 
@@ -256,6 +273,8 @@ class MediaInfoDto {
         _deepEquals(durationSec, other.durationSec) &&
         _deepEquals(thumbnailUrl, other.thumbnailUrl) &&
         _deepEquals(site, other.site) &&
+        _deepEquals(description, other.description) &&
+        _deepEquals(uploadDate, other.uploadDate) &&
         _deepEquals(formats, other.formats);
   }
 
@@ -500,6 +519,29 @@ class YtDlpHostApi {
       isNullValid: false,
     );
     return pigeonVar_replyValue! as MediaInfoDto;
+  }
+
+  /// Raw `yt-dlp --flat-playlist -J <url>` stdout (parsed in Dart). Returns a
+  /// single-video JSON when the URL isn't a playlist/carousel.
+  Future<String> expandRaw(String url) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.grabbit.YtDlpHostApi.expandRaw$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[url],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as String;
   }
 
   Future<void> startDownload(DownloadRequestDto request) async {

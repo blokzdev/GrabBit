@@ -268,6 +268,8 @@ data class MediaInfoDto (
   val durationSec: Long? = null,
   val thumbnailUrl: String? = null,
   val site: String? = null,
+  val description: String? = null,
+  val uploadDate: String? = null,
   val formats: List<FormatDto>
 )
  {
@@ -278,8 +280,10 @@ data class MediaInfoDto (
       val durationSec = pigeonVar_list[2] as Long?
       val thumbnailUrl = pigeonVar_list[3] as String?
       val site = pigeonVar_list[4] as String?
-      val formats = pigeonVar_list[5] as List<FormatDto>
-      return MediaInfoDto(title, uploader, durationSec, thumbnailUrl, site, formats)
+      val description = pigeonVar_list[5] as String?
+      val uploadDate = pigeonVar_list[6] as String?
+      val formats = pigeonVar_list[7] as List<FormatDto>
+      return MediaInfoDto(title, uploader, durationSec, thumbnailUrl, site, description, uploadDate, formats)
     }
   }
   fun toList(): List<Any?> {
@@ -289,6 +293,8 @@ data class MediaInfoDto (
       durationSec,
       thumbnailUrl,
       site,
+      description,
+      uploadDate,
       formats,
     )
   }
@@ -300,7 +306,7 @@ data class MediaInfoDto (
       return true
     }
     val other = other as MediaInfoDto
-    return EnginePigeonPigeonUtils.deepEquals(this.title, other.title) && EnginePigeonPigeonUtils.deepEquals(this.uploader, other.uploader) && EnginePigeonPigeonUtils.deepEquals(this.durationSec, other.durationSec) && EnginePigeonPigeonUtils.deepEquals(this.thumbnailUrl, other.thumbnailUrl) && EnginePigeonPigeonUtils.deepEquals(this.site, other.site) && EnginePigeonPigeonUtils.deepEquals(this.formats, other.formats)
+    return EnginePigeonPigeonUtils.deepEquals(this.title, other.title) && EnginePigeonPigeonUtils.deepEquals(this.uploader, other.uploader) && EnginePigeonPigeonUtils.deepEquals(this.durationSec, other.durationSec) && EnginePigeonPigeonUtils.deepEquals(this.thumbnailUrl, other.thumbnailUrl) && EnginePigeonPigeonUtils.deepEquals(this.site, other.site) && EnginePigeonPigeonUtils.deepEquals(this.description, other.description) && EnginePigeonPigeonUtils.deepEquals(this.uploadDate, other.uploadDate) && EnginePigeonPigeonUtils.deepEquals(this.formats, other.formats)
   }
 
   override fun hashCode(): Int {
@@ -310,6 +316,8 @@ data class MediaInfoDto (
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.durationSec)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.thumbnailUrl)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.site)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.description)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.uploadDate)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.formats)
     return result
   }
@@ -491,6 +499,11 @@ private open class EnginePigeonPigeonCodec : StandardMessageCodec() {
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface YtDlpHostApi {
   fun probe(url: String, callback: (Result<MediaInfoDto>) -> Unit)
+  /**
+   * Raw `yt-dlp --flat-playlist -J <url>` stdout (parsed in Dart). Returns a
+   * single-video JSON when the URL isn't a playlist/carousel.
+   */
+  fun expandRaw(url: String, callback: (Result<String>) -> Unit)
   fun startDownload(request: DownloadRequestDto)
   fun cancel(taskId: String)
   fun engineVersions(callback: (Result<String>) -> Unit)
@@ -512,6 +525,26 @@ interface YtDlpHostApi {
             val args = message as List<Any?>
             val urlArg = args[0] as String
             api.probe(urlArg) { result: Result<MediaInfoDto> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.YtDlpHostApi.expandRaw$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val urlArg = args[0] as String
+            api.expandRaw(urlArg) { result: Result<String> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(EnginePigeonPigeonUtils.wrapError(error))

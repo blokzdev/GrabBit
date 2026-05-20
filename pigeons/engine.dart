@@ -47,6 +47,8 @@ class MediaInfoDto {
     this.durationSec,
     this.thumbnailUrl,
     this.site,
+    this.description,
+    this.uploadDate,
   });
 
   String title;
@@ -54,6 +56,8 @@ class MediaInfoDto {
   int? durationSec;
   String? thumbnailUrl;
   String? site;
+  String? description;
+  String? uploadDate;
   List<FormatDto> formats;
 }
 
@@ -105,6 +109,11 @@ class ProgressDto {
 abstract class YtDlpHostApi {
   @async
   MediaInfoDto probe(String url);
+
+  /// Raw `yt-dlp --flat-playlist -J <url>` stdout (parsed in Dart). Returns a
+  /// single-video JSON when the URL isn't a playlist/carousel.
+  @async
+  String expandRaw(String url);
 
   void startDownload(DownloadRequestDto request);
 
