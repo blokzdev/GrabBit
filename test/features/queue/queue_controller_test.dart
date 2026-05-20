@@ -312,6 +312,36 @@ void main() {
     expect(await repo.countByStatus(TaskStatus.queued), 1);
   });
 
+  test('enqueueHeld holds items without starting them', () async {
+    await controller.enqueueHeld([_qd('h1'), _qd('h2')]);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(engine.running, isEmpty);
+    expect(await repo.countByStatus(TaskStatus.held), 2);
+  });
+
+  test('enqueueNow starts a batch immediately', () async {
+    await controller.enqueueNow([_qd('n1'), _qd('n2')]);
+    await waitFor(() async => engine.running.length == 2);
+    expect(await repo.countByStatus(TaskStatus.running), 2);
+  });
+
+  test('startAll releases the held batch and runs it', () async {
+    await controller.enqueueHeld([_qd('h1'), _qd('h2')]);
+    await controller.startAll();
+    await waitFor(() async => engine.running.length == 2);
+    expect(await repo.countByStatus(TaskStatus.held), 0);
+  });
+
+  test('pauseAll pauses every running download', () async {
+    await controller.enqueue(_qd('t1'));
+    await controller.enqueue(_qd('t2'));
+    await waitFor(() async => engine.running.length == 2);
+
+    controller.pauseAll();
+    await waitFor(() async => await repo.countByStatus(TaskStatus.paused) == 2);
+    expect(engine.running, isEmpty);
+  });
+
   test('reconcileRunning flips orphaned running tasks to queued', () async {
     await db
         .into(db.downloadTasks)

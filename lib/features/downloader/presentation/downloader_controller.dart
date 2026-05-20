@@ -2,8 +2,10 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'downloader_controller.g.dart';
@@ -31,12 +33,14 @@ class DownloaderState {
     this.url = '',
     this.info,
     this.errorMessage,
+    this.errorCode,
   });
 
   final DownloaderPhase phase;
   final String url;
   final MediaInfo? info;
   final String? errorMessage;
+  final DownloadErrorCode? errorCode;
 
   /// Presets worth showing, given the heights the source actually offers.
   List<QualityPreset> get availablePresets {
@@ -58,6 +62,35 @@ class DownloaderController extends _$DownloaderController {
   @override
   DownloaderState build() => const DownloaderState();
 
+  /// Expands [rawUrl] to detect a playlist/carousel. Returns true if it has
+  /// multiple entries (caller routes to the picker, sources pre-loaded); for a
+  /// single item it falls through to [probe] for the rich preview.
+  Future<bool> checkSingle(String rawUrl) async {
+    final url = rawUrl.trim();
+    if (url.isEmpty) return false;
+    state = DownloaderState(phase: DownloaderPhase.probing, url: url);
+    try {
+      final info = await ref.read(downloadEngineProvider).expand(url);
+      if (info.entries.length > 1) {
+        ref.read(selectionControllerProvider.notifier).setSources([
+          ExpandedSource(url: url, entries: info.entries),
+        ]);
+        state = const DownloaderState();
+        return true;
+      }
+    } on DownloadException catch (e) {
+      state = DownloaderState(
+        phase: DownloaderPhase.idle,
+        url: url,
+        errorCode: e.code,
+        errorMessage: e.message,
+      );
+      return false;
+    }
+    await probe(url);
+    return false;
+  }
+
   Future<void> probe(String rawUrl) async {
     final url = rawUrl.trim();
     if (url.isEmpty) return;
@@ -74,6 +107,7 @@ class DownloaderController extends _$DownloaderController {
         phase: DownloaderPhase.idle,
         url: url,
         errorMessage: e.message,
+        errorCode: e.code,
       );
     }
   }
@@ -87,6 +121,7 @@ class DownloaderController extends _$DownloaderController {
 
     final taskId = 'dl_${DateTime.now().microsecondsSinceEpoch}';
     final dir = await ref.read(mediaStorageProvider).mediaDirectory();
+    final settings = await ref.read(settingsControllerProvider.future);
     final request = DownloadRequest(
       taskId: taskId,
       url: current.url,
@@ -95,8 +130,9 @@ class DownloaderController extends _$DownloaderController {
       formatId: preset.formatSelector,
       audioOnly: preset.audioOnly,
       container: preset.audioOnly ? 'm4a' : 'mp4',
-      embedThumbnail: true,
-      embedMetadata: true,
+      subtitles: settings.defaultSubtitles,
+      embedThumbnail: settings.embedThumbnail,
+      embedMetadata: settings.embedMetadata,
     );
     await ref
         .read(queueControllerProvider.notifier)

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/routing/router_refresh.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
+import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_screen.dart';
@@ -43,6 +44,11 @@ GoRouter appRouter(Ref ref) {
         path: '/add',
         name: 'add',
         builder: (context, state) => const AddDownloadScreen(),
+      ),
+      GoRoute(
+        path: '/select',
+        name: 'select',
+        builder: (context, state) => const SelectionScreen(),
       ),
       GoRoute(
         path: '/item/:id',
