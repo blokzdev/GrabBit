@@ -1,17 +1,14 @@
-import 'dart:io';
-
-import 'package:drift/drift.dart' show Value;
-import 'package:grabbit/core/db/database.dart';
-import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/features/queue/data/queued_download.dart';
+import 'package:grabbit/features/queue/presentation/queue_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'downloader_controller.g.dart';
 
-enum DownloaderPhase { idle, probing, ready, downloading, done }
+enum DownloaderPhase { idle, probing, ready, queued }
 
 /// Quality presets exposed in P1. The selector strings are yt-dlp `-f`
 /// expressions, so they work without inspecting the probed format ids.
@@ -33,14 +30,12 @@ class DownloaderState {
     this.phase = DownloaderPhase.idle,
     this.url = '',
     this.info,
-    this.progress,
     this.errorMessage,
   });
 
   final DownloaderPhase phase;
   final String url;
   final MediaInfo? info;
-  final DownloadProgress? progress;
   final String? errorMessage;
 
   /// Presets worth showing, given the heights the source actually offers.
@@ -83,10 +78,12 @@ class DownloaderController extends _$DownloaderController {
     }
   }
 
-  Future<void> startDownload(QualityPreset preset) async {
+  /// Builds the request from the probed info + chosen preset and adds it to the
+  /// download queue (progress is then shown on the queue screen).
+  Future<void> enqueue(QualityPreset preset) async {
     final current = state;
     final info = current.info;
-    if (info == null || current.phase == DownloaderPhase.downloading) return;
+    if (info == null) return;
 
     final taskId = 'dl_${DateTime.now().microsecondsSinceEpoch}';
     final dir = await ref.read(mediaStorageProvider).mediaDirectory();
@@ -101,116 +98,24 @@ class DownloaderController extends _$DownloaderController {
       embedThumbnail: true,
       embedMetadata: true,
     );
-
-    final engine = ref.read(downloadEngineProvider);
-    try {
-      await for (final p in engine.download(request)) {
-        state = DownloaderState(
-          phase: DownloaderPhase.downloading,
-          url: current.url,
-          info: info,
-          progress: p,
+    await ref
+        .read(queueControllerProvider.notifier)
+        .enqueue(
+          QueuedDownload(
+            request: request,
+            title: info.title,
+            site: info.site,
+            durationSec: info.durationSec,
+            uploader: info.uploader,
+            originalUrl: current.url,
+          ),
         );
-        switch (p.stage) {
-          case DownloadStage.done:
-            await _persist(
-              taskId: taskId,
-              info: info,
-              url: current.url,
-              dir: dir,
-              audioOnly: preset.audioOnly,
-            );
-            state = DownloaderState(
-              phase: DownloaderPhase.done,
-              url: current.url,
-              info: info,
-              progress: p,
-            );
-          case DownloadStage.error:
-            state = DownloaderState(
-              phase: DownloaderPhase.ready,
-              url: current.url,
-              info: info,
-              errorMessage:
-                  'Download failed (${p.errorCode?.name ?? 'unknown'})',
-            );
-          case DownloadStage.canceled:
-            state = DownloaderState(
-              phase: DownloaderPhase.ready,
-              url: current.url,
-              info: info,
-              errorMessage: 'Canceled',
-            );
-          case DownloadStage.probing:
-          case DownloadStage.downloading:
-          case DownloadStage.merging:
-            break;
-        }
-      }
-    } catch (e) {
-      state = DownloaderState(
-        phase: DownloaderPhase.ready,
-        url: current.url,
-        info: info,
-        errorMessage: '$e',
-      );
-    }
-  }
-
-  Future<void> cancel() async {
-    final taskId = state.progress?.taskId;
-    if (taskId != null) {
-      await ref.read(downloadEngineProvider).cancel(taskId);
-    }
+    state = DownloaderState(
+      phase: DownloaderPhase.queued,
+      url: current.url,
+      info: info,
+    );
   }
 
   void reset() => state = const DownloaderState();
-
-  Future<void> _persist({
-    required String taskId,
-    required MediaInfo info,
-    required String url,
-    required Directory dir,
-    required bool audioOnly,
-  }) async {
-    File? thumb;
-    File? media;
-    for (final entry in dir.listSync().whereType<File>()) {
-      if (!entry.uri.pathSegments.last.startsWith('$taskId.')) continue;
-      if (entry.path.toLowerCase().endsWith('.jpg')) {
-        thumb = entry;
-      } else {
-        media = entry;
-      }
-    }
-    if (media == null) return;
-
-    final ext = media.path.split('.').last.toLowerCase();
-    final db = ref.read(appDatabaseProvider);
-    await db
-        .into(db.mediaItems)
-        .insertOnConflictUpdate(
-          MediaItemsCompanion.insert(
-            id: taskId,
-            title: info.title,
-            sourceUrl: url,
-            site: info.site ?? 'unknown',
-            filePath: media.path,
-            type: audioOnly ? 'audio' : _typeForExt(ext),
-            createdAt: DateTime.now(),
-            storageState: 'private',
-            durationSec: Value(info.durationSec),
-            sizeBytes: Value(await media.length()),
-            thumbPath: Value(thumb?.path),
-          ),
-        );
-  }
-}
-
-String _typeForExt(String ext) {
-  const image = {'jpg', 'jpeg', 'png', 'gif', 'webp'};
-  const audio = {'m4a', 'mp3', 'opus', 'aac', 'ogg', 'wav'};
-  if (image.contains(ext)) return 'image';
-  if (audio.contains(ext)) return 'audio';
-  return 'video';
 }

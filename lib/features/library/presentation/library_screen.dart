@@ -17,6 +17,11 @@ class LibraryScreen extends ConsumerWidget {
         title: const Text('Library'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.download_outlined),
+            tooltip: 'Queue',
+            onPressed: () => context.push('/queue'),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: 'Settings',
             onPressed: () => context.push('/settings'),
