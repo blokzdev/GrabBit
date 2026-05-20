@@ -14,7 +14,7 @@ void main() {
       ProviderScope(
         overrides: [
           appDatabaseProvider.overrideWithValue(db),
-          libraryItemsProvider.overrideWith((ref) => Stream.value(const [])),
+          filteredLibraryProvider.overrideWith((ref) => Stream.value(const [])),
         ],
         child: const GrabBitApp(),
       ),

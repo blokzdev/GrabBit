@@ -1,21 +1,57 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/media_grid.dart';
 
-class LibraryScreen extends ConsumerWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(libraryItemsProvider);
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = ref.watch(filteredLibraryProvider);
+    final filter = ref.watch(libraryFilterProvider);
+    final controller = ref.read(libraryFilterProvider.notifier);
+    final filtering = filter.search.isNotEmpty || filter.type != null;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Library'),
         actions: [
+          PopupMenuButton<LibrarySort>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Sort',
+            initialValue: filter.sort,
+            onSelected: controller.setSort,
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: LibrarySort.newest, child: Text('Newest')),
+              PopupMenuItem(value: LibrarySort.oldest, child: Text('Oldest')),
+              PopupMenuItem(
+                value: LibrarySort.titleAsc,
+                child: Text('Title A–Z'),
+              ),
+              PopupMenuItem(value: LibrarySort.largest, child: Text('Largest')),
+            ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.folder_outlined),
+            tooltip: 'Collections',
+            onPressed: () => context.push('/collections'),
+          ),
           IconButton(
             icon: const Icon(Icons.download_outlined),
             tooltip: 'Queue',
@@ -28,11 +64,25 @@ class LibraryScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: items.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load library: $e')),
-        data: (rows) =>
-            rows.isEmpty ? const _EmptyLibrary() : _LibraryGrid(items: rows),
+      body: Column(
+        children: [
+          _FilterBar(
+            controller: _searchController,
+            filter: filter,
+            onSearch: controller.setSearch,
+            onType: controller.setType,
+          ),
+          Expanded(
+            child: items.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) =>
+                  Center(child: Text('Failed to load library: $e')),
+              data: (rows) => rows.isEmpty
+                  ? _EmptyLibrary(filtering: filtering)
+                  : MediaGrid(items: rows),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/add'),
@@ -43,108 +93,74 @@ class LibraryScreen extends ConsumerWidget {
   }
 }
 
-class _LibraryGrid extends StatelessWidget {
-  const _LibraryGrid({required this.items});
-  final List<MediaItem> items;
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
+    required this.controller,
+    required this.filter,
+    required this.onSearch,
+    required this.onType,
+  });
+
+  final TextEditingController controller;
+  final LibraryQuery filter;
+  final ValueChanged<String> onSearch;
+  final ValueChanged<String?> onType;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, i) => _LibraryTile(item: items[i]),
-    );
-  }
-}
-
-class _LibraryTile extends StatelessWidget {
-  const _LibraryTile({required this.item});
-  final MediaItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: () => context.push('/item/${item.id}'),
-      borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _Thumb(item: item),
-                  if (item.storageState == 'exported')
-                    const Positioned(top: 6, right: 6, child: _ExportedBadge()),
-                ],
-              ),
+          TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Search title',
+              prefixIcon: const Icon(Icons.search),
+              isDense: true,
+              border: const OutlineInputBorder(),
+              suffixIcon: filter.search.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        controller.clear();
+                        onSearch('');
+                      },
+                    ),
             ),
+            onChanged: onSearch,
           ),
-          const SizedBox(height: 6),
-          Text(
-            item.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium,
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (final type in const [null, 'video', 'audio', 'image'])
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(type == null ? 'All' : _typeLabel(type)),
+                    selected: filter.type == type,
+                    onSelected: (_) => onType(type),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
-}
 
-class _ExportedBadge extends StatelessWidget {
-  const _ExportedBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: const BoxDecoration(
-        color: Colors.black54,
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.save_alt, size: 14, color: Colors.white),
-    );
-  }
-}
-
-class _Thumb extends StatelessWidget {
-  const _Thumb({required this.item});
-  final MediaItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final fallback = ColoredBox(
-      color: scheme.surfaceContainerHighest,
-      child: Icon(
-        item.type == 'audio' ? Icons.music_note : Icons.movie_outlined,
-        color: scheme.onSurfaceVariant,
-        size: 40,
-      ),
-    );
-    final thumbPath = item.thumbPath;
-    if (thumbPath == null) return fallback;
-    return Image.file(
-      File(thumbPath),
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => fallback,
-    );
-  }
+  static String _typeLabel(String type) => switch (type) {
+    'video' => 'Video',
+    'audio' => 'Audio',
+    'image' => 'Image',
+    _ => type,
+  };
 }
 
 class _EmptyLibrary extends StatelessWidget {
-  const _EmptyLibrary();
+  const _EmptyLibrary({required this.filtering});
+  final bool filtering;
 
   @override
   Widget build(BuildContext context) {
@@ -154,15 +170,20 @@ class _EmptyLibrary extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.video_library_outlined,
+            filtering ? Icons.search_off : Icons.video_library_outlined,
             size: 72,
             color: theme.colorScheme.primary,
           ),
           const SizedBox(height: 16),
-          Text('Your library is empty', style: theme.textTheme.titleMedium),
+          Text(
+            filtering ? 'No matches' : 'Your library is empty',
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           Text(
-            'Downloads will appear here.',
+            filtering
+                ? 'Try a different search or filter.'
+                : 'Downloads will appear here.',
             style: theme.textTheme.bodyMedium,
           ),
         ],

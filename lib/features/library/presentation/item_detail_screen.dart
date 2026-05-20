@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
@@ -18,7 +20,16 @@ class ItemDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final item = ref.watch(mediaItemByIdProvider(itemId));
     return Scaffold(
-      appBar: AppBar(title: Text(item.asData?.value?.title ?? 'Item')),
+      appBar: AppBar(
+        title: Text(item.asData?.value?.title ?? 'Item'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit',
+            onPressed: () => context.push('/item/$itemId/edit'),
+          ),
+        ],
+      ),
       body: item.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Failed to load item: $e')),
@@ -57,12 +68,38 @@ class _ItemBody extends StatelessWidget {
                 'Saved ${item.createdAt.toLocal()}',
                 style: theme.textTheme.bodySmall,
               ),
+              if (item.notes != null && item.notes!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(item.notes!, style: theme.textTheme.bodyMedium),
+              ],
+              const SizedBox(height: 12),
+              _TagsRow(itemId: item.id),
               const SizedBox(height: 16),
               _ExportButton(item: item),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TagsRow extends ConsumerWidget {
+  const _TagsRow({required this.itemId});
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tags = ref.watch(tagsForItemProvider(itemId));
+    return tags.maybeWhen(
+      data: (list) => list.isEmpty
+          ? const SizedBox.shrink()
+          : Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [for (final t in list) Chip(label: Text(t.name))],
+            ),
+      orElse: () => const SizedBox.shrink(),
     );
   }
 }

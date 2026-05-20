@@ -1,14 +1,15 @@
 package dev.blokz.grabbit
 
 import android.content.Intent
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class MainActivity : FlutterActivity() {
+// FlutterFragmentActivity (not FlutterActivity) is required by local_auth.
+class MainActivity : FlutterFragmentActivity() {
     private val warmupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var storageHost: StorageHost? = null
 
