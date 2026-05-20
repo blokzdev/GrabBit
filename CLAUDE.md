@@ -217,5 +217,7 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
 - `docs/ARCHITECTURE.md` — system design blueprint.
 - `docs/SPEC.md` — implementation-level technical spec.
 - `docs/ROADMAP.md` — multi-phase delivery plan (P0–P10, banded v1/v2/v3).
+- `docs/VERIFICATION.md` — per-phase on-device manual test checklist (what CI can't
+  cover); used for spot-checks and full v1-release regression.
 
 When in doubt, these four + this file win over memory.
