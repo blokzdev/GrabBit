@@ -121,3 +121,43 @@ abstract class YtDlpHostApi {
 abstract class YtDlpFlutterApi {
   void onProgress(ProgressDto progress);
 }
+
+/// Foreground-service control + connectivity probe for the download queue.
+@HostApi()
+abstract class ServiceHostApi {
+  void startService(String text, int progress, bool indeterminate);
+
+  void updateNotification(String text, int progress, bool indeterminate);
+
+  void stopService();
+
+  @async
+  bool isUnmetered();
+}
+
+@FlutterApi()
+abstract class ServiceFlutterApi {
+  /// The notification's "Stop" action was tapped.
+  void onStopRequested();
+}
+
+/// Export a private library file to the device. [type] is video|audio|image.
+@HostApi()
+abstract class StorageHostApi {
+  /// Launches the SAF folder picker; returns the persisted tree URI or null.
+  @async
+  String? pickExportFolder();
+
+  /// Copies the file into a user-picked SAF tree; returns the saved doc URI.
+  @async
+  String exportToTree(
+    String filePath,
+    String treeUri,
+    String type,
+    String? subdir,
+  );
+
+  /// Copies the file into the public MediaStore (gallery-visible, API 29+).
+  @async
+  String exportToMediaStore(String filePath, String type, String? subdir);
+}

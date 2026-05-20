@@ -117,12 +117,24 @@ drop user data without migration. Add a schema test on bump.
 |---|---|---|
 | `INTERNET` | always | downloads |
 | `POST_NOTIFICATIONS` (13+) | on first download | foreground-service progress |
-| `FOREGROUND_SERVICE` + `*_DATA_SYNC` | downloads | long-running queue |
-| Scoped MediaStore write | only on export/auto-store | no `MANAGE_EXTERNAL_STORAGE` |
+| `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_DATA_SYNC` | downloads | long-running queue; service shows the progress notification |
+| SAF tree URI (persisted) | when user picks an export folder | `ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`; no storage permission |
+| Scoped MediaStore write | export with no folder picked (gallery default, API 29+) | `RELATIVE_PATH` under Movies/Music/Pictures + `/GrabBit`; no `MANAGE_EXTERNAL_STORAGE` |
 | `USE_BIOMETRIC` | if app lock + biometric | local_auth |
 
 Never request broad storage. Private library lives in app-specific storage (no
 permission needed).
+
+**Export model (P2-B):** downloads stay private (app-specific dir) until the user
+explicitly exports. Export is a hand-rolled Pigeon `StorageHostApi`: a user-picked
+**SAF tree** (`exportToTree`, persisted URI in settings) is preferred; with no
+folder chosen it falls back to the gallery-visible **MediaStore** default
+(`exportToMediaStore`, API 29+). The private master file is kept after export and
+`media_items.storage_state` flips `private → exported`. The download foreground
+service keeps the process alive while the in-process queue runs; full process-death
+survival is handled by DB reconciliation on next launch (orphaned `running` →
+`queued`). Wi-Fi-only gates task starts via a native `isUnmetered()` probe (no
+`connectivity_plus` dependency).
 
 ---
 

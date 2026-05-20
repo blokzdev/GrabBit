@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/storage/media_export_service.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
@@ -79,10 +80,24 @@ class _SettingsList extends ConsumerWidget {
             v ? StoragePolicy.autoExport : StoragePolicy.private,
           ),
         ),
-        const ListTile(
-          enabled: false,
-          title: Text('Export folder'),
-          subtitle: Text('Choose a destination folder — coming in P2-B'),
+        ListTile(
+          title: const Text('Export folder'),
+          subtitle: Text(
+            settings.exportFolder == null
+                ? 'Default: gallery (Movies/Music/Pictures/GrabBit)'
+                : settings.exportFolder!,
+          ),
+          trailing: settings.exportFolder == null
+              ? const Icon(Icons.folder_open)
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: 'Use gallery default',
+                  onPressed: () => controller.setExportFolder(null),
+                ),
+          onTap: () async {
+            final uri = await ref.read(mediaExportServiceProvider).pickFolder();
+            if (uri != null) await controller.setExportFolder(uri);
+          },
         ),
         const Divider(),
         const _SectionHeader('Appearance'),

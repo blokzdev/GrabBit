@@ -9,9 +9,11 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 /// Engine whose downloads stay "running" until the test pushes a terminal event.
 class ControllableEngine implements DownloadEngine {
@@ -74,6 +76,32 @@ class ControllableEngine implements DownloadEngine {
   Future<void> update() async {}
 }
 
+class FakeForegroundService implements ForegroundService {
+  int startCount = 0;
+  int stopCount = 0;
+  bool unmetered = true;
+  void Function()? stopCallback;
+
+  @override
+  set onStop(void Function() callback) => stopCallback = callback;
+  @override
+  Future<void> start(
+    String text, {
+    int progress = 0,
+    bool indeterminate = true,
+  }) async => startCount++;
+  @override
+  Future<void> update(
+    String text, {
+    int progress = 0,
+    bool indeterminate = false,
+  }) async {}
+  @override
+  Future<void> stop() async => stopCount++;
+  @override
+  Future<bool> isUnmetered() async => unmetered;
+}
+
 QueuedDownload _qd(String id, {String outputDir = '/tmp', bool audio = false}) {
   return QueuedDownload(
     request: DownloadRequest(
@@ -106,11 +134,13 @@ void main() {
   late ProviderContainer container;
   late QueueRepository repo;
   late QueueController controller;
+  late FakeForegroundService fakeService;
 
   ProviderContainer makeContainer() => ProviderContainer(
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
       downloadEngineProvider.overrideWithValue(engine),
+      foregroundServiceProvider.overrideWithValue(fakeService),
       queueConfigProvider.overrideWithValue(
         const QueueConfig(baseRetryDelay: Duration(milliseconds: 5)),
       ),
@@ -120,6 +150,7 @@ void main() {
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
     engine = ControllableEngine();
+    fakeService = FakeForegroundService();
     container = makeContainer();
     repo = container.read(queueRepositoryProvider);
     controller = container.read(queueControllerProvider.notifier);
@@ -212,6 +243,29 @@ void main() {
     expect(item, isNotNull);
     expect(item!.title, 'Title vid1');
     expect(item.type, 'video');
+  });
+
+  test(
+    'runs the foreground service while downloading, stops when drained',
+    () async {
+      await controller.enqueue(_qd('t1'));
+      await waitFor(() async => engine.running.contains('t1'));
+      expect(fakeService.startCount, greaterThanOrEqualTo(1));
+
+      engine.complete('t1');
+      await waitFor(() async => fakeService.stopCount >= 1);
+    },
+  );
+
+  test('wifiOnly keeps tasks queued on a metered network', () async {
+    await container.read(settingsControllerProvider.notifier).setWifiOnly(true);
+    fakeService.unmetered = false;
+
+    await controller.enqueue(_qd('t1'));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(engine.running, isEmpty);
+    expect(await repo.countByStatus(TaskStatus.queued), 1);
   });
 
   test('reconcileRunning flips orphaned running tasks to queued', () async {

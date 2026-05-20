@@ -625,3 +625,215 @@ class YtDlpFlutterApi(private val binaryMessenger: BinaryMessenger, private val 
     }
   }
 }
+/**
+ * Foreground-service control + connectivity probe for the download queue.
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface ServiceHostApi {
+  fun startService(text: String, progress: Long, indeterminate: Boolean)
+  fun updateNotification(text: String, progress: Long, indeterminate: Boolean)
+  fun stopService()
+  fun isUnmetered(callback: (Result<Boolean>) -> Unit)
+
+  companion object {
+    /** The codec used by ServiceHostApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+    /** Sets up an instance of `ServiceHostApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: ServiceHostApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.ServiceHostApi.startService$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val textArg = args[0] as String
+            val progressArg = args[1] as Long
+            val indeterminateArg = args[2] as Boolean
+            val wrapped: List<Any?> = try {
+              api.startService(textArg, progressArg, indeterminateArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              EnginePigeonPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.ServiceHostApi.updateNotification$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val textArg = args[0] as String
+            val progressArg = args[1] as Long
+            val indeterminateArg = args[2] as Boolean
+            val wrapped: List<Any?> = try {
+              api.updateNotification(textArg, progressArg, indeterminateArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              EnginePigeonPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.ServiceHostApi.stopService$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.stopService()
+              listOf(null)
+            } catch (exception: Throwable) {
+              EnginePigeonPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.ServiceHostApi.isUnmetered$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.isUnmetered{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}
+/** Generated class from Pigeon that represents Flutter messages that can be called from Kotlin. */
+class ServiceFlutterApi(private val binaryMessenger: BinaryMessenger, private val messageChannelSuffix: String = "") {
+  companion object {
+    /** The codec used by ServiceFlutterApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+  }
+  /** The notification's "Stop" action was tapped. */
+  fun onStopRequested(callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.grabbit.ServiceFlutterApi.onStopRequested$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(null) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(EnginePigeonPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+}
+/**
+ * Export a private library file to the device. [type] is video|audio|image.
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface StorageHostApi {
+  /** Launches the SAF folder picker; returns the persisted tree URI or null. */
+  fun pickExportFolder(callback: (Result<String?>) -> Unit)
+  /** Copies the file into a user-picked SAF tree; returns the saved doc URI. */
+  fun exportToTree(filePath: String, treeUri: String, type: String, subdir: String?, callback: (Result<String>) -> Unit)
+  /** Copies the file into the public MediaStore (gallery-visible, API 29+). */
+  fun exportToMediaStore(filePath: String, type: String, subdir: String?, callback: (Result<String>) -> Unit)
+
+  companion object {
+    /** The codec used by StorageHostApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+    /** Sets up an instance of `StorageHostApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: StorageHostApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.StorageHostApi.pickExportFolder$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.pickExportFolder{ result: Result<String?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.StorageHostApi.exportToTree$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val filePathArg = args[0] as String
+            val treeUriArg = args[1] as String
+            val typeArg = args[2] as String
+            val subdirArg = args[3] as String?
+            api.exportToTree(filePathArg, treeUriArg, typeArg, subdirArg) { result: Result<String> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.StorageHostApi.exportToMediaStore$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val filePathArg = args[0] as String
+            val typeArg = args[1] as String
+            val subdirArg = args[2] as String?
+            api.exportToMediaStore(filePathArg, typeArg, subdirArg) { result: Result<String> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(EnginePigeonPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}

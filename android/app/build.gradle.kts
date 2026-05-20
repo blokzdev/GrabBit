@@ -70,4 +70,9 @@ dependencies {
     implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.17.3")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+
+    // NotificationCompat / ContextCompat for the download foreground service.
+    implementation("androidx.core:core-ktx:1.13.1")
+    // DocumentFile for SAF folder export.
+    implementation("androidx.documentfile:documentfile:1.0.1")
 }

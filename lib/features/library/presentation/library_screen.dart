@@ -79,7 +79,14 @@ class _LibraryTile extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: _Thumb(item: item),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _Thumb(item: item),
+                  if (item.storageState == 'exported')
+                    const Positioned(top: 6, right: 6, child: _ExportedBadge()),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -91,6 +98,22 @@ class _LibraryTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ExportedBadge extends StatelessWidget {
+  const _ExportedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: const BoxDecoration(
+        color: Colors.black54,
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.save_alt, size: 14, color: Colors.white),
     );
   }
 }

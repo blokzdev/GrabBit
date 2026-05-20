@@ -9,8 +9,11 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/features/library/data/library_repository.dart';
+import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
+import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,11 +43,15 @@ class QueueController extends _$QueueController {
   final Set<String> _canceling = {};
   final Map<String, Timer> _retryTimers = {};
   Future<void> _pumpChain = Future.value();
+  bool _serviceActive = false;
+  int _lastPercent = 0;
 
   QueueRepository get _repo => ref.read(queueRepositoryProvider);
+  ForegroundService get _service => ref.read(foregroundServiceProvider);
 
   @override
   Future<void> build() async {
+    _service.onStop = _onStopRequested;
     ref.onDispose(() {
       for (final t in _retryTimers.values) {
         t.cancel();
@@ -52,6 +59,13 @@ class QueueController extends _$QueueController {
     });
     await _repo.reconcileRunning();
     await _pump();
+  }
+
+  /// The notification "Stop" action pauses everything currently running.
+  void _onStopRequested() {
+    for (final id in _runners.keys.toList()) {
+      pause(id);
+    }
   }
 
   Future<void> enqueue(QueuedDownload download) async {
@@ -99,13 +113,38 @@ class QueueController extends _$QueueController {
   }
 
   Future<void> _doPump() async {
-    final maxConcurrent = (await ref.read(
-      settingsControllerProvider.future,
-    )).maxConcurrentDownloads;
-    while (await _repo.countByStatus(TaskStatus.running) < maxConcurrent) {
+    final settings = await ref.read(settingsControllerProvider.future);
+    if (settings.wifiOnly && !await _service.isUnmetered()) {
+      await _syncService();
+      return;
+    }
+    while (await _repo.countByStatus(TaskStatus.running) <
+        settings.maxConcurrentDownloads) {
       final next = await _repo.nextQueued();
       if (next == null) break;
       await _start(next);
+    }
+    await _syncService();
+  }
+
+  /// Starts/updates/stops the foreground service to mirror the running set.
+  Future<void> _syncService() async {
+    final running = await _repo.countByStatus(TaskStatus.running);
+    if (running > 0) {
+      final text = '$running download${running == 1 ? '' : 's'} in progress';
+      if (_serviceActive) {
+        await _service.update(
+          text,
+          progress: _lastPercent,
+          indeterminate: _lastPercent == 0,
+        );
+      } else {
+        _serviceActive = true;
+        await _service.start(text);
+      }
+    } else if (_serviceActive) {
+      _serviceActive = false;
+      await _service.stop();
     }
   }
 
@@ -134,7 +173,9 @@ class QueueController extends _$QueueController {
           case DownloadStage.probing:
           case DownloadStage.downloading:
           case DownloadStage.merging:
+            _lastPercent = p.percent.round();
             await _repo.setProgress(id, p.percent);
+            await _syncService();
         }
       }
     } catch (_) {
@@ -147,8 +188,24 @@ class QueueController extends _$QueueController {
     await _repo.setProgress(id, 100);
     await _repo.setStatus(id, TaskStatus.done);
     _finish(id);
-    // Auto-export on completion is wired in P2-B.
+    await _maybeAutoExport(id);
     await _pump();
+  }
+
+  Future<void> _maybeAutoExport(String id) async {
+    final settings = await ref.read(settingsControllerProvider.future);
+    if (settings.storagePolicy != StoragePolicy.autoExport) return;
+    final db = ref.read(appDatabaseProvider);
+    final item = await (db.select(
+      db.mediaItems,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (item == null) return;
+    // Export failure must not fail the download.
+    try {
+      await ref
+          .read(libraryRepositoryProvider)
+          .export(item, treeUri: settings.exportFolder);
+    } catch (_) {}
   }
 
   Future<void> _onError(String id, DownloadErrorCode? code) async {
