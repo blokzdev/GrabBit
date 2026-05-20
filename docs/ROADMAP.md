@@ -61,14 +61,22 @@ see it in the private library, play it in-app.
 app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
-**Goals:** breadth + scale.
+**Goals:** breadth + scale. **Public content only** — authenticated/private content
+(cookie/login import) is deferred to **v2** (see P7).
 **Deliverables:**
-- Instagram, TikTok, X (and more yt-dlp supports) verified; clear errors for
-  unsupported/broken extractors.
+- Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
+  playlists, and carousels; clear errors for unsupported/broken extractors.
+- **Multi-item selection UI**: when a URL expands to several items (playlist,
+  channel, or a mixed image/video carousel), show a thumbnail picker so the user
+  views and chooses exactly which items to download.
+- **Download now vs. add to queue**: each item/URL can download immediately or be
+  added to a queue; users accumulate media across multiple sites, then start the
+  whole batch as one background run.
 - **Bulk**: playlist/channel expansion, multi-URL paste, batch import.
 - Subtitles/captions, thumbnail, full metadata extraction + embedding.
 - User-triggered **yt-dlp self-update**.
-**Exit criteria:** bulk-download a playlist and multiple cross-site URLs reliably.
+**Exit criteria:** expand a playlist/carousel, pick a subset, queue items from
+several sites, and run the batch download reliably.
 
 ## P4 — Polish + v1 Beta
 **Goals:** stability + UX quality for daily use.
@@ -110,6 +118,10 @@ offline; on a low-end device those features are cleanly disabled with explanatio
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced
 configuration, refined UX across all flows, robust update/onboarding, public v2
 release candidate (Android + Windows, still local-only, still free).
+- **Authenticated/private content** (deferred from v1): per-site **cookie/login
+  import** so users can download their own private/age-gated/followers-only media,
+  with cookies stored via `flutter_secure_storage`. Stays on-device — no account,
+  no cloud, still free.
 **Exit criteria:** v2 is stable, polished, and self-recommending; ready for wider
 (still off-store) distribution. **→ v2 complete.**
 

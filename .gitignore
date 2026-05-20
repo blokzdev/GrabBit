@@ -38,6 +38,14 @@ migrate_working_dir/
 *.g.dart
 *.freezed.dart
 
+# Secrets — never commit signing keys or env files (CLAUDE.md §9)
+*.jks
+*.keystore
+key.properties
+*.env
+.env
+.env.*
+
 # Symbolication related
 app.*.symbols
 

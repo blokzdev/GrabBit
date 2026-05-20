@@ -11,7 +11,7 @@ part 'engine_provider.g.dart';
 /// code depend on this provider, never a concrete engine.
 @Riverpod(keepAlive: true)
 DownloadEngine downloadEngine(Ref ref) {
-  if (Platform.isAndroid) return const AndroidYtDlpEngine();
+  if (Platform.isAndroid) return AndroidYtDlpEngine();
   if (Platform.isWindows) return const WindowsProcessEngine();
   throw UnsupportedError('No download engine for ${Platform.operatingSystem}');
 }

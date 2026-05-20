@@ -17,14 +17,30 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "dev.blokz.grabbit"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // youtubedl-android ships native libs only for these ABIs; x86 (32-bit)
+        // is unsupported. Limiting them keeps the APK from bloating further.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        }
+    }
+
+    // youtubedl-android extracts a bundled Python at runtime, so its .so files
+    // must be page-aligned and uncompressed on disk (paired with
+    // extractNativeLibs="true" in the manifest).
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            // youtubedl-android ships its Python/ffmpeg payloads as *.zip.so
+            // archives (not real ELF). Exclude them from NDK stripping, which
+            // otherwise logs "not a valid object file" errors.
+            keepDebugSymbols += listOf("**/libpython.zip.so", "**/libffmpeg.zip.so")
+        }
     }
 
     buildTypes {
@@ -48,4 +64,10 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // On-device download engine: yt-dlp + Python + ffmpeg, bundled as native libs.
+    implementation("io.github.junkfood02.youtubedl-android:library:0.17.3")
+    implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.17.3")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
