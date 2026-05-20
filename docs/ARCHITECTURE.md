@@ -21,14 +21,14 @@ structured so any agent can implement a feature without re-deriving the design.
 ├──────────────────────────────────────────────────────────────┤
 │ Data                                                           │
 │  Drift (SQLite) repos · file storage svc · settings store      │
-│  engine impls · (v2) Supabase client                           │
+│  engine impls · (v3) Supabase client                           │
 ├──────────────────────────────────────────────────────────────┤
 │ Platform / Native                                              │
 │  Android: Kotlin host → Pigeon → youtubedl-android (Py+yt-dlp+ffmpeg)
 │           foreground service · MediaStore · LiteRT (v2)        │
 │  Windows: Dart Process → yt-dlp.exe / ffmpeg.exe (bundled)     │
 ├──────────────────────────────────────────────────────────────┤
-│ Cloud (v2 only)                                                │
+│ Cloud (v3 only)                                                │
 │  Supabase: Auth · Postgres (credit ledger) · Edge Functions    │
 │           → Genkit flows → Gemini · Stripe/PayPal webhooks     │
 └──────────────────────────────────────────────────────────────┘
@@ -132,7 +132,7 @@ Migrations: Drift schema versioning; never destructive without migration.
   `flutter_secure_storage`. Router redirect enforces lock on resume.
 - **Permissions:** least-privilege; request notification + foreground-service;
   storage access only when exporting (scoped storage, no broad MANAGE_EXTERNAL).
-- **No telemetry** in MVP. No secrets in client. (v2) all paid-API keys live in
+- **No telemetry** in v1/v2. No secrets in client. (v3) all paid-API keys live in
   Supabase secrets, never shipped.
 
 ---
@@ -156,11 +156,11 @@ abstract interface class InferenceEngine {
 - **LiteRT** is the primary local runtime (incl. MediaPipe LLM Inference for
   Gemma-class models); whisper.cpp / ONNX may back specific tasks behind the same
   interface. Models are **downloaded on demand**, cached, and verified.
-- Local inference = free (no account). Cloud inference routes through Supabase.
+- Local inference = free (no account). Cloud inference (v3) routes through Supabase.
 
 ---
 
-## 9. Cloud Backend (v2)
+## 9. Cloud Backend (v3)
 
 ```
 App → Supabase Edge Function (auth-checked, rate-limited)

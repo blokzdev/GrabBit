@@ -1,8 +1,8 @@
 # CLAUDE.md — GrabBit Agent Operating Guide
 
-> This is the single source of truth for any AI agent or human contributor working
-> on GrabBit. Read it fully before making changes. Keep it current: when a
-> decision here changes, update this file in the same PR.
+> Single source of truth for any AI agent or human contributor working on GrabBit.
+> Read it fully before making changes. Keep it current: when a decision here
+> changes, update this file in the same PR/commit.
 
 ---
 
@@ -10,25 +10,35 @@
 
 **GrabBit** is a free, privacy-first, multi-platform social-media downloader and
 **private media manager**. Users paste a link (YouTube, Instagram, TikTok, X, …)
-and GrabBit downloads the image/video on-device using **yt-dlp + ffmpeg**.
+and GrabBit downloads the image/video **on-device** using **yt-dlp + ffmpeg**.
 Downloads live in a private in-app library by default; the user explicitly chooses
 what to export to the device gallery. The app supports Simple and Advanced modes,
 bulk downloads, metadata management, deep configurability, and an optional
 PIN/biometric app lock.
 
-**Monetization principle (memorize this — it governs every feature decision):**
+Platforms: **Android first** (APK/AAB sideload, off Play Store because of YouTube),
+**Windows in v2**.
+
+### Monetization principle (memorize — it governs every feature decision)
 
 > **On-device = FREE. Cloud = CREDITS.**
-> Anything that runs on the user's own device (downloads, media manager, playback,
-> metadata, organization, app lock, all local yt-dlp/ffmpeg/Dart tools, AND
-> on-device AI models) is **free forever** — it costs us nothing. Only features
-> that spend *our* money via the backend / paid cloud APIs (e.g. Gemini) are
-> credit-metered. Always bias a feature toward an on-device implementation when
-> quality allows, so it stays free.
+> Anything that runs on the user's own device — downloads, media manager, playback,
+> metadata, organization, app lock, all local yt-dlp/ffmpeg/Dart tools, **and all
+> on-device/edge AI (v2)** — is **free forever**; it costs us nothing. Only
+> features that spend *our* money via the backend / paid cloud APIs (e.g. Gemini,
+> v3) are credit-metered. Always bias a feature toward an on-device implementation
+> when quality allows, so it stays free.
 
-Platforms: **Android first** (APK/AAB sideload, off Play Store because of YouTube),
-**Windows later**. v2 introduces **credit-based multimodal AI** (Gemini + Genkit)
-behind a **Supabase** backend, paid via **Stripe/PayPal**.
+### Version strategy (three bands)
+
+| Band | Theme | Network | Money |
+|---|---|---|---|
+| **v1** | Core on-device downloader + private media manager (Android). | Offline | Free |
+| **v2** | World-class, feature-rich, production-ready, **local-only**: Windows parity + **edge/local AI** with graceful capability-gating. | Offline | Free |
+| **v3** | Introduce **Supabase** backend + **Gemini** cloud AI; **credit-based** monetization (Stripe/PayPal) for cloud-only features. | Online (opt-in) | Credits |
+
+The app stays fully free and offline through v2. Money enters only in v3, and only
+for features that spend our money on cloud APIs. No ads, ever.
 
 ---
 
@@ -42,16 +52,17 @@ behind a **Supabase** backend, paid via **Stripe/PayPal**.
 | Local DB | **Drift** (SQLite) | Relational metadata/queue, typed queries, migrations. |
 | Platform bridge | **Pigeon** | Type-safe Dart↔Kotlin codegen for the engine. |
 | Download engine (Android) | **youtubedl-android** (yausername) | Bundles Python+yt-dlp+ffmpeg; proven (used by Seal). |
-| Download engine (Windows) | bundled `yt-dlp.exe` + `ffmpeg.exe` via Dart `Process` | Native, simple, no Python embed needed. |
+| Download engine (Windows, v2) | bundled `yt-dlp.exe` + `ffmpeg.exe` via Dart `Process` | Native, simple, no Python embed needed. |
 | Background work | Android **foreground service** + persistent queue | Reliable long downloads, OS-compliant. |
 | Secure storage | **flutter_secure_storage** | PIN hash, future tokens. |
 | App lock | **local_auth** + PIN | Biometric + fallback. |
-| On-device AI (v2) | **LiteRT** (primary) behind an `InferenceEngine` abstraction | Free local tier; swappable (whisper.cpp/ONNX). |
-| Backend (v2) | **Supabase** (Auth, Postgres, Edge Functions) | Auth + credit ledger + Gemini/Genkit proxy. |
-| Payments (v2) | **Stripe / PayPal** | Play Billing unavailable off-store. |
+| Edge/Local AI (v2) | **LiteRT / MediaPipe LLM**, **whisper.cpp**, **ML Kit**, behind an `InferenceEngine` abstraction | Free local tier; swappable. |
+| Backend (v3) | **Supabase** (Auth, Postgres, Edge Functions) | Auth + credit ledger + Gemini/Genkit proxy. |
+| Cloud AI (v3) | **Gemini** via **Genkit** flows | Multimodal; for tasks/devices beyond on-device limits. |
+| Payments (v3) | **Stripe / PayPal** | Play Billing unavailable off-store. |
 | UI | **Material 3**, dynamic color, light/dark | Modern, themeable; Simple/Advanced modes. |
 
-> When adding a dependency, justify it in the PR and add it to `docs/SPEC.md`.
+> When adding a dependency, justify it in the commit and add it to `docs/SPEC.md`.
 > Prefer well-maintained, widely-used packages. Avoid abandoned plugins.
 
 ---
@@ -66,22 +77,21 @@ behind a **Supabase** backend, paid via **Stripe/PayPal**.
   CLAUDE.md             this file
   docs/                 PRD, ARCHITECTURE, SPEC, ROADMAP
   .github/workflows/    ci.yml, build-apk.yml
-  app/  (or lib/ at root once scaffolded)
-    lib/
-      core/             theming, routing, db (Drift), logging, di, utils
-      core/engine/      DownloadEngine interface + platform impls
-      core/ai/          (v2) InferenceEngine abstraction + device diagnostics
-      features/
-        downloader/     paste-url, format select, progress
-        library/        private media list + in-app player
-        queue/          bulk/queue management
-        settings/       config, storage policy, app lock
-        ai/             (v2) model selector, AI tools
-      main.dart
-    android/            Kotlin host + youtubedl-android + Pigeon glue
-    windows/            desktop runner + bundled binaries
-    test/               unit/widget tests
-    pigeons/            Pigeon API definitions
+  lib/
+    core/               theming, routing, db (Drift), logging, di, utils
+    core/engine/        DownloadEngine interface + platform impls
+    core/ai/            (v2) InferenceEngine + DeviceCapability diagnostics
+    features/
+      downloader/       paste-url, format select, progress
+      library/          private media list + in-app player
+      queue/            bulk/queue management
+      settings/         config, storage policy, app lock
+      ai/               (v2) model selector, AI tools
+    main.dart
+  android/              Kotlin host + youtubedl-android + Pigeon glue
+  windows/              (v2) desktop runner + bundled binaries
+  test/                 unit/widget tests
+  pigeons/              Pigeon API definitions
 ```
 
 **Rules**
@@ -93,17 +103,25 @@ behind a **Supabase** backend, paid via **Stripe/PayPal**.
 
 ---
 
-## 4. Engine Abstraction Contract
+## 4. Engine Abstraction Contracts
 
-`DownloadEngine` (pure-Dart interface in `core/engine/`) exposes, at minimum:
-`probeFormats(url)`, `download(request) → Stream<Progress>`, `cancel(id)`,
-`extractMetadata(url)`. Implementations:
+### `DownloadEngine` (pure-Dart interface in `core/engine/`)
+Exposes at minimum: `probeFormats(url)`, `download(request) → Stream<Progress>`,
+`cancel(id)`, `extractMetadata(url)`. Implementations:
 - **Android**: `AndroidYtDlpEngine` → Pigeon → Kotlin → `youtubedl-android`.
-- **Windows**: `WindowsProcessEngine` → `Process.start(yt-dlp.exe …)`, parse
+- **Windows (v2)**: `WindowsProcessEngine` → `Process.start(yt-dlp.exe …)`, parse
   progress from stdout, invoke `ffmpeg.exe` for merge/convert.
 
-Engine selection happens once via a Riverpod provider keyed on `Platform`.
-UI and queue code must be engine-agnostic.
+Engine selection happens once via a Riverpod provider keyed on `Platform`. UI and
+queue code must be engine-agnostic.
+
+### `InferenceEngine` (v2, pure-Dart interface in `core/ai/`)
+Mirrors `DownloadEngine`. On-device implementations back local AI (LiteRT/MediaPipe
+LLM, whisper.cpp, ML Kit). A `DeviceCapability` probe (RAM/CPU/accelerator) feature-
+flags each AI feature and **gracefully disables** ones the device can't run (with a
+clear, user-friendly reason). In **v3**, a cloud `InferenceEngine` implementation
+slots behind the same interface, optionally letting incapable devices fall back to
+credit-metered cloud inference.
 
 ---
 
@@ -124,8 +142,8 @@ flutter build apk --release / flutter build appbundle       # release (manual)
 ## 6. CI Discipline — READ BEFORE TOUCHING `.github/`
 
 The maintainer is on **GitHub Free** with limited Actions minutes on a **private**
-repo (~2,000 min/mo), and **tests primarily from a phone** (no local IDE). CI is
-the only feedback loop. Be frugal:
+repo (~2,000 min/mo) and **tests primarily from a phone** (no local IDE). CI is the
+only feedback loop. Be frugal:
 
 - **`ci.yml` — AUTO** on PR + push to feature branches: `dart format` check →
   `flutter analyze` → `flutter test`. **Ubuntu only** (1x multiplier), with pub
@@ -143,8 +161,8 @@ the only feedback loop. Be frugal:
 
 - Active branch: **`claude/init-grabbit-setup-RaBUs`**. Develop, commit, push here.
 - **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`…).
-- Small, reviewable commits. Push with `git push -u origin <branch>`; retry
-  network failures with exponential backoff. Never force-push shared branches.
+- Small, reviewable commits. Push with `git push -u origin <branch>`; retry network
+  failures with exponential backoff. Never force-push shared branches.
 - **Do NOT open PRs unless explicitly asked.**
 
 ---
@@ -163,12 +181,12 @@ the only feedback loop. Be frugal:
 
 ## 9. Security, Privacy & Secrets
 
-- **Privacy-first**: no telemetry/analytics in MVP. Downloads stay on-device.
+- **Privacy-first**: no telemetry/analytics in v1/v2. Downloads stay on-device.
 - Default storage = app-private dir; export to gallery is an explicit user action.
 - App lock: PIN hashed (never stored plain) in `flutter_secure_storage`; biometric
   via `local_auth`.
 - **Never commit secrets.** No API keys in the client. All Gemini/paid-API calls
-  (v2) go through Supabase Edge Functions; keys live in Supabase secrets.
+  (v3) go through Supabase Edge Functions; keys live in Supabase secrets.
 - Scoped storage / least-privilege permissions only (see SPEC permissions matrix).
 
 ---
@@ -188,6 +206,6 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
 - `docs/PRD.md` — what we're building & why (product).
 - `docs/ARCHITECTURE.md` — system design blueprint.
 - `docs/SPEC.md` — implementation-level technical spec.
-- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P8).
+- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P10, banded v1/v2/v3).
 
 When in doubt, these four + this file win over memory.

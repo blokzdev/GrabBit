@@ -1,15 +1,23 @@
 # GrabBit — Multi-Phase Roadmap
 
-Status: Draft v0.1 · Last updated: 2026-05-20
+Status: Draft v0.2 · Last updated: 2026-05-20
 
 Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
-**Deliverables**, **Exit criteria**, and **CI/build notes**. Phases are
-sequential by default; later phases assume earlier exit criteria are met.
+**Deliverables**, **Exit criteria**, and **CI/build notes**. Phases are sequential
+by default; later phases assume earlier exit criteria are met.
 
-Legend: **v1 = free, on-device, Android** (P0–P4) · **Windows** (P5) ·
-**v2 = backend + AI** (P6–P7) · **Launch** (P8).
+Legend (three version bands):
+- **v1 — Android core, free, on-device:** P0–P4.
+- **v2 — world-class, feature-rich, production-ready, LOCAL-ONLY (no cloud):**
+  P5 (Windows parity) · P6 (edge/local AI) · P7 (production polish).
+- **v3 — cloud AI + credit monetization:** P8 (backend + accounts) · P9 (cloud AI)
+  · P10 (public launch).
+
+The app stays fully free and offline through v2. Money enters only in v3.
 
 ---
+
+# v1 — Android core (free, on-device)
 
 ## P0 — Foundation
 **Goals:** stand up a buildable Flutter project + the architecture skeleton + CI.
@@ -49,8 +57,8 @@ see it in the private library, play it in-app.
   picker; `storage_state` tracking.
 - **App lock** (PIN + biometric) with router gate.
 - Settings screen (all defaults per SPEC §4).
-**Exit criteria:** queue a few downloads, export selected items to gallery, lock
-the app, reopen with PIN/biometric.
+**Exit criteria:** queue a few downloads, export selected items to gallery, lock the
+app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale.
@@ -62,44 +70,74 @@ the app, reopen with PIN/biometric.
 - User-triggered **yt-dlp self-update**.
 **Exit criteria:** bulk-download a playlist and multiple cross-site URLs reliably.
 
-## P4 — Polish + Internal Beta
+## P4 — Polish + v1 Beta
 **Goals:** stability + UX quality for daily use.
 **Deliverables:** robust error UX + retries, performance tuning (lists, thumbnails),
 naming templates, Wi-Fi-only, theming polish, empty/loading states, i18n
 scaffolding. Internal beta APK distribution.
 **Exit criteria:** founder uses GrabBit as a daily driver; no critical bugs;
-crash-free across top sites.
+crash-free across top sites. **→ v1 complete.**
+
+---
+
+# v2 — World-class, local-only (Windows + edge AI + polish)
 
 ## P5 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`),
-desktop storage adapter (filesystem export), desktop-adapted UI, **MSIX**
-packaging, binary update path.
+desktop storage adapter (filesystem export), desktop-adapted UI, **MSIX** packaging,
+binary update path.
 **Exit criteria:** Windows build downloads + manages media; feature parity with v1
 core. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P6 — v2 Backend + Accounts
+## P6 — Edge/Local AI (free, on-device)
+**Goals:** the differentiator — on-device AI with graceful capability-gating. **No
+cloud, no account, no credits.**
+**Deliverables:**
+- **DeviceCapabilityService** + device tiers; **ModelCapabilityMatrix**.
+- `InferenceEngine` with on-device impls: **LiteRT / MediaPipe LLM** (Gemma-class),
+  **whisper.cpp** (transcription), **ML Kit** (OCR/translation/labeling).
+- **On-demand model download** + integrity check + caching (keeps install lean).
+- First local feature set: transcription, summarization, translation, OCR, smart
+  tagging / semantic search.
+- **Graceful disabling**: features the device can't run are clearly disabled with a
+  friendly reason — never a crash, never a silent no-op.
+**Exit criteria:** on a capable device, transcribe + summarize a saved item fully
+offline; on a low-end device those features are cleanly disabled with explanation.
+
+## P7 — Production Polish (public v2)
+**Goals:** make the local-only app genuinely world-class and production-ready.
+**Deliverables:** accessibility, complete i18n, performance hardening, advanced
+configuration, refined UX across all flows, robust update/onboarding, public v2
+release candidate (Android + Windows, still local-only, still free).
+**Exit criteria:** v2 is stable, polished, and self-recommending; ready for wider
+(still off-store) distribution. **→ v2 complete.**
+
+---
+
+# v3 — Cloud AI + monetization
+
+## P8 — Backend + Accounts
 **Goals:** the paid rails (cloud only).
 **Deliverables:** Supabase Auth; Postgres credit ledger + RLS (SPEC §9.1); Edge
-Functions skeleton; **Stripe/PayPal** checkout + webhooks → credit grants; account
-+ credits UI. Local-only experience stays account-free.
+Functions skeleton; **Stripe/PayPal** checkout + webhooks → credit grants; account +
+credits UI. The local-only experience stays fully account-free.
 **Exit criteria:** buy credits via Stripe/PayPal in a test env; balance updates via
 webhook; RLS verified.
 
-## P7 — v2 AI Features (Cloud + Free Local)
-**Goals:** the differentiator — adaptive AI tiering.
+## P9 — Cloud AI
+**Goals:** heavier multimodal AI for tasks/devices beyond on-device limits.
 **Deliverables:**
-- **DeviceCapabilityService** + tiers; **ModelCapabilityMatrix**; **model selector**
-  (Free—Local vs Cloud).
-- `InferenceEngine` with **LiteRT** primary (MediaPipe LLM for Gemma-class;
-  whisper.cpp/ONNX where better); **on-demand model download** + caching.
-- Cloud AI via Genkit→Gemini Edge Functions with credit metering + rate limits.
-- First feature set: transcription, summarization, smart tagging/semantic search,
-  translation; generative tools as cloud-only.
+- Cloud `InferenceEngine` impl behind the same interface; **Genkit → Gemini** Edge
+  Functions with credit metering + rate limits.
+- Model selector surfaces **Free — Local** vs **Cloud (credits)**; optional cloud
+  fallback for incapable devices.
+- Cloud feature set: richer summarization, vision Q&A, high-quality
+  transcription/translation, generative thumbnails/clips.
 **Exit criteria:** a feature runs **free locally** on a capable device and via
 **cloud (credits)** for higher quality; cost-per-call < credit price.
 
-## P8 — Launch
+## P10 — Launch
 **Goals:** public availability + growth.
 **Deliverables:** landing/download site (Android APK/AAB + Windows MSIX), install
 guides + legal disclaimer, versioned releases/changelog, basic marketing,
@@ -109,9 +147,9 @@ release/update channel. Add repo `README`.
 ---
 
 ## Cross-Cutting Conventions
-- Every phase: keep CI green; update affected docs in the same PR; conventional
+- Every phase: keep CI green; update affected docs in the same commit; conventional
   commits on `claude/init-grabbit-setup-RaBUs` (until told otherwise).
 - Conserve Actions minutes: auto CI = lint/analyze/test on ubuntu; APK/Windows
   builds are **manual/tagged** and batched (CLAUDE.md §6).
-- Privacy/legal posture (PRD §11) holds throughout: on-device-free, cloud-credits,
+- Privacy/legal posture (PRD §13) holds throughout: on-device-free, cloud-credits,
   no ads, no telemetry, user-responsibility disclaimer.

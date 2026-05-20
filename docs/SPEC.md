@@ -21,12 +21,13 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `permission_handler` | Runtime permissions |
 | `flutter_local_notifications` | Foreground-service progress UI |
 | `media_store_plus` (or platform channel) | Export to gallery (scoped storage) |
-| `dio` | HTTP (v2 backend, model downloads) |
+| `dio` | HTTP (v2 model downloads; v3 backend) |
 | `freezed`, `json_serializable` | Immutable models / JSON |
 | `intl` + `flutter_localizations` | i18n (ARB) |
 | `logger` | Structured logging |
 | **Android native:** `com.github.yausername.youtubedl-android` (yt-dlp + ffmpeg + Python) | Download engine |
-| **v2:** `supabase_flutter`, LiteRT/MediaPipe bindings, payment SDKs | Cloud + on-device AI |
+| **v2:** LiteRT / MediaPipe LLM bindings, whisper.cpp, ML Kit | On-device/edge AI |
+| **v3:** `supabase_flutter`, Stripe/PayPal SDKs | Cloud backend + payments |
 
 Add `flutter_lints`/`very_good_analysis` and a strict `analysis_options.yaml`.
 
@@ -167,22 +168,26 @@ Budget rules per CLAUDE.md §6: ubuntu only, cache, manual APKs, no push-builds.
 
 ---
 
-## 9. v2 — Backend & AI Contracts
+## 9. AI & Backend Contracts (v2 local AI · v3 cloud)
 
-### 9.1 Supabase tables (Postgres, RLS on)
+> **Banding:** On-device AI (§9.3) is the **v2** priority and never requires an
+> account, network, or credits. The Supabase/cloud contracts (§9.1–9.2) are **v3**
+> and ship only when cloud AI is introduced.
+
+### 9.1 Supabase tables (v3 — Postgres, RLS on)
 - `profiles(user_id pk, created_at)`
 - `credit_ledger(id, user_id, delta int, reason, ref, created_at)` — balance = sum(delta)
 - `ai_usage(id, user_id, feature, model, tokens/seconds, cost_credits, created_at)`
 - `payments(id, user_id, provider, provider_ref, amount, credits_granted, status, created_at)`
 
-### 9.2 Edge Functions
+### 9.2 Edge Functions (v3)
 - `POST /ai/{feature}` — auth → check balance → Genkit flow → Gemini → debit
   (transactional) → return result. Rate-limited.
 - `POST /webhooks/stripe`, `POST /webhooks/paypal` — verify signature → grant
   credits (ledger insert) → mark payment.
 - Keys (Gemini, Stripe, PayPal) in Supabase secrets only.
 
-### 9.3 On-device AI
+### 9.3 On-device AI (v2)
 - `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion, freeStorageMB }`.
 - Device tiers (e.g. low / mid / high) → `ModelCapabilityMatrix`:
   `feature → { eligibleLocalModels[byTier], cloudModels[] }`.
