@@ -7,11 +7,12 @@ Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 by default; later phases assume earlier exit criteria are met.
 
 Legend (three version bands):
-- **v1 — Android core, free, on-device:** P0–P4.
+- **v1 — Android core, free, on-device:** P0–P5 (P4 completion & refinement, P5 beta
+  & production readiness / release).
 - **v2 — world-class, feature-rich, production-ready, LOCAL-ONLY (no cloud):**
-  P5 (Windows parity) · P6 (edge/local AI) · P7 (production polish).
-- **v3 — cloud AI + credit monetization:** P8 (backend + accounts) · P9 (cloud AI)
-  · P10 (public launch).
+  P6 (Windows parity) · P7 (edge/local AI) · P8 (production polish).
+- **v3 — cloud AI + credit monetization:** P9 (backend + accounts) · P10 (cloud AI)
+  · P11 (public launch).
 
 The app stays fully free and offline through v2. Money enters only in v3.
 
@@ -70,7 +71,7 @@ app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale. **Public content only** — authenticated/private content
-(cookie/login import) is deferred to **v2** (see P7).
+(cookie/login import) is deferred to **v2** (see P8).
 **Deliverables:**
 - Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
   playlists, and carousels; clear errors for unsupported/broken extractors.
@@ -86,19 +87,39 @@ app, reopen with PIN/biometric.
 **Exit criteria:** expand a playlist/carousel, pick a subset, queue items from
 several sites, and run the batch download reliably.
 
-## P4 — Polish + v1 Beta
-**Goals:** stability + UX quality for daily use.
-**Deliverables:** robust error UX + retries, performance tuning (lists, thumbnails),
-naming templates, Wi-Fi-only, theming polish, empty/loading states, i18n
-scaffolding. Internal beta APK distribution.
-**Exit criteria:** founder uses GrabBit as a daily driver; no critical bugs;
-crash-free across top sites. **→ v1 complete.**
+## P4 — v1 Completion & Refinement
+**Goals:** close the gaps and rough edges found in review so the app is genuinely
+daily-drivable; no new feature areas. Ships as three sub-PRs.
+**Deliverables:**
+- **Correctness & code-health** (P4a): unify taskId generation; tighten queue
+  pause/cancel state + foreground-service error handling; settings schema version;
+  per-task notification progress; remove dead code; +tests.
+- **UX refinements** (P4b): queue shows media titles (not URLs); confirmation
+  dialogs + snackbar feedback on mutations; surface captured metadata
+  (description/uploadDate/uploader) on item detail; "clear completed"; fix
+  select/deselect-all; badge counts; pull-to-refresh.
+- **Feature completion** (P4c): in-app **legal/user-responsibility disclaimer** +
+  first-run onboarding; user-editable **filename template**; **Wi-Fi-only resume**
+  (auto-start when back on an unmetered network).
+**Exit criteria:** founder daily-drives a debug build with no critical bugs; gaps
+closed; review backlog cleared.
+
+## P5 — v1 Beta & Production Readiness
+**Goals:** harden, brand, and ship v1.
+**Deliverables:** **release signing** (keystore + CI secret; the ship blocker);
+**app icon + branding + splash**; performance hardening (large library grid/
+thumbnails, DB indices, big-playlist picker); **i18n scaffolding** (ARB/l10n) +
+**subtitle-language selection** (deferred from P4); distribution (GitHub Release with
+the signed APK + README/landing install steps; version bump); final full
+`docs/VERIFICATION.md` regression on the signed release APK.
+**Exit criteria:** signed release APK installs and passes the full on-device
+regression; published for sideload. **→ v1 complete.**
 
 ---
 
 # v2 — World-class, local-only (Windows + edge AI + polish)
 
-## P5 — Windows Port
+## P6 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`),
 desktop storage adapter (filesystem export), desktop-adapted UI, **MSIX** packaging,
@@ -106,7 +127,7 @@ binary update path.
 **Exit criteria:** Windows build downloads + manages media; feature parity with v1
 core. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P6 — Edge/Local AI (free, on-device)
+## P7 — Edge/Local AI (free, on-device)
 **Goals:** the differentiator — on-device AI with graceful capability-gating. **No
 cloud, no account, no credits.**
 **Deliverables:**
@@ -121,7 +142,7 @@ cloud, no account, no credits.**
 **Exit criteria:** on a capable device, transcribe + summarize a saved item fully
 offline; on a low-end device those features are cleanly disabled with explanation.
 
-## P7 — Production Polish (public v2)
+## P8 — Production Polish (public v2)
 **Goals:** make the local-only app genuinely world-class and production-ready.
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced
 configuration, refined UX across all flows, robust update/onboarding, public v2
@@ -137,7 +158,7 @@ release candidate (Android + Windows, still local-only, still free).
 
 # v3 — Cloud AI + monetization
 
-## P8 — Backend + Accounts
+## P9 — Backend + Accounts
 **Goals:** the paid rails (cloud only).
 **Deliverables:** Supabase Auth; Postgres credit ledger + RLS (SPEC §9.1); Edge
 Functions skeleton; **Stripe/PayPal** checkout + webhooks → credit grants; account +
@@ -145,7 +166,7 @@ credits UI. The local-only experience stays fully account-free.
 **Exit criteria:** buy credits via Stripe/PayPal in a test env; balance updates via
 webhook; RLS verified.
 
-## P9 — Cloud AI
+## P10 — Cloud AI
 **Goals:** heavier multimodal AI for tasks/devices beyond on-device limits.
 **Deliverables:**
 - Cloud `InferenceEngine` impl behind the same interface; **Genkit → Gemini** Edge
@@ -157,7 +178,7 @@ webhook; RLS verified.
 **Exit criteria:** a feature runs **free locally** on a capable device and via
 **cloud (credits)** for higher quality; cost-per-call < credit price.
 
-## P10 — Launch
+## P11 — Launch
 **Goals:** public availability + growth.
 **Deliverables:** landing/download site (Android APK/AAB + Windows MSIX), install
 guides + legal disclaimer, versioned releases/changelog, basic marketing,
