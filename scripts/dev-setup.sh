@@ -54,4 +54,7 @@ cd "$PROJECT_DIR"
 log "running flutter pub get"
 flutter pub get
 
+log "running build_runner codegen (Drift/Riverpod)"
+dart run build_runner build
+
 log "done."

@@ -129,7 +129,7 @@ credit-metered cloud inference.
 
 ```bash
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs   # Riverpod/Drift/Pigeon codegen
+dart run build_runner build                                # Riverpod/Drift codegen
 dart format --set-exit-if-changed .                         # format check (CI gate)
 flutter analyze                                             # static analysis (CI gate)
 flutter test                                                # unit/widget tests (CI gate)

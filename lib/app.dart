@@ -1,25 +1,25 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:grabbit/features/library/presentation/library_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/routing/app_router.dart';
+import 'package:grabbit/core/theme/app_theme.dart';
 
-class GrabBitApp extends StatelessWidget {
+class GrabBitApp extends ConsumerWidget {
   const GrabBitApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GrabBit',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
-        ),
-      ),
-      home: const LibraryScreen(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        return MaterialApp.router(
+          title: 'GrabBit',
+          theme: AppTheme.light(lightDynamic?.harmonized()),
+          darkTheme: AppTheme.dark(darkDynamic?.harmonized()),
+          themeMode: ThemeMode.system,
+          routerConfig: router,
+        );
+      },
     );
   }
 }

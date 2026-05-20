@@ -1,0 +1,54 @@
+name: Build APK
+
+# Manual only — never auto-builds on push (Actions-minute budget, CLAUDE.md §6).
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Build a release APK/AAB instead of debug'
+        type: boolean
+        default: false
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ inputs.release && 'release' || 'debug' }} APK
+    runs-on: ubuntu-latest # 1x minutes; never macOS/windows for Android.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.0
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Codegen (build_runner)
+        run: dart run build_runner build
+
+      - name: Build debug APK
+        if: ${{ !inputs.release }}
+        run: flutter build apk --debug
+
+      - name: Build release APK
+        if: ${{ inputs.release }}
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabbit-${{ inputs.release && 'release' || 'debug' }}-apk
+          path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
