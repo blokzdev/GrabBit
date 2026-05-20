@@ -78,13 +78,31 @@ sections for a full regression (e.g. before a v1 release).
 
 ---
 
-## Future phases (fill in as they land)
+## P3 — Multi-Site + Bulk  *(v1)*
 
-### P3 — Multi-Site + Bulk  *(v1)*
-- [ ] Instagram / TikTok / X public posts download; clear errors for unsupported.
-- [ ] Playlist/carousel expansion shows a **multi-item picker**; chosen items queue.
-- [ ] Multi-URL paste / batch import across sites runs as one batch.
-- [ ] User-triggered **yt-dlp self-update** works.
+### P3-A — Engine: expansion + embedding + metadata  *(merged)*
+Independently testable now (the picker UI for expansion lands in P3-B):
+- [ ] Download a normal video with embedding on → the saved file carries an
+      **embedded thumbnail** and **metadata** (check in a player/file info), and
+      **subtitles** are embedded when the source has them.
+- [ ] Open a downloaded item → `media_metadata` is populated (uploader,
+      **description**, **upload date**) — visible on the item/edit screen.
+- [ ] Confirm the downloaded file still lands as `<taskId>.<ext>` with a `.jpg`
+      thumbnail (embedding didn't break the library's thumbnail pickup).
+
+### P3-B — Bulk UI  *(pending)*
+- [ ] Public **Instagram / TikTok / X** posts download; unsupported URLs (e.g. a
+      TikTok user-profile playlist) show a **friendly error + "Update engine" CTA**,
+      not a crash.
+- [ ] A **YouTube playlist** / **IG or X carousel** expands into a **multi-item
+      picker**; select a subset; **"Download now"** runs them; **"Add to batch"**
+      holds them.
+- [ ] **"Start all"** on the queue runs the held batch; **"Pause all"** pauses
+      running.
+- [ ] **Multi-URL paste** (several links at once) expands each; one bad URL doesn't
+      abort the rest.
+- [ ] **Settings → Downloader engine** shows the yt-dlp version; **Update** runs and
+      refreshes it.
 
 ### P4 — Polish + v1 Beta  *(v1)*
 - [ ] Error UX + retries, naming templates, Wi-Fi-only, empty/loading states.

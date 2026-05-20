@@ -169,6 +169,10 @@ only feedback loop. Be frugal:
   test) **and** the phase's exit criteria met — open a PR into `main` for the
   maintainer to review and merge. The maintainer merges and deletes the branch; the
   agent then syncs local `main` and starts the next phase's branch.
+- **Always update `docs/VERIFICATION.md`** in the same PR whenever it adds
+  user-facing behavior: add the on-device checks CI can't cover (real downloads,
+  native, notifications, biometrics, etc.). Keeping it current is mandatory — it's
+  the v1-release regression checklist.
 - Outside a phase boundary, do **not** open a PR unless explicitly asked.
 
 ---
