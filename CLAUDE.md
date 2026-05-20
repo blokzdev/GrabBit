@@ -159,11 +159,17 @@ only feedback loop. Be frugal:
 
 ## 7. Git Workflow
 
-- Active branch: **`claude/init-grabbit-setup-RaBUs`**. Develop, commit, push here.
+- **`main`** is the default, integration branch — **never commit directly to it.**
+- **One feature branch per phase**, named **`claude/p<N>-<short-topic>`** (e.g.
+  `claude/p2-queue-media-manager`). Develop, commit, and push there.
 - **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`…).
 - Small, reviewable commits. Push with `git push -u origin <branch>`; retry network
   failures with exponential backoff. Never force-push shared branches.
-- **Do NOT open PRs unless explicitly asked.**
+- **Phase = PR**: when a phase is complete — all CI gates green (format · analyze ·
+  test) **and** the phase's exit criteria met — open a PR into `main` for the
+  maintainer to review and merge. The maintainer merges and deletes the branch; the
+  agent then syncs local `main` and starts the next phase's branch.
+- Outside a phase boundary, do **not** open a PR unless explicitly asked.
 
 ---
 
