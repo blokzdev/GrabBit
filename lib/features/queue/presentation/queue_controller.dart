@@ -9,6 +9,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
@@ -42,9 +43,9 @@ class QueueController extends _$QueueController {
   final Set<String> _pausing = {};
   final Set<String> _canceling = {};
   final Map<String, Timer> _retryTimers = {};
+  final Map<String, double> _percents = {};
   Future<void> _pumpChain = Future.value();
   bool _serviceActive = false;
-  int _lastPercent = 0;
 
   QueueRepository get _repo => ref.read(queueRepositoryProvider);
   ForegroundService get _service => ref.read(foregroundServiceProvider);
@@ -114,6 +115,8 @@ class QueueController extends _$QueueController {
   Future<void> cancel(String id) async {
     _retryTimers.remove(id)?.cancel();
     if (_runners.containsKey(id)) {
+      // A cancel supersedes a concurrent pause request for the same task.
+      _pausing.remove(id);
       _canceling.add(id);
       await ref.read(downloadEngineProvider).cancel(id);
     } else {
@@ -147,24 +150,38 @@ class QueueController extends _$QueueController {
   }
 
   /// Starts/updates/stops the foreground service to mirror the running set.
+  /// Service control is best-effort: a platform failure must never break the
+  /// queue, and the `_serviceActive` flag only flips after the call succeeds so
+  /// a failed start/stop is retried on the next sync.
   Future<void> _syncService() async {
     final running = await _repo.countByStatus(TaskStatus.running);
-    if (running > 0) {
-      final text = '$running download${running == 1 ? '' : 's'} in progress';
-      if (_serviceActive) {
-        await _service.update(
-          text,
-          progress: _lastPercent,
-          indeterminate: _lastPercent == 0,
-        );
-      } else {
-        _serviceActive = true;
-        await _service.start(text);
+    try {
+      if (running > 0) {
+        final text = '$running download${running == 1 ? '' : 's'} in progress';
+        final percent = _averagePercent();
+        if (_serviceActive) {
+          await _service.update(
+            text,
+            progress: percent,
+            indeterminate: percent == 0,
+          );
+        } else {
+          await _service.start(text);
+          _serviceActive = true;
+        }
+      } else if (_serviceActive) {
+        await _service.stop();
+        _serviceActive = false;
       }
-    } else if (_serviceActive) {
-      _serviceActive = false;
-      await _service.stop();
-    }
+    } catch (_) {}
+  }
+
+  /// Mean progress across the tasks currently streaming, so the notification
+  /// reflects the whole running set instead of whichever updated last.
+  int _averagePercent() {
+    if (_percents.isEmpty) return 0;
+    final sum = _percents.values.fold<double>(0, (a, b) => a + b);
+    return (sum / _percents.length).round();
   }
 
   Future<void> _start(DownloadTask task) async {
@@ -192,7 +209,7 @@ class QueueController extends _$QueueController {
           case DownloadStage.probing:
           case DownloadStage.downloading:
           case DownloadStage.merging:
-            _lastPercent = p.percent.round();
+            _percents[id] = p.percent;
             await _repo.setProgress(id, p.percent);
             await _syncService();
         }
@@ -248,17 +265,20 @@ class QueueController extends _$QueueController {
   }
 
   Future<void> _onCanceled(String id) async {
+    _canceling.remove(id);
     if (_pausing.remove(id)) {
       await _repo.setStatus(id, TaskStatus.paused);
     } else {
-      _canceling.remove(id);
       await _repo.setStatus(id, TaskStatus.canceled);
     }
     _finish(id);
     await _pump();
   }
 
-  void _finish(String id) => _runners.remove(id);
+  void _finish(String id) {
+    _runners.remove(id);
+    _percents.remove(id);
+  }
 
   Duration _backoff(int retries, QueueConfig config) {
     final ms = config.baseRetryDelay.inMilliseconds * (1 << retries);
@@ -317,22 +337,12 @@ class QueueController extends _$QueueController {
                 uploader: Value(queued.uploader),
                 originalUrl: Value(queued.originalUrl),
                 description: Value(queued.description),
-                uploadDate: Value(_parseUploadDate(queued.uploadDate)),
+                uploadDate: Value(parseUploadDate(queued.uploadDate)),
               ),
             );
       }
     });
   }
-}
-
-/// yt-dlp `upload_date` is `YYYYMMDD` (UTC); returns null if unparseable.
-DateTime? _parseUploadDate(String? raw) {
-  if (raw == null || raw.length != 8) return null;
-  final year = int.tryParse(raw.substring(0, 4));
-  final month = int.tryParse(raw.substring(4, 6));
-  final day = int.tryParse(raw.substring(6, 8));
-  if (year == null || month == null || day == null) return null;
-  return DateTime.utc(year, month, day);
 }
 
 String _typeForExt(String ext) {

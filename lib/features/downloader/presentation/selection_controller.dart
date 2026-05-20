@@ -3,6 +3,7 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
@@ -139,8 +140,7 @@ class SelectionController extends Notifier<SelectionState> {
       for (final e in entries)
         QueuedDownload(
           request: DownloadRequest(
-            taskId:
-                'dl_${DateTime.now().microsecondsSinceEpoch}_${e.url.hashCode}',
+            taskId: newTaskId(),
             url: e.url,
             outputDir: dir.path,
             filenameTemplate: '%(title)s.%(ext)s',

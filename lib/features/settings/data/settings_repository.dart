@@ -15,6 +15,12 @@ class SettingsRepository {
   final AppDatabase _db;
   static const _rowId = 0;
 
+  /// Schema version stamped into the JSON blob. `fromJson` ignores unknown keys
+  /// and missing fields fall back to `@Default`, so additive changes round-trip
+  /// for free; this stamp is the hook future builds branch on to migrate older
+  /// blobs after a field is renamed or removed.
+  static const _schemaVersion = 1;
+
   Future<SettingsModel> read() async {
     final row = await (_db.select(
       _db.appSettings,
@@ -28,12 +34,13 @@ class SettingsRepository {
   }
 
   Future<void> write(SettingsModel settings) async {
+    final json = settings.toJson()..['version'] = _schemaVersion;
     await _db
         .into(_db.appSettings)
         .insertOnConflictUpdate(
           AppSettingsCompanion.insert(
             id: const Value(_rowId),
-            data: jsonEncode(settings.toJson()),
+            data: jsonEncode(json),
           ),
         );
   }
