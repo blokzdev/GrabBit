@@ -284,7 +284,12 @@ class QueueController extends _$QueueController {
               thumbPath: Value(thumb?.path),
             ),
           );
-      if (queued.uploader != null || queued.originalUrl != null) {
+      final hasMetadata =
+          queued.uploader != null ||
+          queued.originalUrl != null ||
+          queued.description != null ||
+          queued.uploadDate != null;
+      if (hasMetadata) {
         await db
             .into(db.mediaMetadata)
             .insertOnConflictUpdate(
@@ -292,11 +297,23 @@ class QueueController extends _$QueueController {
                 itemId: id,
                 uploader: Value(queued.uploader),
                 originalUrl: Value(queued.originalUrl),
+                description: Value(queued.description),
+                uploadDate: Value(_parseUploadDate(queued.uploadDate)),
               ),
             );
       }
     });
   }
+}
+
+/// yt-dlp `upload_date` is `YYYYMMDD` (UTC); returns null if unparseable.
+DateTime? _parseUploadDate(String? raw) {
+  if (raw == null || raw.length != 8) return null;
+  final year = int.tryParse(raw.substring(0, 4));
+  final month = int.tryParse(raw.substring(4, 6));
+  final day = int.tryParse(raw.substring(6, 8));
+  if (year == null || month == null || day == null) return null;
+  return DateTime.utc(year, month, day);
 }
 
 String _typeForExt(String ext) {

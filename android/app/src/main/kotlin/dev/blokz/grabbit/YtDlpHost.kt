@@ -35,6 +35,20 @@ class YtDlpHost(
         }
     }
 
+    override fun expandRaw(url: String, callback: (Result<String>) -> Unit) {
+        scope.launch {
+            val result = runCatching {
+                YtDlpEngine.ensureInitialized(context)
+                val request = YoutubeDLRequest(url).apply {
+                    addOption("--flat-playlist")
+                    addOption("-J")
+                }
+                YoutubeDL.getInstance().execute(request).out
+            }
+            withContext(Dispatchers.Main) { callback(result) }
+        }
+    }
+
     override fun startDownload(request: DownloadRequestDto) {
         scope.launch {
             try {
@@ -50,7 +64,13 @@ class YtDlpHost(
                     }
                     addOption("--write-thumbnail")
                     addOption("--convert-thumbnails", "jpg")
-                    if (request.subtitles) addOption("--write-auto-subs")
+                    if (request.embedThumbnail) addOption("--embed-thumbnail")
+                    if (request.embedMetadata) addOption("--embed-metadata")
+                    if (request.subtitles) {
+                        addOption("--write-subs")
+                        addOption("--write-auto-subs")
+                        addOption("--embed-subs")
+                    }
                 }
                 YoutubeDL.getInstance().execute(ytReq, request.taskId) { progress, etaInSeconds, line ->
                     val stage = if (line.contains("[Merger]") || line.contains("Merging")) {
@@ -114,6 +134,8 @@ private fun VideoInfo.toDto(): MediaInfoDto = MediaInfoDto(
     durationSec = duration.takeIf { it > 0 }?.toLong(),
     thumbnailUrl = thumbnail,
     site = extractor,
+    description = description,
+    uploadDate = uploadDate,
     formats = formats?.map { it.toDto() } ?: emptyList(),
 )
 

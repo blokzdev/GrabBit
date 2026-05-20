@@ -40,6 +40,8 @@ class MediaInfo {
     this.durationSec,
     this.thumbnailUrl,
     this.site,
+    this.description,
+    this.uploadDate,
   });
 
   final String title;
@@ -48,6 +50,42 @@ class MediaInfo {
   final int? durationSec;
   final String? thumbnailUrl;
   final String? site;
+  final String? description;
+  final String? uploadDate;
+}
+
+/// One item from an expanded playlist/channel/carousel. Shallow (from
+/// `--flat-playlist`): [thumbnailUrl]/[durationSec] are often null.
+class MediaEntry {
+  const MediaEntry({
+    required this.url,
+    required this.title,
+    this.id,
+    this.thumbnailUrl,
+    this.durationSec,
+    this.isImage = false,
+  });
+
+  final String url;
+  final String title;
+  final String? id;
+  final String? thumbnailUrl;
+  final int? durationSec;
+  final bool isImage;
+}
+
+/// Result of [DownloadEngine.expand]: one or more entries. A non-playlist URL
+/// collapses to a single entry so callers have a uniform path.
+class PlaylistInfo {
+  const PlaylistInfo({
+    required this.entries,
+    this.title,
+    this.isPlaylist = false,
+  });
+
+  final List<MediaEntry> entries;
+  final String? title;
+  final bool isPlaylist;
 }
 
 /// A fully-specified download job handed to the engine.
@@ -139,6 +177,10 @@ class EngineVersion {
 abstract interface class DownloadEngine {
   /// Resolves formats, metadata, and thumbnails for [url].
   Future<MediaInfo> probe(String url);
+
+  /// Expands a URL into its entries (playlist/channel/carousel); a single item
+  /// collapses to a one-entry result.
+  Future<PlaylistInfo> expand(String url);
 
   /// Runs a download, emitting progress and a single terminal event.
   Stream<DownloadProgress> download(DownloadRequest request);

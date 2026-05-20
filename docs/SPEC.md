@@ -41,7 +41,8 @@ Add `flutter_lints`/`very_good_analysis` and a strict `analysis_options.yaml`.
 class FormatDto { String id; String ext; int? height; int? tbr; String? vcodec;
   String? acodec; bool audioOnly; int? filesize; String label; }
 class MediaInfoDto { String title; String? uploader; int? durationSec;
-  String? thumbnailUrl; String? site; List<FormatDto> formats; }
+  String? thumbnailUrl; String? site; String? description; String? uploadDate;
+  List<FormatDto> formats; }
 class DownloadRequestDto { String taskId; String url; String? formatId;
   bool audioOnly; String? container; bool subtitles; bool embedThumbnail;
   bool embedMetadata; String outputDir; String filenameTemplate; }
@@ -51,11 +52,23 @@ class ProgressDto { String taskId; double percent; double speedBps; int? etaSec;
 @HostApi()
 abstract class YtDlpHostApi {
   @async MediaInfoDto probe(String url);
+  @async String expandRaw(String url);   // raw `--flat-playlist -J` stdout; parsed in Dart (P3)
   void startDownload(DownloadRequestDto request);   // progress via FlutterApi
   void cancel(String taskId);
   @async String engineVersions();                   // yt-dlp + ffmpeg versions
   @async void updateEngine();
 }
+```
+
+**Download options (P3):** `startDownload` passes `--write-thumbnail
+--convert-thumbnails jpg` (library thumb) and, per request flags,
+`--embed-thumbnail`, `--embed-metadata`, and subtitles
+(`--write-subs --write-auto-subs --embed-subs`). Playlist/channel/carousel
+expansion is `expandRaw` → `yt-dlp --flat-playlist -J` → parsed by
+`lib/core/engine/playlist_parser.dart` into `PlaylistInfo{entries:[MediaEntry]}`
+(single items collapse to one entry). `media_metadata` is populated with
+uploader/description/uploadDate/originalUrl on completion.
+```dart
 
 @FlutterApi()
 abstract class YtDlpFlutterApi { void onProgress(ProgressDto progress); }
