@@ -43,6 +43,15 @@ class SettingsController extends _$SettingsController {
   Future<void> setWifiOnly(bool value) async =>
       _update((await future).copyWith(wifiOnly: value));
 
+  Future<void> setDefaultSubtitles(bool value) async =>
+      _update((await future).copyWith(defaultSubtitles: value));
+
+  Future<void> setEmbedThumbnail(bool value) async =>
+      _update((await future).copyWith(embedThumbnail: value));
+
+  Future<void> setEmbedMetadata(bool value) async =>
+      _update((await future).copyWith(embedMetadata: value));
+
   Future<void> setAppLock(AppLockSettings appLock) async =>
       _update((await future).copyWith(appLock: appLock));
 }

@@ -4,6 +4,7 @@ import 'package:grabbit/core/storage/media_export_service.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
+import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -72,6 +73,25 @@ class _SettingsList extends ConsumerWidget {
           value: settings.wifiOnly,
           onChanged: controller.setWifiOnly,
         ),
+        SwitchListTile(
+          title: const Text('Download subtitles'),
+          subtitle: const Text('Write and embed subtitles when available'),
+          value: settings.defaultSubtitles,
+          onChanged: controller.setDefaultSubtitles,
+        ),
+        SwitchListTile(
+          title: const Text('Embed thumbnail'),
+          value: settings.embedThumbnail,
+          onChanged: controller.setEmbedThumbnail,
+        ),
+        SwitchListTile(
+          title: const Text('Embed metadata'),
+          value: settings.embedMetadata,
+          onChanged: controller.setEmbedMetadata,
+        ),
+        const Divider(),
+        const _SectionHeader('Downloader engine'),
+        const _EngineUpdateTile(),
         const Divider(),
         const _SectionHeader('Storage'),
         SwitchListTile(
@@ -200,6 +220,35 @@ class _AppLockSection extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _EngineUpdateTile extends ConsumerWidget {
+  const _EngineUpdateTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(engineUpdateControllerProvider);
+    final data = state.asData?.value;
+    final updating = data?.updating ?? false;
+    return ListTile(
+      title: const Text('yt-dlp'),
+      subtitle: Text(
+        data?.message ??
+            (data?.version != null ? 'Version ${data!.version}' : 'Loading…'),
+      ),
+      trailing: updating
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : TextButton(
+              onPressed: () =>
+                  ref.read(engineUpdateControllerProvider.notifier).runUpdate(),
+              child: const Text('Update'),
+            ),
     );
   }
 }
