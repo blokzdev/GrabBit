@@ -2,6 +2,7 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
@@ -10,7 +11,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'downloader_controller.g.dart';
 
-enum DownloaderPhase { idle, probing, ready, queued }
+enum DownloaderPhase { idle, probing, ready }
 
 /// Quality presets exposed in P1. The selector strings are yt-dlp `-f`
 /// expressions, so they work without inspecting the probed format ids.
@@ -62,9 +63,11 @@ class DownloaderController extends _$DownloaderController {
   @override
   DownloaderState build() => const DownloaderState();
 
-  /// Expands [rawUrl] to detect a playlist/carousel. Returns true if it has
-  /// multiple entries (caller routes to the picker, sources pre-loaded); for a
-  /// single item it falls through to [probe] for the rich preview.
+  /// Expands [rawUrl] to detect a playlist/carousel. [expand] is a fast,
+  /// flat listing (cheap on a real playlist); if it yields multiple entries we
+  /// hand them to the selection picker and return true. A single entry isn't a
+  /// playlist, so we fall through to the slower [probe] for the rich
+  /// single-item preview (formats, thumbnail) and return false.
   Future<bool> checkSingle(String rawUrl) async {
     final url = rawUrl.trim();
     if (url.isEmpty) return false;
@@ -119,7 +122,7 @@ class DownloaderController extends _$DownloaderController {
     final info = current.info;
     if (info == null) return;
 
-    final taskId = 'dl_${DateTime.now().microsecondsSinceEpoch}';
+    final taskId = newTaskId();
     final dir = await ref.read(mediaStorageProvider).mediaDirectory();
     final settings = await ref.read(settingsControllerProvider.future);
     final request = DownloadRequest(
@@ -148,12 +151,7 @@ class DownloaderController extends _$DownloaderController {
             uploadDate: info.uploadDate,
           ),
         );
-    state = DownloaderState(
-      phase: DownloaderPhase.queued,
-      url: current.url,
-      info: info,
-    );
+    // Clear the form; the UI navigates to the queue after enqueuing.
+    state = const DownloaderState();
   }
-
-  void reset() => state = const DownloaderState();
 }

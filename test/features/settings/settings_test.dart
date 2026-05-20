@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,6 +63,27 @@ void main() {
       const updated = SettingsModel(mode: UiMode.advanced, wifiOnly: true);
       await repo.write(updated);
       expect(await repo.read(), updated);
+    });
+
+    test('write stamps a schema version into the blob', () async {
+      await repo.write(const SettingsModel());
+      final row = await (db.select(
+        db.appSettings,
+      )..where((t) => t.id.equals(0))).getSingle();
+      expect(jsonDecode(row.data)['version'], 1);
+    });
+
+    test('reads a legacy blob without a version field', () async {
+      // Simulate a pre-versioning row: valid settings JSON, no `version` key.
+      await db
+          .into(db.appSettings)
+          .insert(
+            AppSettingsCompanion.insert(
+              id: const Value(0),
+              data: jsonEncode(const SettingsModel(wifiOnly: true).toJson()),
+            ),
+          );
+      expect((await repo.read()).wifiOnly, isTrue);
     });
   });
 

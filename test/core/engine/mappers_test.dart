@@ -123,5 +123,32 @@ void main() {
       expect(classifyEngineError(''), DownloadErrorCode.unknown);
       expect(classifyEngineError(null), DownloadErrorCode.unknown);
     });
+
+    test('maps the remaining taxonomy codes and is case-insensitive', () {
+      expect(
+        classifyEngineError('postprocessing: ffmpeg exited with code 1'),
+        DownloadErrorCode.ffmpegFailed,
+      );
+      expect(
+        classifyEngineError('Permission denied: /storage'),
+        DownloadErrorCode.permissionDenied,
+      );
+      expect(
+        classifyEngineError('No space left on device'),
+        DownloadErrorCode.storageFull,
+      );
+      expect(
+        classifyEngineError('Connection reset by peer'),
+        DownloadErrorCode.network,
+      );
+      expect(
+        classifyEngineError('Unable to extract player response'),
+        DownloadErrorCode.extractorFailed,
+      );
+      expect(
+        classifyEngineError('something we have never seen'),
+        DownloadErrorCode.unknown,
+      );
+    });
   });
 }
