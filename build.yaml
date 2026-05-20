@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          # Recurse into nested model objects (e.g. SettingsModel.appLock) when
+          # generating toJson/fromJson. Off by default.
+          explicit_to_json: true
