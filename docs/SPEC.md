@@ -25,7 +25,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `freezed`, `json_serializable` | Immutable models / JSON |
 | `intl` + `flutter_localizations` | i18n (ARB) |
 | `logger` | Structured logging |
-| **Android native:** `com.github.yausername.youtubedl-android` (yt-dlp + ffmpeg + Python) | Download engine |
+| **Android native:** `io.github.junkfood02.youtubedl-android:{library,ffmpeg}:0.17.3` (Maven Central; yt-dlp + ffmpeg + Python; Kotlin pkg `com.yausername.youtubedl_android`) | Download engine |
 | **v2:** LiteRT / MediaPipe LLM bindings, whisper.cpp, ML Kit | On-device/edge AI |
 | **v3:** `supabase_flutter`, Stripe/PayPal SDKs | Cloud backend + payments |
 
@@ -198,8 +198,11 @@ Budget rules per CLAUDE.md §6: ubuntu only, cache, manual APKs, no push-builds.
 
 ---
 
-## 10. Open Items to confirm at P0
-- Exact `minSdk` for youtubedl-android; NDK/ABI splits for APK size.
-- Whether to use Pigeon EventChannel vs FlutterApi callbacks for progress.
-- media_store plugin vs hand-rolled platform channel for export.
-- Strict-lints package choice.
+## 10. Open Items
+- ~~Exact `minSdk` for youtubedl-android~~ → **minSdk 24** (Flutter 3.44 default;
+  satisfies the JunkFood02 fork). NDK/ABI splits for APK size: decided in P1
+  (`abiFilters` arm64-v8a/armeabi-v7a/x86_64; ABI splits in `build-apk.yml` if large).
+- ~~Pigeon EventChannel vs FlutterApi for progress~~ → **FlutterApi callbacks**
+  (`YtDlpFlutterApi.onProgress`), dispatched to per-task Dart streams.
+- media_store plugin vs hand-rolled platform channel for export → **P2**.
+- Strict-lints package choice → `flutter_lints` + strict analyzer toggles (P0).

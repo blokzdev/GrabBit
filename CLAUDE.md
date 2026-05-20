@@ -51,7 +51,7 @@ for features that spend our money on cloud APIs. No ads, ever.
 | Routing | **go_router** | Declarative, deep-link ready. |
 | Local DB | **Drift** (SQLite) | Relational metadata/queue, typed queries, migrations. |
 | Platform bridge | **Pigeon** | Type-safe Dart↔Kotlin codegen for the engine. |
-| Download engine (Android) | **youtubedl-android** (yausername) | Bundles Python+yt-dlp+ffmpeg; proven (used by Seal). |
+| Download engine (Android) | **youtubedl-android** (JunkFood02 fork, `io.github.junkfood02.youtubedl-android`) | Bundles Python+yt-dlp+ffmpeg; maintained fork used by Seal; on Maven Central. |
 | Download engine (Windows, v2) | bundled `yt-dlp.exe` + `ffmpeg.exe` via Dart `Process` | Native, simple, no Python embed needed. |
 | Background work | Android **foreground service** + persistent queue | Reliable long downloads, OS-compliant. |
 | Secure storage | **flutter_secure_storage** | PIN hash, future tokens. |
