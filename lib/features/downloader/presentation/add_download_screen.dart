@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 
@@ -64,20 +65,9 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
             if (state.phase == DownloaderPhase.ready)
               _PresetPicker(
                 presets: state.availablePresets,
-                onSelected: controller.startDownload,
-              ),
-            if (state.phase == DownloaderPhase.downloading &&
-                state.progress != null)
-              _ProgressView(
-                progress: state.progress!,
-                onCancel: controller.cancel,
-              ),
-            if (state.phase == DownloaderPhase.done)
-              _DoneView(
-                onDone: () {
-                  controller.reset();
-                  _urlController.clear();
-                  Navigator.of(context).maybePop();
+                onSelected: (preset) async {
+                  await controller.enqueue(preset);
+                  if (context.mounted) context.go('/queue');
                 },
               ),
           ],
@@ -157,7 +147,7 @@ class _PresetPicker extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Download', style: Theme.of(context).textTheme.titleSmall),
+        Text('Add to queue', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -173,55 +163,6 @@ class _PresetPicker extends StatelessWidget {
               ),
           ],
         ),
-      ],
-    );
-  }
-}
-
-class _ProgressView extends StatelessWidget {
-  const _ProgressView({required this.progress, required this.onCancel});
-  final DownloadProgress progress;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final percent = (progress.percent.clamp(0, 100)) / 100;
-    final eta = progress.etaSec;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        LinearProgressIndicator(value: percent == 0 ? null : percent),
-        const SizedBox(height: 8),
-        Text(
-          progress.stage == DownloadStage.merging
-              ? 'Merging…'
-              : '${progress.percent.toStringAsFixed(0)}%'
-                    '${eta != null ? ' · ${eta}s left' : ''}',
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: onCancel,
-          icon: const Icon(Icons.close),
-          label: const Text('Cancel'),
-        ),
-      ],
-    );
-  }
-}
-
-class _DoneView extends StatelessWidget {
-  const _DoneView({required this.onDone});
-  final VoidCallback onDone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Icon(Icons.check_circle, color: Colors.green, size: 48),
-        const SizedBox(height: 8),
-        const Text('Saved to your library'),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: onDone, child: const Text('Done')),
       ],
     );
   }

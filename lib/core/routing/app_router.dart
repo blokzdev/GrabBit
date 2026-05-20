@@ -2,6 +2,8 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_screen.dart';
+import 'package:grabbit/features/queue/presentation/queue_screen.dart';
+import 'package:grabbit/features/settings/presentation/settings_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_router.g.dart';
@@ -28,6 +30,16 @@ GoRouter appRouter(Ref ref) {
         name: 'item',
         builder: (context, state) =>
             ItemDetailScreen(itemId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/queue',
+        name: 'queue',
+        builder: (context, state) => const QueueScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );

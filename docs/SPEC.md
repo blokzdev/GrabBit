@@ -19,8 +19,10 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `flutter_secure_storage` | PIN hash / secrets |
 | `local_auth` | Biometric auth |
 | `permission_handler` | Runtime permissions |
-| `flutter_local_notifications` | Foreground-service progress UI |
-| `media_store_plus` (or platform channel) | Export to gallery (scoped storage) |
+| `flutter_local_notifications` | Notification channel + terminal (complete/failed) notifications. The **foreground-service notification itself is built natively** in `DownloadService.kt` (FGS lifecycle requires it) |
+| `video_player`, `chewie` | In-app media playback (P1) |
+| `crypto` | Salted PIN hashing for app lock (P2) |
+| Export to device: **hand-rolled Pigeon channel** (SAF + MediaStore) — no `media_store_plus`/`shared_storage` dep (see §5) | Export to gallery / user-picked folder |
 | `dio` | HTTP (v2 model downloads; v3 backend) |
 | `freezed`, `json_serializable` | Immutable models / JSON |
 | `intl` + `flutter_localizations` | i18n (ARB) |
@@ -204,5 +206,15 @@ Budget rules per CLAUDE.md §6: ubuntu only, cache, manual APKs, no push-builds.
   (`abiFilters` arm64-v8a/armeabi-v7a/x86_64; ABI splits in `build-apk.yml` if large).
 - ~~Pigeon EventChannel vs FlutterApi for progress~~ → **FlutterApi callbacks**
   (`YtDlpFlutterApi.onProgress`), dispatched to per-task Dart streams.
-- media_store plugin vs hand-rolled platform channel for export → **P2**.
+- ~~media_store plugin vs hand-rolled platform channel for export~~ → **hand-rolled
+  Pigeon channel** (SAF `ACTION_OPEN_DOCUMENT_TREE` + persistable URI for a
+  user-picked folder; MediaStore `RELATIVE_PATH` default for gallery visibility). No
+  new dependency. See §5.
 - Strict-lints package choice → `flutter_lints` + strict analyzer toggles (P0).
+
+### Implementation conventions (learned)
+- **Manual Riverpod providers for Drift-row types.** `riverpod_generator` throws
+  `InvalidTypeException` when a `@riverpod` function's signature references a Drift
+  generated row class (e.g. `MediaItem`, `DownloadTask`). Any provider that returns
+  such a type **must be a hand-written** `StreamProvider`/`FutureProvider`/`Notifier`,
+  not codegen. Codegen is still used everywhere else (engine provider, router, etc.).

@@ -65,6 +65,20 @@ class DownloadRequest {
     this.embedMetadata = false,
   });
 
+  factory DownloadRequest.fromJson(Map<String, dynamic> json) =>
+      DownloadRequest(
+        taskId: json['taskId'] as String,
+        url: json['url'] as String,
+        outputDir: json['outputDir'] as String,
+        filenameTemplate: json['filenameTemplate'] as String,
+        formatId: json['formatId'] as String?,
+        audioOnly: json['audioOnly'] as bool? ?? false,
+        container: json['container'] as String?,
+        subtitles: json['subtitles'] as bool? ?? false,
+        embedThumbnail: json['embedThumbnail'] as bool? ?? false,
+        embedMetadata: json['embedMetadata'] as bool? ?? false,
+      );
+
   final String taskId;
   final String url;
   final String outputDir;
@@ -75,6 +89,19 @@ class DownloadRequest {
   final bool subtitles;
   final bool embedThumbnail;
   final bool embedMetadata;
+
+  Map<String, dynamic> toJson() => {
+    'taskId': taskId,
+    'url': url,
+    'outputDir': outputDir,
+    'filenameTemplate': filenameTemplate,
+    'formatId': formatId,
+    'audioOnly': audioOnly,
+    'container': container,
+    'subtitles': subtitles,
+    'embedThumbnail': embedThumbnail,
+    'embedMetadata': embedMetadata,
+  };
 }
 
 /// A progress event streamed during a download. A terminal event carries a

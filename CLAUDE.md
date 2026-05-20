@@ -182,6 +182,10 @@ only feedback loop. Be frugal:
 - Validate only at boundaries (user input, parsed yt-dlp output, backend).
 - Errors: use the typed error taxonomy in `docs/SPEC.md`; surface user-friendly
   messages, log technical detail.
+- **Riverpod + Drift:** any provider whose signature returns a Drift generated row
+  type (e.g. `MediaItem`, `DownloadTask`) must be a **hand-written** provider —
+  `riverpod_generator` throws `InvalidTypeException` on those types. Use codegen for
+  all other providers.
 
 ---
 
