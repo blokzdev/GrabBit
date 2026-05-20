@@ -12,10 +12,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        YtDlpHostApi.setUp(
-            flutterEngine.dartExecutor.binaryMessenger,
-            YtDlpHost(applicationContext),
-        )
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        val flutterApi = YtDlpFlutterApi(messenger)
+        YtDlpHostApi.setUp(messenger, YtDlpHost(applicationContext, flutterApi))
         // Warm up the engine (first run extracts Python) so the first probe is fast.
         warmupScope.launch { runCatching { YtDlpEngine.ensureInitialized(applicationContext) } }
     }

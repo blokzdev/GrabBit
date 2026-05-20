@@ -53,6 +53,59 @@ void main() {
     });
   });
 
+  group('DownloadRequest.toDto', () {
+    test('round-trips all fields', () {
+      const req = DownloadRequest(
+        taskId: 't1',
+        url: 'https://y/v',
+        outputDir: '/data/media',
+        filenameTemplate: '%(title)s.%(ext)s',
+        formatId: '137',
+        audioOnly: true,
+        container: 'm4a',
+        subtitles: true,
+        embedThumbnail: true,
+        embedMetadata: true,
+      );
+      final dto = req.toDto();
+      expect(dto.taskId, 't1');
+      expect(dto.url, 'https://y/v');
+      expect(dto.outputDir, '/data/media');
+      expect(dto.formatId, '137');
+      expect(dto.audioOnly, isTrue);
+      expect(dto.container, 'm4a');
+      expect(dto.subtitles, isTrue);
+    });
+  });
+
+  group('ProgressDto.toDomain', () {
+    test('maps stages and derives terminal error codes', () {
+      DownloadProgress map(String stage, {String? error}) => ProgressDto(
+        taskId: 't',
+        percent: 50,
+        speedBps: 0,
+        stage: stage,
+        error: error,
+      ).toDomain();
+
+      expect(map('downloading').stage, DownloadStage.downloading);
+      expect(map('merging').stage, DownloadStage.merging);
+      expect(map('done').stage, DownloadStage.done);
+      expect(map('done').errorCode, isNull);
+
+      final canceled = map('canceled');
+      expect(canceled.stage, DownloadStage.canceled);
+      expect(canceled.errorCode, DownloadErrorCode.canceled);
+
+      final errored = map('error', error: 'Unsupported URL: x');
+      expect(errored.stage, DownloadStage.error);
+      expect(errored.errorCode, DownloadErrorCode.unsupportedSite);
+
+      // Unknown stage strings fall back to error.
+      expect(map('weird').stage, DownloadStage.error);
+    });
+  });
+
   group('classifyEngineError', () {
     test('maps known yt-dlp messages to codes', () {
       expect(
