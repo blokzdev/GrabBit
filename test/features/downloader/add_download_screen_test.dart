@@ -74,8 +74,9 @@ void main() {
       find.byType(TextField),
       'https://youtu.be/dQw4w9WgXcQ',
     );
-    await tester.tap(find.text('Check link'));
-    await tester.pump();
+    await tester.tap(find.text('Check link(s)'));
+    await tester.pump(); // expand future
+    await tester.pump(); // probe future
     await tester.pump();
 
     expect(find.textContaining('Never Gonna Give You Up'), findsOneWidget);

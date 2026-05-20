@@ -62,7 +62,10 @@ class QueueController extends _$QueueController {
   }
 
   /// The notification "Stop" action pauses everything currently running.
-  void _onStopRequested() {
+  void _onStopRequested() => pauseAll();
+
+  /// Pauses every currently-running download.
+  void pauseAll() {
     for (final id in _runners.keys.toList()) {
       pause(id);
     }
@@ -70,6 +73,22 @@ class QueueController extends _$QueueController {
 
   Future<void> enqueue(QueuedDownload download) async {
     await _repo.enqueue(download);
+    await _pump();
+  }
+
+  /// Adds downloads to the batch "cart" (`held`) without starting them.
+  Future<void> enqueueHeld(List<QueuedDownload> downloads) =>
+      _repo.enqueueAll(downloads, status: TaskStatus.held);
+
+  /// Starts a regular (immediate) batch of downloads now.
+  Future<void> enqueueNow(List<QueuedDownload> downloads) async {
+    await _repo.enqueueAll(downloads);
+    await _pump();
+  }
+
+  /// Releases the held batch into the queue and starts running it.
+  Future<void> startAll() async {
+    await _repo.startAllHeld();
     await _pump();
   }
 

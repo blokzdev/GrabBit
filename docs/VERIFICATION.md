@@ -90,7 +90,7 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Confirm the downloaded file still lands as `<taskId>.<ext>` with a `.jpg`
       thumbnail (embedding didn't break the library's thumbnail pickup).
 
-### P3-B — Bulk UI  *(pending)*
+### P3-B — Bulk UI  *(merged)*
 - [ ] Public **Instagram / TikTok / X** posts download; unsupported URLs (e.g. a
       TikTok user-profile playlist) show a **friendly error + "Update engine" CTA**,
       not a crash.
