@@ -69,6 +69,11 @@ class ControllableEngine implements DownloadEngine {
       const MediaInfo(title: '', formats: []);
 
   @override
+  Future<PlaylistInfo> expand(String url) async => PlaylistInfo(
+    entries: [MediaEntry(url: url, title: 'x')],
+  );
+
+  @override
   Future<EngineVersion> version() async =>
       const EngineVersion(ytDlp: '1', ffmpeg: '1');
 
@@ -102,7 +107,13 @@ class FakeForegroundService implements ForegroundService {
   Future<bool> isUnmetered() async => unmetered;
 }
 
-QueuedDownload _qd(String id, {String outputDir = '/tmp', bool audio = false}) {
+QueuedDownload _qd(
+  String id, {
+  String outputDir = '/tmp',
+  bool audio = false,
+  String? description,
+  String? uploadDate,
+}) {
   return QueuedDownload(
     request: DownloadRequest(
       taskId: id,
@@ -113,6 +124,9 @@ QueuedDownload _qd(String id, {String outputDir = '/tmp', bool audio = false}) {
     ),
     title: 'Title $id',
     site: 'example',
+    uploader: 'Channel $id',
+    description: description,
+    uploadDate: uploadDate,
   );
 }
 
@@ -244,6 +258,36 @@ void main() {
     expect(item!.title, 'Title vid1');
     expect(item.type, 'video');
   });
+
+  test(
+    'completion writes description + uploadDate to media_metadata',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('grabbit_meta_');
+      addTearDown(() => dir.delete(recursive: true));
+      await File('${dir.path}/m1.mp4').writeAsString('data');
+
+      await controller.enqueue(
+        _qd(
+          'm1',
+          outputDir: dir.path,
+          description: 'A clip',
+          uploadDate: '20240115',
+        ),
+      );
+      await waitFor(() async => engine.running.contains('m1'));
+      engine.complete('m1');
+      await waitFor(
+        () async => (await repo.byId('m1'))?.status == TaskStatus.done,
+      );
+
+      final meta = await (db.select(
+        db.mediaMetadata,
+      )..where((t) => t.itemId.equals('m1'))).getSingle();
+      expect(meta.uploader, 'Channel m1');
+      expect(meta.description, 'A clip');
+      expect(meta.uploadDate!.toUtc(), DateTime.utc(2024, 1, 15));
+    },
+  );
 
   test(
     'runs the foreground service while downloading, stops when drained',

@@ -108,6 +108,8 @@ class DownloaderController extends _$DownloaderController {
             durationSec: info.durationSec,
             uploader: info.uploader,
             originalUrl: current.url,
+            description: info.description,
+            uploadDate: info.uploadDate,
           ),
         );
     state = DownloaderState(
