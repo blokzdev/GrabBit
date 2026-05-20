@@ -11,7 +11,9 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - "**/*.pigeon.dart"
     - "**/generated/**"
+    - "pigeons/**"
 
 linter:
   rules:
