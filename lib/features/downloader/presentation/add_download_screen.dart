@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
+import 'package:grabbit/features/downloader/presentation/error_messages.dart';
+import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 
 class AddDownloadScreen extends ConsumerStatefulWidget {
   const AddDownloadScreen({super.key});
@@ -20,6 +24,24 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
     super.dispose();
   }
 
+  Future<void> _check() async {
+    final text = _urlController.text;
+    final urls = text
+        .split(RegExp(r'\s+'))
+        .where((u) => u.trim().isNotEmpty)
+        .toList();
+    if (urls.isEmpty) return;
+    if (urls.length == 1) {
+      final isMulti = await ref
+          .read(downloaderControllerProvider.notifier)
+          .checkSingle(urls.first);
+      if (isMulti && mounted) unawaited(context.push('/select'));
+    } else {
+      await ref.read(selectionControllerProvider.notifier).expandUrls(text);
+      if (mounted) unawaited(context.push('/select'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(downloaderControllerProvider);
@@ -35,25 +57,27 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
             TextField(
               controller: _urlController,
               autofocus: true,
-              keyboardType: TextInputType.url,
+              minLines: 1,
+              maxLines: 4,
+              keyboardType: TextInputType.multiline,
               decoration: const InputDecoration(
-                labelText: 'Paste a link',
-                hintText: 'https://…',
+                labelText: 'Paste one or more links',
+                hintText: 'https://…  (playlists & multiple links supported)',
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: controller.probe,
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
-              onPressed: state.phase == DownloaderPhase.probing
-                  ? null
-                  : () => controller.probe(_urlController.text),
+              onPressed: state.phase == DownloaderPhase.probing ? null : _check,
               icon: const Icon(Icons.search),
-              label: const Text('Check link'),
+              label: const Text('Check link(s)'),
             ),
             const SizedBox(height: 16),
             if (state.errorMessage != null)
-              _ErrorBanner(message: state.errorMessage!),
+              _ErrorBanner(
+                message: friendlyError(state.errorCode, state.errorMessage!),
+                showUpdate: suggestsEngineUpdate(state.errorCode),
+              ),
             if (state.phase == DownloaderPhase.probing)
               const Center(
                 child: Padding(
@@ -78,8 +102,9 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
 }
 
 class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message});
+  const _ErrorBanner({required this.message, this.showUpdate = false});
   final String message;
+  final bool showUpdate;
 
   @override
   Widget build(BuildContext context) {
@@ -91,16 +116,30 @@ class _ErrorBanner extends StatelessWidget {
         color: scheme.errorContainer,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, color: scheme.onErrorContainer),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: scheme.onErrorContainer),
-            ),
+          Row(
+            children: [
+              Icon(Icons.error_outline, color: scheme.onErrorContainer),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(color: scheme.onErrorContainer),
+                ),
+              ),
+            ],
           ),
+          if (showUpdate)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => context.push('/settings'),
+                icon: const Icon(Icons.system_update_alt),
+                label: const Text('Update the downloader engine'),
+              ),
+            ),
         ],
       ),
     );
