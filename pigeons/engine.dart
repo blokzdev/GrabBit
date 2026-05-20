@@ -121,3 +121,22 @@ abstract class YtDlpHostApi {
 abstract class YtDlpFlutterApi {
   void onProgress(ProgressDto progress);
 }
+
+/// Foreground-service control + connectivity probe for the download queue.
+@HostApi()
+abstract class ServiceHostApi {
+  void startService(String text, int progress, bool indeterminate);
+
+  void updateNotification(String text, int progress, bool indeterminate);
+
+  void stopService();
+
+  @async
+  bool isUnmetered();
+}
+
+@FlutterApi()
+abstract class ServiceFlutterApi {
+  /// The notification's "Stop" action was tapped.
+  void onStopRequested();
+}

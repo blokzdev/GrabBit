@@ -15,7 +15,14 @@ class MainActivity : FlutterActivity() {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         val flutterApi = YtDlpFlutterApi(messenger)
         YtDlpHostApi.setUp(messenger, YtDlpHost(applicationContext, flutterApi))
+        ServiceHostApi.setUp(messenger, ServiceHost(applicationContext))
+        DownloadService.flutterApi = ServiceFlutterApi(messenger)
         // Warm up the engine (first run extracts Python) so the first probe is fast.
         warmupScope.launch { runCatching { YtDlpEngine.ensureInitialized(applicationContext) } }
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        DownloadService.flutterApi = null
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 }
