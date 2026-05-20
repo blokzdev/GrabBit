@@ -1,30 +1,22 @@
 package dev.blokz.grabbit
 
-import android.os.Bundle
-import android.util.Log
-import com.yausername.ffmpeg.FFmpeg
-import com.yausername.youtubedl_android.YoutubeDL
-import com.yausername.youtubedl_android.YoutubeDLException
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class MainActivity : FlutterActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Initialize the bundled yt-dlp + ffmpeg off the main thread; the first
-        // run extracts a Python runtime, which is slow. Probe/download wait on
-        // this in later P1 chunks.
-        Thread {
-            try {
-                YoutubeDL.getInstance().init(applicationContext)
-                FFmpeg.getInstance().init(applicationContext)
-                Log.i(TAG, "youtubedl-android initialized")
-            } catch (e: YoutubeDLException) {
-                Log.e(TAG, "failed to initialize youtubedl-android", e)
-            }
-        }.start()
-    }
+    private val warmupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private companion object {
-        const val TAG = "GrabBitEngine"
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        YtDlpHostApi.setUp(
+            flutterEngine.dartExecutor.binaryMessenger,
+            YtDlpHost(applicationContext),
+        )
+        // Warm up the engine (first run extracts Python) so the first probe is fast.
+        warmupScope.launch { runCatching { YtDlpEngine.ensureInitialized(applicationContext) } }
     }
 }
