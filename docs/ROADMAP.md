@@ -53,10 +53,18 @@ see it in the private library, play it in-app.
   pause/resume).
 - **Simple vs Advanced** modes; per-download format/quality/audio-only/subtitles.
 - **Metadata management** (edit title/tags/notes), collections, search/sort/filter.
-- **Save to device** (scoped MediaStore export) + **auto-store** setting + folder
-  picker; `storage_state` tracking.
+- **Save to device**: full **SAF folder picker** (`ACTION_OPEN_DOCUMENT_TREE` +
+  persistable URI) with a gallery-visible **MediaStore default**; **auto-export**
+  setting; `storage_state` (`private → exported`) tracking. Private master is kept
+  on export.
 - **App lock** (PIN + biometric) with router gate.
 - Settings screen (all defaults per SPEC §4).
+
+**Delivery tactic:** P2 is large, so it ships as **3 sequential sub-PRs** (each its
+own `claude/p2{a,b,c}-*` branch + PR, merged in order): **P2-A** Config + Queue core
+(pure Dart), **P2-B** Background foreground-service + Export (native/Pigeon — batched
+so the maintainer device-tests the risky surfaces in one session), **P2-C** Manager
+UX (metadata/collections/search) + App lock.
 **Exit criteria:** queue a few downloads, export selected items to gallery, lock the
 app, reopen with PIN/biometric.
 
