@@ -104,16 +104,27 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Settings → Downloader engine** shows the yt-dlp version; **Update** runs and
       refreshes it.
 
-### P4 — Polish + v1 Beta  *(v1)*
-- [ ] Error UX + retries, naming templates, Wi-Fi-only, empty/loading states.
-- [ ] Daily-driver use with no critical bugs across top sites.
+## P4 — v1 Completion & Refinement  *(v1)*
+- [ ] Queue shows media **titles** (not raw URLs); cancel/remove and delete-collection
+      ask for **confirmation**; actions show **snackbar** feedback.
+- [ ] Item detail surfaces captured **description / upload date / uploader**.
+- [ ] Queue **"Clear completed"** works; selection **select/deselect-all** both work.
+- [ ] First launch shows a one-time **legal/user-responsibility disclaimer**; it
+      doesn't reappear after acceptance.
+- [ ] A custom **filename template** (Settings) applies to saved/exported names.
+- [ ] **Wi-Fi-only** auto-resumes queued tasks when back on an unmetered network.
+
+## P5 — v1 Beta & Production Readiness  *(v1)*
+- [ ] App has a custom **icon / splash / branding**.
+- [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
+- [ ] i18n scaffolding present; subtitle-language selection works (if shipped).
 
 ---
 
 ## v1 release (full regression with the **release** APK)
-1. Set up app signing (release keystore) so the release APK installs — **TODO at
-   v1** (not yet configured).
+1. **Release signing** configured (keystore + CI secret) so the release APK installs
+   — done in **P5**.
 2. Build with **Build APK → release = true**, install the signed release APK.
-3. Run **every** section above (P0 → P4) end-to-end on a real device.
+3. Run **every** section above (P0 → P5) end-to-end on a real device.
 4. Confirm: privacy (nothing in Gallery until exported), app lock, background
    downloads, and playback all work on the AOT release build.
