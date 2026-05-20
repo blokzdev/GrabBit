@@ -1,11 +1,15 @@
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/routing/router_refresh.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
+import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/lock/lock_screen.dart';
 import 'package:grabbit/features/queue/presentation/queue_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_router.g.dart';
@@ -16,7 +20,20 @@ part 'app_router.g.dart';
 GoRouter appRouter(Ref ref) {
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: RouterRefreshNotifier(ref),
+    redirect: (context, state) => lockRedirect(
+      enabled:
+          ref.read(settingsControllerProvider).asData?.value.appLock.enabled ??
+          false,
+      locked: ref.read(lockControllerProvider) == LockState.locked,
+      atLock: state.matchedLocation == '/lock',
+    ),
     routes: [
+      GoRoute(
+        path: '/lock',
+        name: 'lock',
+        builder: (context, state) => const LockScreen(),
+      ),
       GoRoute(
         path: '/',
         name: 'library',

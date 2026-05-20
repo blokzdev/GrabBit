@@ -105,9 +105,17 @@ drop user data without migration. Add a schema test on bump.
   "theme": "system",                // system|light|dark
   "dynamicColor": true,
   "locale": null,                   // null = system
-  "appLock": { "enabled": false, "biometric": false, "pinHash": null }
+  "appLock": { "enabled": false, "biometric": false }
 }
 ```
+
+**App-lock (P2-C) deviation:** settings JSON holds only `appLock.enabled` and
+`appLock.biometric`. The PIN is **never** stored here — `PinRepository` keeps a
+random salt + `sha256(salt:pin)` (via the `crypto` package) in
+`flutter_secure_storage`. A go_router `redirect` gates the app: when app-lock is
+enabled and `LockController` is `locked`, all routes redirect to `/lock`; the app
+re-locks on `AppLifecycleState.paused/hidden`. `local_auth` provides the optional
+biometric unlock (requires `MainActivity` to extend `FlutterFragmentActivity`).
 
 ---
 

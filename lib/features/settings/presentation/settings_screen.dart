@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
+import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
@@ -124,12 +126,80 @@ class _SettingsList extends ConsumerWidget {
         ),
         const Divider(),
         const _SectionHeader('Security'),
-        const ListTile(
-          enabled: false,
-          title: Text('App lock'),
-          subtitle: Text('PIN and biometric lock — coming in P2-C'),
-        ),
+        _AppLockSection(appLock: settings.appLock),
       ],
+    );
+  }
+}
+
+class _AppLockSection extends ConsumerWidget {
+  const _AppLockSection({required this.appLock});
+  final AppLockSettings appLock;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.read(settingsControllerProvider.notifier);
+    return Column(
+      children: [
+        SwitchListTile(
+          title: const Text('App lock'),
+          subtitle: const Text('Require a PIN to open GrabBit'),
+          value: appLock.enabled,
+          onChanged: (enable) async {
+            if (enable) {
+              final pin = await _askPin(context);
+              if (pin == null) return;
+              await ref.read(pinRepositoryProvider).setPin(pin);
+              await settings.setAppLock(appLock.copyWith(enabled: true));
+              ref.read(lockControllerProvider.notifier).unlock();
+            } else {
+              await ref.read(pinRepositoryProvider).clear();
+              await settings.setAppLock(
+                const AppLockSettings(enabled: false, biometric: false),
+              );
+            }
+          },
+        ),
+        if (appLock.enabled)
+          SwitchListTile(
+            title: const Text('Biometric unlock'),
+            subtitle: const Text('Use fingerprint or face to unlock'),
+            value: appLock.biometric,
+            onChanged: (v) =>
+                settings.setAppLock(appLock.copyWith(biometric: v)),
+          ),
+      ],
+    );
+  }
+
+  Future<String?> _askPin(BuildContext context) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Set a PIN'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'At least 4 digits'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().length >= 4) {
+                Navigator.of(context).pop(controller.text.trim());
+              }
+            },
+            child: const Text('Set'),
+          ),
+        ],
+      ),
     );
   }
 }
