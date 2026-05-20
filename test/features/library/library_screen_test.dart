@@ -21,7 +21,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          libraryItemsProvider.overrideWith(
+          filteredLibraryProvider.overrideWith(
             (ref) => Stream.value([_sampleItem()]),
           ),
         ],
@@ -38,7 +38,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          libraryItemsProvider.overrideWith(
+          filteredLibraryProvider.overrideWith(
             (ref) => Stream.value(<MediaItem>[]),
           ),
         ],

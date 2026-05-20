@@ -1,7 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
+import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_screen.dart';
+import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
 import 'package:grabbit/features/queue/presentation/queue_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,6 +32,25 @@ GoRouter appRouter(Ref ref) {
         name: 'item',
         builder: (context, state) =>
             ItemDetailScreen(itemId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/item/:id/edit',
+        name: 'item-edit',
+        builder: (context, state) =>
+            MetadataEditScreen(itemId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/collections',
+        name: 'collections',
+        builder: (context, state) => const CollectionsScreen(),
+      ),
+      GoRoute(
+        path: '/collection/:id',
+        name: 'collection',
+        builder: (context, state) => CollectionDetailScreen(
+          collectionId: int.parse(state.pathParameters['id']!),
+          name: state.extra as String?,
+        ),
       ),
       GoRoute(
         path: '/queue',
