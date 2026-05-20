@@ -12,8 +12,31 @@ class QueueScreen extends ConsumerWidget {
     // Ensure the scheduler is alive (reconciles + pumps on first build).
     ref.watch(queueControllerProvider);
     final tasks = ref.watch(queueTasksProvider);
+    final controller = ref.read(queueControllerProvider.notifier);
+    final rows = tasks.asData?.value ?? const [];
+    final heldCount = rows.where((t) => t.status == TaskStatus.held).length;
+    final runningCount = rows
+        .where((t) => t.status == TaskStatus.running)
+        .length;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Queue')),
+      appBar: AppBar(
+        title: const Text('Queue'),
+        actions: [
+          if (heldCount > 0)
+            TextButton.icon(
+              onPressed: controller.startAll,
+              icon: const Icon(Icons.play_arrow),
+              label: Text('Start all ($heldCount)'),
+            ),
+          if (runningCount > 0)
+            IconButton(
+              tooltip: 'Pause all',
+              icon: const Icon(Icons.pause),
+              onPressed: controller.pauseAll,
+            ),
+        ],
+      ),
       body: tasks.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Failed to load queue: $e')),
@@ -72,6 +95,22 @@ class _TaskTile extends ConsumerWidget {
             ),
           ],
         );
+      case TaskStatus.held:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.play_arrow),
+              tooltip: 'Start',
+              onPressed: () => controller.resume(task.id),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Remove',
+              onPressed: () => controller.remove(task.id),
+            ),
+          ],
+        );
       case TaskStatus.paused:
         return IconButton(
           icon: const Icon(Icons.play_arrow),
@@ -96,6 +135,7 @@ class _TaskTile extends ConsumerWidget {
   String _statusLabel(DownloadTask task) => switch (task.status) {
     TaskStatus.running => '${task.progress.toStringAsFixed(0)}%',
     TaskStatus.queued => 'Queued',
+    TaskStatus.held => 'Held (batch)',
     TaskStatus.paused => 'Paused',
     TaskStatus.done => 'Done',
     TaskStatus.canceled => 'Canceled',

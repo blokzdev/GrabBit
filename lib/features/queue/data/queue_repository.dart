@@ -14,6 +14,9 @@ abstract final class TaskStatus {
   static const done = 'done';
   static const error = 'error';
   static const canceled = 'canceled';
+
+  /// In a batch "cart" — never auto-started until the user taps "Start all".
+  static const held = 'held';
 }
 
 /// CRUD + streaming over the `download_tasks` table.
@@ -45,18 +48,42 @@ class QueueRepository {
             ..limit(1))
           .getSingleOrNull();
 
-  Future<void> enqueue(QueuedDownload download) async {
-    await _db
-        .into(_db.downloadTasks)
-        .insert(
+  Future<void> enqueue(
+    QueuedDownload download, {
+    String status = TaskStatus.queued,
+  }) => enqueueAll([download], status: status);
+
+  /// Inserts a batch of downloads in one transaction (status applies to all).
+  Future<void> enqueueAll(
+    List<QueuedDownload> downloads, {
+    String status = TaskStatus.queued,
+  }) async {
+    if (downloads.isEmpty) return;
+    final now = DateTime.now();
+    await _db.batch((batch) {
+      for (var i = 0; i < downloads.length; i++) {
+        final d = downloads[i];
+        batch.insert(
+          _db.downloadTasks,
           DownloadTasksCompanion.insert(
-            id: download.request.taskId,
-            url: download.request.url,
-            requestJson: jsonEncode(download.toJson()),
-            status: TaskStatus.queued,
-            createdAt: DateTime.now(),
+            id: d.request.taskId,
+            url: d.request.url,
+            requestJson: jsonEncode(d.toJson()),
+            status: status,
+            // Preserve insertion order within a batch added at the same instant.
+            createdAt: now.add(Duration(milliseconds: i)),
           ),
+          mode: InsertMode.insertOrReplace,
         );
+      }
+    });
+  }
+
+  /// Flips every `held` task to `queued` (the scheduler then runs them).
+  Future<void> startAllHeld() async {
+    await (_db.update(_db.downloadTasks)
+          ..where((t) => t.status.equals(TaskStatus.held)))
+        .write(const DownloadTasksCompanion(status: Value(TaskStatus.queued)));
   }
 
   Future<void> setStatus(String id, String status, {String? errorCode}) async {
