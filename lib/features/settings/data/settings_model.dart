@@ -44,6 +44,7 @@ abstract class SettingsModel with _$SettingsModel {
     @Default(true) bool dynamicColor,
     String? locale,
     @Default(AppLockSettings()) AppLockSettings appLock,
+    @Default(false) bool disclaimerAccepted,
   }) = _SettingsModel;
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) =>

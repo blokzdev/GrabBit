@@ -9,6 +9,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
@@ -53,7 +54,14 @@ class QueueController extends _$QueueController {
   @override
   Future<void> build() async {
     _service.onStop = _onStopRequested;
+    // Re-pump when the network changes so Wi-Fi-only tasks auto-start once an
+    // unmetered network returns (_doPump re-checks the metered gate).
+    final netSub = ref
+        .read(networkMonitorProvider)
+        .onChanged
+        .listen((_) => _pump());
     ref.onDispose(() {
+      netSub.cancel();
       for (final t in _retryTimers.values) {
         t.cancel();
       }

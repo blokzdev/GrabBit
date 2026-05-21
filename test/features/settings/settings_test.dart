@@ -110,5 +110,23 @@ void main() {
       // Persisted to DB.
       expect((await SettingsRepository(db).read()).mode, UiMode.advanced);
     });
+
+    test('acceptDisclaimer persists the flag', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      final loaded = await container.read(settingsControllerProvider.future);
+      expect(loaded.disclaimerAccepted, isFalse);
+
+      await container
+          .read(settingsControllerProvider.notifier)
+          .acceptDisclaimer();
+
+      expect((await SettingsRepository(db).read()).disclaimerAccepted, isTrue);
+    });
   });
 }
