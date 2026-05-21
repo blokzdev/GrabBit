@@ -15,27 +15,47 @@ class MediaGrid extends StatelessWidget {
     return GridView.builder(
       physics: physics,
       padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
+      gridDelegate: mediaGridDelegate,
       itemCount: items.length,
-      itemBuilder: (context, i) => _MediaTile(item: items[i]),
+      itemBuilder: (context, i) => MediaTile(item: items[i]),
     );
   }
 }
 
-class _MediaTile extends StatelessWidget {
-  const _MediaTile({required this.item});
+const mediaGridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
+  maxCrossAxisExtent: 220,
+  childAspectRatio: 0.8,
+  crossAxisSpacing: 12,
+  mainAxisSpacing: 12,
+);
+
+/// A single media thumbnail tile. Tapping opens the detail screen by default;
+/// pass [onTap]/[onLongPress] (e.g. for Explorer selection) to override, and
+/// [selectionMode]/[selected] to show a selection check.
+class MediaTile extends StatelessWidget {
+  const MediaTile({
+    required this.item,
+    this.selectionMode = false,
+    this.selected = false,
+    this.onTap,
+    this.onLongPress,
+    super.key,
+  });
+
   final MediaItem item;
+  final bool selectionMode;
+  final bool selected;
+  final void Function(MediaItem)? onTap;
+  final void Function(MediaItem)? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => context.push('/item/${item.id}'),
+      onTap: onTap != null
+          ? () => onTap!(item)
+          : () => context.push('/item/${item.id}'),
+      onLongPress: onLongPress == null ? null : () => onLongPress!(item),
       borderRadius: BorderRadius.circular(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,6 +69,19 @@ class _MediaTile extends StatelessWidget {
                   _Thumb(item: item),
                   if (item.storageState == 'exported')
                     const Positioned(top: 6, right: 6, child: _ExportedBadge()),
+                  if (selectionMode)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Icon(
+                        selected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color: selected
+                            ? theme.colorScheme.primary
+                            : Colors.white70,
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/features/library/data/folder_repository.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/folder_picker.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
@@ -23,6 +25,21 @@ class ItemDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(item.asData?.value?.title ?? 'Item'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.drive_file_move_outlined),
+            tooltip: 'Move to folder',
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final choice = await pickFolder(context, ref);
+              if (choice == null) return;
+              await ref.read(folderRepositoryProvider).moveItems([
+                itemId,
+              ], choice.id);
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(const SnackBar(content: Text('Moved')));
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Edit',

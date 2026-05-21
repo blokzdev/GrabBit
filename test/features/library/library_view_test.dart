@@ -2,17 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
-import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
-import 'package:grabbit/features/library/presentation/library_screen.dart';
-import 'package:grabbit/features/queue/data/queue_repository.dart';
-
-/// LibraryScreen reads the queue + collections providers for its app-bar
-/// badges; stub them so the widget tests don't touch a real database.
-final _badgeStubs = [
-  queueTasksProvider.overrideWith((ref) => Stream.value(<DownloadTask>[])),
-  collectionsProvider.overrideWith((ref) => Stream.value(<Collection>[])),
-];
+import 'package:grabbit/features/library/presentation/library_view.dart';
 
 MediaItem _sampleItem() => MediaItem(
   id: 'item1',
@@ -30,12 +21,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          ..._badgeStubs,
           filteredLibraryProvider.overrideWith(
             (ref) => Stream.value([_sampleItem()]),
           ),
         ],
-        child: const MaterialApp(home: LibraryScreen()),
+        child: const MaterialApp(home: Scaffold(body: LibraryView())),
       ),
     );
     await tester.pump();
@@ -48,12 +38,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          ..._badgeStubs,
           filteredLibraryProvider.overrideWith(
             (ref) => Stream.value(<MediaItem>[]),
           ),
         ],
-        child: const MaterialApp(home: LibraryScreen()),
+        child: const MaterialApp(home: Scaffold(body: LibraryView())),
       ),
     );
     await tester.pump();
