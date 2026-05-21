@@ -34,7 +34,7 @@ abstract class SettingsModel with _$SettingsModel {
     @Default('mp4') String defaultContainer,
     @Default(StoragePolicy.private) StoragePolicy storagePolicy,
     String? exportFolder,
-    @Default('%(title)s.%(ext)s') String filenameTemplate,
+    @Default('{title}') String filenameTemplate,
     @Default(2) int maxConcurrentDownloads,
     @Default(false) bool wifiOnly,
     @Default(false) bool defaultSubtitles,

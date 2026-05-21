@@ -128,5 +128,24 @@ void main() {
 
       expect((await SettingsRepository(db).read()).disclaimerAccepted, isTrue);
     });
+
+    test('setFilenameTemplate persists the pattern', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(settingsControllerProvider.future);
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setFilenameTemplate('{channel} - {title}');
+
+      expect(
+        (await SettingsRepository(db).read()).filenameTemplate,
+        '{channel} - {title}',
+      );
+    });
   });
 }

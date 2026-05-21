@@ -54,7 +54,11 @@ class YtDlpHost(
             try {
                 YtDlpEngine.ensureInitialized(context)
                 val ytReq = YoutubeDLRequest(request.url).apply {
-                    addOption("-o", "${request.outputDir}/${request.taskId}.%(ext)s")
+                    // Download into a per-task subfolder so the taskId names the
+                    // folder (deterministic pickup) while the user's template
+                    // names the file. Empty template falls back to the title.
+                    val template = request.filenameTemplate.ifEmpty { "%(title)s.%(ext)s" }
+                    addOption("-o", "${request.outputDir}/${request.taskId}/$template")
                     if (request.audioOnly) {
                         addOption("-x")
                         addOption("--audio-format", request.container ?: "m4a")

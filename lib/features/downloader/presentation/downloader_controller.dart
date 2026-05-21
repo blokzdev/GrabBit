@@ -2,6 +2,7 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
@@ -129,7 +130,7 @@ class DownloaderController extends _$DownloaderController {
       taskId: taskId,
       url: current.url,
       outputDir: dir.path,
-      filenameTemplate: '%(title)s.%(ext)s',
+      filenameTemplate: resolveOutputTemplate(settings.filenameTemplate),
       formatId: preset.formatSelector,
       audioOnly: preset.audioOnly,
       container: preset.audioOnly ? 'm4a' : 'mp4',

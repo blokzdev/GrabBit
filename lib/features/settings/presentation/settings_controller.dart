@@ -40,6 +40,9 @@ class SettingsController extends _$SettingsController {
   Future<void> setMaxConcurrentDownloads(int value) async =>
       _update((await future).copyWith(maxConcurrentDownloads: value));
 
+  Future<void> setFilenameTemplate(String template) async =>
+      _update((await future).copyWith(filenameTemplate: template));
+
   Future<void> setWifiOnly(bool value) async =>
       _update((await future).copyWith(wifiOnly: value));
 
