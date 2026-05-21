@@ -41,3 +41,44 @@ List<String> frameArgs({
   '2',
   output,
 ];
+
+/// Rotates 90° (clockwise → `transpose=1`, else counter-clockwise `=2`).
+/// Works for video and image (output extension drives the encoder).
+List<String> rotateArgs({
+  required String input,
+  required String output,
+  required bool clockwise,
+}) => ['-y', '-i', input, '-vf', 'transpose=${clockwise ? 1 : 2}', output];
+
+/// Flips vertically (`vflip`) or mirrors horizontally (`hflip`).
+List<String> flipArgs({
+  required String input,
+  required String output,
+  required bool vertical,
+}) => ['-y', '-i', input, '-vf', vertical ? 'vflip' : 'hflip', output];
+
+/// Reverses video + audio (buffers the whole stream — best for short clips).
+List<String> reverseArgs({required String input, required String output}) => [
+  '-y',
+  '-i',
+  input,
+  '-vf',
+  'reverse',
+  '-af',
+  'areverse',
+  output,
+];
+
+/// Strips video, keeping the audio track (output extension picks the codec).
+List<String> extractAudioArgs({
+  required String input,
+  required String output,
+}) => ['-y', '-i', input, '-vn', output];
+
+/// Re-containers / converts by output extension (no filters).
+List<String> convertArgs({required String input, required String output}) => [
+  '-y',
+  '-i',
+  input,
+  output,
+];

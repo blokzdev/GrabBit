@@ -13,8 +13,9 @@ import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/features/library/data/media_tools_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 
-/// On-device editing tools (P6a: trim + frame extract) that produce a new
-/// library item, leaving the original untouched.
+/// On-device editing tools that produce a new library item, leaving the
+/// original untouched. Video: trim, frame extract, rotate/flip/mirror, reverse,
+/// extract audio. Image: rotate/flip/mirror, convert.
 class MediaStudioScreen extends ConsumerStatefulWidget {
   const MediaStudioScreen({required this.itemId, super.key});
   final String itemId;
@@ -45,6 +46,7 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
     required List<String> Function(String input, String output) build,
     int? outDurationSec,
   }) async {
+    if (_running) return;
     final messenger = ScaffoldMessenger.of(context);
     final jobId = newTaskId();
     final mediaDir = await ref.read(mediaStorageProvider).mediaDirectory();
@@ -105,6 +107,8 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
     if (id != null) await ref.read(mediaToolsEngineProvider).cancel(id);
   }
 
+  String _ext(MediaItem row) => row.filePath.split('.').last;
+
   @override
   Widget build(BuildContext context) {
     final item = ref.watch(mediaItemByIdProvider(widget.itemId));
@@ -115,55 +119,9 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
         error: (e, _) => Center(child: Text('Failed to load item: $e')),
         data: (row) {
           if (row == null) return const Center(child: Text('Item not found'));
-          if (row.type == 'audio' || row.durationSec == null) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Trim and frame tools need a video with a known duration. '
-                  'More tools (rotate, flip, convert, image editing) are coming.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
           return Stack(
             children: [
-              _Tools(
-                durationSec: row.durationSec!,
-                trim: _trim ??= RangeValues(0, row.durationSec!.toDouble()),
-                framePos: _framePos ??= 0,
-                onTrimChanged: (v) => setState(() => _trim = v),
-                onFrameChanged: (v) => setState(() => _framePos = v),
-                running: _running,
-                onTrim: () => _run(
-                  row,
-                  label: 'trim',
-                  outExt: row.filePath.split('.').last,
-                  outDurationSec: (_trim!.end - _trim!.start).round(),
-                  build: (input, output) => trimArgs(
-                    input: input,
-                    output: output,
-                    start: Duration(
-                      milliseconds: (_trim!.start * 1000).round(),
-                    ),
-                    duration: Duration(
-                      milliseconds: ((_trim!.end - _trim!.start) * 1000)
-                          .round(),
-                    ),
-                  ),
-                ),
-                onFrame: () => _run(
-                  row,
-                  label: 'frame',
-                  outExt: 'jpg',
-                  build: (input, output) => frameArgs(
-                    input: input,
-                    output: output,
-                    at: Duration(milliseconds: (_framePos! * 1000).round()),
-                  ),
-                ),
-              ),
+              _toolsFor(row),
               if (_running)
                 _RunningOverlay(progress: _progress, onCancel: _cancel),
             ],
@@ -172,76 +130,315 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
       ),
     );
   }
+
+  Widget _toolsFor(MediaItem row) {
+    if (row.type == 'image') return _imageTools(row);
+    if (row.type == 'video') return _videoTools(row);
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Editing tools are available for video and image items.',
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _videoTools(MediaItem row) {
+    final ext = _ext(row);
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (row.durationSec != null) ...[
+          _TrimCard(
+            durationSec: row.durationSec!,
+            values: _trim ??= RangeValues(0, row.durationSec!.toDouble()),
+            onChanged: _running ? null : (v) => setState(() => _trim = v),
+            onApply: () => _run(
+              row,
+              label: 'trim',
+              outExt: ext,
+              outDurationSec: (_trim!.end - _trim!.start).round(),
+              build: (i, o) => trimArgs(
+                input: i,
+                output: o,
+                start: Duration(milliseconds: (_trim!.start * 1000).round()),
+                duration: Duration(
+                  milliseconds: ((_trim!.end - _trim!.start) * 1000).round(),
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: 32),
+          _FrameCard(
+            durationSec: row.durationSec!,
+            value: _framePos ??= 0,
+            onChanged: _running ? null : (v) => setState(() => _framePos = v),
+            onApply: () => _run(
+              row,
+              label: 'frame',
+              outExt: 'jpg',
+              build: (i, o) => frameArgs(
+                input: i,
+                output: o,
+                at: Duration(milliseconds: (_framePos! * 1000).round()),
+              ),
+            ),
+          ),
+          const Divider(height: 32),
+        ],
+        Text('Transform', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _opChip(
+              'Rotate left',
+              Icons.rotate_left,
+              () => _run(
+                row,
+                label: 'rotated',
+                outExt: ext,
+                build: (i, o) =>
+                    rotateArgs(input: i, output: o, clockwise: false),
+              ),
+            ),
+            _opChip(
+              'Rotate right',
+              Icons.rotate_right,
+              () => _run(
+                row,
+                label: 'rotated',
+                outExt: ext,
+                build: (i, o) =>
+                    rotateArgs(input: i, output: o, clockwise: true),
+              ),
+            ),
+            _opChip(
+              'Mirror',
+              Icons.flip,
+              () => _run(
+                row,
+                label: 'mirrored',
+                outExt: ext,
+                build: (i, o) => flipArgs(input: i, output: o, vertical: false),
+              ),
+            ),
+            _opChip(
+              'Flip',
+              Icons.flip_camera_android,
+              () => _run(
+                row,
+                label: 'flipped',
+                outExt: ext,
+                build: (i, o) => flipArgs(input: i, output: o, vertical: true),
+              ),
+            ),
+            _opChip(
+              'Reverse',
+              Icons.fast_rewind,
+              () => _run(
+                row,
+                label: 'reversed',
+                outExt: ext,
+                outDurationSec: row.durationSec,
+                build: (i, o) => reverseArgs(input: i, output: o),
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 32),
+        Text('Convert', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            _opChip(
+              'Extract audio (M4A)',
+              Icons.music_note,
+              () => _run(
+                row,
+                label: 'audio',
+                outExt: 'm4a',
+                build: (i, o) => extractAudioArgs(input: i, output: o),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _imageTools(MediaItem row) {
+    final ext = _ext(row);
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Transform', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _opChip(
+              'Rotate left',
+              Icons.rotate_left,
+              () => _run(
+                row,
+                label: 'rotated',
+                outExt: ext,
+                build: (i, o) =>
+                    rotateArgs(input: i, output: o, clockwise: false),
+              ),
+            ),
+            _opChip(
+              'Rotate right',
+              Icons.rotate_right,
+              () => _run(
+                row,
+                label: 'rotated',
+                outExt: ext,
+                build: (i, o) =>
+                    rotateArgs(input: i, output: o, clockwise: true),
+              ),
+            ),
+            _opChip(
+              'Mirror',
+              Icons.flip,
+              () => _run(
+                row,
+                label: 'mirrored',
+                outExt: ext,
+                build: (i, o) => flipArgs(input: i, output: o, vertical: false),
+              ),
+            ),
+            _opChip(
+              'Flip',
+              Icons.flip_camera_android,
+              () => _run(
+                row,
+                label: 'flipped',
+                outExt: ext,
+                build: (i, o) => flipArgs(input: i, output: o, vertical: true),
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 32),
+        Text('Convert', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final fmt in const ['jpg', 'png', 'webp'])
+              if (fmt != ext.toLowerCase())
+                _opChip(
+                  'To ${fmt.toUpperCase()}',
+                  Icons.transform,
+                  () => _run(
+                    row,
+                    label: fmt,
+                    outExt: fmt,
+                    build: (i, o) => convertArgs(input: i, output: o),
+                  ),
+                ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _opChip(String label, IconData icon, VoidCallback onTap) => ActionChip(
+    avatar: Icon(icon, size: 18),
+    label: Text(label),
+    onPressed: _running ? null : onTap,
+  );
 }
 
-class _Tools extends StatelessWidget {
-  const _Tools({
+class _TrimCard extends StatelessWidget {
+  const _TrimCard({
     required this.durationSec,
-    required this.trim,
-    required this.framePos,
-    required this.onTrimChanged,
-    required this.onFrameChanged,
-    required this.running,
-    required this.onTrim,
-    required this.onFrame,
+    required this.values,
+    required this.onChanged,
+    required this.onApply,
   });
-
   final int durationSec;
-  final RangeValues trim;
-  final double framePos;
-  final ValueChanged<RangeValues> onTrimChanged;
-  final ValueChanged<double> onFrameChanged;
-  final bool running;
-  final VoidCallback onTrim;
-  final VoidCallback onFrame;
-
-  String _fmt(double s) {
-    final d = Duration(seconds: s.round());
-    final m = d.inMinutes.toString().padLeft(2, '0');
-    final sec = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return '$m:$sec';
-  }
+  final RangeValues values;
+  final ValueChanged<RangeValues>? onChanged;
+  final VoidCallback onApply;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final max = durationSec.toDouble();
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Trim', style: theme.textTheme.titleMedium),
         Text(
-          '${_fmt(trim.start)} – ${_fmt(trim.end)}',
+          '${_fmt(values.start)} – ${_fmt(values.end)}',
           style: theme.textTheme.bodySmall,
         ),
         RangeSlider(
-          values: trim,
-          max: max,
-          labels: RangeLabels(_fmt(trim.start), _fmt(trim.end)),
-          onChanged: running ? null : onTrimChanged,
+          values: values,
+          max: durationSec.toDouble(),
+          labels: RangeLabels(_fmt(values.start), _fmt(values.end)),
+          onChanged: onChanged,
         ),
         FilledButton.icon(
-          onPressed: running || trim.end <= trim.start ? null : onTrim,
+          onPressed: (onChanged == null || values.end <= values.start)
+              ? null
+              : onApply,
           icon: const Icon(Icons.content_cut),
           label: const Text('Trim to new item'),
         ),
-        const Divider(height: 32),
+      ],
+    );
+  }
+}
+
+class _FrameCard extends StatelessWidget {
+  const _FrameCard({
+    required this.durationSec,
+    required this.value,
+    required this.onChanged,
+    required this.onApply,
+  });
+  final int durationSec;
+  final double value;
+  final ValueChanged<double>? onChanged;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Text('Extract frame', style: theme.textTheme.titleMedium),
-        Text('at ${_fmt(framePos)}', style: theme.textTheme.bodySmall),
+        Text('at ${_fmt(value)}', style: theme.textTheme.bodySmall),
         Slider(
-          value: framePos,
-          max: max,
-          label: _fmt(framePos),
-          onChanged: running ? null : onFrameChanged,
+          value: value,
+          max: durationSec.toDouble(),
+          label: _fmt(value),
+          onChanged: onChanged,
         ),
         FilledButton.icon(
-          onPressed: running ? null : onFrame,
+          onPressed: onChanged == null ? null : onApply,
           icon: const Icon(Icons.image_outlined),
           label: const Text('Save frame as image'),
         ),
       ],
     );
   }
+}
+
+String _fmt(double s) {
+  final d = Duration(seconds: s.round());
+  final m = d.inMinutes.toString().padLeft(2, '0');
+  final sec = (d.inSeconds % 60).toString().padLeft(2, '0');
+  return '$m:$sec';
 }
 
 class _RunningOverlay extends StatelessWidget {

@@ -46,6 +46,75 @@ void main() {
     });
   });
 
+  group('transform builders', () {
+    test('rotate uses transpose 1 (cw) / 2 (ccw)', () {
+      expect(rotateArgs(input: '/i.mp4', output: '/o.mp4', clockwise: true), [
+        '-y',
+        '-i',
+        '/i.mp4',
+        '-vf',
+        'transpose=1',
+        '/o.mp4',
+      ]);
+      expect(rotateArgs(input: '/i.mp4', output: '/o.mp4', clockwise: false), [
+        '-y',
+        '-i',
+        '/i.mp4',
+        '-vf',
+        'transpose=2',
+        '/o.mp4',
+      ]);
+    });
+
+    test('flip maps vertical→vflip, mirror→hflip', () {
+      expect(flipArgs(input: '/i.mp4', output: '/o.mp4', vertical: true), [
+        '-y',
+        '-i',
+        '/i.mp4',
+        '-vf',
+        'vflip',
+        '/o.mp4',
+      ]);
+      expect(flipArgs(input: '/i.mp4', output: '/o.mp4', vertical: false), [
+        '-y',
+        '-i',
+        '/i.mp4',
+        '-vf',
+        'hflip',
+        '/o.mp4',
+      ]);
+    });
+
+    test('reverse reverses both streams', () {
+      expect(reverseArgs(input: '/i.mp4', output: '/o.mp4'), [
+        '-y',
+        '-i',
+        '/i.mp4',
+        '-vf',
+        'reverse',
+        '-af',
+        'areverse',
+        '/o.mp4',
+      ]);
+    });
+
+    test('extract audio strips video; convert is filter-free', () {
+      expect(extractAudioArgs(input: '/i.mp4', output: '/o.m4a'), [
+        '-y',
+        '-i',
+        '/i.mp4',
+        '-vn',
+        '/o.m4a',
+      ]);
+      expect(convertArgs(input: '/i.png', output: '/o.jpg'), [
+        '-y',
+        '-i',
+        '/i.png',
+        '/o.jpg',
+      ]);
+    });
+  });
+
   group('toolPercent', () {
     test('maps processed time to a clamped 0..100 percent', () {
       expect(toolPercent(5000, 10000), 50);
