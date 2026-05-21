@@ -20,6 +20,7 @@ void main() {
     String type, {
     int day = 1,
     int size = 100,
+    String site = 'youtube',
   }) => db
       .into(db.mediaItems)
       .insert(
@@ -27,12 +28,30 @@ void main() {
           id: id,
           title: title,
           sourceUrl: 'https://y/$id',
-          site: 'youtube',
+          site: site,
           filePath: '/m/$id',
           type: type,
           createdAt: DateTime.utc(2026, 1, day),
           storageState: 'private',
           sizeBytes: Value(size),
+        ),
+      );
+
+  Future<void> seedMeta(
+    String itemId, {
+    String? uploader,
+    String? description,
+    String? playlistId,
+    String? playlistTitle,
+  }) => db
+      .into(db.mediaMetadata)
+      .insert(
+        MediaMetadataCompanion.insert(
+          itemId: itemId,
+          uploader: Value(uploader),
+          description: Value(description),
+          playlistId: Value(playlistId),
+          playlistTitle: Value(playlistTitle),
         ),
       );
 
@@ -132,5 +151,65 @@ void main() {
     )..where((t) => t.id.equals('a'))).getSingle();
     expect(item.title, 'New title');
     expect(item.notes, 'a note');
+  });
+
+  group('facets', () {
+    test('search also matches the description', () async {
+      await seed('a', 'Untitled', 'video');
+      await seed('b', 'Other', 'video');
+      await seedMeta('a', description: 'a rare keyword here');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(search: 'rare keyword'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
+    test('filters by site (platform)', () async {
+      await seed('a', 'A', 'video', site: 'youtube');
+      await seed('b', 'B', 'video', site: 'tiktok');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(site: 'tiktok'))
+          .first;
+      expect(rows.map((r) => r.id), ['b']);
+    });
+
+    test('filters by uploader (channel)', () async {
+      await seed('a', 'A', 'video');
+      await seed('b', 'B', 'video');
+      await seedMeta('a', uploader: 'Rick');
+      await seedMeta('b', uploader: 'Other');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(uploader: 'Rick'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
+    test('filters by playlist', () async {
+      await seed('a', 'A', 'video');
+      await seed('b', 'B', 'video');
+      await seedMeta('a', playlistId: 'PL1', playlistTitle: 'Mix');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(playlistId: 'PL1'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
+    test('distinct facet values', () async {
+      await seed('a', 'A', 'video', site: 'youtube');
+      await seed('b', 'B', 'video', site: 'tiktok');
+      await seedMeta(
+        'a',
+        uploader: 'Rick',
+        playlistId: 'PL1',
+        playlistTitle: 'Mix',
+      );
+      await seedMeta('b', uploader: 'Rick'); // duplicate uploader
+
+      expect(await repo.watchDistinctSites().first, ['tiktok', 'youtube']);
+      expect(await repo.watchDistinctUploaders().first, ['Rick']);
+      final playlists = await repo.watchDistinctPlaylists().first;
+      expect(playlists.map((p) => p.id), ['PL1']);
+      expect(playlists.single.title, 'Mix');
+    });
   });
 }

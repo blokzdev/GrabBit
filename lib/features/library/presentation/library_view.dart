@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/library_filter_sheet.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 
 /// The Library body (search/type filter + media grid). Hosted by HomeScreen's
@@ -36,6 +37,7 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
           filter: filter,
           onSearch: controller.setSearch,
           onType: controller.setType,
+          onFilters: () => showLibraryFilters(context),
         ),
         Expanded(
           child: RefreshIndicator(
@@ -72,12 +74,14 @@ class _FilterBar extends StatelessWidget {
     required this.filter,
     required this.onSearch,
     required this.onType,
+    required this.onFilters,
   });
 
   final TextEditingController controller;
   final LibraryQuery filter;
   final ValueChanged<String> onSearch;
   final ValueChanged<String?> onType;
+  final VoidCallback onFilters;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +92,7 @@ class _FilterBar extends StatelessWidget {
           TextField(
             controller: controller,
             decoration: InputDecoration(
-              hintText: 'Search title',
+              hintText: 'Search title or description',
               prefixIcon: const Icon(Icons.search),
               isDense: true,
               border: const OutlineInputBorder(),
@@ -116,6 +120,16 @@ class _FilterBar extends StatelessWidget {
                     onSelected: (_) => onType(type),
                   ),
                 ),
+              const Spacer(),
+              Badge(
+                isLabelVisible: filter.activeFacetCount > 0,
+                label: Text('${filter.activeFacetCount}'),
+                child: IconButton(
+                  icon: const Icon(Icons.tune),
+                  tooltip: 'Filters',
+                  onPressed: onFilters,
+                ),
+              ),
             ],
           ),
         ],

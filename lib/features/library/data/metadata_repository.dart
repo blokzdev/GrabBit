@@ -12,24 +12,49 @@ class LibraryQuery {
     this.type,
     this.collectionId,
     this.sort = LibrarySort.newest,
+    this.site,
+    this.uploader,
+    this.playlistId,
   });
 
-  final String search;
+  final String search; // matches title OR description
   final String? type; // video | audio | image | null (all)
   final int? collectionId;
   final LibrarySort sort;
+  final String? site; // platform facet
+  final String? uploader; // channel facet
+  final String? playlistId; // playlist facet
+
+  /// Active metadata facets (excludes search/type/sort/collection).
+  int get activeFacetCount =>
+      (site != null ? 1 : 0) +
+      (uploader != null ? 1 : 0) +
+      (playlistId != null ? 1 : 0);
 
   LibraryQuery copyWith({
     String? search,
     String? Function()? type,
     int? Function()? collectionId,
     LibrarySort? sort,
+    String? Function()? site,
+    String? Function()? uploader,
+    String? Function()? playlistId,
   }) => LibraryQuery(
     search: search ?? this.search,
     type: type != null ? type() : this.type,
     collectionId: collectionId != null ? collectionId() : this.collectionId,
     sort: sort ?? this.sort,
+    site: site != null ? site() : this.site,
+    uploader: uploader != null ? uploader() : this.uploader,
+    playlistId: playlistId != null ? playlistId() : this.playlistId,
   );
+}
+
+/// A distinct playlist facet value (filter by [id], display [title]).
+class PlaylistFacet {
+  const PlaylistFacet({required this.id, required this.title});
+  final String id;
+  final String title;
 }
 
 /// Tags, collections, notes/title edits, and parameterized library queries.
@@ -40,11 +65,24 @@ class MetadataRepository {
 
   Stream<List<MediaItem>> watchFiltered(LibraryQuery q) {
     final query = _db.select(_db.mediaItems);
-    if (q.search.trim().isNotEmpty) {
-      query.where((t) => t.title.like('%${q.search.trim()}%'));
+    final search = q.search.trim();
+    if (search.isNotEmpty) {
+      // Match the title OR the description (via the metadata table).
+      query.where(
+        (t) =>
+            t.title.like('%$search%') |
+            t.id.isInQuery(
+              _db.selectOnly(_db.mediaMetadata)
+                ..addColumns([_db.mediaMetadata.itemId])
+                ..where(_db.mediaMetadata.description.like('%$search%')),
+            ),
+      );
     }
     if (q.type != null) {
       query.where((t) => t.type.equals(q.type!));
+    }
+    if (q.site != null) {
+      query.where((t) => t.site.equals(q.site!));
     }
     if (q.collectionId != null) {
       query.where(
@@ -52,6 +90,24 @@ class MetadataRepository {
           _db.selectOnly(_db.mediaCollections)
             ..addColumns([_db.mediaCollections.itemId])
             ..where(_db.mediaCollections.collectionId.equals(q.collectionId!)),
+        ),
+      );
+    }
+    if (q.uploader != null) {
+      query.where(
+        (t) => t.id.isInQuery(
+          _db.selectOnly(_db.mediaMetadata)
+            ..addColumns([_db.mediaMetadata.itemId])
+            ..where(_db.mediaMetadata.uploader.equals(q.uploader!)),
+        ),
+      );
+    }
+    if (q.playlistId != null) {
+      query.where(
+        (t) => t.id.isInQuery(
+          _db.selectOnly(_db.mediaMetadata)
+            ..addColumns([_db.mediaMetadata.itemId])
+            ..where(_db.mediaMetadata.playlistId.equals(q.playlistId!)),
         ),
       );
     }
@@ -64,6 +120,41 @@ class MetadataRepository {
       },
     ]);
     return query.watch();
+  }
+
+  /// Distinct platform/site values present in the library (for the facet picker).
+  Stream<List<String>> watchDistinctSites() {
+    final q = _db.selectOnly(_db.mediaItems, distinct: true)
+      ..addColumns([_db.mediaItems.site])
+      ..orderBy([OrderingTerm.asc(_db.mediaItems.site)]);
+    return q.map((r) => r.read(_db.mediaItems.site)!).watch();
+  }
+
+  /// Distinct uploader/channel names present in the library.
+  Stream<List<String>> watchDistinctUploaders() {
+    final q = _db.selectOnly(_db.mediaMetadata, distinct: true)
+      ..addColumns([_db.mediaMetadata.uploader])
+      ..where(_db.mediaMetadata.uploader.isNotNull())
+      ..orderBy([OrderingTerm.asc(_db.mediaMetadata.uploader)]);
+    return q.map((r) => r.read(_db.mediaMetadata.uploader)!).watch();
+  }
+
+  /// Distinct playlists present in the library.
+  Stream<List<PlaylistFacet>> watchDistinctPlaylists() {
+    final q = _db.selectOnly(_db.mediaMetadata, distinct: true)
+      ..addColumns([
+        _db.mediaMetadata.playlistId,
+        _db.mediaMetadata.playlistTitle,
+      ])
+      ..where(_db.mediaMetadata.playlistId.isNotNull())
+      ..orderBy([OrderingTerm.asc(_db.mediaMetadata.playlistTitle)]);
+    return q.map((r) {
+      final id = r.read(_db.mediaMetadata.playlistId)!;
+      return PlaylistFacet(
+        id: id,
+        title: r.read(_db.mediaMetadata.playlistTitle) ?? id,
+      );
+    }).watch();
   }
 
   Stream<MediaMetadataData?> watchMetadataForItem(String itemId) => (_db.select(
@@ -196,4 +287,17 @@ final collectionItemsProvider = StreamProvider.family<List<MediaItem>, int>(
   (ref, collectionId) => ref
       .watch(metadataRepositoryProvider)
       .watchFiltered(LibraryQuery(collectionId: collectionId)),
+);
+
+// Distinct facet values for the Library filter sheet.
+final distinctSitesProvider = StreamProvider<List<String>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchDistinctSites(),
+);
+
+final distinctUploadersProvider = StreamProvider<List<String>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchDistinctUploaders(),
+);
+
+final distinctPlaylistsProvider = StreamProvider<List<PlaylistFacet>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchDistinctPlaylists(),
 );

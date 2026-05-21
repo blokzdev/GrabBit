@@ -35,6 +35,14 @@ class LibraryFilter extends Notifier<LibraryQuery> {
   void setType(String? type) => state = state.copyWith(type: () => type);
   void setSort(LibrarySort sort) => state = state.copyWith(sort: sort);
   void setCollection(int? id) => state = state.copyWith(collectionId: () => id);
+  void setSite(String? site) => state = state.copyWith(site: () => site);
+  void setUploader(String? u) => state = state.copyWith(uploader: () => u);
+  void setPlaylist(String? id) => state = state.copyWith(playlistId: () => id);
+  void clearFacets() => state = state.copyWith(
+    site: () => null,
+    uploader: () => null,
+    playlistId: () => null,
+  );
 }
 
 final libraryFilterProvider = NotifierProvider<LibraryFilter, LibraryQuery>(

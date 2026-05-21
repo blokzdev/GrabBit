@@ -120,6 +120,16 @@ class _MetadataSection extends ConsumerWidget {
       children: [
         if (meta.uploader != null && meta.uploader!.isNotEmpty)
           Text('Uploader: ${meta.uploader}', style: theme.textTheme.bodySmall),
+        if (meta.uploaderId != null && meta.uploaderId!.isNotEmpty)
+          Text(
+            'Username: ${meta.uploaderId}',
+            style: theme.textTheme.bodySmall,
+          ),
+        if (meta.playlistTitle != null && meta.playlistTitle!.isNotEmpty)
+          Text(
+            'Playlist: ${meta.playlistTitle}',
+            style: theme.textTheme.bodySmall,
+          ),
         if (date != null)
           Text(
             'Uploaded ${date.year}-${_pad(date.month)}-${_pad(date.day)}',
