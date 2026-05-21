@@ -9,6 +9,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/core/engine/info_json_parser.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
@@ -305,14 +306,27 @@ class QueueController extends _$QueueController {
     if (!dir.existsSync()) return;
     File? thumb;
     File? media;
+    File? infoFile;
     for (final entry in dir.listSync().whereType<File>()) {
-      if (entry.path.toLowerCase().endsWith('.jpg')) {
+      final lower = entry.path.toLowerCase();
+      if (lower.endsWith('.info.json')) {
+        infoFile = entry;
+      } else if (lower.endsWith('.jpg')) {
         thumb = entry;
+      } else if (lower.endsWith('.json')) {
+        // Other yt-dlp sidecars (e.g. live chat) — ignore.
       } else {
         media = entry;
       }
     }
     if (media == null) return;
+
+    // Rich metadata from the .info.json sidecar (full set for single AND batch
+    // downloads), falling back to whatever the queued item already carried.
+    InfoJson? info;
+    if (infoFile != null) {
+      info = parseInfoJsonString(await infoFile.readAsString());
+    }
 
     final ext = media.path.split('.').last.toLowerCase();
     final db = ref.read(appDatabaseProvider);
@@ -325,7 +339,7 @@ class QueueController extends _$QueueController {
               id: id,
               title: queued.title,
               sourceUrl: queued.request.url,
-              site: queued.site ?? 'unknown',
+              site: queued.site ?? info?.extractor ?? 'unknown',
               filePath: mediaFile.path,
               type: queued.request.audioOnly ? 'audio' : _typeForExt(ext),
               createdAt: DateTime.now(),
@@ -335,21 +349,34 @@ class QueueController extends _$QueueController {
               thumbPath: Value(thumb?.path),
             ),
           );
+      final uploader = info?.uploader ?? queued.uploader;
+      final description = info?.description ?? queued.description;
+      final uploadDate = parseUploadDate(info?.uploadDate ?? queued.uploadDate);
       final hasMetadata =
-          queued.uploader != null ||
+          uploader != null ||
+          description != null ||
+          uploadDate != null ||
           queued.originalUrl != null ||
-          queued.description != null ||
-          queued.uploadDate != null;
+          queued.playlistId != null ||
+          info?.uploaderId != null ||
+          info?.sourceId != null ||
+          info?.tags != null;
       if (hasMetadata) {
         await db
             .into(db.mediaMetadata)
             .insertOnConflictUpdate(
               MediaMetadataCompanion.insert(
                 itemId: id,
-                uploader: Value(queued.uploader),
+                uploader: Value(uploader),
                 originalUrl: Value(queued.originalUrl),
-                description: Value(queued.description),
-                uploadDate: Value(parseUploadDate(queued.uploadDate)),
+                description: Value(description),
+                uploadDate: Value(uploadDate),
+                uploaderId: Value(info?.uploaderId),
+                channelId: Value(info?.channelId),
+                sourceId: Value(info?.sourceId),
+                playlistId: Value(queued.playlistId),
+                playlistTitle: Value(queued.playlistTitle),
+                tags: Value(info?.tags),
               ),
             );
       }

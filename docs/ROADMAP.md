@@ -104,24 +104,30 @@ daily-drivable; no new feature areas. Ships as three sub-PRs.
 **Exit criteria:** founder daily-drives a debug build with no critical bugs; gaps
 closed; review backlog cleared.
 
-## P5 — Media Manager: File Explorer
-**Goals:** a Dropbox-like in-app file system on top of the private library — without
-moving any files on disk. Two coexisting views: the existing **Library** (filter by
-collections/tags/type/search) and a new **Explorer** (folder tree).
+## P5 — Media Manager: File Explorer + rich metadata & faceted browsing
+**Goals:** a Dropbox-like in-app file system on top of the private library (no files
+moved on disk) plus rich metadata capture so the library can be browsed/filtered by
+platform, channel, username, playlist, and keywords. Two coexisting views: the
+**Library** (collections/tags/facets) and a new **Explorer** (folder tree), reached by
+a segmented toggle on Home. Ships as **3 sub-PRs**.
 **Deliverables:**
-- **Schema migration v1→v2** (first real Drift migration): `Folders` table (`id`,
-  `name`, `parentId` nullable self-FK, `createdAt`) + nullable `folderId` on
-  `MediaItems` (`onDelete: setNull`); a `MigrationStrategy` + an upgrade test.
-- **Folder repository**: create/rename/delete (reparent-or-orphan), move item(s) to a
-  folder, watch a folder's subfolders + items, breadcrumb path.
-- **Explorer view**: navigate folders/subfolders, breadcrumbs, create/rename/delete
-  folders, multi-select move of media, an "uncategorized" root (`folderId == null`).
-  Coexists with collections/tags (cross-cutting overlays stay in Library).
-- Physical files remain flat at `media/<taskId>`; folders are purely **virtual**.
-  Existing items start at the root — no data rearrangement. ("Copy" = optional real
-  file duplication into a new item; deferred unless wanted.)
-**Exit criteria:** create nested folders, move/rename/delete, browse via Explorer
-while Library filtering still works; a v1 database upgrades to v2 cleanly.
+- **P5a — Schema v2 + rich metadata capture**: first Drift migration (v1→v2) adding a
+  `Folders` table (`id`, `name`, `parentId` self-FK `setNull`, `createdAt`), a nullable
+  `folderId` on `MediaItems`, and metadata columns (`uploaderId`, `channelId`,
+  `sourceId`, `playlistId`, `playlistTitle`, `tags`) + facet indices. Capture full
+  metadata uniformly via yt-dlp `--write-info-json` (parsed at completion, retained on
+  disk) for **both single and batch** downloads; playlist identity threaded from the
+  expansion step.
+- **P5b — File Explorer**: folder repository (create/rename/delete reparent-or-orphan,
+  move items, watch subfolders/items, breadcrumbs); Explorer view via the Library |
+  Explorer Home toggle; multi-select "move to folder". Coexists with collections/tags.
+- **P5c — Faceted filtering/browsing**: filter the Library by platform/site, channel,
+  username, playlist, and description keywords; surface the new metadata on item detail.
+- Physical files stay at `media/<taskId>/…`; folders are purely **virtual**. Existing
+  items start at the root — no data rearrangement.
+**Exit criteria:** a v1 DB upgrades cleanly; batch downloads carry full metadata;
+create/move/rename folders and browse via Explorer; filter by platform/channel/
+playlist/keyword — all while Library search/sort/collections still work.
 
 ## P6 — Media Studio: Editing Tools
 **Goals:** on-device (therefore free) media editing for saved items, leveraging the

@@ -16,11 +16,15 @@ class ExpandedSource {
     required this.url,
     this.entries = const [],
     this.error,
+    this.playlistId,
+    this.playlistTitle,
   });
 
   final String url;
   final List<MediaEntry> entries;
   final String? error;
+  final String? playlistId;
+  final String? playlistTitle;
 }
 
 class SelectionState {
@@ -86,7 +90,14 @@ class SelectionController extends Notifier<SelectionState> {
     for (final url in urls) {
       try {
         final info = await engine.expand(url);
-        sources.add(ExpandedSource(url: url, entries: info.entries));
+        sources.add(
+          ExpandedSource(
+            url: url,
+            entries: info.entries,
+            playlistId: info.isPlaylist ? info.id : null,
+            playlistTitle: info.isPlaylist ? info.title : null,
+          ),
+        );
       } on DownloadException catch (e) {
         sources.add(ExpandedSource(url: url, error: e.message));
       }
@@ -134,6 +145,10 @@ class SelectionController extends Notifier<SelectionState> {
     final dir = await ref.read(mediaStorageProvider).mediaDirectory();
     final settings = await ref.read(settingsControllerProvider.future);
     final preset = state.preset;
+    final sourceByEntry = {
+      for (final s in state.sources)
+        for (final e in s.entries) e.url: s,
+    };
     final entries = state.allEntries
         .where((e) => state.selected.contains(e.url))
         .toList();
@@ -158,6 +173,8 @@ class SelectionController extends Notifier<SelectionState> {
           title: e.title,
           durationSec: e.durationSec,
           originalUrl: e.url,
+          playlistId: sourceByEntry[e.url]?.playlistId,
+          playlistTitle: sourceByEntry[e.url]?.playlistTitle,
         ),
     ];
   }

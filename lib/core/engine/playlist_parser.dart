@@ -25,6 +25,7 @@ PlaylistInfo parsePlaylistJson(String raw) {
     }
     return PlaylistInfo(
       entries: entries,
+      id: decoded['id'] as String?,
       title: decoded['title'] as String?,
       isPlaylist: true,
     );

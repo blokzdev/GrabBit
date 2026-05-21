@@ -77,7 +77,12 @@ class DownloaderController extends _$DownloaderController {
       final info = await ref.read(downloadEngineProvider).expand(url);
       if (info.entries.length > 1) {
         ref.read(selectionControllerProvider.notifier).setSources([
-          ExpandedSource(url: url, entries: info.entries),
+          ExpandedSource(
+            url: url,
+            entries: info.entries,
+            playlistId: info.id,
+            playlistTitle: info.title,
+          ),
         ]);
         state = const DownloaderState();
         return true;
