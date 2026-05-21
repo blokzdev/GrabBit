@@ -116,13 +116,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       keeps that name. (Files live under `media/<taskId>/`.)
 - [ ] **Wi-Fi-only** auto-resumes queued tasks when back on an unmetered network.
 
-## P5 — Media Manager: File Explorer  *(v1)*
-- [ ] Create nested folders; rename and delete them (deleted folder's media falls
-      back to the root, not lost).
-- [ ] Move single + multi-selected media between folders; Explorer reflects it.
-- [ ] Library view (collections/tags/search/sort) still works alongside Explorer.
-- [ ] Upgrading an existing (v1-schema) install migrates cleanly — existing media
-      appears at the root, nothing lost.
+## P5 — Media Manager: File Explorer + metadata  *(v1)*
+- [ ] **P5a** Upgrading an existing (v1-schema) install migrates cleanly — existing
+      media survives and appears at the root, nothing lost.
+- [ ] **P5a** A **batch** (playlist) download now records channel/username/upload-date
+      and its playlist; item detail shows them (previously batch items had none).
+- [ ] **P5b** Create nested folders; rename and delete them (deleted folder's media
+      falls back to the root, not lost). Move single + multi-selected media between
+      folders; Explorer reflects it; the Home Library | Explorer toggle works.
+- [ ] **P5c** Filter the Library by platform, channel, username, playlist, and a
+      description keyword; Library search/sort/collections still work.
 
 ## P6 — Media Studio: Editing Tools  *(v1)*
 - [ ] Trim a video → a new playable library item; the original is preserved.

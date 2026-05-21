@@ -13,6 +13,8 @@ class QueuedDownload {
     this.originalUrl,
     this.description,
     this.uploadDate,
+    this.playlistId,
+    this.playlistTitle,
   });
 
   factory QueuedDownload.fromJson(Map<String, dynamic> json) => QueuedDownload(
@@ -24,6 +26,8 @@ class QueuedDownload {
     originalUrl: json['originalUrl'] as String?,
     description: json['description'] as String?,
     uploadDate: json['uploadDate'] as String?,
+    playlistId: json['playlistId'] as String?,
+    playlistTitle: json['playlistTitle'] as String?,
   );
 
   final DownloadRequest request;
@@ -34,6 +38,8 @@ class QueuedDownload {
   final String? originalUrl;
   final String? description;
   final String? uploadDate;
+  final String? playlistId;
+  final String? playlistTitle;
 
   Map<String, dynamic> toJson() => {
     'request': request.toJson(),
@@ -44,5 +50,7 @@ class QueuedDownload {
     'originalUrl': originalUrl,
     'description': description,
     'uploadDate': uploadDate,
+    'playlistId': playlistId,
+    'playlistTitle': playlistTitle,
   };
 }

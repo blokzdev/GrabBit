@@ -304,6 +304,54 @@ void main() {
     },
   );
 
+  test('enriches metadata from the .info.json sidecar', () async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_info_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/b1').create();
+    await File('${dir.path}/b1/clip.mp4').writeAsString('data');
+    await File('${dir.path}/b1/clip.info.json').writeAsString(
+      '{"id":"vid42","uploader":"Cool Channel","uploader_id":"@cool",'
+      '"channel_id":"UC9","upload_date":"20240115","extractor_key":"Youtube",'
+      '"tags":["a","b"]}',
+    );
+
+    // A batch-style item: no uploader/site of its own, but a playlist identity.
+    final qd = QueuedDownload(
+      request: DownloadRequest(
+        taskId: 'b1',
+        url: 'https://example.com/b1',
+        outputDir: dir.path,
+        filenameTemplate: '%(title)s.%(ext)s',
+      ),
+      title: 'Clip',
+      playlistId: 'PL7',
+      playlistTitle: 'My Playlist',
+    );
+    await controller.enqueue(qd);
+    await waitFor(() async => engine.running.contains('b1'));
+    engine.complete('b1');
+    await waitFor(
+      () async => (await repo.byId('b1'))?.status == TaskStatus.done,
+    );
+
+    final item = await (db.select(
+      db.mediaItems,
+    )..where((t) => t.id.equals('b1'))).getSingle();
+    expect(item.site, 'Youtube'); // from info.json extractor
+
+    final meta = await (db.select(
+      db.mediaMetadata,
+    )..where((t) => t.itemId.equals('b1'))).getSingle();
+    expect(meta.uploader, 'Cool Channel');
+    expect(meta.uploaderId, '@cool');
+    expect(meta.channelId, 'UC9');
+    expect(meta.sourceId, 'vid42');
+    expect(meta.tags, 'a, b');
+    expect(meta.playlistId, 'PL7');
+    expect(meta.playlistTitle, 'My Playlist');
+    expect(meta.uploadDate!.toUtc(), DateTime.utc(2024, 1, 15));
+  });
+
   test(
     'runs the foreground service while downloading, stops when drained',
     () async {

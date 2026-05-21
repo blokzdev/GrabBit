@@ -19,9 +19,28 @@ class MediaItems extends Table {
   DateTimeColumn get createdAt => dateTime()();
   TextColumn get storageState => text()(); // private | exported
   TextColumn get notes => text().nullable()();
+  // Virtual Explorer folder (P5); null = library root. Files stay physically flat.
+  IntColumn get folderId => integer().nullable().references(
+    Folders,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Virtual, single-parent folder tree for the Explorer view (P5). Purely a DB
+/// hierarchy — physical files are unaffected.
+class Folders extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get parentId => integer().nullable().references(
+    Folders,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+  DateTimeColumn get createdAt => dateTime()();
 }
 
 /// Per-item extended metadata, 1:1 with [MediaItems].
@@ -32,6 +51,13 @@ class MediaMetadata extends Table {
   DateTimeColumn get uploadDate => dateTime().nullable()();
   TextColumn get description => text().nullable()();
   TextColumn get originalUrl => text().nullable()();
+  // Captured from the download's .info.json / expansion (P5) for faceted browsing.
+  TextColumn get uploaderId => text().nullable()(); // channel handle / username
+  TextColumn get channelId => text().nullable()();
+  TextColumn get sourceId => text().nullable()(); // yt-dlp %(id)s
+  TextColumn get playlistId => text().nullable()();
+  TextColumn get playlistTitle => text().nullable()();
+  TextColumn get tags => text().nullable()(); // comma-joined
 
   @override
   Set<Column<Object>> get primaryKey => {itemId};
@@ -96,6 +122,7 @@ class AppSettings extends Table {
 @DriftDatabase(
   tables: [
     MediaItems,
+    Folders,
     MediaMetadata,
     Tags,
     MediaTags,
@@ -110,13 +137,49 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) => m.createAll(),
+    onCreate: (m) async {
+      await m.createAll();
+      await _createIndices();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(folders);
+        await m.addColumn(mediaItems, mediaItems.folderId);
+        await m.addColumn(mediaMetadata, mediaMetadata.uploaderId);
+        await m.addColumn(mediaMetadata, mediaMetadata.channelId);
+        await m.addColumn(mediaMetadata, mediaMetadata.sourceId);
+        await m.addColumn(mediaMetadata, mediaMetadata.playlistId);
+        await m.addColumn(mediaMetadata, mediaMetadata.playlistTitle);
+        await m.addColumn(mediaMetadata, mediaMetadata.tags);
+        await _createIndices();
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// Facet indices for library filtering/browsing. Idempotent so it can run on
+  /// both fresh creates and upgrades.
+  Future<void> _createIndices() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_items_site ON media_items (site)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_items_folder ON media_items (folder_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_metadata_uploader ON media_metadata (uploader)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_metadata_uploader_id ON media_metadata (uploader_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_metadata_playlist_id ON media_metadata (playlist_id)',
+    );
+  }
 }

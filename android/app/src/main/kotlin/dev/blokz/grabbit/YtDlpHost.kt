@@ -68,6 +68,9 @@ class YtDlpHost(
                     }
                     addOption("--write-thumbnail")
                     addOption("--convert-thumbnails", "jpg")
+                    // Full metadata sidecar, parsed at completion + retained on
+                    // disk for future re-derivation (P5).
+                    addOption("--write-info-json")
                     if (request.embedThumbnail) addOption("--embed-thumbnail")
                     if (request.embedMetadata) addOption("--embed-metadata")
                     if (request.subtitles) {

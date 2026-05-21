@@ -79,11 +79,13 @@ class MediaEntry {
 class PlaylistInfo {
   const PlaylistInfo({
     required this.entries,
+    this.id,
     this.title,
     this.isPlaylist = false,
   });
 
   final List<MediaEntry> entries;
+  final String? id;
   final String? title;
   final bool isPlaylist;
 }
