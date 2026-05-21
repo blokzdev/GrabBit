@@ -220,7 +220,7 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
 - `docs/PRD.md` — what we're building & why (product).
 - `docs/ARCHITECTURE.md` — system design blueprint.
 - `docs/SPEC.md` — implementation-level technical spec.
-- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P11, banded v1/v2/v3).
+- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P13, banded v1/v2/v3).
 - `docs/VERIFICATION.md` — per-phase on-device manual test checklist (what CI can't
   cover); used for spot-checks and full v1-release regression.
 

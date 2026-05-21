@@ -114,7 +114,21 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] A custom **filename template** (Settings) applies to saved/exported names.
 - [ ] **Wi-Fi-only** auto-resumes queued tasks when back on an unmetered network.
 
-## P5 — v1 Beta & Production Readiness  *(v1)*
+## P5 — Media Manager: File Explorer  *(v1)*
+- [ ] Create nested folders; rename and delete them (deleted folder's media falls
+      back to the root, not lost).
+- [ ] Move single + multi-selected media between folders; Explorer reflects it.
+- [ ] Library view (collections/tags/search/sort) still works alongside Explorer.
+- [ ] Upgrading an existing (v1-schema) install migrates cleanly — existing media
+      appears at the root, nothing lost.
+
+## P6 — Media Studio: Editing Tools  *(v1)*
+- [ ] Trim a video → a new playable library item; the original is preserved.
+- [ ] Extract a frame (first / last / scrubbed position) → a new image item.
+- [ ] Flip/mirror/rotate an image and a video; convert container/extract audio.
+- [ ] Long operations show progress; unsupported ops are disabled with a reason.
+
+## P7 — v1 Beta & Production Readiness  *(v1)*
 - [ ] App has a custom **icon / splash / branding**.
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
 - [ ] i18n scaffolding present; subtitle-language selection works (if shipped).
@@ -123,8 +137,8 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 
 ## v1 release (full regression with the **release** APK)
 1. **Release signing** configured (keystore + CI secret) so the release APK installs
-   — done in **P5**.
+   — done in **P7**.
 2. Build with **Build APK → release = true**, install the signed release APK.
-3. Run **every** section above (P0 → P5) end-to-end on a real device.
+3. Run **every** section above (P0 → P7) end-to-end on a real device.
 4. Confirm: privacy (nothing in Gallery until exported), app lock, background
    downloads, and playback all work on the AOT release build.
