@@ -87,8 +87,9 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       **subtitles** are embedded when the source has them.
 - [ ] Open a downloaded item → `media_metadata` is populated (uploader,
       **description**, **upload date**) — visible on the item/edit screen.
-- [ ] Confirm the downloaded file still lands as `<taskId>.<ext>` with a `.jpg`
-      thumbnail (embedding didn't break the library's thumbnail pickup).
+- [ ] A completed download still produces a playable media file **and** a `.jpg`
+      thumbnail (embedding didn't break the library's thumbnail pickup). (Files now
+      live under `media/<taskId>/` — see P4.)
 
 ### P3-B — Bulk UI  *(merged)*
 - [ ] Public **Instagram / TikTok / X** posts download; unsupported URLs (e.g. a
@@ -109,6 +110,10 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       ask for **confirmation**; actions show **snackbar** feedback.
 - [ ] Item detail surfaces captured **description / upload date / uploader**.
 - [ ] Queue **"Clear completed"** works; selection **select/deselect-all** both work.
+- [ ] Home shows **badge counts** on the Queue + Collections actions; **pull-to-refresh**
+      reloads the library grid; the **Save to device** button shows its destination.
+- [ ] With 2 concurrent downloads, the progress **notification** shows averaged progress
+      (not whichever updated last).
 - [ ] First launch shows a one-time **legal/user-responsibility disclaimer**; it
       doesn't reappear after acceptance.
 - [ ] A custom **filename pattern** (Settings → Download filename: chips +
@@ -126,8 +131,9 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       navigate and the breadcrumb walks back. Rename/delete a folder (delete moves its
       media + subfolders back to root, nothing lost). Long-press items to multi-select,
       then Move to a folder; single-item "Move to folder" works from item detail too.
-- [ ] **P5c** Filter the Library by platform, channel, username, playlist, and a
-      description keyword; Library search/sort/collections still work.
+- [ ] **P5c** Filter the Library by **platform, channel, playlist** and a
+      **description keyword** (search now matches descriptions too); item detail shows
+      **username + playlist**. Library search/sort/collections still work.
 
 ## P6 — Media Studio: Editing Tools  *(v1)*
 - [ ] **P6a** The APK installs with ffmpeg_kit bundled (note size; `flutter build apk
