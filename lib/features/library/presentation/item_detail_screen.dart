@@ -68,6 +68,7 @@ class _ItemBody extends StatelessWidget {
                 'Saved ${item.createdAt.toLocal()}',
                 style: theme.textTheme.bodySmall,
               ),
+              _MetadataSection(itemId: item.id),
               if (item.notes != null && item.notes!.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(item.notes!, style: theme.textTheme.bodyMedium),
@@ -82,6 +83,43 @@ class _ItemBody extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Shows the uploader / upload date / description captured at download time
+/// (persisted in `media_metadata`), when any of them is present.
+class _MetadataSection extends ConsumerWidget {
+  const _MetadataSection({required this.itemId});
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final meta = ref.watch(metadataForItemProvider(itemId)).asData?.value;
+    if (meta == null) return const SizedBox.shrink();
+
+    final date = meta.uploadDate;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (meta.uploader != null && meta.uploader!.isNotEmpty)
+          Text('Uploader: ${meta.uploader}', style: theme.textTheme.bodySmall),
+        if (date != null)
+          Text(
+            'Uploaded ${date.year}-${_pad(date.month)}-${_pad(date.day)}',
+            style: theme.textTheme.bodySmall,
+          ),
+        if (meta.description != null &&
+            meta.description!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text('Description', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(meta.description!, style: theme.textTheme.bodyMedium),
+        ],
+      ],
+    );
+  }
+
+  static String _pad(int n) => n.toString().padLeft(2, '0');
 }
 
 class _TagsRow extends ConsumerWidget {
@@ -126,16 +164,32 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
         ],
       );
     }
-    return FilledButton.icon(
-      onPressed: _busy ? null : _export,
-      icon: _busy
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.save_alt),
-      label: const Text('Save to device'),
+    final folder = ref
+        .watch(settingsControllerProvider)
+        .asData
+        ?.value
+        .exportFolder;
+    final destination = folder ?? 'gallery (Movies/Music/Pictures/GrabBit)';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FilledButton.icon(
+          onPressed: _busy ? null : _export,
+          icon: _busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.save_alt),
+          label: const Text('Save to device'),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Saves to $destination',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 

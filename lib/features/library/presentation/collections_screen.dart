@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 
@@ -29,9 +30,25 @@ class CollectionsScreen extends ConsumerWidget {
                       title: Text(c.name),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
-                        onPressed: () => ref
-                            .read(metadataRepositoryProvider)
-                            .deleteCollection(c.id),
+                        tooltip: 'Delete collection',
+                        onPressed: () async {
+                          final ok = await confirm(
+                            context,
+                            title: 'Delete collection?',
+                            message:
+                                'Delete "${c.name}"? The media stays in your '
+                                'library.',
+                            confirmLabel: 'Delete',
+                            destructive: true,
+                          );
+                          if (!ok) return;
+                          await ref
+                              .read(metadataRepositoryProvider)
+                              .deleteCollection(c.id);
+                          if (context.mounted) {
+                            _notify(context, 'Collection deleted');
+                          }
+                        },
                       ),
                       onTap: () =>
                           context.push('/collection/${c.id}', extra: c.name),
@@ -68,8 +85,15 @@ class CollectionsScreen extends ConsumerWidget {
     );
     if (name != null && name.trim().isNotEmpty) {
       await ref.read(metadataRepositoryProvider).createCollection(name);
+      if (context.mounted) _notify(context, 'Collection created');
     }
   }
+}
+
+void _notify(BuildContext context, String message) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }
 
 class CollectionDetailScreen extends ConsumerWidget {

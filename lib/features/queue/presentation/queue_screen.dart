@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
 
@@ -18,6 +21,11 @@ class QueueScreen extends ConsumerWidget {
     final runningCount = rows
         .where((t) => t.status == TaskStatus.running)
         .length;
+    final completedCount = rows
+        .where(
+          (t) => t.status == TaskStatus.done || t.status == TaskStatus.canceled,
+        )
+        .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -25,7 +33,16 @@ class QueueScreen extends ConsumerWidget {
         actions: [
           if (heldCount > 0)
             TextButton.icon(
-              onPressed: controller.startAll,
+              onPressed: () async {
+                await controller.startAll();
+                if (context.mounted) {
+                  _notify(
+                    context,
+                    'Started $heldCount download'
+                    '${heldCount == 1 ? '' : 's'}',
+                  );
+                }
+              },
               icon: const Icon(Icons.play_arrow),
               label: Text('Start all ($heldCount)'),
             ),
@@ -34,6 +51,17 @@ class QueueScreen extends ConsumerWidget {
               tooltip: 'Pause all',
               icon: const Icon(Icons.pause),
               onPressed: controller.pauseAll,
+            ),
+          if (completedCount > 0)
+            IconButton(
+              tooltip: 'Clear completed',
+              icon: const Icon(Icons.clear_all),
+              onPressed: () async {
+                final n = await controller.clearCompleted();
+                if (context.mounted) {
+                  _notify(context, 'Cleared $n completed');
+                }
+              },
             ),
         ],
       ),
@@ -60,7 +88,11 @@ class _TaskTile extends ConsumerWidget {
     final controller = ref.read(queueControllerProvider.notifier);
     final running = task.status == TaskStatus.running;
     return ListTile(
-      title: Text(task.url, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(
+        _displayTitle(task),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -72,11 +104,11 @@ class _TaskTile extends ConsumerWidget {
           Text(_statusLabel(task)),
         ],
       ),
-      trailing: _actions(controller),
+      trailing: _actions(context, controller),
     );
   }
 
-  Widget _actions(QueueController controller) {
+  Widget _actions(BuildContext context, QueueController controller) {
     switch (task.status) {
       case TaskStatus.running:
       case TaskStatus.queued:
@@ -91,7 +123,19 @@ class _TaskTile extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.close),
               tooltip: 'Cancel',
-              onPressed: () => controller.cancel(task.id),
+              onPressed: () async {
+                final ok = await confirm(
+                  context,
+                  title: 'Cancel download?',
+                  message: 'Progress on "${_displayTitle(task)}" will be lost.',
+                  confirmLabel: 'Cancel download',
+                  cancelLabel: 'Keep',
+                  destructive: true,
+                );
+                if (!ok) return;
+                await controller.cancel(task.id);
+                if (context.mounted) _notify(context, 'Download canceled');
+              },
             ),
           ],
         );
@@ -104,11 +148,7 @@ class _TaskTile extends ConsumerWidget {
               tooltip: 'Start',
               onPressed: () => controller.resume(task.id),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Remove',
-              onPressed: () => controller.remove(task.id),
-            ),
+            _RemoveButton(task: task, controller: controller),
           ],
         );
       case TaskStatus.paused:
@@ -124,11 +164,7 @@ class _TaskTile extends ConsumerWidget {
           onPressed: () => controller.retry(task.id),
         );
       default:
-        return IconButton(
-          icon: const Icon(Icons.delete_outline),
-          tooltip: 'Remove',
-          onPressed: () => controller.remove(task.id),
-        );
+        return _RemoveButton(task: task, controller: controller);
     }
   }
 
@@ -143,4 +179,47 @@ class _TaskTile extends ConsumerWidget {
       'Failed${task.errorCode != null ? ' (${task.errorCode})' : ''}',
     _ => task.status,
   };
+}
+
+class _RemoveButton extends StatelessWidget {
+  const _RemoveButton({required this.task, required this.controller});
+  final DownloadTask task;
+  final QueueController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.delete_outline),
+      tooltip: 'Remove',
+      onPressed: () async {
+        final ok = await confirm(
+          context,
+          title: 'Remove from queue?',
+          message: 'Remove "${_displayTitle(task)}" from the queue?',
+          confirmLabel: 'Remove',
+          destructive: true,
+        );
+        if (!ok) return;
+        await controller.remove(task.id);
+        if (context.mounted) _notify(context, 'Removed from queue');
+      },
+    );
+  }
+}
+
+/// The download's display title (from the persisted request), falling back to
+/// the raw URL for legacy/partial rows that lack one.
+String _displayTitle(DownloadTask task) {
+  try {
+    final json = jsonDecode(task.requestJson) as Map<String, dynamic>;
+    final title = json['title'] as String?;
+    if (title != null && title.trim().isNotEmpty) return title;
+  } catch (_) {}
+  return task.url;
+}
+
+void _notify(BuildContext context, String message) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }

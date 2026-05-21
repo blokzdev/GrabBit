@@ -6,12 +6,14 @@ import 'package:grabbit/core/db/database.dart';
 
 /// Reusable thumbnail grid of media items (library + collection views).
 class MediaGrid extends StatelessWidget {
-  const MediaGrid({required this.items, super.key});
+  const MediaGrid({required this.items, this.physics, super.key});
   final List<MediaItem> items;
+  final ScrollPhysics? physics;
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
+      physics: physics,
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 220,
