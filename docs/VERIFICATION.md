@@ -12,8 +12,10 @@
      installs with the debug key).
    - Check **release** only for a v1 release candidate (needs signing — see
      §"v1 release").
-2. Download the `grabbit-debug-apk` artifact, transfer to the phone, install
-   (allow "install unknown apps" for your browser/files app).
+2. Download the `grabbit-debug-apk` artifact (a zip of per-ABI APKs), transfer to
+   the phone, and install **`app-arm64-v8a-debug.apk`** (the right one for any
+   modern phone) — allow "install unknown apps" for your browser/files app.
+   (`armeabi-v7a` = older 32-bit devices, `x86_64` = emulators.)
 
 Legend: each item is a check to perform. Re-run any section anytime; run **all**
 sections for a full regression (e.g. before a v1 release).
