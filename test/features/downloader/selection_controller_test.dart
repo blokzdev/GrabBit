@@ -90,4 +90,12 @@ void main() {
     c.selectNone();
     expect(container.read(selectionControllerProvider).selected, isEmpty);
   });
+
+  test('selectAll re-selects every entry', () async {
+    final c = container.read(selectionControllerProvider.notifier);
+    await c.expandUrls('https://y/playlist');
+    c.selectNone();
+    c.selectAll();
+    expect(container.read(selectionControllerProvider).selected.length, 3);
+  });
 }

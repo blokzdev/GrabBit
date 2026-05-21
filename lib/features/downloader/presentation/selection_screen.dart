@@ -21,10 +21,14 @@ class SelectionScreen extends ConsumerWidget {
         title: Text('Select items ($selectedCount/${state.totalCount})'),
         actions: [
           TextButton(
-            onPressed: selectedCount == entries.length
-                ? controller.selectNone
+            onPressed: entries.isEmpty || selectedCount == entries.length
+                ? null
                 : controller.selectAll,
-            child: Text(selectedCount == entries.length ? 'None' : 'All'),
+            child: const Text('All'),
+          ),
+          TextButton(
+            onPressed: selectedCount == 0 ? null : controller.selectNone,
+            child: const Text('None'),
           ),
         ],
       ),

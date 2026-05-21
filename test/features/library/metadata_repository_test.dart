@@ -103,6 +103,26 @@ void main() {
     );
   });
 
+  test('watchMetadataForItem emits the row, null when absent', () async {
+    await seed('a', 'A', 'video');
+    expect(await repo.watchMetadataForItem('a').first, isNull);
+
+    await db
+        .into(db.mediaMetadata)
+        .insert(
+          MediaMetadataCompanion.insert(
+            itemId: 'a',
+            uploader: const Value('Chan'),
+            description: const Value('A clip'),
+            uploadDate: Value(DateTime.utc(2024, 1, 15)),
+          ),
+        );
+    final meta = await repo.watchMetadataForItem('a').first;
+    expect(meta, isNotNull);
+    expect(meta!.uploader, 'Chan');
+    expect(meta.description, 'A clip');
+  });
+
   test('updateTitle and updateNotes', () async {
     await seed('a', 'Old', 'video');
     await repo.updateTitle('a', 'New title');

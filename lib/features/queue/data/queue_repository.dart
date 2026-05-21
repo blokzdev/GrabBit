@@ -113,6 +113,13 @@ class QueueRepository {
     await (_db.delete(_db.downloadTasks)..where((t) => t.id.equals(id))).go();
   }
 
+  /// Deletes finished tasks (done/canceled); returns how many were removed.
+  Future<int> clearCompleted() =>
+      (_db.delete(_db.downloadTasks)..where(
+            (t) => t.status.isIn(const [TaskStatus.done, TaskStatus.canceled]),
+          ))
+          .go();
+
   /// On startup, any task left `running` was orphaned by process death — requeue.
   Future<void> reconcileRunning() async {
     await (_db.update(_db.downloadTasks)

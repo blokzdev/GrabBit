@@ -66,6 +66,10 @@ class MetadataRepository {
     return query.watch();
   }
 
+  Stream<MediaMetadataData?> watchMetadataForItem(String itemId) => (_db.select(
+    _db.mediaMetadata,
+  )..where((t) => t.itemId.equals(itemId))).watchSingleOrNull();
+
   Future<void> updateTitle(String itemId, String title) async {
     await (_db.update(_db.mediaItems)..where((t) => t.id.equals(itemId))).write(
       MediaItemsCompanion(title: Value(title.trim())),
@@ -179,6 +183,13 @@ final collectionsForItemProvider =
     StreamProvider.family<List<Collection>, String>(
       (ref, itemId) =>
           ref.watch(metadataRepositoryProvider).watchCollectionsForItem(itemId),
+    );
+
+// Hand-written (returns a Drift row type) per CLAUDE.md §8.
+final metadataForItemProvider =
+    StreamProvider.family<MediaMetadataData?, String>(
+      (ref, itemId) =>
+          ref.watch(metadataRepositoryProvider).watchMetadataForItem(itemId),
     );
 
 final collectionItemsProvider = StreamProvider.family<List<MediaItem>, int>(

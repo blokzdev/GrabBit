@@ -129,6 +129,9 @@ class QueueController extends _$QueueController {
     await _repo.remove(id);
   }
 
+  /// Removes all finished (done/canceled) tasks; returns how many were cleared.
+  Future<int> clearCompleted() => _repo.clearCompleted();
+
   Future<void> _pump() {
     _pumpChain = _pumpChain.then((_) => _doPump()).catchError((_) {});
     return _pumpChain;

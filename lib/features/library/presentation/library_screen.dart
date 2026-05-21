@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/queue/data/queue_repository.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -27,6 +28,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final filter = ref.watch(libraryFilterProvider);
     final controller = ref.read(libraryFilterProvider.notifier);
     final filtering = filter.search.isNotEmpty || filter.type != null;
+    final pendingQueue =
+        ref
+            .watch(queueTasksProvider)
+            .asData
+            ?.value
+            .where(
+              (t) =>
+                  t.status != TaskStatus.done &&
+                  t.status != TaskStatus.canceled,
+            )
+            .length ??
+        0;
+    final collectionCount =
+        ref.watch(collectionsProvider).asData?.value.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -48,12 +63,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ],
           ),
           IconButton(
-            icon: const Icon(Icons.folder_outlined),
+            icon: Badge(
+              isLabelVisible: collectionCount > 0,
+              label: Text('$collectionCount'),
+              child: const Icon(Icons.folder_outlined),
+            ),
             tooltip: 'Collections',
             onPressed: () => context.push('/collections'),
           ),
           IconButton(
-            icon: const Icon(Icons.download_outlined),
+            icon: Badge(
+              isLabelVisible: pendingQueue > 0,
+              label: Text('$pendingQueue'),
+              child: const Icon(Icons.download_outlined),
+            ),
             tooltip: 'Queue',
             onPressed: () => context.push('/queue'),
           ),
@@ -73,13 +96,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onType: controller.setType,
           ),
           Expanded(
-            child: items.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) =>
-                  Center(child: Text('Failed to load library: $e')),
-              data: (rows) => rows.isEmpty
-                  ? _EmptyLibrary(filtering: filtering)
-                  : MediaGrid(items: rows),
+            child: RefreshIndicator(
+              onRefresh: () async => ref.invalidate(filteredLibraryProvider),
+              child: items.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) =>
+                    Center(child: Text('Failed to load library: $e')),
+                data: (rows) => rows.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 0.6,
+                            child: _EmptyLibrary(filtering: filtering),
+                          ),
+                        ],
+                      )
+                    : MediaGrid(
+                        items: rows,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                      ),
+              ),
             ),
           ),
         ],

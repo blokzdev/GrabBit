@@ -342,6 +342,32 @@ void main() {
     expect(engine.running, isEmpty);
   });
 
+  test('clearCompleted removes done/canceled but keeps active tasks', () async {
+    Future<void> insert(String id, String status) => db
+        .into(db.downloadTasks)
+        .insert(
+          DownloadTasksCompanion.insert(
+            id: id,
+            url: 'https://example.com/$id',
+            requestJson: '{}',
+            status: status,
+            createdAt: DateTime.now(),
+          ),
+        );
+    await insert('d1', TaskStatus.done);
+    await insert('c1', TaskStatus.canceled);
+    await insert('q1', TaskStatus.queued);
+    await insert('e1', TaskStatus.error);
+
+    final cleared = await controller.clearCompleted();
+
+    expect(cleared, 2);
+    expect(await repo.byId('d1'), isNull);
+    expect(await repo.byId('c1'), isNull);
+    expect(await repo.byId('q1'), isNotNull);
+    expect(await repo.byId('e1'), isNotNull);
+  });
+
   test('reconcileRunning flips orphaned running tasks to queued', () async {
     await db
         .into(db.downloadTasks)
