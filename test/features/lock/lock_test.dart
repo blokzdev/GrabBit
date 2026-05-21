@@ -69,6 +69,76 @@ void main() {
     });
   });
 
+  group('startupRedirect', () {
+    test('forces the disclaimer until accepted', () {
+      expect(
+        startupRedirect(
+          disclaimerAccepted: false,
+          lockEnabled: false,
+          locked: false,
+          location: '/',
+        ),
+        '/disclaimer',
+      );
+      // Already on the disclaimer: no further redirect.
+      expect(
+        startupRedirect(
+          disclaimerAccepted: false,
+          lockEnabled: false,
+          locked: false,
+          location: '/disclaimer',
+        ),
+        isNull,
+      );
+    });
+
+    test('leaves the disclaimer once accepted', () {
+      expect(
+        startupRedirect(
+          disclaimerAccepted: true,
+          lockEnabled: false,
+          locked: false,
+          location: '/disclaimer',
+        ),
+        '/',
+      );
+    });
+
+    test('disclaimer gates before the app lock', () {
+      // Not accepted + lock enabled+locked still goes to the disclaimer first.
+      expect(
+        startupRedirect(
+          disclaimerAccepted: false,
+          lockEnabled: true,
+          locked: true,
+          location: '/',
+        ),
+        '/disclaimer',
+      );
+    });
+
+    test('falls through to the lock check once accepted', () {
+      expect(
+        startupRedirect(
+          disclaimerAccepted: true,
+          lockEnabled: true,
+          locked: true,
+          location: '/',
+        ),
+        '/lock',
+      );
+      expect(
+        startupRedirect(
+          disclaimerAccepted: true,
+          lockEnabled: false,
+          locked: false,
+          location: '/',
+        ),
+        isNull,
+      );
+    });
+  });
+
   group('LockController', () {
     test('unlockWithPin transitions to unlocked on success', () async {
       final store = FakeStore();

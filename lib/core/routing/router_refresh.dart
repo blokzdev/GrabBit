@@ -24,3 +24,21 @@ String? lockRedirect({
   if ((!enabled || !locked) && atLock) return '/';
   return null;
 }
+
+/// Pure startup redirect: the one-time legal disclaimer gates everything, then
+/// the app-lock check applies. Extracted for testability.
+String? startupRedirect({
+  required bool disclaimerAccepted,
+  required bool lockEnabled,
+  required bool locked,
+  required String location,
+}) {
+  final atDisclaimer = location == '/disclaimer';
+  if (!disclaimerAccepted) return atDisclaimer ? null : '/disclaimer';
+  if (atDisclaimer) return '/';
+  return lockRedirect(
+    enabled: lockEnabled,
+    locked: locked,
+    atLock: location == '/lock',
+  );
+}

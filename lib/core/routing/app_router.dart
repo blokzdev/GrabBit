@@ -7,6 +7,7 @@ import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
 import 'package:grabbit/features/lock/lock_screen.dart';
 import 'package:grabbit/features/queue/presentation/queue_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
@@ -22,14 +23,21 @@ GoRouter appRouter(Ref ref) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: RouterRefreshNotifier(ref),
-    redirect: (context, state) => lockRedirect(
-      enabled:
-          ref.read(settingsControllerProvider).asData?.value.appLock.enabled ??
-          false,
-      locked: ref.read(lockControllerProvider) == LockState.locked,
-      atLock: state.matchedLocation == '/lock',
-    ),
+    redirect: (context, state) {
+      final settings = ref.read(settingsControllerProvider).asData?.value;
+      return startupRedirect(
+        disclaimerAccepted: settings?.disclaimerAccepted ?? true,
+        lockEnabled: settings?.appLock.enabled ?? false,
+        locked: ref.read(lockControllerProvider) == LockState.locked,
+        location: state.matchedLocation,
+      );
+    },
     routes: [
+      GoRoute(
+        path: '/disclaimer',
+        name: 'disclaimer',
+        builder: (context, state) => const DisclaimerScreen(),
+      ),
       GoRoute(
         path: '/lock',
         name: 'lock',

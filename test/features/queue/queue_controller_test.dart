@@ -9,6 +9,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
@@ -107,6 +108,14 @@ class FakeForegroundService implements ForegroundService {
   Future<bool> isUnmetered() async => unmetered;
 }
 
+/// Network monitor whose change events the test fires manually.
+class FakeNetworkMonitor implements NetworkMonitor {
+  final _controller = StreamController<void>.broadcast();
+  void fireChange() => _controller.add(null);
+  @override
+  Stream<void> get onChanged => _controller.stream;
+}
+
 QueuedDownload _qd(
   String id, {
   String outputDir = '/tmp',
@@ -149,12 +158,14 @@ void main() {
   late QueueRepository repo;
   late QueueController controller;
   late FakeForegroundService fakeService;
+  late FakeNetworkMonitor fakeNetwork;
 
   ProviderContainer makeContainer() => ProviderContainer(
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
       downloadEngineProvider.overrideWithValue(engine),
       foregroundServiceProvider.overrideWithValue(fakeService),
+      networkMonitorProvider.overrideWithValue(fakeNetwork),
       queueConfigProvider.overrideWithValue(
         const QueueConfig(baseRetryDelay: Duration(milliseconds: 5)),
       ),
@@ -165,6 +176,7 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     engine = ControllableEngine();
     fakeService = FakeForegroundService();
+    fakeNetwork = FakeNetworkMonitor();
     container = makeContainer();
     repo = container.read(queueRepositoryProvider);
     controller = container.read(queueControllerProvider.notifier);
@@ -310,6 +322,20 @@ void main() {
 
     expect(engine.running, isEmpty);
     expect(await repo.countByStatus(TaskStatus.queued), 1);
+  });
+
+  test('resumes Wi-Fi-only tasks when an unmetered network returns', () async {
+    await container.read(settingsControllerProvider.notifier).setWifiOnly(true);
+    fakeService.unmetered = false;
+
+    await controller.enqueue(_qd('t1'));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(engine.running, isEmpty); // blocked on a metered network
+
+    // Network flips to unmetered and emits a change → the queue re-pumps.
+    fakeService.unmetered = true;
+    fakeNetwork.fireChange();
+    await waitFor(() async => engine.running.contains('t1'));
   });
 
   test('enqueueHeld holds items without starting them', () async {
