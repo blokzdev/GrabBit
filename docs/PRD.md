@@ -95,7 +95,16 @@ No account is required for v1/v2. Accounts appear only in v3 (for credits).
 - In-app library: grid/list, thumbnails, in-app video/audio player + image viewer.
 - Metadata management: title, source URL, uploader, duration, date, resolution,
   tags, notes; edit/rename.
-- Organization: collections/folders, search, filter, sort; bulk operations.
+- Organization — two coexisting views:
+  - **Library view:** collections (many-to-many) + tags, search, filter, sort; bulk
+    operations.
+  - **Explorer view (P5):** a Dropbox-like virtual file system — nested
+    folders/subfolders, move/rename, breadcrumbs — over the on-device library
+    (files stay private; folders are virtual, so nothing is re-arranged on disk).
+- **Media editing (P6):** on-device, free ffmpeg-powered tools — trim, reverse,
+  flip/mirror/rotate, convert (container/codec/audio-extract), and frame extraction
+  (first/last/any frame → image) for video and images. Edits produce new library
+  items; originals are preserved.
 - Storage policy:
   - **Default:** app-private working directory (not in gallery).
   - **Manual export:** "Save to device" for selected items → chosen folder.

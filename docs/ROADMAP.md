@@ -7,12 +7,12 @@ Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 by default; later phases assume earlier exit criteria are met.
 
 Legend (three version bands):
-- **v1 — Android core, free, on-device:** P0–P5 (P4 completion & refinement, P5 beta
-  & production readiness / release).
+- **v1 — Android core, free, on-device:** P0–P7 (P4 completion & refinement, P5 file
+  explorer, P6 media studio, P7 beta & production readiness / release).
 - **v2 — world-class, feature-rich, production-ready, LOCAL-ONLY (no cloud):**
-  P6 (Windows parity) · P7 (edge/local AI) · P8 (production polish).
-- **v3 — cloud AI + credit monetization:** P9 (backend + accounts) · P10 (cloud AI)
-  · P11 (public launch).
+  P8 (Windows parity) · P9 (edge/local AI) · P10 (production polish).
+- **v3 — cloud AI + credit monetization:** P11 (backend + accounts) · P12 (cloud AI)
+  · P13 (public launch).
 
 The app stays fully free and offline through v2. Money enters only in v3.
 
@@ -71,7 +71,7 @@ app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale. **Public content only** — authenticated/private content
-(cookie/login import) is deferred to **v2** (see P8).
+(cookie/login import) is deferred to **v2** (see P10).
 **Deliverables:**
 - Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
   playlists, and carousels; clear errors for unsupported/broken extractors.
@@ -104,7 +104,45 @@ daily-drivable; no new feature areas. Ships as three sub-PRs.
 **Exit criteria:** founder daily-drives a debug build with no critical bugs; gaps
 closed; review backlog cleared.
 
-## P5 — v1 Beta & Production Readiness
+## P5 — Media Manager: File Explorer
+**Goals:** a Dropbox-like in-app file system on top of the private library — without
+moving any files on disk. Two coexisting views: the existing **Library** (filter by
+collections/tags/type/search) and a new **Explorer** (folder tree).
+**Deliverables:**
+- **Schema migration v1→v2** (first real Drift migration): `Folders` table (`id`,
+  `name`, `parentId` nullable self-FK, `createdAt`) + nullable `folderId` on
+  `MediaItems` (`onDelete: setNull`); a `MigrationStrategy` + an upgrade test.
+- **Folder repository**: create/rename/delete (reparent-or-orphan), move item(s) to a
+  folder, watch a folder's subfolders + items, breadcrumb path.
+- **Explorer view**: navigate folders/subfolders, breadcrumbs, create/rename/delete
+  folders, multi-select move of media, an "uncategorized" root (`folderId == null`).
+  Coexists with collections/tags (cross-cutting overlays stay in Library).
+- Physical files remain flat at `media/<taskId>`; folders are purely **virtual**.
+  Existing items start at the root — no data rearrangement. ("Copy" = optional real
+  file duplication into a new item; deferred unless wanted.)
+**Exit criteria:** create nested folders, move/rename/delete, browse via Explorer
+while Library filtering still works; a v1 database upgrades to v2 cleanly.
+
+## P6 — Media Studio: Editing Tools
+**Goals:** on-device (therefore free) media editing for saved items, leveraging the
+already-bundled ffmpeg.
+**Deliverables:**
+- **ffmpeg exposure** (spike-gated): confirm youtubedl-android's bundled
+  `FFmpeg.getInstance()` runs arbitrary args with progress → expose via a new Pigeon
+  `MediaToolsHostApi.runFfmpeg(...)` (mirroring the `YtDlpHostApi` wiring). Fallback:
+  a maintained `ffmpeg_kit` fork (note APK-size cost; original retired in 2025).
+- **`MediaToolsEngine`** pure-Dart interface (like `DownloadEngine`) so Windows
+  (`ffmpeg.exe`, P8) slots behind the same contract.
+- **Editor UI** from the item viewer: video — trim, reverse, flip/mirror/rotate,
+  convert (container/codec/audio-extract), extract frame(s) (first/last/scrubber →
+  image); images — flip/mirror/rotate/crop/convert.
+- Outputs are **new library items** (originals preserved), landing in the current
+  folder (P5) with metadata; progress shown (reuse the foreground-service/queue
+  pattern). Unsupported ops are cleanly gated.
+**Exit criteria:** trim a video, extract a frame, and flip an image — each produces a
+new playable/viewable library item fully offline.
+
+## P7 — v1 Beta & Production Readiness
 **Goals:** harden, brand, and ship v1.
 **Deliverables:** **release signing** (keystore + CI secret; the ship blocker);
 **app icon + branding + splash**; performance hardening (large library grid/
@@ -119,7 +157,7 @@ regression; published for sideload. **→ v1 complete.**
 
 # v2 — World-class, local-only (Windows + edge AI + polish)
 
-## P6 — Windows Port
+## P8 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`),
 desktop storage adapter (filesystem export), desktop-adapted UI, **MSIX** packaging,
@@ -127,7 +165,7 @@ binary update path.
 **Exit criteria:** Windows build downloads + manages media; feature parity with v1
 core. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P7 — Edge/Local AI (free, on-device)
+## P9 — Edge/Local AI (free, on-device)
 **Goals:** the differentiator — on-device AI with graceful capability-gating. **No
 cloud, no account, no credits.**
 **Deliverables:**
@@ -142,7 +180,7 @@ cloud, no account, no credits.**
 **Exit criteria:** on a capable device, transcribe + summarize a saved item fully
 offline; on a low-end device those features are cleanly disabled with explanation.
 
-## P8 — Production Polish (public v2)
+## P10 — Production Polish (public v2)
 **Goals:** make the local-only app genuinely world-class and production-ready.
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced
 configuration, refined UX across all flows, robust update/onboarding, public v2
@@ -158,7 +196,7 @@ release candidate (Android + Windows, still local-only, still free).
 
 # v3 — Cloud AI + monetization
 
-## P9 — Backend + Accounts
+## P11 — Backend + Accounts
 **Goals:** the paid rails (cloud only).
 **Deliverables:** Supabase Auth; Postgres credit ledger + RLS (SPEC §9.1); Edge
 Functions skeleton; **Stripe/PayPal** checkout + webhooks → credit grants; account +
@@ -166,7 +204,7 @@ credits UI. The local-only experience stays fully account-free.
 **Exit criteria:** buy credits via Stripe/PayPal in a test env; balance updates via
 webhook; RLS verified.
 
-## P10 — Cloud AI
+## P12 — Cloud AI
 **Goals:** heavier multimodal AI for tasks/devices beyond on-device limits.
 **Deliverables:**
 - Cloud `InferenceEngine` impl behind the same interface; **Genkit → Gemini** Edge
@@ -178,7 +216,7 @@ webhook; RLS verified.
 **Exit criteria:** a feature runs **free locally** on a capable device and via
 **cloud (credits)** for higher quality; cost-per-call < credit price.
 
-## P11 — Launch
+## P13 — Launch
 **Goals:** public availability + growth.
 **Deliverables:** landing/download site (Android APK/AAB + Windows MSIX), install
 guides + legal disclaimer, versioned releases/changelog, basic marketing,
