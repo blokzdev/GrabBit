@@ -24,12 +24,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
-        // youtubedl-android ships native libs only for these ABIs; x86 (32-bit)
-        // is unsupported. Limiting them keeps the APK from bloating further.
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
-        }
     }
 
     // youtubedl-android extracts a bundled Python at runtime, so its .so files
