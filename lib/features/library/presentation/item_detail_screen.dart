@@ -41,8 +41,13 @@ class ItemDetailScreen extends ConsumerWidget {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.auto_fix_high_outlined),
+            tooltip: 'Studio (edit)',
+            onPressed: () => context.push('/item/$itemId/studio'),
+          ),
+          IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit',
+            tooltip: 'Edit info',
             onPressed: () => context.push('/item/$itemId/edit'),
           ),
         ],

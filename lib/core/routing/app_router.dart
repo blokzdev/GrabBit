@@ -5,6 +5,7 @@ import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
+import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
@@ -69,6 +70,12 @@ GoRouter appRouter(Ref ref) {
         name: 'item-edit',
         builder: (context, state) =>
             MetadataEditScreen(itemId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/item/:id/studio',
+        name: 'item-studio',
+        builder: (context, state) =>
+            MediaStudioScreen(itemId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/collections',
