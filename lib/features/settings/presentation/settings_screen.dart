@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
+import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
@@ -73,6 +74,7 @@ class _SettingsList extends ConsumerWidget {
           value: settings.wifiOnly,
           onChanged: controller.setWifiOnly,
         ),
+        _FilenameTemplateTile(template: settings.filenameTemplate),
         SwitchListTile(
           title: const Text('Download subtitles'),
           subtitle: const Text('Write and embed subtitles when available'),
@@ -148,6 +150,87 @@ class _SettingsList extends ConsumerWidget {
         const _SectionHeader('Security'),
         _AppLockSection(appLock: settings.appLock),
       ],
+    );
+  }
+}
+
+class _FilenameTemplateTile extends ConsumerStatefulWidget {
+  const _FilenameTemplateTile({required this.template});
+  final String template;
+
+  @override
+  ConsumerState<_FilenameTemplateTile> createState() =>
+      _FilenameTemplateTileState();
+}
+
+class _FilenameTemplateTileState extends ConsumerState<_FilenameTemplateTile> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.template,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _persist(String value) =>
+      ref.read(settingsControllerProvider.notifier).setFilenameTemplate(value);
+
+  void _insert(String token) {
+    final text = '${_controller.text}{$token}';
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _persist(text);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Download filename', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            decoration: const InputDecoration(
+              isDense: true,
+              border: OutlineInputBorder(),
+              helperText:
+                  'Tap a tag to add it. The extension is added for you.',
+            ),
+            onChanged: (v) {
+              _persist(v);
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final t in filenameTokens)
+                ActionChip(
+                  label: Text(t.label),
+                  onPressed: () => _insert(t.key),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Preview: ${renderPreview(_controller.text)}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

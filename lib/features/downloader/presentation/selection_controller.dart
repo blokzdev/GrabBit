@@ -3,6 +3,7 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
@@ -133,17 +134,20 @@ class SelectionController extends Notifier<SelectionState> {
     final dir = await ref.read(mediaStorageProvider).mediaDirectory();
     final settings = await ref.read(settingsControllerProvider.future);
     final preset = state.preset;
-    final entries = state.allEntries.where(
-      (e) => state.selected.contains(e.url),
-    );
+    final entries = state.allEntries
+        .where((e) => state.selected.contains(e.url))
+        .toList();
     return [
-      for (final e in entries)
+      for (final (i, e) in entries.indexed)
         QueuedDownload(
           request: DownloadRequest(
             taskId: newTaskId(),
             url: e.url,
             outputDir: dir.path,
-            filenameTemplate: '%(title)s.%(ext)s',
+            filenameTemplate: resolveOutputTemplate(
+              settings.filenameTemplate,
+              index: i + 1,
+            ),
             formatId: preset.formatSelector,
             audioOnly: preset.audioOnly,
             container: preset.audioOnly ? 'm4a' : 'mp4',

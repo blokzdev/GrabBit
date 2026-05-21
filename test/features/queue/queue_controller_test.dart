@@ -253,8 +253,10 @@ void main() {
   test('completion persists a library item from output files', () async {
     final dir = await Directory.systemTemp.createTemp('grabbit_queue_');
     addTearDown(() => dir.delete(recursive: true));
-    await File('${dir.path}/vid1.mp4').writeAsString('data');
-    await File('${dir.path}/vid1.jpg').writeAsString('thumb');
+    // Files land in a per-task subfolder named by the taskId.
+    await Directory('${dir.path}/vid1').create();
+    await File('${dir.path}/vid1/My Clip.mp4').writeAsString('data');
+    await File('${dir.path}/vid1/My Clip.jpg').writeAsString('thumb');
 
     await controller.enqueue(_qd('vid1', outputDir: dir.path));
     await waitFor(() async => engine.running.contains('vid1'));
@@ -276,7 +278,8 @@ void main() {
     () async {
       final dir = await Directory.systemTemp.createTemp('grabbit_meta_');
       addTearDown(() => dir.delete(recursive: true));
-      await File('${dir.path}/m1.mp4').writeAsString('data');
+      await Directory('${dir.path}/m1').create();
+      await File('${dir.path}/m1/clip.mp4').writeAsString('data');
 
       await controller.enqueue(
         _qd(

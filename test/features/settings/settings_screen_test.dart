@@ -28,4 +28,29 @@ void main() {
 
     expect((await SettingsRepository(db).read()).mode, UiMode.advanced);
   });
+
+  testWidgets('inserting a filename token persists and updates the preview', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Default pattern preview.
+    expect(find.textContaining('Preview:'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ActionChip, 'Channel'));
+    await tester.pumpAndSettle();
+
+    final saved = (await SettingsRepository(db).read()).filenameTemplate;
+    expect(saved, '{title}{channel}');
+    expect(find.textContaining('Rick Astley'), findsOneWidget);
+  });
 }

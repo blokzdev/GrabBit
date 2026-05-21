@@ -299,12 +299,13 @@ class QueueController extends _$QueueController {
   }
 
   Future<void> _persistCompleted(String id, QueuedDownload queued) async {
-    final dir = Directory(queued.request.outputDir);
+    // Files land in a per-task subfolder (see YtDlpHost `-o`): the task id names
+    // the folder, the user's template names the file inside it.
+    final dir = Directory('${queued.request.outputDir}/$id');
     if (!dir.existsSync()) return;
     File? thumb;
     File? media;
     for (final entry in dir.listSync().whereType<File>()) {
-      if (!entry.uri.pathSegments.last.startsWith('$id.')) continue;
       if (entry.path.toLowerCase().endsWith('.jpg')) {
         thumb = entry;
       } else {

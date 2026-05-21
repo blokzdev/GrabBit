@@ -111,7 +111,9 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Queue **"Clear completed"** works; selection **select/deselect-all** both work.
 - [ ] First launch shows a one-time **legal/user-responsibility disclaimer**; it
       doesn't reappear after acceptance.
-- [ ] A custom **filename template** (Settings) applies to saved/exported names.
+- [ ] A custom **filename pattern** (Settings → Download filename: chips +
+      preview) names the downloaded file; a batch numbers via `{num}`; exporting
+      keeps that name. (Files live under `media/<taskId>/`.)
 - [ ] **Wi-Fi-only** auto-resumes queued tasks when back on an unmetered network.
 
 ## P5 — Media Manager: File Explorer  *(v1)*
