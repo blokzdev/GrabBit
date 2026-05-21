@@ -18,7 +18,9 @@ android {
 
     defaultConfig {
         applicationId = "dev.blokz.grabbit"
-        minSdk = flutter.minSdkVersion
+        // ffmpeg_kit_flutter_new requires API 24+; take the higher of it and
+        // Flutter's default.
+        minSdk = maxOf(24, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

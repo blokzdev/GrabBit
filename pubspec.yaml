@@ -40,6 +40,7 @@ dependencies:
   video_player: ^2.11.1
   chewie: ^1.14.1
   crypto: ^3.0.7
+  ffmpeg_kit_flutter_new: ^4.1.0
 
 dev_dependencies:
   flutter_test:

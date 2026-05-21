@@ -11,6 +11,7 @@ import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/engine/info_json_parser.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
+import 'package:grabbit/core/utils/media_type.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
@@ -341,7 +342,7 @@ class QueueController extends _$QueueController {
               sourceUrl: queued.request.url,
               site: queued.site ?? info?.extractor ?? 'unknown',
               filePath: mediaFile.path,
-              type: queued.request.audioOnly ? 'audio' : _typeForExt(ext),
+              type: queued.request.audioOnly ? 'audio' : mediaTypeForExt(ext),
               createdAt: DateTime.now(),
               storageState: 'private',
               durationSec: Value(queued.durationSec),
@@ -382,12 +383,4 @@ class QueueController extends _$QueueController {
       }
     });
   }
-}
-
-String _typeForExt(String ext) {
-  const image = {'jpg', 'jpeg', 'png', 'gif', 'webp'};
-  const audio = {'m4a', 'mp3', 'opus', 'aac', 'ogg', 'wav'};
-  if (image.contains(ext)) return 'image';
-  if (audio.contains(ext)) return 'audio';
-  return 'video';
 }

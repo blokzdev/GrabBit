@@ -130,10 +130,13 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       description keyword; Library search/sort/collections still work.
 
 ## P6 — Media Studio: Editing Tools  *(v1)*
-- [ ] Trim a video → a new playable library item; the original is preserved.
-- [ ] Extract a frame (first / last / scrubbed position) → a new image item.
-- [ ] Flip/mirror/rotate an image and a video; convert container/extract audio.
-- [ ] Long operations show progress; unsupported ops are disabled with a reason.
+- [ ] **P6a** The APK installs with ffmpeg_kit bundled (note size; `flutter build apk
+      --split-per-abi` keeps per-install size down). Open a video's **Studio** action.
+- [ ] **P6a** Trim a video (range slider) → a new playable library item; original kept.
+- [ ] **P6a** Extract a frame (scrubbed position) → a new image item; progress + Cancel
+      work during the job.
+- [ ] **P6b** Flip/mirror/rotate an image and a video; reverse; convert container /
+      extract audio → each a new item.
 
 ## P7 — v1 Beta & Production Readiness  *(v1)*
 - [ ] App has a custom **icon / splash / branding**.
