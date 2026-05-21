@@ -3,8 +3,8 @@ import 'package:grabbit/core/routing/router_refresh.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
+import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
-import 'package:grabbit/features/library/presentation/library_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
@@ -45,8 +45,8 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: '/',
-        name: 'library',
-        builder: (context, state) => const LibraryScreen(),
+        name: 'home',
+        builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
         path: '/add',

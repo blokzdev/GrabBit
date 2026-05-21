@@ -121,9 +121,11 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       media survives and appears at the root, nothing lost.
 - [ ] **P5a** A **batch** (playlist) download now records channel/username/upload-date
       and its playlist; item detail shows them (previously batch items had none).
-- [ ] **P5b** Create nested folders; rename and delete them (deleted folder's media
-      falls back to the root, not lost). Move single + multi-selected media between
-      folders; Explorer reflects it; the Home Library | Explorer toggle works.
+- [ ] **P5b** Home Library | Explorer toggle switches views. In Explorer: the
+      "New folder" FAB creates a folder (nested under the current one); folder tiles
+      navigate and the breadcrumb walks back. Rename/delete a folder (delete moves its
+      media + subfolders back to root, nothing lost). Long-press items to multi-select,
+      then Move to a folder; single-item "Move to folder" works from item detail too.
 - [ ] **P5c** Filter the Library by platform, channel, username, playlist, and a
       description keyword; Library search/sort/collections still work.
 

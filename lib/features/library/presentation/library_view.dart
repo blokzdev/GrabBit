@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/media_grid.dart';
+
+/// The Library body (search/type filter + media grid). Hosted by HomeScreen's
+/// segmented toggle; the app bar/FAB live in the shell.
+class LibraryView extends ConsumerStatefulWidget {
+  const LibraryView({super.key});
+
+  @override
+  ConsumerState<LibraryView> createState() => _LibraryViewState();
+}
+
+class _LibraryViewState extends ConsumerState<LibraryView> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = ref.watch(filteredLibraryProvider);
+    final filter = ref.watch(libraryFilterProvider);
+    final controller = ref.read(libraryFilterProvider.notifier);
+    final filtering = filter.search.isNotEmpty || filter.type != null;
+
+    return Column(
+      children: [
+        _FilterBar(
+          controller: _searchController,
+          filter: filter,
+          onSearch: controller.setSearch,
+          onType: controller.setType,
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async => ref.invalidate(filteredLibraryProvider),
+            child: items.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) =>
+                  Center(child: Text('Failed to load library: $e')),
+              data: (rows) => rows.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.sizeOf(context).height * 0.6,
+                          child: _EmptyLibrary(filtering: filtering),
+                        ),
+                      ],
+                    )
+                  : MediaGrid(
+                      items: rows,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
+    required this.controller,
+    required this.filter,
+    required this.onSearch,
+    required this.onType,
+  });
+
+  final TextEditingController controller;
+  final LibraryQuery filter;
+  final ValueChanged<String> onSearch;
+  final ValueChanged<String?> onType;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Column(
+        children: [
+          TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Search title',
+              prefixIcon: const Icon(Icons.search),
+              isDense: true,
+              border: const OutlineInputBorder(),
+              suffixIcon: filter.search.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        controller.clear();
+                        onSearch('');
+                      },
+                    ),
+            ),
+            onChanged: onSearch,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (final type in const [null, 'video', 'audio', 'image'])
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(type == null ? 'All' : _typeLabel(type)),
+                    selected: filter.type == type,
+                    onSelected: (_) => onType(type),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _typeLabel(String type) => switch (type) {
+    'video' => 'Video',
+    'audio' => 'Audio',
+    'image' => 'Image',
+    _ => type,
+  };
+}
+
+class _EmptyLibrary extends StatelessWidget {
+  const _EmptyLibrary({required this.filtering});
+  final bool filtering;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            filtering ? Icons.search_off : Icons.video_library_outlined,
+            size: 72,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            filtering ? 'No matches' : 'Your library is empty',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            filtering
+                ? 'Try a different search or filter.'
+                : 'Downloads will appear here.',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
