@@ -147,8 +147,17 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       extract audio → each a new item.
 
 ## P7 — Branding & Frontend Revamp  *(v1)*
-- [ ] Launcher shows the new **rabbit-motif icon** (incl. Android-13 themed/monochrome);
-      cold start shows the branded **splash** in both light and dark.
+
+### P7a — Brand foundation
+- [ ] Launcher shows the new **rabbit-motif icon**; on Android 13+ enabling **themed icons**
+      tints the silhouette and the **download chevron reads as a hollow cutout**.
+- [ ] Cold start shows the branded **splash** (brand background + bunny) in both light and dark.
+- [ ] App renders in the new theme (indigo + amber accent) in light/dark, **dynamic color**
+      on and off; headings use **Outfit**, body uses **Inter** (fonts work **offline** —
+      verify with networking disabled on first launch).
+- [ ] No regression in existing P0–P6 flows after the theme swap.
+
+### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.
 - [ ] **Empty / loading (skeleton) / error** states render on each screen (empty

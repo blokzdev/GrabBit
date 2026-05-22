@@ -42,9 +42,8 @@ dependencies:
   crypto: ^3.0.7
   ffmpeg_kit_flutter_new: ^4.1.0
 
-  # Brand & typography (P7)
+  # Brand (P7)
   flutter_svg: ^2.3.0        # render the brand SVG mark in-app (resolution-independent)
-  google_fonts: ^8.1.0       # Outfit (display) + Inter (body) brand type
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +67,15 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
+  # Bundled (offline, no runtime fetch) brand type. Variable fonts — weights are
+  # selected via fontWeight against the wght axis.
+  fonts:
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/Outfit.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
 
 # Adaptive launcher icon generated from the brand mark. Foreground = white bunny +
 # amber chevron; monochrome = silhouette with the chevron hollowed out (Android 13+
