@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_filter_sheet.dart';
@@ -43,16 +47,28 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
           child: RefreshIndicator(
             onRefresh: () async => ref.invalidate(filteredLibraryProvider),
             child: items.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) =>
-                  Center(child: Text('Failed to load library: $e')),
+              loading: () => const MediaGridSkeleton(),
+              error: (e, _) => ErrorView(
+                message: 'Failed to load library: $e',
+                onRetry: () => ref.invalidate(filteredLibraryProvider),
+              ),
               data: (rows) => rows.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       children: [
                         SizedBox(
                           height: MediaQuery.sizeOf(context).height * 0.6,
-                          child: _EmptyLibrary(filtering: filtering),
+                          child: EmptyState(
+                            icon: filtering
+                                ? Icons.search_off
+                                : Icons.video_library_outlined,
+                            title: filtering
+                                ? 'No matches'
+                                : 'Your library is empty',
+                            message: filtering
+                                ? 'Try a different search or filter.'
+                                : 'Downloads will appear here.',
+                          ),
                         ),
                       ],
                     )
@@ -85,8 +101,14 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceMd,
+        tokens.spaceSm,
+        tokens.spaceMd,
+        0,
+      ),
       child: Column(
         children: [
           TextField(
@@ -108,7 +130,7 @@ class _FilterBar extends StatelessWidget {
             ),
             onChanged: onSearch,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: tokens.spaceSm),
           Row(
             children: [
               Expanded(
@@ -158,38 +180,4 @@ class _FilterBar extends StatelessWidget {
     'image' => 'Image',
     _ => type,
   };
-}
-
-class _EmptyLibrary extends StatelessWidget {
-  const _EmptyLibrary({required this.filtering});
-  final bool filtering;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            filtering ? Icons.search_off : Icons.video_library_outlined,
-            size: 72,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            filtering ? 'No matches' : 'Your library is empty',
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            filtering
-                ? 'Try a different search or filter.'
-                : 'Downloads will appear here.',
-            style: theme.textTheme.bodyMedium,
-          ),
-        ],
-      ),
-    );
-  }
 }

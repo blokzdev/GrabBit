@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
 import 'package:grabbit/core/utils/filename_template.dart';
+import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
@@ -34,7 +35,7 @@ class _SettingsList extends ConsumerWidget {
     final controller = ref.read(settingsControllerProvider.notifier);
     return ListView(
       children: [
-        const _SectionHeader('Downloads'),
+        const SectionHeader('Downloads'),
         SwitchListTile(
           title: const Text('Advanced mode'),
           subtitle: const Text('Show all format and quality options'),
@@ -92,7 +93,7 @@ class _SettingsList extends ConsumerWidget {
           onChanged: controller.setEmbedMetadata,
         ),
         const Divider(),
-        const _SectionHeader('Downloader engine'),
+        const SectionHeader('Downloader engine'),
         const _EngineUpdateTile(),
         SwitchListTile(
           title: const Text('Check for updates on app open'),
@@ -103,7 +104,7 @@ class _SettingsList extends ConsumerWidget {
           onChanged: controller.setAutoCheckEngineUpdate,
         ),
         const Divider(),
-        const _SectionHeader('Storage'),
+        const SectionHeader('Storage'),
         SwitchListTile(
           title: const Text('Auto-save to device'),
           subtitle: const Text('Export every download to your gallery folder'),
@@ -132,7 +133,7 @@ class _SettingsList extends ConsumerWidget {
           },
         ),
         const Divider(),
-        const _SectionHeader('Appearance'),
+        const SectionHeader('Appearance'),
         ListTile(
           title: const Text('Theme'),
           trailing: DropdownButton<ThemeChoice>(
@@ -155,7 +156,7 @@ class _SettingsList extends ConsumerWidget {
           onChanged: controller.setDynamicColor,
         ),
         const Divider(),
-        const _SectionHeader('Security'),
+        const SectionHeader('Security'),
         _AppLockSection(appLock: settings.appLock),
       ],
     );
@@ -340,25 +341,6 @@ class _EngineUpdateTile extends ConsumerWidget {
                   ref.read(engineUpdateControllerProvider.notifier).runUpdate(),
               child: const Text('Update'),
             ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(
-        title,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: theme.colorScheme.primary,
-        ),
-      ),
     );
   }
 }

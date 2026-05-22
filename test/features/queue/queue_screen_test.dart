@@ -123,6 +123,13 @@ void main() {
     expect(find.text('https://example.com/legacy'), findsOneWidget);
   });
 
+  testWidgets('shows an empty state when the queue has no tasks', (
+    tester,
+  ) async {
+    await pumpQueue(tester);
+    expect(find.text('No downloads in the queue'), findsOneWidget);
+  });
+
   testWidgets('removal is gated by a confirmation dialog', (tester) async {
     await seedDone('t1', url: 'https://example.com/v');
 

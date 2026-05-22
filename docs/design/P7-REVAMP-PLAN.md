@@ -41,13 +41,22 @@
   light/dark + dynamic color with no regressions. *(on-device spot-check pending — see
   `docs/VERIFICATION.md` P7.)*
 
-### `[ ]` P7b — Shared component library
-- Restyle reusable widgets to the system: `MediaGrid`/`MediaTile`, `confirm()` dialog,
-  settings tiles/section headers, error banners, queue task tile, filter bar.
-- Add shared **empty / skeleton-loader / error** widgets in `lib/core/widgets/`.
-- Expressive go_router page transitions + thumbnail **hero** animation.
-- **Exit / review:** components demoed across a couple of screens; empty/skeleton/error
-  render correctly.
+### `[x]` P7b — Shared component library
+- ✅ Shared state widgets in `lib/core/widgets/`: `EmptyState`, `ErrorView`,
+  `ErrorBanner` (consolidates the two ad-hoc banners; caller passes the "Update engine"
+  action), `Skeleton`/`MediaGridSkeleton`/`ListSkeleton` (custom no-dep shimmer), and
+  `SectionHeader` (extracted from settings).
+- ✅ Restyled shared components onto tokens: `MediaTile`/`MediaGrid` (token radii/spacing,
+  scrim/role colors, **video play badge**, thumbnail **Hero**), queue task tile + status
+  **pills**, library filter bar, settings section headers; `GrabBitTokens.of(context)`
+  resilient accessor added.
+- ✅ Thumbnail **Hero** (tile → `/item/:id`, lightweight flight shuttle); kept the global
+  `FadeForwards` route transition.
+- ✅ Wired the new empty/skeleton/error states into **Library** + **Queue** (demo); other
+  screens adopt them in their own subphases.
+- **Exit / review:** components demoed on Library + Queue; empty/skeleton/error render. CI
+  green (format · analyze · 147 tests · debug APK). *(on-device spot-check pending — see
+  `docs/VERIFICATION.md`.)*
 
 ---
 

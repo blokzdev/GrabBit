@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
 
@@ -84,10 +88,17 @@ class QueueScreen extends ConsumerWidget {
         ],
       ),
       body: tasks.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load queue: $e')),
+        loading: () => const ListSkeleton(),
+        error: (e, _) => ErrorView(
+          message: 'Failed to load queue: $e',
+          onRetry: () => ref.invalidate(queueTasksProvider),
+        ),
         data: (rows) => rows.isEmpty
-            ? const Center(child: Text('No downloads in the queue'))
+            ? const EmptyState(
+                icon: Icons.download_done_outlined,
+                title: 'No downloads in the queue',
+                message: 'Links you add will download here.',
+              )
             : Column(
                 children: [
                   _QueueSummary(rows: rows),
@@ -119,22 +130,84 @@ class _QueueSummary extends StatelessWidget {
     final done = count((t) => t.status == TaskStatus.done);
     final failed = count((t) => t.status == TaskStatus.error);
 
-    final parts = <String>[
-      if (running > 0) '$running running',
-      if (queued > 0) '$queued queued',
-      if (held > 0) '$held held',
-      if (paused > 0) '$paused paused',
-      if (done > 0) '$done done',
-      if (failed > 0) '$failed failed',
-    ];
-    if (parts.isEmpty) return const SizedBox.shrink();
-
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    final pills = <Widget>[
+      if (running > 0)
+        _pill(
+          context,
+          '$running running',
+          scheme.primaryContainer,
+          scheme.onPrimaryContainer,
+        ),
+      if (queued > 0)
+        _pill(
+          context,
+          '$queued queued',
+          scheme.secondaryContainer,
+          scheme.onSecondaryContainer,
+        ),
+      if (held > 0)
+        _pill(
+          context,
+          '$held held',
+          scheme.secondaryContainer,
+          scheme.onSecondaryContainer,
+        ),
+      if (paused > 0)
+        _pill(
+          context,
+          '$paused paused',
+          scheme.surfaceContainerHighest,
+          scheme.onSurfaceVariant,
+        ),
+      if (done > 0)
+        _pill(
+          context,
+          '$done done',
+          scheme.tertiaryContainer,
+          scheme.onTertiaryContainer,
+        ),
+      if (failed > 0)
+        _pill(
+          context,
+          '$failed failed',
+          scheme.errorContainer,
+          scheme.onErrorContainer,
+        ),
+    ];
+    if (pills.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spaceLg,
+        vertical: tokens.spaceSm,
+      ),
+      child: Wrap(
+        spacing: tokens.spaceSm,
+        runSpacing: tokens.spaceXs,
+        children: pills,
+      ),
+    );
+  }
+
+  Widget _pill(BuildContext context, String label, Color bg, Color fg) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Text(parts.join('  ·  '), style: theme.textTheme.bodySmall),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spaceMd,
+        vertical: tokens.spaceXs,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(color: fg),
+      ),
     );
   }
 }
@@ -146,6 +219,7 @@ class _TaskTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(queueControllerProvider.notifier);
+    final tokens = GrabBitTokens.of(context);
     final running = task.status == TaskStatus.running;
     return ListTile(
       title: Text(
@@ -156,11 +230,12 @@ class _TaskTile extends ConsumerWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 4),
+          SizedBox(height: tokens.spaceXs),
           LinearProgressIndicator(
             value: running && task.progress == 0 ? null : task.progress / 100,
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: tokens.spaceXs),
           Text(_statusLabel(task)),
         ],
       ),

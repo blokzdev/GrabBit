@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
+import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/error_banner.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
@@ -46,6 +48,7 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(downloaderControllerProvider);
     final controller = ref.read(downloaderControllerProvider.notifier);
+    final tokens = GrabBitTokens.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add download')),
@@ -74,9 +77,20 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
             ),
             const SizedBox(height: 16),
             if (state.errorMessage != null)
-              _ErrorBanner(
-                message: friendlyError(state.errorCode, state.errorMessage!),
-                showUpdate: suggestsEngineUpdate(state.errorCode),
+              Padding(
+                padding: EdgeInsets.only(bottom: tokens.spaceLg),
+                child: ErrorBanner(
+                  message: friendlyError(state.errorCode, state.errorMessage!),
+                  actions: suggestsEngineUpdate(state.errorCode)
+                      ? [
+                          TextButton.icon(
+                            onPressed: () => context.push('/settings'),
+                            icon: const Icon(Icons.system_update_alt),
+                            label: const Text('Update the downloader engine'),
+                          ),
+                        ]
+                      : null,
+                ),
               ),
             if (state.phase == DownloaderPhase.probing)
               const Center(
@@ -111,51 +125,6 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, this.showUpdate = false});
-  final String message;
-  final bool showUpdate;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.error_outline, color: scheme.onErrorContainer),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  message,
-                  style: TextStyle(color: scheme.onErrorContainer),
-                ),
-              ),
-            ],
-          ),
-          if (showUpdate)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => context.push('/settings'),
-                icon: const Icon(Icons.system_update_alt),
-                label: const Text('Update the downloader engine'),
-              ),
-            ),
-        ],
       ),
     );
   }
