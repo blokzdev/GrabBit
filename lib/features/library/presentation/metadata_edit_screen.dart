@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/section_header.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 
@@ -27,51 +32,57 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
     final item = ref.watch(mediaItemByIdProvider(widget.itemId));
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            tooltip: 'Save',
-            onPressed: _save,
-          ),
-        ],
+        actions: [TextButton(onPressed: _save, child: const Text('Save'))],
       ),
       body: item.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load item: $e')),
+        loading: () => const _FormSkeleton(),
+        error: (e, _) => ErrorView(
+          message: 'Failed to load item: $e',
+          onRetry: () => ref.invalidate(mediaItemByIdProvider(widget.itemId)),
+        ),
         data: (row) {
-          if (row == null) return const Center(child: Text('Item not found'));
+          if (row == null) {
+            return const EmptyState(
+              icon: Icons.broken_image_outlined,
+              title: 'Item not found',
+              message: 'This item may have been removed.',
+            );
+          }
           if (!_loaded) {
             _titleController.text = row.title;
             _notesController.text = row.notes ?? '';
             _loaded = true;
           }
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(vertical: tokens.spaceMd),
             children: [
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
+              const SectionHeader('Details'),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(labelText: 'Title'),
+                    ),
+                    SizedBox(height: tokens.spaceMd),
+                    TextField(
+                      controller: _notesController,
+                      minLines: 2,
+                      maxLines: 5,
+                      decoration: const InputDecoration(labelText: 'Notes'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _notesController,
-                minLines: 2,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
+              SizedBox(height: tokens.spaceLg),
               _TagsEditor(itemId: widget.itemId, controller: _tagController),
-              const SizedBox(height: 24),
+              SizedBox(height: tokens.spaceLg),
               _CollectionsEditor(itemId: widget.itemId),
             ],
           );
@@ -101,41 +112,54 @@ class _TagsEditor extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = GrabBitTokens.of(context);
     final tags = ref.watch(tagsForItemProvider(itemId));
     final repo = ref.read(metadataRepositoryProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Tags', style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 8),
-        tags.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text('$e'),
-          data: (list) => Wrap(
-            spacing: 8,
-            runSpacing: 4,
+        const SectionHeader('Tags'),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final tag in list)
-                Chip(
-                  label: Text(tag.name),
-                  onDeleted: () => repo.removeTagFromItem(itemId, tag.id),
+              tags.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('$e'),
+                data: (list) => list.isEmpty
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: EdgeInsets.only(bottom: tokens.spaceSm),
+                        child: Wrap(
+                          spacing: tokens.spaceSm,
+                          runSpacing: tokens.spaceXs,
+                          children: [
+                            for (final tag in list)
+                              Chip(
+                                label: Text(tag.name),
+                                onDeleted: () =>
+                                    repo.removeTagFromItem(itemId, tag.id),
+                              ),
+                          ],
+                        ),
+                      ),
+              ),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: 'Add a tag',
+                  isDense: true,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.add),
+                    tooltip: 'Add tag',
+                    onPressed: () => _add(repo),
+                  ),
                 ),
+                onSubmitted: (_) => _add(repo),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: 'Add a tag',
-            isDense: true,
-            border: const OutlineInputBorder(),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _add(repo),
-            ),
-          ),
-          onSubmitted: (_) => _add(repo),
         ),
       ],
     );
@@ -153,47 +177,71 @@ class _CollectionsEditor extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     final all = ref.watch(collectionsProvider);
     final mine = ref.watch(collectionsForItemProvider(itemId));
     final repo = ref.read(metadataRepositoryProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text('Collections', style: Theme.of(context).textTheme.titleSmall),
-            const Spacer(),
-            TextButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('New'),
-              onPressed: () => _createDialog(context, repo),
-            ),
-          ],
+        // A section header with a trailing inline-create action.
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            tokens.spaceLg,
+            tokens.spaceLg,
+            tokens.spaceSm,
+            tokens.spaceXs,
+          ),
+          child: Row(
+            children: [
+              Text(
+                'Collections',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('New'),
+                onPressed: () => _createDialog(context, repo),
+              ),
+            ],
+          ),
         ),
-        all.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text('$e'),
-          data: (collections) {
-            final memberIds = (mine.asData?.value ?? [])
-                .map((c) => c.id)
-                .toSet();
-            if (collections.isEmpty) {
-              return const Text('No collections yet.');
-            }
-            return Column(
-              children: [
-                for (final c in collections)
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(c.name),
-                    value: memberIds.contains(c.id),
-                    onChanged: (checked) => (checked ?? false)
-                        ? repo.addItemToCollection(itemId, c.id)
-                        : repo.removeItemFromCollection(itemId, c.id),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+          child: all.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (e, _) => Text('$e'),
+            data: (collections) {
+              final memberIds = (mine.asData?.value ?? [])
+                  .map((c) => c.id)
+                  .toSet();
+              if (collections.isEmpty) {
+                return Text(
+                  'No collections yet.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-              ],
-            );
-          },
+                );
+              }
+              return Column(
+                children: [
+                  for (final c in collections)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(c.name),
+                      value: memberIds.contains(c.id),
+                      onChanged: (checked) => (checked ?? false)
+                          ? repo.addItemToCollection(itemId, c.id)
+                          : repo.removeItemFromCollection(itemId, c.id),
+                    ),
+                ],
+              );
+            },
+          ),
         ),
       ],
     );
@@ -229,5 +277,29 @@ class _CollectionsEditor extends ConsumerWidget {
     if (name != null && name.trim().isNotEmpty) {
       await repo.createCollection(name);
     }
+  }
+}
+
+/// Shimmering placeholder while the item row loads.
+class _FormSkeleton extends StatelessWidget {
+  const _FormSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Shimmer(
+      child: ListView(
+        padding: EdgeInsets.all(tokens.spaceLg),
+        children: [
+          Skeleton(height: 56, radius: tokens.radiusMd),
+          SizedBox(height: tokens.spaceMd),
+          Skeleton(height: 96, radius: tokens.radiusMd),
+          SizedBox(height: tokens.spaceLg),
+          Skeleton(height: 16, width: 80, radius: tokens.radiusSm),
+          SizedBox(height: tokens.spaceSm),
+          Skeleton(height: 32, radius: tokens.radiusPill),
+        ],
+      ),
+    );
   }
 }

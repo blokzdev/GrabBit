@@ -69,7 +69,7 @@
 | `[x]` P7e | Selection | `/select` |
 | `[x]` P7f | Queue | `/queue` |
 | `[x]` P7g | Item Detail | `/item/:id` |
-| `[ ]` P7h | Metadata Edit | `/item/:id/edit` |
+| `[x]` P7h | Metadata Edit | `/item/:id/edit` |
 | `[ ]` P7i | Media Studio | `/item/:id/studio` |
 | `[ ]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
 | `[ ]` P7k | Settings | `/settings` |
@@ -104,6 +104,11 @@ technical **detail chips** (type · duration · resolution · size), metadata ro
 (destination + "Saved" banner); Move/Edit/Studio stay as app-bar actions; loading-skeleton /
 error / not-found states. Added a shared `formatBytes` util. CI green (format · analyze ·
 168 tests · debug APK).
+
+**P7h done:** Metadata Edit restyled to a clean form — shared `SectionHeader`s
+(Details / Tags / Collections), themed filled Title/Notes fields, tag chips + add field,
+collections checkboxes with inline "New" create, a labeled **Save** action, and
+loading-skeleton / error / not-found states. CI green (format · analyze · 169 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.
