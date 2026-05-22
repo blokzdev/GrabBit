@@ -133,13 +133,13 @@ scrollable disclaimer paragraphs, full-width pill primary "I understand and agre
 Centered branded lock icon, obscured PIN field (numeric), full-width "Unlock", secondary
 "Use biometrics" when enabled. Error variant ("Wrong PIN") with subtle shake. No nav.
 
-### `[ ]` Home — Library view — `/` (P7c)
+### `[x]` Home — Library view — `/` (P7c)
 Tonal app bar (wordmark + Sort, Collections w/ badge, Queue w/ badge + active dot);
 "Library | Explorer" segmented toggle; filter bar (search + type chips All/Video/Audio/
 Image); responsive media grid (2-col phone, more on large screens); pull-to-refresh;
 extended FAB "Add". States: populated · empty ("library is empty" + Add) · skeleton grid.
 
-### `[ ]` Home — Explorer view — `/` (P7c)
+### `[x]` Home — Explorer view — `/` (P7c)
 Same screen, toggled. Breadcrumb row; mixed folder tiles + media cards; multi-select
 (long-press) with "Move to folder"; folder rename/delete; FAB → "New folder". Empty
 folder state.

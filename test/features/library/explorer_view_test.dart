@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/folder_repository.dart';
 import 'package:grabbit/features/library/presentation/explorer_view.dart';
 
@@ -35,6 +39,9 @@ void main() {
               folderId == null ? [_item('a', 'Root Clip')] : <MediaItem>[],
             ),
           ),
+          folderItemCountsProvider.overrideWith(
+            (ref) => Stream.value(<int, int>{1: 3}),
+          ),
           breadcrumbProvider.overrideWith(
             (ref, folderId) async => folderId == null ? <Folder>[] : [_music],
           ),
@@ -42,7 +49,10 @@ void main() {
         child: const MaterialApp(home: Scaffold(body: ExplorerView())),
       ),
     );
-    await tester.pump(); // build + resolve completing stubs
+    // Two pumps: one to subscribe, one to deliver the Stream.value emissions
+    // (folders/items/counts) so the body leaves the loading skeleton.
+    await tester.pump();
+    await tester.pump();
   }
 
   testWidgets('renders root folders + items and navigates into a folder', (
@@ -54,8 +64,22 @@ void main() {
 
     await tester.tap(find.text('Music'));
     await tester.pump();
+    await tester.pump();
     expect(find.text('This folder is empty'), findsOneWidget);
     expect(find.text('Root Clip'), findsNothing);
+  });
+
+  testWidgets('folder card shows the item count', (tester) async {
+    await pumpExplorer(tester);
+    expect(find.text('3 items'), findsOneWidget);
+  });
+
+  testWidgets('empty folder uses the shared EmptyState', (tester) async {
+    await pumpExplorer(tester);
+    await tester.tap(find.text('Music'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(EmptyState), findsOneWidget);
   });
 
   testWidgets('long-press starts multi-select with a Move action', (
@@ -68,5 +92,33 @@ void main() {
 
     expect(find.text('1 selected'), findsOneWidget);
     expect(find.widgetWithText(TextButton, 'Move'), findsOneWidget);
+  });
+
+  testWidgets('shows a skeleton while folders/items load', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          // Streams that never emit keep the providers in the loading state.
+          subfoldersProvider.overrideWith(
+            (ref, _) => Stream<List<Folder>>.fromFuture(
+              Completer<List<Folder>>().future,
+            ),
+          ),
+          folderItemsProvider.overrideWith(
+            (ref, _) => Stream<List<MediaItem>>.fromFuture(
+              Completer<List<MediaItem>>().future,
+            ),
+          ),
+          folderItemCountsProvider.overrideWith(
+            (ref) => Stream.value(<int, int>{}),
+          ),
+          breadcrumbProvider.overrideWith((ref, _) async => <Folder>[]),
+        ],
+        child: const MaterialApp(home: Scaffold(body: ExplorerView())),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(MediaGridSkeleton), findsOneWidget);
   });
 }

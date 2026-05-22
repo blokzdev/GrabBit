@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/folder_repository.dart';
 import 'package:grabbit/features/library/presentation/folder_picker.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
@@ -115,61 +119,38 @@ class _ExplorerViewState extends ConsumerState<ExplorerView> {
   Widget build(BuildContext context) {
     final currentId = ref.watch(explorerFolderProvider);
     final crumbs = ref.watch(breadcrumbProvider(currentId)).asData?.value ?? [];
-    final folders =
-        ref.watch(subfoldersProvider(currentId)).asData?.value ?? [];
-    final items = ref.watch(folderItemsProvider(currentId)).asData?.value ?? [];
+    final foldersAsync = ref.watch(subfoldersProvider(currentId));
+    final itemsAsync = ref.watch(folderItemsProvider(currentId));
     final selecting = _selected.isNotEmpty;
+
+    final Widget body;
+    if (foldersAsync.hasError || itemsAsync.hasError) {
+      final error = foldersAsync.error ?? itemsAsync.error;
+      body = ErrorView(
+        message: 'Failed to load folder: $error',
+        onRetry: () {
+          ref.invalidate(subfoldersProvider(currentId));
+          ref.invalidate(folderItemsProvider(currentId));
+        },
+      );
+    } else if (!foldersAsync.hasValue || !itemsAsync.hasValue) {
+      body = const MediaGridSkeleton();
+    } else {
+      final folders = foldersAsync.value!;
+      final items = itemsAsync.value!;
+      body = (folders.isEmpty && items.isEmpty)
+          ? const EmptyState(
+              icon: Icons.folder_open_outlined,
+              title: 'This folder is empty',
+              message: 'Create subfolders or move media here.',
+            )
+          : _grid(context, folders, items, selecting);
+    }
 
     return Column(
       children: [
         _Breadcrumb(crumbs: crumbs, onTap: _open),
-        Expanded(
-          child: (folders.isEmpty && items.isEmpty)
-              ? const _EmptyFolder()
-              : CustomScrollView(
-                  slivers: [
-                    SliverList.list(
-                      children: [
-                        for (final f in folders)
-                          ListTile(
-                            leading: const Icon(Icons.folder),
-                            title: Text(f.name),
-                            onTap: () => _open(f.id),
-                            trailing: PopupMenuButton<String>(
-                              onSelected: (v) => v == 'rename'
-                                  ? _renameFolder(f)
-                                  : _deleteFolder(f),
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(
-                                  value: 'rename',
-                                  child: Text('Rename'),
-                                ),
-                                PopupMenuItem(
-                                  value: 'delete',
-                                  child: Text('Delete'),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.all(12),
-                      sliver: SliverGrid.builder(
-                        gridDelegate: mediaGridDelegate,
-                        itemCount: items.length,
-                        itemBuilder: (context, i) => MediaTile(
-                          item: items[i],
-                          selectionMode: selecting,
-                          selected: _selected.contains(items[i].id),
-                          onTap: selecting ? _toggle : null,
-                          onLongPress: _toggle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-        ),
+        Expanded(child: body),
         if (selecting)
           _SelectionBar(
             count: _selected.length,
@@ -177,6 +158,122 @@ class _ExplorerViewState extends ConsumerState<ExplorerView> {
             onClear: () => setState(_selected.clear),
           ),
       ],
+    );
+  }
+
+  /// One unified grid: folder cards flow into media tiles. Folders aren't
+  /// selectable (tap opens); only media participate in multi-select.
+  Widget _grid(
+    BuildContext context,
+    List<Folder> folders,
+    List<MediaItem> items,
+    bool selecting,
+  ) {
+    final tokens = GrabBitTokens.of(context);
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(tokens.spaceMd),
+          sliver: SliverGrid.builder(
+            gridDelegate: mediaGridDelegate,
+            itemCount: folders.length + items.length,
+            itemBuilder: (context, i) {
+              if (i < folders.length) {
+                final folder = folders[i];
+                return _FolderCard(
+                  folder: folder,
+                  onTap: () => _open(folder.id),
+                  onRename: () => _renameFolder(folder),
+                  onDelete: () => _deleteFolder(folder),
+                );
+              }
+              final item = items[i - folders.length];
+              return MediaTile(
+                item: item,
+                selectionMode: selecting,
+                selected: _selected.contains(item.id),
+                onTap: selecting ? _toggle : null,
+                onLongPress: _toggle,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A folder tile in the Explorer grid: glyph + name + item count, with a
+/// rename/delete overflow menu. Sized to the shared media-tile footprint.
+class _FolderCard extends ConsumerWidget {
+  const _FolderCard({
+    required this.folder,
+    required this.onTap,
+    required this.onRename,
+    required this.onDelete,
+  });
+
+  final Folder folder;
+  final VoidCallback onTap;
+  final VoidCallback onRename;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    final count =
+        ref.watch(folderItemCountsProvider).asData?.value[folder.id] ?? 0;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      color: scheme.surfaceContainerHigh,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.all(tokens.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.folder_rounded, color: scheme.primary),
+                  const Spacer(),
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    iconSize: 20,
+                    tooltip: 'Folder actions',
+                    onSelected: (v) => v == 'rename' ? onRename() : onDelete(),
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'rename', child: Text('Rename')),
+                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    ],
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                folder.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium,
+              ),
+              SizedBox(height: tokens.spaceXs),
+              Text(
+                '$count item${count == 1 ? '' : 's'}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -188,22 +285,31 @@ class _Breadcrumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        children: [
-          TextButton.icon(
-            onPressed: () => onTap(null),
-            icon: const Icon(Icons.home_outlined, size: 18),
-            label: const Text('Library'),
-          ),
-          for (final f in crumbs) ...[
-            const Icon(Icons.chevron_right, size: 18),
-            TextButton(onPressed: () => onTap(f.id), child: Text(f.name)),
+    final scheme = Theme.of(context).colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    return Material(
+      color: scheme.surfaceContainerLow,
+      child: SizedBox(
+        height: 48,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: tokens.spaceSm),
+          children: [
+            TextButton.icon(
+              onPressed: () => onTap(null),
+              icon: const Icon(Icons.home_outlined, size: 18),
+              label: const Text('Library'),
+            ),
+            for (final f in crumbs) ...[
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
+              TextButton(onPressed: () => onTap(f.id), child: Text(f.name)),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -222,12 +328,16 @@ class _SelectionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final tokens = GrabBitTokens.of(context);
     return Material(
       color: scheme.surfaceContainerHigh,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.spaceMd,
+            vertical: tokens.spaceSm,
+          ),
           child: Row(
             children: [
               Expanded(child: Text('$count selected')),
@@ -244,34 +354,6 @@ class _SelectionBar extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _EmptyFolder extends StatelessWidget {
-  const _EmptyFolder();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.folder_open_outlined,
-            size: 72,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text('This folder is empty', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Create subfolders or move media here.',
-            style: theme.textTheme.bodyMedium,
-          ),
-        ],
       ),
     );
   }

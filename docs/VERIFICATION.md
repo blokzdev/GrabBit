@@ -168,6 +168,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Add-download and Selection error banners use the new shared style; the "Update the
       downloader engine" action still appears for engine-related errors and opens Settings.
 
+### P7c — Home (Library + Explorer)
+- [ ] App bar shows the **mark + "GrabBit" wordmark** (legible in light/dark + dynamic color);
+      Sort / Collections badge / Queue badge all work.
+- [ ] Queue icon shows a small **running dot** while a download is actively in progress, and
+      no dot when nothing is running.
+- [ ] Segmented toggle switches **Library ↔ Explorer**; the FAB swaps Add ↔ New folder.
+- [ ] Library: populated grid · empty state with an inline **Add** action · pull-to-refresh ·
+      grid shows ≈2 columns on a phone, more on a tablet/large screen.
+- [ ] Explorer: **breadcrumb** walks back to root; **folder cards** (glyph + name + item count)
+      open on tap; **rename**/**delete** from the card menu (delete moves contents to root);
+      **long-press** media → multi-select → **Move to folder**; **New folder** FAB; empty-folder
+      state; skeleton while loading and an error+Retry on failure.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.

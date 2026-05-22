@@ -64,7 +64,7 @@
 
 | Subphase | Screen(s) | Routes |
 |---|---|---|
-| `[ ]` P7c | Home — Library + Explorer views | `/` |
+| `[x]` P7c | Home — Library + Explorer views | `/` |
 | `[ ]` P7d | Add Download | `/add` |
 | `[ ]` P7e | Selection | `/select` |
 | `[ ]` P7f | Queue | `/queue` |
@@ -74,6 +74,13 @@
 | `[ ]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
 | `[ ]` P7k | Settings | `/settings` |
 | `[ ]` P7l | Disclaimer + Lock | `/disclaimer`, `/lock` |
+
+**P7c done:** Home shell rebranded (mark + wordmark app bar, queue running dot, tokenized
+toggle); Explorer revamped to a **unified folder + media grid** (folder cards with glyph /
+name / item-count + rename/delete menu; media tiles keep multi-select), restyled breadcrumb +
+selection bar, and adopted the P7b empty/skeleton/error states; Library empty state gained an
+inline **Add** action. CI green (format · analyze · 154 tests · debug APK). *(on-device
+spot-check pending — see `docs/VERIFICATION.md`.)*
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.

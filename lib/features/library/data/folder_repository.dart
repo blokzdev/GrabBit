@@ -63,6 +63,21 @@ class FolderRepository {
     _db.folders,
   )..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  /// Item counts per folder (`folderId` → count) for the Explorer folder cards.
+  Stream<Map<int, int>> watchFolderItemCounts() {
+    final count = _db.mediaItems.id.count();
+    final query = _db.selectOnly(_db.mediaItems)
+      ..addColumns([_db.mediaItems.folderId, count])
+      ..where(_db.mediaItems.folderId.isNotNull())
+      ..groupBy([_db.mediaItems.folderId]);
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows)
+          row.read(_db.mediaItems.folderId)!: row.read(count) ?? 0,
+      },
+    );
+  }
+
   /// Root → … → current, for the Explorer breadcrumb.
   Future<List<Folder>> breadcrumb(int? folderId) async {
     final path = <Folder>[];
@@ -95,6 +110,10 @@ final folderItemsProvider = StreamProvider.family<List<MediaItem>, int?>(
 
 final allFoldersProvider = StreamProvider<List<Folder>>(
   (ref) => ref.watch(folderRepositoryProvider).watchAllFolders(),
+);
+
+final folderItemCountsProvider = StreamProvider<Map<int, int>>(
+  (ref) => ref.watch(folderRepositoryProvider).watchFolderItemCounts(),
 );
 
 final breadcrumbProvider = FutureProvider.family<List<Folder>, int?>(
