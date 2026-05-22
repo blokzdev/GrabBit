@@ -7,12 +7,13 @@ Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 by default; later phases assume earlier exit criteria are met.
 
 Legend (three version bands):
-- **v1 — Android core, free, on-device:** P0–P7 (P4 completion & refinement, P5 file
-  explorer, P6 media studio, P7 beta & production readiness / release).
+- **v1 — Android core, free, on-device:** P0–P8 (P4 completion & refinement, P5 file
+  explorer, P6 media studio, P7 branding & frontend revamp, P8 beta & production
+  readiness / release).
 - **v2 — world-class, feature-rich, production-ready, LOCAL-ONLY (no cloud):**
-  P8 (Windows parity) · P9 (edge/local AI) · P10 (production polish).
-- **v3 — cloud AI + credit monetization:** P11 (backend + accounts) · P12 (cloud AI)
-  · P13 (public launch).
+  P9 (Windows parity) · P10 (edge/local AI) · P11 (production polish).
+- **v3 — cloud AI + credit monetization:** P12 (backend + accounts) · P13 (cloud AI)
+  · P14 (public launch).
 
 The app stays fully free and offline through v2. Money enters only in v3.
 
@@ -71,7 +72,7 @@ app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale. **Public content only** — authenticated/private content
-(cookie/login import) is deferred to **v2** (see P10).
+(cookie/login import) is deferred to **v2** (see P11).
 **Deliverables:**
 - Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
   playlists, and carousels; clear errors for unsupported/broken extractors.
@@ -138,7 +139,7 @@ already-bundled ffmpeg.
   `MediaToolsHostApi.runFfmpeg(...)` (mirroring the `YtDlpHostApi` wiring). Fallback:
   a maintained `ffmpeg_kit` fork (note APK-size cost; original retired in 2025).
 - **`MediaToolsEngine`** pure-Dart interface (like `DownloadEngine`) so Windows
-  (`ffmpeg.exe`, P8) slots behind the same contract.
+  (`ffmpeg.exe`, P9) slots behind the same contract.
 - **Editor UI** from the item viewer: video — trim, reverse, flip/mirror/rotate,
   convert (container/codec/audio-extract), extract frame(s) (first/last/scrubber →
   image); images — flip/mirror/rotate/crop/convert.
@@ -148,14 +149,41 @@ already-bundled ffmpeg.
 **Exit criteria:** trim a video, extract a frame, and flip an image — each produces a
 new playable/viewable library item fully offline.
 
-## P7 — v1 Beta & Production Readiness
-**Goals:** harden, brand, and ship v1.
+## P7 — Branding & Frontend Revamp
+**Goals:** elevate the MVP-feeling frontend into a cohesive, world-class,
+production-ready Android experience with a real visual identity. No backend, no new
+feature areas — pure design/identity/UX. **Material 3 Expressive** is the target
+language; a **rabbit motif** ("Grab" + rabbit) anchors the brand.
+**Deliverables:**
+- **Brand identity** — rabbit-motif logo; **adaptive launcher icon** (foreground/
+  background + Android-13 **themed/monochrome** layer); notification icon; themed
+  **splash** (light/dark). Tooling: `flutter_launcher_icons` + `flutter_native_splash`.
+- **Design foundation** — adopt **Material 3 Expressive** in `core/theme`
+  (expressive color/type/shape/motion); replace the default purple seed with the
+  brand seed (keep Material-You dynamic color); **design tokens** as a `ThemeExtension`
+  (spacing, radii, elevation, durations) so screens stop hardcoding values.
+- **Shared component library** restyle (cards, tiles, bottom sheets, dialogs, chips,
+  pickers, progress, snackbars) + shared **empty / skeleton-loader / error** widgets
+  replacing bare spinners and `Center+Text`.
+- **Per-screen revamp** of all 12 routes to the new system (Simple/Advanced parity);
+  expressive page transitions + thumbnail hero animations.
+- **Responsive/large-screen + foldable** layouts (today phone-only) and an
+  **accessibility** pass (contrast, ≥48dp targets, semantics, dynamic type).
+**Process:** kicked off by a **Stitch design brief** (`docs/design/stitch-brief.md`)
+used to generate wireframes for every screen; built **foundation-first** then
+incrementally per-screen (each PR keeps CI green + updates `docs/VERIFICATION.md`).
+**Exit criteria:** every screen revamped to the new system and verified on a real
+device (light/dark + dynamic color); new icon/splash render; no regression in the
+P0–P6 on-device checks.
+
+## P8 — v1 Beta & Production Readiness
+**Goals:** harden and ship v1.
 **Deliverables:** **release signing** (keystore + CI secret; the ship blocker);
-**app icon + branding + splash**; performance hardening (large library grid/
-thumbnails, DB indices, big-playlist picker); **i18n scaffolding** (ARB/l10n) +
-**subtitle-language selection** (deferred from P4); distribution (GitHub Release with
-the signed APK + README/landing install steps; version bump); final full
-`docs/VERIFICATION.md` regression on the signed release APK.
+performance hardening (large library grid/thumbnails, DB indices, big-playlist
+picker); **i18n scaffolding** (ARB/l10n) + **subtitle-language selection** (deferred
+from P4); distribution (GitHub Release with the signed APK + README/landing install
+steps; version bump); final full `docs/VERIFICATION.md` regression on the signed
+release APK.
 **Exit criteria:** signed release APK installs and passes the full on-device
 regression; published for sideload. **→ v1 complete.**
 
@@ -163,7 +191,7 @@ regression; published for sideload. **→ v1 complete.**
 
 # v2 — World-class, local-only (Windows + edge AI + polish)
 
-## P8 — Windows Port
+## P9 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`),
 desktop storage adapter (filesystem export), desktop-adapted UI, **MSIX** packaging,
@@ -171,7 +199,7 @@ binary update path.
 **Exit criteria:** Windows build downloads + manages media; feature parity with v1
 core. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P9 — Edge/Local AI (free, on-device)
+## P10 — Edge/Local AI (free, on-device)
 **Goals:** the differentiator — on-device AI with graceful capability-gating. **No
 cloud, no account, no credits.**
 **Deliverables:**
@@ -186,7 +214,7 @@ cloud, no account, no credits.**
 **Exit criteria:** on a capable device, transcribe + summarize a saved item fully
 offline; on a low-end device those features are cleanly disabled with explanation.
 
-## P10 — Production Polish (public v2)
+## P11 — Production Polish (public v2)
 **Goals:** make the local-only app genuinely world-class and production-ready.
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced
 configuration, refined UX across all flows, robust update/onboarding, public v2
@@ -202,7 +230,7 @@ release candidate (Android + Windows, still local-only, still free).
 
 # v3 — Cloud AI + monetization
 
-## P11 — Backend + Accounts
+## P12 — Backend + Accounts
 **Goals:** the paid rails (cloud only).
 **Deliverables:** Supabase Auth; Postgres credit ledger + RLS (SPEC §9.1); Edge
 Functions skeleton; **Stripe/PayPal** checkout + webhooks → credit grants; account +
@@ -210,7 +238,7 @@ credits UI. The local-only experience stays fully account-free.
 **Exit criteria:** buy credits via Stripe/PayPal in a test env; balance updates via
 webhook; RLS verified.
 
-## P12 — Cloud AI
+## P13 — Cloud AI
 **Goals:** heavier multimodal AI for tasks/devices beyond on-device limits.
 **Deliverables:**
 - Cloud `InferenceEngine` impl behind the same interface; **Genkit → Gemini** Edge
@@ -222,7 +250,7 @@ webhook; RLS verified.
 **Exit criteria:** a feature runs **free locally** on a capable device and via
 **cloud (credits)** for higher quality; cost-per-call < credit price.
 
-## P13 — Launch
+## P14 — Launch
 **Goals:** public availability + growth.
 **Deliverables:** landing/download site (Android APK/AAB + Windows MSIX), install
 guides + legal disclaimer, versioned releases/changelog, basic marketing,

@@ -1,7 +1,7 @@
 # GrabBit — Backlog
 
 > Living list of device-test findings and UX/feature refinements that don't map to a
-> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P13);
+> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P14);
 > `docs/VERIFICATION.md` holds the on-device checklist.
 
 ## In progress
@@ -11,7 +11,8 @@ _(nothing active — pick the next batch from below)_
 - [ ] Queue **drag-to-reorder** and per-item move up/down.
 - [ ] Queue **dashboard**: aggregate speed / ETA / total size; multi-select batch ops.
 - [ ] Media Studio **crop** tool (image + video) — interactive rectangle UI.
-- [ ] Broader **UI polish** pass (spacing, empty states, responsive layouts).
+- [ ] Broader **UI polish** pass (spacing, empty states, responsive layouts). —
+      *now folded into **P7 — Branding & Frontend Revamp***
 - [ ] **16 KB page-size** validation on Pixel 9 / Android 15+ (ffmpeg/python native
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 
