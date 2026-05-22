@@ -144,7 +144,8 @@ Same screen, toggled. Breadcrumb row; mixed folder tiles + media cards; multi-se
 (long-press) with "Move to folder"; folder rename/delete; FAB → "New folder". Empty
 folder state.
 
-### `[ ]` Add Download — `/add` (P7d)
+### `[x]` Add Download — `/add` (P7d)
+*(P7d: styling pass. The "Advanced = more format/codec options" picker is deferred — see `docs/BACKLOG.md`; presets are the same in both modes for now.)*
 Multi-line URL input (paste affordance); resolves to a media preview card (thumbnail/
 title/uploader/duration); quality preset chips (Simple = few presets, Advanced = more
 format/codec options); two pill actions "Add to queue" (tonal) + "Download now" (accent).

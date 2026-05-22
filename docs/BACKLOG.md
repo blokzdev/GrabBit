@@ -8,6 +8,13 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Advanced format/codec picker** on Add Download — in Advanced mode, list the probed
+      `MediaInfo.formats` (resolution / codec / filesize) and let the user pick a specific
+      one. Needs `enqueue`/`DownloadRequest` to accept a concrete format selector, not just a
+      `QualityPreset`. *(Deferred from P7d, which was a styling pass.)*
+- [ ] **Library/Explorer error-state widget test** (testing debt) — driving a `StreamProvider`
+      into its error state was unreliable under the fake-async widget-test harness; revisit via
+      a `ProviderContainer`-level assertion. (`ErrorView` itself is unit-tested.) *(From P7b.)*
 - [ ] Queue **drag-to-reorder** and per-item move up/down.
 - [ ] Queue **dashboard**: aggregate speed / ETA / total size; multi-select batch ops.
 - [ ] Media Studio **crop** tool (image + video) — interactive rectangle UI.
