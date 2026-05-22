@@ -42,6 +42,10 @@ dependencies:
   crypto: ^3.0.7
   ffmpeg_kit_flutter_new: ^4.1.0
 
+  # Brand & typography (P7)
+  flutter_svg: ^2.3.0        # render the brand SVG mark in-app (resolution-independent)
+  google_fonts: ^8.1.0       # Outfit (display) + Inter (body) brand type
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -55,5 +59,36 @@ dev_dependencies:
   json_serializable: ^6.14.0
   pigeon: ^26.3.4
 
+  # Brand asset generation (P7) — run manually after the SVG/PNG masters change:
+  #   dart run flutter_launcher_icons   &&   dart run flutter_native_splash:create
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
+
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brand/
+
+# Adaptive launcher icon generated from the brand mark. Foreground = white bunny +
+# amber chevron; monochrome = silhouette with the chevron hollowed out (Android 13+
+# themed icons); background = brand indigo.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/brand/generated/icon_legacy.png"
+  adaptive_icon_background: "#5A3FE0"
+  adaptive_icon_foreground: "assets/brand/generated/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/brand/generated/icon_monochrome.png"
+
+# Branded splash (Android 12+ included). Brand fill behind the white mark.
+flutter_native_splash:
+  color: "#5A3FE0"
+  color_dark: "#121019"
+  image: "assets/brand/generated/splash_logo.png"
+  android_12:
+    color: "#5A3FE0"
+    color_dark: "#121019"
+    image: "assets/brand/generated/splash_logo.png"
+  android: true
+  ios: false
+  web: false

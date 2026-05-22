@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- GrabBit mark — monochrome: single-color silhouette with the download chevron
+       knocked out as transparent negative space (for the Android themed/monochrome
+       icon layer and flat single-color uses). Recolor the fill as needed. -->
+  <defs>
+    <mask id="grab" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="black"/>
+      <g fill="white">
+        <rect x="190" y="70" width="56" height="172" rx="28" transform="rotate(-10 218 156)"/>
+        <rect x="266" y="70" width="56" height="172" rx="28" transform="rotate(10 294 156)"/>
+        <circle cx="256" cy="314" r="118"/>
+      </g>
+      <path d="M204 300 L256 350 L308 300" fill="none" stroke="black" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" fill="#5A3FE0" mask="url(#grab)"/>
+</svg>

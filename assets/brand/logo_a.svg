@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- Direction A — "Grab": two angled ears above a download chevron (stroke-forward) -->
-  <rect x="176" y="92" width="66" height="210" rx="33" fill="#5A3FE0" transform="rotate(-13 209 197)"/>
-  <rect x="270" y="92" width="66" height="210" rx="33" fill="#5A3FE0" transform="rotate(13 303 197)"/>
-  <path d="M168 298 L256 374 L344 298" stroke="#FF8A4C" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
