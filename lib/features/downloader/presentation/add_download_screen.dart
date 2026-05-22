@@ -89,9 +89,24 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
             if (state.phase == DownloaderPhase.ready)
               _PresetPicker(
                 presets: state.availablePresets,
-                onSelected: (preset) async {
-                  await controller.enqueue(preset);
-                  if (context.mounted) context.go('/queue');
+                onAction: (preset, startNow) async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final router = GoRouter.of(context);
+                  await controller.enqueue(preset, startNow: startNow);
+                  router.go('/');
+                  messenger
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          startNow ? 'Download started' : 'Added to queue',
+                        ),
+                        action: SnackBarAction(
+                          label: 'View queue',
+                          onPressed: () => router.push('/queue'),
+                        ),
+                      ),
+                    );
                 },
               ),
           ],
@@ -176,30 +191,64 @@ class _MediaPreview extends StatelessWidget {
   }
 }
 
-class _PresetPicker extends StatelessWidget {
-  const _PresetPicker({required this.presets, required this.onSelected});
+class _PresetPicker extends StatefulWidget {
+  const _PresetPicker({required this.presets, required this.onAction});
   final List<QualityPreset> presets;
-  final void Function(QualityPreset) onSelected;
+  final void Function(QualityPreset preset, bool startNow) onAction;
+
+  @override
+  State<_PresetPicker> createState() => _PresetPickerState();
+}
+
+class _PresetPickerState extends State<_PresetPicker> {
+  late QualityPreset _selected = widget.presets.first;
+
+  @override
+  void didUpdateWidget(_PresetPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.presets.contains(_selected)) _selected = widget.presets.first;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Add to queue', style: Theme.of(context).textTheme.titleSmall),
+        Text('Quality', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           children: [
-            for (final preset in presets)
-              ActionChip(
+            for (final preset in widget.presets)
+              ChoiceChip(
                 avatar: Icon(
                   preset.audioOnly ? Icons.music_note : Icons.movie_outlined,
                   size: 18,
                 ),
                 label: Text(preset.label),
-                onPressed: () => onSelected(preset),
+                selected: _selected == preset,
+                onSelected: (_) => setState(() => _selected = preset),
               ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => widget.onAction(_selected, false),
+                icon: const Icon(Icons.playlist_add),
+                label: const Text('Add to queue'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => widget.onAction(_selected, true),
+                icon: const Icon(Icons.download),
+                label: const Text('Download now'),
+              ),
+            ),
           ],
         ),
       ],

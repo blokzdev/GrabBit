@@ -1,9 +1,19 @@
+import 'dart:io';
+
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/core/network/network_monitor.dart';
+import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
+import 'package:grabbit/features/queue/data/foreground_service.dart';
+import 'package:grabbit/features/queue/data/queue_repository.dart';
+import 'package:grabbit/features/queue/presentation/queue_controller.dart';
 
 /// Engine returning a configurable number of expanded entries, and a fixed
 /// single-item probe result.
@@ -36,6 +46,49 @@ class _FakeEngine implements DownloadEngine {
 
   @override
   Future<void> update() async {}
+}
+
+class _NoopService implements ForegroundService {
+  @override
+  set onStop(void Function() callback) {}
+  @override
+  Future<void> start(
+    String text, {
+    int progress = 0,
+    bool indeterminate = true,
+  }) async {}
+  @override
+  Future<void> update(
+    String text, {
+    int progress = 0,
+    bool indeterminate = false,
+  }) async {}
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<bool> isUnmetered() async => true;
+}
+
+class _FakeNetwork implements NetworkMonitor {
+  @override
+  Stream<void> get onChanged => const Stream.empty();
+}
+
+class _FakeStorage extends MediaStorage {
+  @override
+  Future<Directory> mediaDirectory() async => Directory.systemTemp;
+}
+
+Future<void> _waitFor(
+  Future<bool> Function() cond, {
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  final end = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(end)) {
+    if (await cond()) return;
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
+  throw StateError('condition not met within $timeout');
 }
 
 void main() {
@@ -80,5 +133,53 @@ void main() {
     final state = container.read(downloaderControllerProvider);
     expect(state.phase, DownloaderPhase.ready);
     expect(state.info?.title, 'Single clip');
+  });
+
+  group('enqueue start choice', () {
+    late AppDatabase db;
+
+    ProviderContainer wiredContainer() => ProviderContainer(
+      overrides: [
+        downloadEngineProvider.overrideWithValue(_FakeEngine(1)),
+        appDatabaseProvider.overrideWithValue(db),
+        foregroundServiceProvider.overrideWithValue(_NoopService()),
+        networkMonitorProvider.overrideWithValue(_FakeNetwork()),
+        mediaStorageProvider.overrideWithValue(_FakeStorage()),
+      ],
+    );
+
+    setUp(() => db = AppDatabase(NativeDatabase.memory()));
+    tearDown(() => db.close());
+
+    test('startNow:false holds the download', () async {
+      final container = wiredContainer();
+      addTearDown(container.dispose);
+      final repo = container.read(queueRepositoryProvider);
+      await container.read(queueControllerProvider.future);
+
+      final controller = container.read(downloaderControllerProvider.notifier);
+      await controller.probe('https://example.com/video');
+      await controller.enqueue(QualityPreset.best, startNow: false);
+
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(await repo.countByStatus(TaskStatus.held), 1);
+      expect(await repo.countByStatus(TaskStatus.running), 0);
+    });
+
+    test('startNow:true starts the download', () async {
+      final container = wiredContainer();
+      addTearDown(container.dispose);
+      final repo = container.read(queueRepositoryProvider);
+      await container.read(queueControllerProvider.future);
+
+      final controller = container.read(downloaderControllerProvider.notifier);
+      await controller.probe('https://example.com/video');
+      await controller.enqueue(QualityPreset.best, startNow: true);
+
+      await _waitFor(
+        () async => await repo.countByStatus(TaskStatus.running) == 1,
+      );
+      expect(await repo.countByStatus(TaskStatus.held), 0);
+    });
   });
 }

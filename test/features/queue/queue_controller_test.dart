@@ -409,6 +409,19 @@ void main() {
     expect(await repo.countByStatus(TaskStatus.held), 0);
   });
 
+  test('resumeAll re-queues every paused download', () async {
+    await controller.enqueue(_qd('t1'));
+    await controller.enqueue(_qd('t2'));
+    await waitFor(() async => engine.running.length == 2);
+
+    controller.pauseAll();
+    await waitFor(() async => await repo.countByStatus(TaskStatus.paused) == 2);
+
+    await controller.resumeAll();
+    await waitFor(() async => engine.running.length == 2);
+    expect(await repo.countByStatus(TaskStatus.paused), 0);
+  });
+
   test('pauseAll pauses every running download', () async {
     await controller.enqueue(_qd('t1'));
     await controller.enqueue(_qd('t2'));

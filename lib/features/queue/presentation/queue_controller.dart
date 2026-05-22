@@ -103,6 +103,12 @@ class QueueController extends _$QueueController {
     await _pump();
   }
 
+  /// Re-queues every paused download so the scheduler picks them back up.
+  Future<void> resumeAll() async {
+    await _repo.resumeAllPaused();
+    await _pump();
+  }
+
   Future<void> pause(String id) async {
     if (_runners.containsKey(id)) {
       _pausing.add(id);
