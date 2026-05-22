@@ -51,13 +51,16 @@ async function master(name, { bg, svg, markPx, size = 1024 }) {
 }
 
 // --- Launcher icon masters (1024) ---
-// Adaptive foreground: tight-cropped mark nearly fills the canvas; the 16% inset
-// flutter_launcher_icons adds then lands it in the ~66% safe zone.
-await master('icon_foreground.png', { bg: TRANSPARENT, svg: tight(whiteBunny), markPx: 1000 });
+// Mark fills 75% of the tile (12.5% margin each side) — bold but inside both the
+// squircle and circle masks. flutter_launcher_icons inset is set to 0 so this
+// baked framing IS the final look (see pubspec: adaptive_icon_foreground_inset).
+const FILL = Math.round(1024 * 0.75); // 768
+// Adaptive foreground: white bunny + amber chevron.
+await master('icon_foreground.png', { bg: TRANSPARENT, svg: tight(whiteBunny), markPx: FILL });
 // Adaptive monochrome: white silhouette w/ hollow chevron, same framing.
-await master('icon_monochrome.png', { bg: TRANSPARENT, svg: tight(whiteHollow), markPx: 1000 });
+await master('icon_monochrome.png', { bg: TRANSPARENT, svg: tight(whiteHollow), markPx: FILL });
 // Legacy/round square: brand fill + white mark (launcher applies the mask shape).
-await master('icon_legacy.png', { bg: BRAND, svg: tight(whiteBunny), markPx: 760 });
+await master('icon_legacy.png', { bg: BRAND, svg: tight(whiteBunny), markPx: FILL });
 
 // --- Splash master (1024) ---
 await master('splash_logo.png', { bg: TRANSPARENT, svg: tight(whiteBunny), markPx: 600 });

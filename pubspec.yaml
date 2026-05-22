@@ -87,6 +87,8 @@ flutter_launcher_icons:
   adaptive_icon_background: "#5A3FE0"
   adaptive_icon_foreground: "assets/brand/generated/icon_foreground.png"
   adaptive_icon_monochrome: "assets/brand/generated/icon_monochrome.png"
+  # Masters already bake the 75% safe-zone framing, so don't double-inset.
+  adaptive_icon_foreground_inset: 0
 
 # Branded splash (Android 12+ included). Brand fill behind the white mark.
 flutter_native_splash:
