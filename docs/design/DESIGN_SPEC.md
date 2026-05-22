@@ -163,7 +163,7 @@ Hero media (Chewie player for video / zoomable image); large title; metadata sec
 device" (shows destination + "Saved" state); secondary actions Move / Edit / Studio.
 Video + image variants.
 
-### `[ ]` Metadata Edit — `/item/:id/edit` (P7h)
+### `[x]` Metadata Edit — `/item/:id/edit` (P7h)
 App bar with Save. Title field; multi-line Notes; tags editor (chips + add field);
 collections checkboxes + inline create. Clean spaced form with section headers.
 

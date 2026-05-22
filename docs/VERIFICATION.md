@@ -228,6 +228,15 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Move / Edit / Studio app-bar actions work; loading shows a skeleton, a missing item
       shows the "Item not found" state.
 
+### P7h — Metadata Edit
+- [ ] Editing **Title** and **Notes** and tapping **Save** persists and is reflected on the
+      item detail screen.
+- [ ] **Tags**: add a tag (field + Add / submit) and remove via the chip's delete; updates live.
+- [ ] **Collections**: create one inline via **New**, and toggle membership via the checkboxes;
+      empty shows the "No collections yet." hint.
+- [ ] Section headers (Details / Tags / Collections) and themed filled fields render cleanly;
+      loading-skeleton / error / not-found states appear as expected.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.
