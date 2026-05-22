@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 
@@ -13,46 +17,31 @@ class CollectionsScreen extends ConsumerWidget {
     final collections = ref.watch(collectionsProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Collections')),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _create(context, ref),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('New collection'),
       ),
       body: collections.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load: $e')),
+        loading: () => const ListSkeleton(),
+        error: (e, _) => ErrorView(
+          message: 'Failed to load collections: $e',
+          onRetry: () => ref.invalidate(collectionsProvider),
+        ),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('No collections yet'))
+            ? EmptyState(
+                icon: Icons.collections_bookmark_outlined,
+                title: 'No collections yet',
+                message: 'Group items into collections to find them fast.',
+                action: FilledButton.icon(
+                  onPressed: () => _create(context, ref),
+                  icon: const Icon(Icons.add),
+                  label: const Text('New collection'),
+                ),
+              )
             : ListView(
                 children: [
-                  for (final c in list)
-                    ListTile(
-                      leading: const Icon(Icons.folder),
-                      title: Text(c.name),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Delete collection',
-                        onPressed: () async {
-                          final ok = await confirm(
-                            context,
-                            title: 'Delete collection?',
-                            message:
-                                'Delete "${c.name}"? The media stays in your '
-                                'library.',
-                            confirmLabel: 'Delete',
-                            destructive: true,
-                          );
-                          if (!ok) return;
-                          await ref
-                              .read(metadataRepositoryProvider)
-                              .deleteCollection(c.id);
-                          if (context.mounted) {
-                            _notify(context, 'Collection deleted');
-                          }
-                        },
-                      ),
-                      onTap: () =>
-                          context.push('/collection/${c.id}', extra: c.name),
-                    ),
+                  for (final c in list) _CollectionTile(collection: c),
                 ],
               ),
       ),
@@ -90,6 +79,50 @@ class CollectionsScreen extends ConsumerWidget {
   }
 }
 
+class _CollectionTile extends ConsumerWidget {
+  const _CollectionTile({required this.collection});
+  final Collection collection;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final count =
+        ref.watch(collectionItemCountsProvider).asData?.value[collection.id] ??
+        0;
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: scheme.primaryContainer,
+        foregroundColor: scheme.onPrimaryContainer,
+        child: const Icon(Icons.collections_bookmark),
+      ),
+      title: Text(collection.name),
+      subtitle: Text('$count item${count == 1 ? '' : 's'}'),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete_outline),
+        tooltip: 'Delete collection',
+        onPressed: () async {
+          final ok = await confirm(
+            context,
+            title: 'Delete collection?',
+            message:
+                'Delete "${collection.name}"? The media stays in your library.',
+            confirmLabel: 'Delete',
+            destructive: true,
+          );
+          if (!ok) return;
+          await ref
+              .read(metadataRepositoryProvider)
+              .deleteCollection(collection.id);
+          if (context.mounted) _notify(context, 'Collection deleted');
+        },
+      ),
+      onTap: () =>
+          context.push('/collection/${collection.id}', extra: collection.name),
+    );
+  }
+}
+
 void _notify(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -112,10 +145,19 @@ class CollectionDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(name ?? 'Collection')),
       body: items.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load: $e')),
+        loading: () => const MediaGridSkeleton(),
+        error: (e, _) => ErrorView(
+          message: 'Failed to load collection: $e',
+          onRetry: () => ref.invalidate(collectionItemsProvider(collectionId)),
+        ),
         data: (rows) => rows.isEmpty
-            ? const Center(child: Text('This collection is empty'))
+            ? const EmptyState(
+                icon: Icons.video_library_outlined,
+                title: 'This collection is empty',
+                message:
+                    'Add items to this collection from their detail '
+                    'screen.',
+              )
             : MediaGrid(items: rows),
       ),
     );

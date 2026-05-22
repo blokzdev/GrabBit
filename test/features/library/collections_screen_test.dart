@@ -1,0 +1,132 @@
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/collections_screen.dart';
+import 'package:grabbit/features/library/presentation/media_grid.dart';
+
+Collection _collection() =>
+    Collection(id: 1, name: 'Faves', createdAt: DateTime.utc(2026));
+
+MediaItem _item() => MediaItem(
+  id: 'i1',
+  title: 'Saved Clip',
+  sourceUrl: 'https://example.com/v',
+  site: 'youtube',
+  filePath: '/tmp/i1.mp4',
+  type: 'video',
+  createdAt: DateTime.utc(2026),
+  storageState: 'private',
+);
+
+void main() {
+  late AppDatabase db;
+  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  tearDown(() => db.close());
+
+  Future<void> settle(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump();
+  }
+
+  testWidgets(
+    'list shows collection rows with item counts',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            collectionsProvider.overrideWith(
+              (ref) => Stream.value([_collection()]),
+            ),
+            collectionItemCountsProvider.overrideWith(
+              (ref) => Stream.value(<int, int>{1: 3}),
+            ),
+          ],
+          child: const MaterialApp(home: CollectionsScreen()),
+        ),
+      );
+      await settle(tester);
+
+      expect(find.text('Faves'), findsOneWidget);
+      expect(find.text('3 items'), findsOneWidget);
+      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'list shows an empty state when there are no collections',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            collectionsProvider.overrideWith(
+              (ref) => Stream.value(<Collection>[]),
+            ),
+            collectionItemCountsProvider.overrideWith(
+              (ref) => Stream.value(<int, int>{}),
+            ),
+          ],
+          child: const MaterialApp(home: CollectionsScreen()),
+        ),
+      );
+      await settle(tester);
+
+      expect(find.byType(EmptyState), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'detail shows the scoped media grid',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            collectionItemsProvider(
+              1,
+            ).overrideWith((ref) => Stream.value([_item()])),
+          ],
+          child: const MaterialApp(
+            home: CollectionDetailScreen(collectionId: 1, name: 'Faves'),
+          ),
+        ),
+      );
+      await settle(tester);
+
+      expect(find.text('Saved Clip'), findsOneWidget);
+      expect(find.byType(MediaGrid), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'detail shows an empty state for an empty collection',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            collectionItemsProvider(
+              1,
+            ).overrideWith((ref) => Stream.value(<MediaItem>[])),
+          ],
+          child: const MaterialApp(
+            home: CollectionDetailScreen(collectionId: 1, name: 'Faves'),
+          ),
+        ),
+      );
+      await settle(tester);
+
+      expect(find.byType(EmptyState), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+}

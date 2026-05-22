@@ -71,7 +71,7 @@
 | `[x]` P7g | Item Detail | `/item/:id` |
 | `[x]` P7h | Metadata Edit | `/item/:id/edit` |
 | `[x]` P7i | Media Studio | `/item/:id/studio` |
-| `[ ]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
+| `[x]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
 | `[ ]` P7k | Settings | `/settings` |
 | `[ ]` P7l | Disclaimer + Lock | `/disclaimer`, `/lock` |
 
@@ -115,6 +115,11 @@ loading-skeleton / error / not-found states. CI green (format · analyze · 169 
 shared empty/error/not-found + loading skeleton, and a polished **running overlay** (scrim +
 op label + % + Cancel). Engine/ops/repo untouched; **crop** stays deferred (`docs/BACKLOG.md`).
 CI green (format · analyze · 171 tests · debug APK).
+
+**P7j done:** Collections restyled — list rows (circular icon avatar, name, **item count**,
+delete) with an "New collection" extended FAB + name dialog; detail uses the shared `MediaGrid`.
+Shared empty/skeleton/error states; added a `collectionItemCountsProvider` (group-by aggregate,
+mirrors the folder counts). CI green (format · analyze · 175 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.

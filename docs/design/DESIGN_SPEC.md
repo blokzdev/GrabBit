@@ -174,11 +174,11 @@ Preview + tools. Video: timeline with range slider (trim, MM:SS), single-handle 
 convert. Image: rotate/flip/mirror/crop/convert. Primary Apply/Export (new item; original
 kept). **Running** overlay: scrim + progress % + Cancel.
 
-### `[ ]` Collections (list) — `/collections` (P7j)
+### `[x]` Collections (list) — `/collections` (P7j)
 List of collection rows (icon, name, count, delete); FAB "New collection" → name dialog.
 States: populated · empty.
 
-### `[ ]` Collection Detail — `/collection/:id` (P7j)
+### `[x]` Collection Detail — `/collection/:id` (P7j)
 Collection-scoped media grid (same card system as Library). Populated · empty-collection.
 
 ### `[x]` Queue — `/queue` (P7f)
