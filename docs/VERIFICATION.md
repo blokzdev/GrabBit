@@ -157,6 +157,17 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       verify with networking disabled on first launch).
 - [ ] No regression in existing P0–P6 flows after the theme swap.
 
+### P7b — Shared components
+- [ ] **Library** shows the **skeleton grid** while loading (animated shimmer, not a bare
+      spinner), a friendly **empty state**, and an **error state** with Retry on failure.
+- [ ] **Queue** shows the **skeleton list** while loading, an **empty state**, and status
+      **pills** (running/queued/held/paused/done/failed) above the list.
+- [ ] Tapping a library tile **animates the thumbnail (Hero)** into the item detail screen,
+      and back on pop.
+- [ ] **Video** tiles show a centered **play badge**; audio/image tiles do not.
+- [ ] Add-download and Selection error banners use the new shared style; the "Update the
+      downloader engine" action still appears for engine-related errors and opens Settings.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.

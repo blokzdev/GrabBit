@@ -10,6 +10,7 @@ import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/folder_picker.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
 
@@ -72,11 +73,17 @@ class _ItemBody extends StatelessWidget {
     final theme = Theme.of(context);
     return ListView(
       children: [
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: item.type == 'image'
-              ? InteractiveViewer(child: Image.file(File(item.filePath)))
-              : _PlayerView(filePath: item.filePath),
+        Hero(
+          tag: mediaHeroTag(item.id),
+          // The destination hosts the heavy player/zoomable image; fly the
+          // lightweight thumbnail instead so the transition stays smooth.
+          flightShuttleBuilder: (_, _, _, _, _) => MediaThumb(item: item),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: item.type == 'image'
+                ? InteractiveViewer(child: Image.file(File(item.filePath)))
+                : _PlayerView(filePath: item.filePath),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(16),

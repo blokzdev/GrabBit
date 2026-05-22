@@ -3,6 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/theme/tokens.dart';
+
+/// Hero tag for an item's thumbnail (tile → detail flight). Shared so the
+/// detail screen can match it.
+String mediaHeroTag(String itemId) => 'media-thumb-$itemId';
 
 /// Reusable thumbnail grid of media items (library + collection views).
 class MediaGrid extends StatelessWidget {
@@ -12,9 +17,10 @@ class MediaGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
     return GridView.builder(
       physics: physics,
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(tokens.spaceMd),
       gridDelegate: mediaGridDelegate,
       itemCount: items.length,
       itemBuilder: (context, i) => MediaTile(item: items[i]),
@@ -51,42 +57,50 @@ class MediaTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final radius = BorderRadius.circular(tokens.radiusMd);
     return InkWell(
       onTap: onTap != null
           ? () => onTap!(item)
           : () => context.push('/item/${item.id}'),
       onLongPress: onLongPress == null ? null : () => onLongPress!(item),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: radius,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _Thumb(item: item),
-                  if (item.storageState == 'exported')
-                    const Positioned(top: 6, right: 6, child: _ExportedBadge()),
-                  if (selectionMode)
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: Icon(
-                        selected
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: selected
-                            ? theme.colorScheme.primary
-                            : Colors.white70,
+            child: Hero(
+              tag: mediaHeroTag(item.id),
+              child: ClipRRect(
+                borderRadius: radius,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MediaThumb(item: item),
+                    if (item.type == 'video') const _PlayBadge(),
+                    if (item.storageState == 'exported')
+                      const Positioned(
+                        top: 6,
+                        right: 6,
+                        child: _OverlayBadge(icon: Icons.save_alt),
                       ),
-                    ),
-                ],
+                    if (selectionMode)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: _OverlayBadge(
+                          icon: selected
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          tint: selected ? theme.colorScheme.primary : null,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: tokens.spaceXs),
           Text(
             item.title,
             maxLines: 2,
@@ -99,24 +113,54 @@ class MediaTile extends StatelessWidget {
   }
 }
 
-class _ExportedBadge extends StatelessWidget {
-  const _ExportedBadge();
+/// A centered video affordance over the thumbnail (so video reads distinctly
+/// from audio/image tiles).
+class _PlayBadge extends StatelessWidget {
+  const _PlayBadge();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: const BoxDecoration(
-        color: Colors.black54,
-        shape: BoxShape.circle,
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.scrim.withValues(alpha: 0.4),
+          shape: BoxShape.circle,
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(6),
+          child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 30),
+        ),
       ),
-      child: const Icon(Icons.save_alt, size: 14, color: Colors.white),
     );
   }
 }
 
-class _Thumb extends StatelessWidget {
-  const _Thumb({required this.item});
+/// A small circular scrim badge for overlays on arbitrary thumbnail imagery,
+/// where fixed light-on-scrim stays legible regardless of theme/photo.
+class _OverlayBadge extends StatelessWidget {
+  const _OverlayBadge({required this.icon, this.tint});
+  final IconData icon;
+  final Color? tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: scheme.scrim.withValues(alpha: 0.55),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 16, color: tint ?? Colors.white),
+    );
+  }
+}
+
+/// The item's thumbnail image with a typed fallback. Public so the detail
+/// screen can reuse it as the Hero flight shuttle.
+class MediaThumb extends StatelessWidget {
+  const MediaThumb({required this.item, super.key});
   final MediaItem item;
 
   @override

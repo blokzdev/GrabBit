@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_view.dart';
 
@@ -48,5 +51,24 @@ void main() {
     await tester.pump();
 
     expect(find.text('Your library is empty'), findsOneWidget);
+  });
+
+  testWidgets('shows a skeleton grid while loading', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          filteredLibraryProvider.overrideWith(
+            // A stream that never emits keeps the provider in the loading state.
+            (ref) => Stream<List<MediaItem>>.fromFuture(
+              Completer<List<MediaItem>>().future,
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: LibraryView())),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(MediaGridSkeleton), findsOneWidget);
   });
 }

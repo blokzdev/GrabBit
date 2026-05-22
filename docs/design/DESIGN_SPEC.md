@@ -95,7 +95,10 @@ Defined in `lib/core/theme/` (P7a) so screens stop hardcoding values.
 
 ## 6. Components
 
-Restyled in P7b; reused everywhere after.
+**P7b status:** the shared layer ships in `lib/core/widgets/` — `EmptyState`, `ErrorView`,
+`ErrorBanner`, `Skeleton`/`MediaGridSkeleton`/`ListSkeleton` (custom shimmer), `SectionHeader`
+— plus token-driven `MediaTile`/`MediaGrid` (video play badge + thumbnail Hero) and queue
+status pills. Tokens are read via `GrabBitTokens.of(context)`. Reused per-screen after.
 
 - **Media card / tile** (`MediaGrid`/`MediaTile`) — large rounded thumbnail, play badge
   for video, title + source, "Saved to device" badge, clear selection state.

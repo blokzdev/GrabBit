@@ -86,6 +86,11 @@ class GrabBitTokens extends ThemeExtension<GrabBitTokens> {
     motionLong: Duration(milliseconds: 400),
   );
 
+  /// The active tokens, falling back to [standard] when no theme has registered
+  /// the extension (e.g. a bare `MaterialApp` in a widget test).
+  static GrabBitTokens of(BuildContext context) =>
+      Theme.of(context).extension<GrabBitTokens>() ?? standard;
+
   @override
   GrabBitTokens copyWith({
     double? spaceXs,

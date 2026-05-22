@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
+import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/error_banner.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 
@@ -15,6 +17,7 @@ class SelectionScreen extends ConsumerWidget {
     final controller = ref.read(selectionControllerProvider.notifier);
     final entries = state.allEntries;
     final selectedCount = state.selected.length;
+    final tokens = GrabBitTokens.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +38,15 @@ class SelectionScreen extends ConsumerWidget {
       body: Column(
         children: [
           for (final s in state.sources.where((s) => s.error != null))
-            _SourceError(url: s.url, error: s.error!),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.spaceMd,
+                tokens.spaceMd,
+                tokens.spaceMd,
+                0,
+              ),
+              child: ErrorBanner(message: '${s.url} — ${s.error!}'),
+            ),
           Expanded(
             child: entries.isEmpty
                 ? const Center(child: Text('Nothing to download'))
@@ -201,30 +212,6 @@ class _BottomBar extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SourceError extends StatelessWidget {
-  const _SourceError({required this.url, required this.error});
-  final String url;
-  final String error;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '$url — $error',
-        style: TextStyle(color: scheme.onErrorContainer),
       ),
     );
   }
