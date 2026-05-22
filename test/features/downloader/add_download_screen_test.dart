@@ -83,5 +83,26 @@ void main() {
     expect(find.text('Best'), findsOneWidget);
     expect(find.text('1080p'), findsOneWidget);
     expect(find.text('Audio only'), findsOneWidget);
+    // Preview is a card and shows the formatted duration (213s → 3:33).
+    expect(find.byType(Card), findsOneWidget);
+    expect(find.text('3:33'), findsOneWidget);
+    // Pill actions are present.
+    expect(find.widgetWithText(FilledButton, 'Download now'), findsOneWidget);
+  });
+
+  testWidgets('offers a paste affordance on the URL field', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          downloadEngineProvider.overrideWithValue(
+            _FakeEngine(const MediaInfo(title: 't', formats: [])),
+          ),
+          mediaStorageProvider.overrideWithValue(_FakeStorage()),
+        ],
+        child: const MaterialApp(home: AddDownloadScreen()),
+      ),
+    );
+
+    expect(find.byIcon(Icons.content_paste), findsOneWidget);
   });
 }

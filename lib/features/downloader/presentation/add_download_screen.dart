@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/error_banner.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
@@ -24,6 +27,15 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
   void dispose() {
     _urlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (text == null || text.trim().isEmpty) return;
+    _urlController
+      ..text = text
+      ..selection = TextSelection.collapsed(offset: text.length);
   }
 
   Future<void> _check() async {
@@ -49,11 +61,12 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
     final state = ref.watch(downloaderControllerProvider);
     final controller = ref.read(downloaderControllerProvider.notifier);
     final tokens = GrabBitTokens.of(context);
+    final probing = state.phase == DownloaderPhase.probing;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add download')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(tokens.spaceLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -63,19 +76,23 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
               minLines: 1,
               maxLines: 4,
               keyboardType: TextInputType.multiline,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Paste one or more links',
                 hintText: 'https://…  (playlists & multiple links supported)',
-                border: OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.content_paste),
+                  tooltip: 'Paste',
+                  onPressed: _paste,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: tokens.spaceMd),
             FilledButton.icon(
-              onPressed: state.phase == DownloaderPhase.probing ? null : _check,
+              onPressed: probing ? null : _check,
               icon: const Icon(Icons.search),
               label: const Text('Check link(s)'),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: tokens.spaceLg),
             if (state.errorMessage != null)
               Padding(
                 padding: EdgeInsets.only(bottom: tokens.spaceLg),
@@ -92,13 +109,7 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
                       : null,
                 ),
               ),
-            if (state.phase == DownloaderPhase.probing)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
+            if (probing) const _PreviewSkeleton(),
             if (state.info != null) _MediaPreview(info: state.info!),
             if (state.phase == DownloaderPhase.ready)
               _PresetPicker(
@@ -130,6 +141,28 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
   }
 }
 
+/// Card-shaped placeholder shown while a link is being probed.
+class _PreviewSkeleton extends StatelessWidget {
+  const _PreviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Shimmer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Skeleton(height: 180, radius: tokens.radiusMd),
+          SizedBox(height: tokens.spaceMd),
+          Skeleton(height: 18, width: 240, radius: tokens.radiusSm),
+          SizedBox(height: tokens.spaceSm),
+          Skeleton(height: 12, width: 140, radius: tokens.radiusSm),
+        ],
+      ),
+    );
+  }
+}
+
 class _MediaPreview extends StatelessWidget {
   const _MediaPreview({required this.info});
   final MediaInfo info;
@@ -137,25 +170,101 @@ class _MediaPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (info.thumbnailUrl != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              info.thumbnailUrl!,
-              height: 180,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    final duration = formatDuration(info.durationSec);
+
+    return Card(
+      margin: EdgeInsets.only(bottom: tokens.spaceLg),
+      color: scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(tokens.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _Thumbnail(url: info.thumbnailUrl),
+                    if (duration.isNotEmpty)
+                      Positioned(
+                        right: tokens.spaceSm,
+                        bottom: tokens.spaceSm,
+                        child: _DurationPill(text: duration),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        const SizedBox(height: 12),
-        Text(info.title, style: theme.textTheme.titleMedium),
-        if (info.uploader != null)
-          Text(info.uploader!, style: theme.textTheme.bodySmall),
-        const SizedBox(height: 16),
-      ],
+            SizedBox(height: tokens.spaceMd),
+            Text(info.title, style: theme.textTheme.titleMedium),
+            if (info.uploader != null) ...[
+              SizedBox(height: tokens.spaceXs),
+              Text(
+                info.uploader!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Thumbnail extends StatelessWidget {
+  const _Thumbnail({required this.url});
+  final String? url;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final placeholder = ColoredBox(
+      color: scheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.image_outlined,
+        color: scheme.onSurfaceVariant,
+        size: 40,
+      ),
+    );
+    final src = url;
+    if (src == null) return placeholder;
+    return Image.network(
+      src,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => placeholder,
+    );
+  }
+}
+
+class _DurationPill extends StatelessWidget {
+  const _DurationPill({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: tokens.spaceSm, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.scrim.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+      ),
+      child: Text(
+        text,
+        style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
+      ),
     );
   }
 }
@@ -180,13 +289,15 @@ class _PresetPickerState extends State<_PresetPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Quality', style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 8),
+        Text('Quality', style: theme.textTheme.titleSmall),
+        SizedBox(height: tokens.spaceSm),
         Wrap(
-          spacing: 8,
+          spacing: tokens.spaceSm,
           children: [
             for (final preset in widget.presets)
               ChoiceChip(
@@ -200,19 +311,23 @@ class _PresetPickerState extends State<_PresetPicker> {
               ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: tokens.spaceLg),
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: FilledButton.tonalIcon(
                 onPressed: () => widget.onAction(_selected, false),
                 icon: const Icon(Icons.playlist_add),
                 label: const Text('Add to queue'),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: tokens.spaceMd),
             Expanded(
               child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: tokens.accent,
+                  foregroundColor: tokens.onAccent,
+                ),
                 onPressed: () => widget.onAction(_selected, true),
                 icon: const Icon(Icons.download),
                 label: const Text('Download now'),

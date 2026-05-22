@@ -181,6 +181,17 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       **long-press** media → multi-select → **Move to folder**; **New folder** FAB; empty-folder
       state; skeleton while loading and an error+Retry on failure.
 
+### P7d — Add Download
+- [ ] The URL field's **paste** button fills the field from the clipboard.
+- [ ] While probing a link, a **skeleton** preview card shows (not a bare spinner).
+- [ ] Resolved link shows a **preview card**: thumbnail (neutral placeholder if it fails to
+      load), a **duration** pill, title, and uploader.
+- [ ] Quality **preset chips** reflect the available qualities; **Add to queue** is tonal and
+      **Download now** is the amber **accent** pill; both enqueue correctly.
+- [ ] An unsupported/extractor error shows the shared error banner with the **"Update the
+      downloader engine"** action (opens Settings).
+- [ ] Pasting multiple links / a playlist still routes to the Selection screen.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.

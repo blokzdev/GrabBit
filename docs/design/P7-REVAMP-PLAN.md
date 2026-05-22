@@ -65,7 +65,7 @@
 | Subphase | Screen(s) | Routes |
 |---|---|---|
 | `[x]` P7c | Home — Library + Explorer views | `/` |
-| `[ ]` P7d | Add Download | `/add` |
+| `[x]` P7d | Add Download | `/add` |
 | `[ ]` P7e | Selection | `/select` |
 | `[ ]` P7f | Queue | `/queue` |
 | `[ ]` P7g | Item Detail | `/item/:id` |
@@ -81,6 +81,11 @@ name / item-count + rename/delete menu; media tiles keep multi-select), restyled
 selection bar, and adopted the P7b empty/skeleton/error states; Library empty state gained an
 inline **Add** action. CI green (format · analyze · 154 tests · debug APK). *(on-device
 spot-check pending — see `docs/VERIFICATION.md`.)*
+
+**P7d done:** Add Download restyled — paste affordance on the URL field, probing **skeleton**,
+**preview card** (thumbnail + duration pill + title/uploader), and **pill** actions (tonal
+"Add to queue" + accent "Download now"); tokenized throughout. Advanced format/codec picker
+**deferred** to `docs/BACKLOG.md`. CI green (format · analyze · 159 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.
