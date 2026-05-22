@@ -180,7 +180,7 @@ States: populated · empty.
 ### `[ ]` Collection Detail — `/collection/:id` (P7j)
 Collection-scoped media grid (same card system as Library). Populated · empty-collection.
 
-### `[ ]` Queue — `/queue` (P7f)
+### `[x]` Queue — `/queue` (P7f)
 App bar with back/Home (never strands) + contextual actions (Start all / Resume all /
 Pause all / Clear completed); status summary pills (Running·Queued·Held·Paused·Done·
 Failed); task tiles (title not raw URL, linear progress, status label, per-task actions:

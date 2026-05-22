@@ -202,6 +202,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       now" (starts immediately); both route home with a "View queue" snackbar.
 - [ ] Entry tiles show a **duration** caption when the source reports it.
 
+### P7f — Queue
+- [ ] Each task is a **card** with a status-colored **leading avatar** + glyph; the title is
+      the media title (not the raw URL) with a `status · site · duration` line.
+- [ ] A **progress bar** shows only while a task is **running/paused** (indeterminate at 0%),
+      not for queued/done/canceled/failed.
+- [ ] Per-task actions work: running/queued → Pause + Cancel (confirm); held → Start + Remove;
+      paused → Resume + Remove; failed → Retry + Remove; done/canceled → Remove.
+- [ ] **Summary pills** (running/queued/held/paused/done/failed) update live and match the
+      tile status colors.
+- [ ] App bar: **Start all / Resume all / Pause all / Clear completed** appear contextually;
+      Back/Home never strands.
+- [ ] Empty + active states render; loading shows the skeleton, load failure shows error+retry.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.

@@ -67,7 +67,7 @@
 | `[x]` P7c | Home — Library + Explorer views | `/` |
 | `[x]` P7d | Add Download | `/add` |
 | `[x]` P7e | Selection | `/select` |
-| `[ ]` P7f | Queue | `/queue` |
+| `[x]` P7f | Queue | `/queue` |
 | `[ ]` P7g | Item Detail | `/item/:id` |
 | `[ ]` P7h | Metadata Edit | `/item/:id/edit` |
 | `[ ]` P7i | Media Studio | `/item/:id/studio` |
@@ -92,6 +92,11 @@ type-icon fallback, scheme-role selection badge, duration caption), shared `Empt
 entries, `MediaGridSkeleton` while expanding, and a tonal bottom bar with the quality dropdown +
 **pill** actions (tonal "Add to queue" + accent "Download now"). CI green (format · analyze ·
 160 tests · debug APK).
+
+**P7f done:** Queue task list elevated to status-aware **cards** — leading status avatar
+(color + glyph), title, `status · site · duration` line, progress bar **only while active**,
+and per-task actions (Pause/Cancel/Resume/Retry/Remove). Status palette shared between the
+summary pills and tile avatars. CI green (format · analyze · 162 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.

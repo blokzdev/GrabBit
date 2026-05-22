@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
@@ -104,6 +105,7 @@ class QueueScreen extends ConsumerWidget {
                   _QueueSummary(rows: rows),
                   Expanded(
                     child: ListView.builder(
+                      padding: EdgeInsets.zero,
                       itemCount: rows.length,
                       itemBuilder: (context, i) => _TaskTile(task: rows[i]),
                     ),
@@ -114,6 +116,54 @@ class QueueScreen extends ConsumerWidget {
     );
   }
 }
+
+/// Visual style (container/on-container colors + glyph) for a task status,
+/// shared by the summary pills and the per-task status avatars.
+({Color bg, Color fg, IconData icon}) _statusStyle(
+  ColorScheme s,
+  String status,
+) => switch (status) {
+  TaskStatus.running => (
+    bg: s.primaryContainer,
+    fg: s.onPrimaryContainer,
+    icon: Icons.download,
+  ),
+  TaskStatus.queued => (
+    bg: s.secondaryContainer,
+    fg: s.onSecondaryContainer,
+    icon: Icons.schedule,
+  ),
+  TaskStatus.held => (
+    bg: s.secondaryContainer,
+    fg: s.onSecondaryContainer,
+    icon: Icons.inventory_2_outlined,
+  ),
+  TaskStatus.paused => (
+    bg: s.surfaceContainerHighest,
+    fg: s.onSurfaceVariant,
+    icon: Icons.pause,
+  ),
+  TaskStatus.done => (
+    bg: s.tertiaryContainer,
+    fg: s.onTertiaryContainer,
+    icon: Icons.check,
+  ),
+  TaskStatus.canceled => (
+    bg: s.surfaceContainerHighest,
+    fg: s.onSurfaceVariant,
+    icon: Icons.block,
+  ),
+  TaskStatus.error => (
+    bg: s.errorContainer,
+    fg: s.onErrorContainer,
+    icon: Icons.error_outline,
+  ),
+  _ => (
+    bg: s.surfaceContainerHighest,
+    fg: s.onSurfaceVariant,
+    icon: Icons.help_outline,
+  ),
+};
 
 /// A compact count of where the queue's tasks stand, shown above the list.
 class _QueueSummary extends StatelessWidget {
@@ -130,59 +180,23 @@ class _QueueSummary extends StatelessWidget {
     final done = count((t) => t.status == TaskStatus.done);
     final failed = count((t) => t.status == TaskStatus.error);
 
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final tokens = GrabBitTokens.of(context);
     final pills = <Widget>[
-      if (running > 0)
-        _pill(
-          context,
-          '$running running',
-          scheme.primaryContainer,
-          scheme.onPrimaryContainer,
-        ),
-      if (queued > 0)
-        _pill(
-          context,
-          '$queued queued',
-          scheme.secondaryContainer,
-          scheme.onSecondaryContainer,
-        ),
-      if (held > 0)
-        _pill(
-          context,
-          '$held held',
-          scheme.secondaryContainer,
-          scheme.onSecondaryContainer,
-        ),
-      if (paused > 0)
-        _pill(
-          context,
-          '$paused paused',
-          scheme.surfaceContainerHighest,
-          scheme.onSurfaceVariant,
-        ),
-      if (done > 0)
-        _pill(
-          context,
-          '$done done',
-          scheme.tertiaryContainer,
-          scheme.onTertiaryContainer,
-        ),
-      if (failed > 0)
-        _pill(
-          context,
-          '$failed failed',
-          scheme.errorContainer,
-          scheme.onErrorContainer,
-        ),
+      if (running > 0) _pill(context, '$running running', TaskStatus.running),
+      if (queued > 0) _pill(context, '$queued queued', TaskStatus.queued),
+      if (held > 0) _pill(context, '$held held', TaskStatus.held),
+      if (paused > 0) _pill(context, '$paused paused', TaskStatus.paused),
+      if (done > 0) _pill(context, '$done done', TaskStatus.done),
+      if (failed > 0) _pill(context, '$failed failed', TaskStatus.error),
     ];
     if (pills.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: tokens.spaceLg,
-        vertical: tokens.spaceSm,
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        tokens.spaceSm,
+        tokens.spaceLg,
+        0,
       ),
       child: Wrap(
         spacing: tokens.spaceSm,
@@ -192,21 +206,22 @@ class _QueueSummary extends StatelessWidget {
     );
   }
 
-  Widget _pill(BuildContext context, String label, Color bg, Color fg) {
+  Widget _pill(BuildContext context, String label, String status) {
     final theme = Theme.of(context);
     final tokens = GrabBitTokens.of(context);
+    final style = _statusStyle(theme.colorScheme, status);
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: tokens.spaceMd,
         vertical: tokens.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: bg,
+        color: style.bg,
         borderRadius: BorderRadius.circular(tokens.radiusPill),
       ),
       child: Text(
         label,
-        style: theme.textTheme.labelSmall?.copyWith(color: fg),
+        style: theme.textTheme.labelSmall?.copyWith(color: style.fg),
       ),
     );
   }
@@ -219,27 +234,74 @@ class _TaskTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(queueControllerProvider.notifier);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final tokens = GrabBitTokens.of(context);
+    final meta = _TaskMeta.parse(task);
     final running = task.status == TaskStatus.running;
-    return ListTile(
-      title: Text(
-        _displayTitle(task),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    final showProgress = running || task.status == TaskStatus.paused;
+    final suffix = [
+      meta.site,
+      formatDuration(meta.durationSec),
+    ].where((e) => e != null && e.isNotEmpty).join('  ·  ');
+    final statusLine = suffix.isEmpty
+        ? _statusLabel(task)
+        : '${_statusLabel(task)}  ·  $suffix';
+
+    return Card(
+      margin: EdgeInsets.symmetric(
+        horizontal: tokens.spaceMd,
+        vertical: tokens.spaceXs,
       ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: tokens.spaceXs),
-          LinearProgressIndicator(
-            value: running && task.progress == 0 ? null : task.progress / 100,
-            borderRadius: BorderRadius.circular(tokens.radiusPill),
-          ),
-          SizedBox(height: tokens.spaceXs),
-          Text(_statusLabel(task)),
-        ],
+      color: scheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
       ),
-      trailing: _actions(context, controller),
+      child: Padding(
+        padding: EdgeInsets.all(tokens.spaceMd),
+        child: Row(
+          children: [
+            _StatusAvatar(status: task.status),
+            SizedBox(width: tokens.spaceMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    meta.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  SizedBox(height: tokens.spaceXs),
+                  Text(
+                    statusLine,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: task.status == TaskStatus.error
+                          ? scheme.error
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (showProgress) ...[
+                    SizedBox(height: tokens.spaceSm),
+                    LinearProgressIndicator(
+                      value: running && task.progress == 0
+                          ? null
+                          : task.progress / 100,
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            SizedBox(width: tokens.spaceSm),
+            _actions(context, controller),
+          ],
+        ),
+      ),
     );
   }
 
@@ -287,16 +349,28 @@ class _TaskTile extends ConsumerWidget {
           ],
         );
       case TaskStatus.paused:
-        return IconButton(
-          icon: const Icon(Icons.play_arrow),
-          tooltip: 'Resume',
-          onPressed: () => controller.resume(task.id),
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.play_arrow),
+              tooltip: 'Resume',
+              onPressed: () => controller.resume(task.id),
+            ),
+            _RemoveButton(task: task, controller: controller),
+          ],
         );
       case TaskStatus.error:
-        return IconButton(
-          icon: const Icon(Icons.refresh),
-          tooltip: 'Retry',
-          onPressed: () => controller.retry(task.id),
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Retry',
+              onPressed: () => controller.retry(task.id),
+            ),
+            _RemoveButton(task: task, controller: controller),
+          ],
         );
       default:
         return _RemoveButton(task: task, controller: controller);
@@ -314,6 +388,24 @@ class _TaskTile extends ConsumerWidget {
       'Failed${task.errorCode != null ? ' (${task.errorCode})' : ''}',
     _ => task.status,
   };
+}
+
+/// Circular, status-colored badge for a task tile's leading slot.
+class _StatusAvatar extends StatelessWidget {
+  const _StatusAvatar({required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _statusStyle(Theme.of(context).colorScheme, status);
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: style.bg, shape: BoxShape.circle),
+      child: Icon(style.icon, color: style.fg, size: 20),
+    );
+  }
 }
 
 class _RemoveButton extends StatelessWidget {
@@ -342,16 +434,31 @@ class _RemoveButton extends StatelessWidget {
   }
 }
 
+/// Display metadata pulled from the persisted request JSON.
+class _TaskMeta {
+  const _TaskMeta({required this.title, this.site, this.durationSec});
+  final String title;
+  final String? site;
+  final int? durationSec;
+
+  static _TaskMeta parse(DownloadTask task) {
+    try {
+      final json = jsonDecode(task.requestJson) as Map<String, dynamic>;
+      final title = (json['title'] as String?)?.trim();
+      return _TaskMeta(
+        title: title != null && title.isNotEmpty ? title : task.url,
+        site: json['site'] as String?,
+        durationSec: json['durationSec'] as int?,
+      );
+    } catch (_) {
+      return _TaskMeta(title: task.url);
+    }
+  }
+}
+
 /// The download's display title (from the persisted request), falling back to
 /// the raw URL for legacy/partial rows that lack one.
-String _displayTitle(DownloadTask task) {
-  try {
-    final json = jsonDecode(task.requestJson) as Map<String, dynamic>;
-    final title = json['title'] as String?;
-    if (title != null && title.trim().isNotEmpty) return title;
-  } catch (_) {}
-  return task.url;
-}
+String _displayTitle(DownloadTask task) => _TaskMeta.parse(task).title;
 
 void _notify(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
