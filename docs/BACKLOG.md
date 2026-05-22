@@ -5,13 +5,7 @@
 > `docs/VERIFICATION.md` holds the on-device checklist.
 
 ## In progress
-- [ ] **Engine auto-update on launch** + Settings toggle (fresh installs were failing
-      YouTube with "Please sign in" until a manual yt-dlp update). — *batch 1, PR A*
-- [ ] **Download start choice**: single videos get "Download now" vs "Add to queue"
-      (held, manual start), matching the batch screen. — *batch 1, PR B*
-- [ ] **Queue back button**: the queue screen could strand the user (reached via
-      `context.go`); fix navigation + add a defensive Back/Home. — *batch 1, PR B*
-- [ ] **Queue manager polish**: header counts + "Resume all". — *batch 1, PR B*
+_(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
 - [ ] Queue **drag-to-reorder** and per-item move up/down.
@@ -22,4 +16,10 @@
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 
 ## Done
-_(moved here as items ship)_
+- [x] **Engine auto-update on launch** + Settings toggle (fresh installs were failing
+      YouTube with "Please sign in" until a manual yt-dlp update). — *batch 1, #25*
+- [x] **Download start choice**: single videos get "Download now" vs "Add to queue"
+      (held, manual start), matching the batch screen. — *batch 1, #26*
+- [x] **Queue back button**: the queue screen could strand the user (reached via
+      `context.go`); fixed navigation + added a defensive Back/Home. — *batch 1, #26*
+- [x] **Queue manager polish**: header counts + "Resume all". — *batch 1, #26*
