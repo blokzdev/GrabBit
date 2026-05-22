@@ -60,4 +60,10 @@ class SettingsController extends _$SettingsController {
 
   Future<void> acceptDisclaimer() async =>
       _update((await future).copyWith(disclaimerAccepted: true));
+
+  Future<void> setAutoCheckEngineUpdate(bool value) async =>
+      _update((await future).copyWith(autoCheckEngineUpdate: value));
+
+  Future<void> setLastEngineCheck(DateTime when) async =>
+      _update((await future).copyWith(lastEngineCheck: when));
 }

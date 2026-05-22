@@ -45,6 +45,8 @@ abstract class SettingsModel with _$SettingsModel {
     String? locale,
     @Default(AppLockSettings()) AppLockSettings appLock,
     @Default(false) bool disclaimerAccepted,
+    @Default(true) bool autoCheckEngineUpdate,
+    DateTime? lastEngineCheck,
   }) = _SettingsModel;
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) =>

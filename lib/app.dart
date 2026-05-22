@@ -1,10 +1,12 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/routing/app_router.dart';
 import 'package:grabbit/core/theme/app_theme.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
+import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 class GrabBitApp extends ConsumerStatefulWidget {
@@ -20,6 +22,27 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoUpdate());
+  }
+
+  /// Throttled, non-blocking yt-dlp self-update on launch (keeps the engine
+  /// current so public videos don't fail with "Please sign in"). Offline-safe.
+  Future<void> _maybeAutoUpdate() async {
+    final settings = await ref.read(settingsControllerProvider.future);
+    if (!shouldAutoCheckEngine(
+      enabled: settings.autoCheckEngineUpdate,
+      lastCheck: settings.lastEngineCheck,
+      now: DateTime.now(),
+    )) {
+      return;
+    }
+    // Stamp before updating so a slow/failed update doesn't retry every launch.
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .setLastEngineCheck(DateTime.now());
+    try {
+      await ref.read(downloadEngineProvider).update();
+    } catch (_) {}
   }
 
   @override
