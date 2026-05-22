@@ -157,7 +157,7 @@ select-all; responsive grid of selectable thumbnail tiles (checkbox/ring + type 
 optional per-source error card; bottom bar (quality dropdown + Add/Download). States:
 populated · partial selection · source errors.
 
-### `[ ]` Item Detail — `/item/:id` (P7g)
+### `[x]` Item Detail — `/item/:id` (P7g)
 Hero media (Chewie player for video / zoomable image); large title; metadata section
 (uploader, platform, playlist, date, expandable description); tag chips; primary "Save to
 device" (shows destination + "Saved" state); secondary actions Move / Edit / Studio.

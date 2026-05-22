@@ -68,7 +68,7 @@
 | `[x]` P7d | Add Download | `/add` |
 | `[x]` P7e | Selection | `/select` |
 | `[x]` P7f | Queue | `/queue` |
-| `[ ]` P7g | Item Detail | `/item/:id` |
+| `[x]` P7g | Item Detail | `/item/:id` |
 | `[ ]` P7h | Metadata Edit | `/item/:id/edit` |
 | `[ ]` P7i | Media Studio | `/item/:id/studio` |
 | `[ ]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
@@ -97,6 +97,13 @@ entries, `MediaGridSkeleton` while expanding, and a tonal bottom bar with the qu
 (color + glyph), title, `status · site · duration` line, progress bar **only while active**,
 and per-task actions (Pause/Cancel/Resume/Retry/Remove). Status palette shared between the
 summary pills and tile avatars. CI green (format · analyze · 162 tests · debug APK).
+
+**P7g done:** Item Detail revamped — hero media (player / zoomable image), large title,
+technical **detail chips** (type · duration · resolution · size), metadata rows + an
+**expandable description**, tag chips, and a prominent **accent "Save to device"** primary
+(destination + "Saved" banner); Move/Edit/Studio stay as app-bar actions; loading-skeleton /
+error / not-found states. Added a shared `formatBytes` util. CI green (format · analyze ·
+168 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.
