@@ -215,6 +215,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       Back/Home never strands.
 - [ ] Empty + active states render; loading shows the skeleton, load failure shows error+retry.
 
+### P7g — Item Detail
+- [ ] Hero media: a **video** plays (Chewie) and an **image** pinch-zooms; the thumbnail
+      **Hero**-animates in from the library tile and back on pop.
+- [ ] Large title + a `site · Saved <date>` subtitle; **detail chips** (type / duration /
+      resolution / size) show when available.
+- [ ] Metadata rows (uploader / username / playlist / uploaded date) appear when present; the
+      **description expands/collapses** ("Show more" / "Show less").
+- [ ] Tag chips render when the item has tags.
+- [ ] **Save to device** is a prominent **accent** button showing the destination; after
+      saving (or for an already-exported item) it shows the **"Saved to device"** state.
+- [ ] Move / Edit / Studio app-bar actions work; loading shows a skeleton, a missing item
+      shows the "Item not found" state.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.

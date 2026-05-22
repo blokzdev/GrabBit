@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/byte_format.dart';
+import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/folder_repository.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
@@ -54,10 +60,17 @@ class ItemDetailScreen extends ConsumerWidget {
         ],
       ),
       body: item.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load item: $e')),
+        loading: () => const _DetailSkeleton(),
+        error: (e, _) => ErrorView(
+          message: 'Failed to load item: $e',
+          onRetry: () => ref.invalidate(mediaItemByIdProvider(itemId)),
+        ),
         data: (row) => row == null
-            ? const Center(child: Text('Item not found'))
+            ? const EmptyState(
+                icon: Icons.broken_image_outlined,
+                title: 'Item not found',
+                message: 'This item may have been removed.',
+              )
             : _ItemBody(item: row),
       ),
     );
@@ -71,6 +84,8 @@ class _ItemBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
     return ListView(
       children: [
         Hero(
@@ -78,33 +93,43 @@ class _ItemBody extends StatelessWidget {
           // The destination hosts the heavy player/zoomable image; fly the
           // lightweight thumbnail instead so the transition stays smooth.
           flightShuttleBuilder: (_, _, _, _, _) => MediaThumb(item: item),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: item.type == 'image'
-                ? InteractiveViewer(child: Image.file(File(item.filePath)))
-                : _PlayerView(filePath: item.filePath),
+          child: ColoredBox(
+            color: Colors.black,
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: item.type == 'image'
+                  ? InteractiveViewer(
+                      child: Image.file(
+                        File(item.filePath),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const _BrokenMedia(),
+                      ),
+                    )
+                  : _PlayerView(filePath: item.filePath),
+            ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(tokens.spaceLg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.title, style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text('Source: ${item.site}', style: theme.textTheme.bodySmall),
+              Text(item.title, style: theme.textTheme.headlineSmall),
+              SizedBox(height: tokens.spaceXs),
               Text(
-                'Saved ${item.createdAt.toLocal()}',
-                style: theme.textTheme.bodySmall,
+                '${item.site}  ·  Saved ${_ymd(item.createdAt.toLocal())}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
+              _DetailChips(item: item),
               _MetadataSection(itemId: item.id),
               if (item.notes != null && item.notes!.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: tokens.spaceMd),
                 Text(item.notes!, style: theme.textTheme.bodyMedium),
               ],
-              const SizedBox(height: 12),
               _TagsRow(itemId: item.id),
-              const SizedBox(height: 16),
+              SizedBox(height: tokens.spaceLg),
               _ExportButton(item: item),
             ],
           ),
@@ -114,8 +139,63 @@ class _ItemBody extends StatelessWidget {
   }
 }
 
-/// Shows the uploader / upload date / description captured at download time
-/// (persisted in `media_metadata`), when any of them is present.
+String _ymd(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+/// Quick technical facts (type / duration / resolution / size) as tonal chips.
+class _DetailChips extends StatelessWidget {
+  const _DetailChips({required this.item});
+  final MediaItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    final resolution = (item.width != null && item.height != null)
+        ? '${item.width}×${item.height}'
+        : '';
+    final chips = [
+      item.type.toUpperCase(),
+      formatDuration(item.durationSec),
+      resolution,
+      formatBytes(item.sizeBytes),
+    ].where((e) => e.isNotEmpty).toList();
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Wrap(
+        spacing: tokens.spaceSm,
+        runSpacing: tokens.spaceXs,
+        children: [for (final c in chips) _chip(context, c)],
+      ),
+    );
+  }
+
+  Widget _chip(BuildContext context, String label) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spaceMd,
+        vertical: tokens.spaceXs,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: scheme.onSecondaryContainer,
+        ),
+      ),
+    );
+  }
+}
+
+/// Uploader / username / playlist / upload date + an expandable description,
+/// from the metadata captured at download time.
 class _MetadataSection extends ConsumerWidget {
   const _MetadataSection({required this.itemId});
   final String itemId;
@@ -123,42 +203,111 @@ class _MetadataSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     final meta = ref.watch(metadataForItemProvider(itemId)).asData?.value;
     if (meta == null) return const SizedBox.shrink();
 
+    String? clean(String? v) => (v != null && v.trim().isNotEmpty) ? v : null;
     final date = meta.uploadDate;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (meta.uploader != null && meta.uploader!.isNotEmpty)
-          Text('Uploader: ${meta.uploader}', style: theme.textTheme.bodySmall),
-        if (meta.uploaderId != null && meta.uploaderId!.isNotEmpty)
-          Text(
-            'Username: ${meta.uploaderId}',
-            style: theme.textTheme.bodySmall,
-          ),
-        if (meta.playlistTitle != null && meta.playlistTitle!.isNotEmpty)
-          Text(
-            'Playlist: ${meta.playlistTitle}',
-            style: theme.textTheme.bodySmall,
-          ),
-        if (date != null)
-          Text(
-            'Uploaded ${date.year}-${_pad(date.month)}-${_pad(date.day)}',
-            style: theme.textTheme.bodySmall,
-          ),
-        if (meta.description != null &&
-            meta.description!.trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Text('Description', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 4),
-          Text(meta.description!, style: theme.textTheme.bodyMedium),
+    final rows = <Widget>[
+      if (clean(meta.uploader) != null)
+        _InfoRow(icon: Icons.person_outline, value: meta.uploader!),
+      if (clean(meta.uploaderId) != null)
+        _InfoRow(icon: Icons.alternate_email, value: meta.uploaderId!),
+      if (clean(meta.playlistTitle) != null)
+        _InfoRow(icon: Icons.playlist_play, value: meta.playlistTitle!),
+      if (date != null)
+        _InfoRow(icon: Icons.event_outlined, value: 'Uploaded ${_ymd(date)}'),
+    ];
+    final description = clean(meta.description);
+    if (rows.isEmpty && description == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...rows,
+          if (description != null) ...[
+            SizedBox(height: tokens.spaceMd),
+            Text('Description', style: theme.textTheme.titleSmall),
+            SizedBox(height: tokens.spaceXs),
+            _ExpandableText(text: description),
+          ],
         ],
-      ],
+      ),
     );
   }
+}
 
-  static String _pad(int n) => n.toString().padLeft(2, '0');
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.value});
+  final IconData icon;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: tokens.spaceXs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: scheme.onSurfaceVariant),
+          SizedBox(width: tokens.spaceSm),
+          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+/// A description that collapses to a few lines with a Show more/less toggle.
+class _ExpandableText extends StatefulWidget {
+  const _ExpandableText({required this.text});
+  final String text;
+
+  @override
+  State<_ExpandableText> createState() => _ExpandableTextState();
+}
+
+class _ExpandableTextState extends State<_ExpandableText> {
+  static const _collapsedLines = 5;
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.bodyMedium;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: _collapsedLines,
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.text,
+              style: style,
+              maxLines: _expanded ? null : _collapsedLines,
+              overflow: _expanded ? TextOverflow.clip : TextOverflow.ellipsis,
+            ),
+            if (overflows)
+              TextButton(
+                onPressed: () => setState(() => _expanded = !_expanded),
+                child: Text(_expanded ? 'Show less' : 'Show more'),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _TagsRow extends ConsumerWidget {
@@ -167,14 +316,18 @@ class _TagsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = GrabBitTokens.of(context);
     final tags = ref.watch(tagsForItemProvider(itemId));
     return tags.maybeWhen(
       data: (list) => list.isEmpty
           ? const SizedBox.shrink()
-          : Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [for (final t in list) Chip(label: Text(t.name))],
+          : Padding(
+              padding: EdgeInsets.only(top: tokens.spaceLg),
+              child: Wrap(
+                spacing: tokens.spaceSm,
+                runSpacing: tokens.spaceXs,
+                children: [for (final t in list) Chip(label: Text(t.name))],
+              ),
             ),
       orElse: () => const SizedBox.shrink(),
     );
@@ -194,15 +347,33 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+
     if (widget.item.storageState == 'exported') {
-      return Row(
-        children: [
-          Icon(Icons.check_circle, color: Colors.green.shade600, size: 18),
-          const SizedBox(width: 8),
-          const Text('Saved to device'),
-        ],
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(tokens.spaceMd),
+        decoration: BoxDecoration(
+          color: scheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle, color: scheme.onSecondaryContainer),
+            SizedBox(width: tokens.spaceSm),
+            Text(
+              'Saved to device',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: scheme.onSecondaryContainer,
+              ),
+            ),
+          ],
+        ),
       );
     }
+
     final folder = ref
         .watch(settingsControllerProvider)
         .asData
@@ -212,21 +383,30 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FilledButton.icon(
-          onPressed: _busy ? null : _export,
-          icon: _busy
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.save_alt),
-          label: const Text('Save to device'),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: tokens.accent,
+              foregroundColor: tokens.onAccent,
+            ),
+            onPressed: _busy ? null : _export,
+            icon: _busy
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.save_alt),
+            label: const Text('Save to device'),
+          ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: tokens.spaceXs),
         Text(
           'Saves to $destination',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -247,6 +427,57 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+}
+
+class _BrokenMedia extends StatelessWidget {
+  const _BrokenMedia();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ColoredBox(
+      color: scheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.broken_image_outlined,
+        color: scheme.onSurfaceVariant,
+        size: 48,
+      ),
+    );
+  }
+}
+
+/// Shimmering placeholder while the item row loads.
+class _DetailSkeleton extends StatelessWidget {
+  const _DetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Shimmer(
+      child: ListView(
+        children: [
+          const AspectRatio(aspectRatio: 16 / 9, child: Skeleton(radius: 0)),
+          Padding(
+            padding: EdgeInsets.all(tokens.spaceLg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Skeleton(height: 26, width: 260, radius: tokens.radiusSm),
+                SizedBox(height: tokens.spaceSm),
+                Skeleton(height: 12, width: 160, radius: tokens.radiusSm),
+                SizedBox(height: tokens.spaceLg),
+                Skeleton(height: 14, radius: tokens.radiusSm),
+                SizedBox(height: tokens.spaceSm),
+                Skeleton(height: 14, radius: tokens.radiusSm),
+                SizedBox(height: tokens.spaceSm),
+                Skeleton(height: 14, width: 220, radius: tokens.radiusSm),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
