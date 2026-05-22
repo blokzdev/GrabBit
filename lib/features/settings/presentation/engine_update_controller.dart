@@ -3,6 +3,19 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'engine_update_controller.g.dart';
 
+/// Whether to auto-check for a yt-dlp update on launch: enabled, and either never
+/// checked or last checked at least [interval] ago. Pure (no I/O) for testing.
+bool shouldAutoCheckEngine({
+  required bool enabled,
+  required DateTime? lastCheck,
+  required DateTime now,
+  Duration interval = const Duration(hours: 24),
+}) {
+  if (!enabled) return false;
+  if (lastCheck == null) return true;
+  return now.difference(lastCheck) >= interval;
+}
+
 class EngineUpdateState {
   const EngineUpdateState({this.version, this.updating = false, this.message});
 

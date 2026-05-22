@@ -94,6 +94,14 @@ class _SettingsList extends ConsumerWidget {
         const Divider(),
         const _SectionHeader('Downloader engine'),
         const _EngineUpdateTile(),
+        SwitchListTile(
+          title: const Text('Check for updates on app open'),
+          subtitle: const Text(
+            'Keep yt-dlp current automatically (recommended for YouTube)',
+          ),
+          value: settings.autoCheckEngineUpdate,
+          onChanged: controller.setAutoCheckEngineUpdate,
+        ),
         const Divider(),
         const _SectionHeader('Storage'),
         SwitchListTile(

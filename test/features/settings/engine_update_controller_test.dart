@@ -50,4 +50,41 @@ void main() {
     expect(state?.version, '2026.05.20');
     expect(state?.message, isNotNull);
   });
+
+  group('shouldAutoCheckEngine', () {
+    final now = DateTime.utc(2026, 5, 21, 12);
+
+    test('disabled → never checks', () {
+      expect(
+        shouldAutoCheckEngine(enabled: false, lastCheck: null, now: now),
+        isFalse,
+      );
+    });
+
+    test('enabled + never checked → checks', () {
+      expect(
+        shouldAutoCheckEngine(enabled: true, lastCheck: null, now: now),
+        isTrue,
+      );
+    });
+
+    test('respects the 24h interval', () {
+      expect(
+        shouldAutoCheckEngine(
+          enabled: true,
+          lastCheck: now.subtract(const Duration(hours: 23)),
+          now: now,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldAutoCheckEngine(
+          enabled: true,
+          lastCheck: now.subtract(const Duration(hours: 25)),
+          now: now,
+        ),
+        isTrue,
+      );
+    });
+  });
 }

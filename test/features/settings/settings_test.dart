@@ -129,6 +129,30 @@ void main() {
       expect((await SettingsRepository(db).read()).disclaimerAccepted, isTrue);
     });
 
+    test(
+      'autoCheckEngineUpdate defaults on and persists when toggled',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [appDatabaseProvider.overrideWithValue(db)],
+        );
+        addTearDown(container.dispose);
+
+        final loaded = await container.read(settingsControllerProvider.future);
+        expect(loaded.autoCheckEngineUpdate, isTrue);
+
+        await container
+            .read(settingsControllerProvider.notifier)
+            .setAutoCheckEngineUpdate(false);
+
+        expect(
+          (await SettingsRepository(db).read()).autoCheckEngineUpdate,
+          isFalse,
+        );
+      },
+    );
+
     test('setFilenameTemplate persists the pattern', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
