@@ -154,24 +154,15 @@ new playable/viewable library item fully offline.
 production-ready Android experience with a real visual identity. No backend, no new
 feature areas — pure design/identity/UX. **Material 3 Expressive** is the target
 language; a **rabbit motif** ("Grab" + rabbit) anchors the brand.
-**Deliverables:**
-- **Brand identity** — rabbit-motif logo; **adaptive launcher icon** (foreground/
-  background + Android-13 **themed/monochrome** layer); notification icon; themed
-  **splash** (light/dark). Tooling: `flutter_launcher_icons` + `flutter_native_splash`.
-- **Design foundation** — adopt **Material 3 Expressive** in `core/theme`
-  (expressive color/type/shape/motion); replace the default purple seed with the
-  brand seed (keep Material-You dynamic color); **design tokens** as a `ThemeExtension`
-  (spacing, radii, elevation, durations) so screens stop hardcoding values.
-- **Shared component library** restyle (cards, tiles, bottom sheets, dialogs, chips,
-  pickers, progress, snackbars) + shared **empty / skeleton-loader / error** widgets
-  replacing bare spinners and `Center+Text`.
-- **Per-screen revamp** of all 12 routes to the new system (Simple/Advanced parity);
-  expressive page transitions + thumbnail hero animations.
-- **Responsive/large-screen + foldable** layouts (today phone-only) and an
-  **accessibility** pass (contrast, ≥48dp targets, semantics, dynamic type).
-**Process:** kicked off by a **Stitch design brief** (`docs/design/stitch-brief.md`)
-used to generate wireframes for every screen; built **foundation-first** then
-incrementally per-screen (each PR keeps CI green + updates `docs/VERIFICATION.md`).
+**Scope (high level):** brand identity (rabbit-ears logo + adaptive icon + splash);
+a Material 3 Expressive design foundation (color/type/shape/motion + design tokens);
+a restyled shared component library; a per-screen revamp of all 12 routes; and a
+responsive/foldable + accessibility pass.
+**Delivery:** designed **directly in Flutter** (no external wireframing tool) and
+shipped as many small **subphases** (foundation first, then one per screen), each
+reviewed on-device. The subphase breakdown lives in
+**`docs/design/P7-REVAMP-PLAN.md`**; the design system (brand, tokens, components,
+per-screen intent) lives in **`docs/design/DESIGN_SPEC.md`**.
 **Exit criteria:** every screen revamped to the new system and verified on a real
 device (light/dark + dynamic color); new icon/splash render; no regression in the
 P0–P6 on-device checks.
