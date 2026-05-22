@@ -167,7 +167,8 @@ Video + image variants.
 App bar with Save. Title field; multi-line Notes; tags editor (chips + add field);
 collections checkboxes + inline create. Clean spaced form with section headers.
 
-### `[ ]` Media Studio — `/item/:id/studio` (P7i)
+### `[x]` Media Studio — `/item/:id/studio` (P7i)
+*(crop tool deferred — see `docs/BACKLOG.md`)*
 Preview + tools. Video: timeline with range slider (trim, MM:SS), single-handle slider
 (frame extract). Transform chips: rotate/flip/mirror/reverse/extract-audio/extract-frame/
 convert. Image: rotate/flip/mirror/crop/convert. Primary Apply/Export (new item; original
