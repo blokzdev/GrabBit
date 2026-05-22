@@ -35,7 +35,9 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
           mediaItemByIdProvider('x').overrideWith((ref) => item),
           // Finite stubs so the live Drift watch streams don't stall the test.
-          metadataForItemProvider('x').overrideWith((ref) => Stream.value(null)),
+          metadataForItemProvider(
+            'x',
+          ).overrideWith((ref) => Stream.value(null)),
           tagsForItemProvider('x').overrideWith((ref) => Stream.value(<Tag>[])),
         ],
         child: const MaterialApp(home: ItemDetailScreen(itemId: 'x')),
@@ -45,29 +47,30 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('renders detail chips and a Save to device action', (
-    tester,
-  ) async {
-    await pump(tester, _item());
+  testWidgets(
+    'renders detail chips and a Save to device action',
+    (tester) async {
+      await pump(tester, _item());
 
-    expect(find.text('My Clip'), findsWidgets); // app bar + body title
-    expect(find.text('IMAGE'), findsOneWidget);
-    expect(find.text('1920×1080'), findsOneWidget);
-    expect(
-      find.widgetWithText(FilledButton, 'Save to device'),
-      findsOneWidget,
-    );
-  }, timeout: const Timeout(Duration(seconds: 30)));
+      expect(find.text('My Clip'), findsWidgets); // app bar + body title
+      expect(find.text('IMAGE'), findsOneWidget);
+      expect(find.text('1920×1080'), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'Save to device'),
+        findsOneWidget,
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 
-  testWidgets('an exported item shows the saved state, not the button', (
-    tester,
-  ) async {
-    await pump(tester, _item(storageState: 'exported'));
+  testWidgets(
+    'an exported item shows the saved state, not the button',
+    (tester) async {
+      await pump(tester, _item(storageState: 'exported'));
 
-    expect(find.text('Saved to device'), findsOneWidget);
-    expect(
-      find.widgetWithText(FilledButton, 'Save to device'),
-      findsNothing,
-    );
-  }, timeout: const Timeout(Duration(seconds: 30)));
+      expect(find.text('Saved to device'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Save to device'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 }
