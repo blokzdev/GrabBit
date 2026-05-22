@@ -44,19 +44,20 @@ silhouette at small/monochrome sizes. Pairs with a **"GrabBit"** wordmark (displ
 - Splash via `flutter_native_splash` (Material splash: brand background + centered mark),
   light + dark.
 
-> P7a presents **2–3 logo directions** for sign-off before assets are finalized.
+> **Finalized in P7a (Direction B):** a friendly rounded bunny head + ears with an amber
+> "grab" chevron. In `logo_mono.svg` the chevron is **knocked out as transparent negative
+> space** so the download cue survives when Android tints the themed/monochrome layer.
 
 ---
 
 ## 3. Color
 
-Move off the default M3 purple (`0xFF6750A4`). **Starting brand palette** (finalized in
-P7a; alternates presented there):
+Off the default M3 purple (`0xFF6750A4`). **Brand palette** (finalized P7a):
 
 | Role | Light | Dark | Notes |
 |---|---|---|---|
 | **Brand seed / primary** | `#5A3FE0` (electric indigo-violet) | tonal | confident, modern-Android |
-| **Accent (CTA)** | `#FF8A4C` (warm amber) | tonal | primary download/grab actions, FAB |
+| **Accent (CTA)** | `#FF8A4C` (warm amber) | tonal | primary download/grab actions, FAB; on the `GrabBitTokens` extension (not a `ColorScheme` role) |
 | **Surface** | near-white, low-chroma | near-black, low-chroma | lets media pop |
 | Error | M3 default error roles | — | from the scheme |
 
@@ -72,7 +73,8 @@ and brand-specific values from the `GrabBitTokens` extension (§5).
 
 Material 3 Expressive type scale. **Display/headline** = a friendly geometric sans
 (**Outfit**) to echo the rounded mark; **body/label** = a highly readable sans (**Inter**).
-Via `google_fonts` (or bundled assets). Use the M3 roles (`displayLarge` … `labelSmall`)
+**Bundled** as variable fonts in `assets/fonts/` (no `google_fonts` runtime fetch — keeps
+the app offline + privacy-first). Use the M3 roles (`displayLarge` … `labelSmall`)
 through `TextTheme`; screens reference roles, not raw sizes. Bias one size up on key
 headlines for the expressive feel; keep body ≥14sp and respect the system text-scale.
 

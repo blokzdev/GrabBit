@@ -22,6 +22,10 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `flutter_local_notifications` | Notification channel + terminal (complete/failed) notifications. The **foreground-service notification itself is built natively** in `DownloadService.kt` (FGS lifecycle requires it) |
 | `video_player`, `chewie` | In-app media playback (P1) |
 | `crypto` | Salted PIN hashing for app lock (P2) |
+| `flutter_svg` | Render the brand SVG mark in-app at any size (P7) |
+| `flutter_launcher_icons` (dev) | Generate the adaptive launcher icon — foreground + brand background + **monochrome** (Android-13 themed) — from PNG masters (P7) |
+| `flutter_native_splash` (dev) | Generate the branded (Android-12+) splash, light/dark (P7) |
+| **Bundled fonts** `Outfit` (display) + `Inter` (body) in `assets/fonts/` | Brand type, **bundled not fetched** — offline + privacy-first (no `google_fonts` runtime call) (P7) |
 | Export to device: **hand-rolled Pigeon channel** (SAF + MediaStore) — no `media_store_plus`/`shared_storage` dep (see §5) | Export to gallery / user-picked folder |
 | `dio` | HTTP (v2 model downloads; v3 backend) |
 | `freezed`, `json_serializable` | Immutable models / JSON |

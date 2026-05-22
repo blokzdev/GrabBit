@@ -1,0 +1,9 @@
+{
+  "name": "grabbit-brand-tools",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only: rasterize brand SVGs to PNG masters (Sharp/libvips). Not shipped.",
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

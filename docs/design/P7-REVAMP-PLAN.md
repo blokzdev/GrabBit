@@ -23,20 +23,23 @@
 
 ## Foundation
 
-### `[ ]` P7a — Brand identity & design foundation
-- Design the rabbit-ears **SVG** logo; present **2–3 directions** for sign-off.
-- Generate the **adaptive launcher icon** (foreground / background / **monochrome**),
-  **notification** icon, and themed **splash** (light/dark).
-- Add deps: `flutter_svg`; dev `flutter_launcher_icons`, `flutter_native_splash`;
-  `google_fonts` (or bundled font). Register `assets/brand/` in `pubspec.yaml`. Justify
-  in commit + add to `docs/SPEC.md`.
-- Expand `lib/core/theme/app_theme.dart` into a full **Material 3 Expressive** theme
-  (color/type/shape/motion + component themes), keeping `DynamicColorBuilder` in
-  `lib/app.dart` working; replace the `0xFF6750A4` seed with the brand seed.
-- Add `GrabBitTokens extends ThemeExtension` (spacing, radii, elevation, durations, brand
-  colors) in `lib/core/theme/`.
+### `[x]` P7a — Brand identity & design foundation
+- ✅ Rabbit-ears **SVG** logo (3 directions presented; **Direction B** chosen): `logo.svg`
+  (full color) + `logo_mono.svg` (silhouette with the download chevron **hollowed out** for
+  the themed/monochrome layer). Rasterized to PNG masters via a Sharp dev tool (`tool/brand/`).
+- ✅ **Adaptive launcher icon** (foreground / brand background / **monochrome**) via
+  `flutter_launcher_icons`, and the Android-12+ branded **splash** (light/dark) via
+  `flutter_native_splash`.
+- ✅ Deps: `flutter_svg`; dev `flutter_launcher_icons`, `flutter_native_splash`. Brand type
+  **Outfit + Inter bundled** in `assets/fonts/` (offline/privacy-first — no `google_fonts`
+  runtime fetch). `assets/brand/` registered; added to `docs/SPEC.md`.
+- ✅ `lib/core/theme/app_theme.dart` → full **Material 3 Expressive** theme (brand seed
+  `#5A3FE0` + amber accent, Outfit/Inter type, pill buttons/chips, rounded cards/sheets,
+  component themes), `DynamicColorBuilder` in `lib/app.dart` still working.
+- ✅ `GrabBitTokens extends ThemeExtension` (spacing, radii, elevation, motion, brand colors).
 - **Exit / review:** new icon + splash render on-device; app adopts the new theme in
-  light/dark + dynamic color with no regressions.
+  light/dark + dynamic color with no regressions. *(on-device spot-check pending — see
+  `docs/VERIFICATION.md` P7.)*
 
 ### `[ ]` P7b — Shared component library
 - Restyle reusable widgets to the system: `MediaGrid`/`MediaTile`, `confirm()` dialog,
