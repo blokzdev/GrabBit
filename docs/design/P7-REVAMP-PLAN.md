@@ -72,7 +72,7 @@
 | `[x]` P7h | Metadata Edit | `/item/:id/edit` |
 | `[x]` P7i | Media Studio | `/item/:id/studio` |
 | `[x]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
-| `[ ]` P7k | Settings | `/settings` |
+| `[x]` P7k | Settings | `/settings` |
 | `[ ]` P7l | Disclaimer + Lock | `/disclaimer`, `/lock` |
 
 **P7c done:** Home shell rebranded (mark + wordmark app bar, queue running dot, tokenized
@@ -120,6 +120,11 @@ CI green (format · analyze · 171 tests · debug APK).
 delete) with an "New collection" extended FAB + name dialog; detail uses the shared `MediaGrid`.
 Shared empty/skeleton/error states; added a `collectionItemCountsProvider` (group-by aggregate,
 mirrors the folder counts). CI green (format · analyze · 175 tests · debug APK).
+
+**P7k done:** Settings restyled — each section (Downloads / Downloader engine / Storage /
+Appearance / Security) is an **icon-led `SectionHeader` + grouped card** (`SectionHeader` gained
+an optional `icon`); themed filled filename field (token chips + preview); shared skeleton/error
+states; all controls + logic unchanged. CI green (format · analyze · 176 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.

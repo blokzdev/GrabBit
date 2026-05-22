@@ -187,7 +187,7 @@ Pause all / Clear completed); status summary pills (Running·Queued·Held·Pause
 Failed); task tiles (title not raw URL, linear progress, status label, per-task actions:
 Pause/Cancel/Resume/Retry/Remove). States: active queue · empty.
 
-### `[ ]` Settings — `/settings` (P7k)
+### `[x]` Settings — `/settings` (P7k)
 Sections with headers + leading icons: Downloads (Advanced-mode switch, default quality,
 max concurrent 1–5, Wi-Fi only, filename template w/ token chips + preview, subtitles/
 thumbnail/metadata switches); Downloader engine (yt-dlp version + Update + progress,
