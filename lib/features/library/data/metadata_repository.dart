@@ -227,6 +227,20 @@ class MetadataRepository {
     await (_db.delete(_db.collections)..where((t) => t.id.equals(id))).go();
   }
 
+  /// Item counts per collection (`collectionId` → count) for the list rows.
+  Stream<Map<int, int>> watchCollectionItemCounts() {
+    final count = _db.mediaCollections.itemId.count();
+    final query = _db.selectOnly(_db.mediaCollections)
+      ..addColumns([_db.mediaCollections.collectionId, count])
+      ..groupBy([_db.mediaCollections.collectionId]);
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows)
+          row.read(_db.mediaCollections.collectionId)!: row.read(count) ?? 0,
+      },
+    );
+  }
+
   Stream<List<Collection>> watchCollectionsForItem(String itemId) {
     final query = _db.select(_db.collections).join([
       innerJoin(
@@ -268,6 +282,10 @@ final tagsForItemProvider = StreamProvider.family<List<Tag>, String>(
 
 final collectionsProvider = StreamProvider<List<Collection>>(
   (ref) => ref.watch(metadataRepositoryProvider).watchCollections(),
+);
+
+final collectionItemCountsProvider = StreamProvider<Map<int, int>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchCollectionItemCounts(),
 );
 
 final collectionsForItemProvider =

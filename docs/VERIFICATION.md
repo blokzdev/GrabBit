@@ -247,6 +247,14 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Unsupported types show the "Editing not available" empty state; loading/error/not-found
       render. *(Crop is deferred — see `docs/BACKLOG.md`.)*
 
+### P7j — Collections
+- [ ] The list shows each collection as a row (icon + name + **item count**) with a delete
+      action; the **New collection** FAB opens a name dialog and creates one.
+- [ ] Tapping a collection opens its scoped **media grid** (same cards as Library, Hero into
+      detail); deleting a collection keeps its media in the library.
+- [ ] Empty states render for no-collections and for an empty collection; loading shows the
+      skeleton, load failure shows error+retry.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.
