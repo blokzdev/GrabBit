@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
@@ -68,6 +69,13 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
                             message: filtering
                                 ? 'Try a different search or filter.'
                                 : 'Downloads will appear here.',
+                            action: filtering
+                                ? null
+                                : FilledButton.icon(
+                                    onPressed: () => context.push('/add'),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Add'),
+                                  ),
                           ),
                         ),
                       ],

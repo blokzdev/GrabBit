@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/explorer_view.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
@@ -25,33 +27,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final library = _view == HomeView.library;
-    final pendingQueue =
-        ref
-            .watch(queueTasksProvider)
-            .asData
-            ?.value
-            .where(
-              (t) =>
-                  t.status != TaskStatus.done &&
-                  t.status != TaskStatus.canceled,
-            )
-            .length ??
-        0;
+    final tokens = GrabBitTokens.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('GrabBit'),
+        title: const _BrandTitle(),
         actions: [
           if (library) ...[const _SortAction(), const _CollectionsAction()],
-          IconButton(
-            icon: Badge(
-              isLabelVisible: pendingQueue > 0,
-              label: Text('$pendingQueue'),
-              child: const Icon(Icons.download_outlined),
-            ),
-            tooltip: 'Queue',
-            onPressed: () => context.push('/queue'),
-          ),
+          const _QueueAction(),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: 'Settings',
@@ -61,7 +44,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(52),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            padding: EdgeInsets.fromLTRB(
+              tokens.spaceMd,
+              0,
+              tokens.spaceMd,
+              tokens.spaceSm,
+            ),
             child: SegmentedButton<HomeView>(
               segments: const [
                 ButtonSegment(
@@ -93,6 +81,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               icon: const Icon(Icons.create_new_folder_outlined),
               label: const Text('New folder'),
             ),
+    );
+  }
+}
+
+class _BrandTitle extends StatelessWidget {
+  const _BrandTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          'assets/brand/logo.svg',
+          height: 24,
+          semanticsLabel: 'GrabBit',
+        ),
+        SizedBox(width: tokens.spaceSm),
+        Text('GrabBit', style: Theme.of(context).textTheme.titleLarge),
+      ],
+    );
+  }
+}
+
+/// Queue action: count badge for pending work + an accent "running" dot shown
+/// only while a download is actively in progress.
+class _QueueAction extends ConsumerWidget {
+  const _QueueAction();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = GrabBitTokens.of(context);
+    final tasks = ref.watch(queueTasksProvider).asData?.value ?? const [];
+    final pending = tasks
+        .where(
+          (t) => t.status != TaskStatus.done && t.status != TaskStatus.canceled,
+        )
+        .length;
+    final anyRunning = tasks.any((t) => t.status == TaskStatus.running);
+
+    return IconButton(
+      tooltip: 'Queue',
+      onPressed: () => context.push('/queue'),
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Badge(
+            isLabelVisible: pending > 0,
+            label: Text('$pending'),
+            child: const Icon(Icons.download_outlined),
+          ),
+          if (anyRunning)
+            Positioned(
+              left: -1,
+              top: -1,
+              child: Container(
+                key: const Key('queueRunningDot'),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: tokens.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
