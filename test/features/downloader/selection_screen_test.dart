@@ -9,6 +9,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 
@@ -74,5 +75,28 @@ void main() {
     expect(find.text('Add to queue'), findsOneWidget);
     // Both entries selected by default → "2/2" in the title.
     expect(find.textContaining('2/2'), findsOneWidget);
+    // "Download now" is the accent FilledButton.
+    expect(find.widgetWithText(FilledButton, 'Download now'), findsOneWidget);
+  });
+
+  testWidgets('shows an empty state when there is nothing to download', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [downloadEngineProvider.overrideWithValue(_FakeEngine())],
+    );
+    addTearDown(container.dispose);
+    container.read(selectionControllerProvider.notifier).setSources(const []);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: SelectionScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(EmptyState), findsOneWidget);
+    expect(find.text('Nothing to download'), findsOneWidget);
   });
 }

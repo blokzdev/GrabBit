@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_banner.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 
@@ -18,6 +21,33 @@ class SelectionScreen extends ConsumerWidget {
     final entries = state.allEntries;
     final selectedCount = state.selected.length;
     final tokens = GrabBitTokens.of(context);
+
+    final Widget body;
+    if (state.expanding && entries.isEmpty) {
+      body = const MediaGridSkeleton();
+    } else if (entries.isEmpty) {
+      body = const EmptyState(
+        icon: Icons.playlist_remove,
+        title: 'Nothing to download',
+        message: 'These links produced no downloadable items.',
+      );
+    } else {
+      body = GridView.builder(
+        padding: EdgeInsets.all(tokens.spaceMd),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200,
+          childAspectRatio: 0.8,
+          crossAxisSpacing: tokens.spaceSm,
+          mainAxisSpacing: tokens.spaceSm,
+        ),
+        itemCount: entries.length,
+        itemBuilder: (context, i) => _EntryTile(
+          entry: entries[i],
+          selected: state.selected.contains(entries[i].url),
+          onTap: () => controller.toggle(entries[i].url),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -47,26 +77,7 @@ class SelectionScreen extends ConsumerWidget {
               ),
               child: ErrorBanner(message: '${s.url} — ${s.error!}'),
             ),
-          Expanded(
-            child: entries.isEmpty
-                ? const Center(child: Text('Nothing to download'))
-                : GridView.builder(
-                    padding: const EdgeInsets.all(12),
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 200,
-                          childAspectRatio: 0.85,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                        ),
-                    itemCount: entries.length,
-                    itemBuilder: (context, i) => _EntryTile(
-                      entry: entries[i],
-                      selected: state.selected.contains(entries[i].url),
-                      onTap: () => controller.toggle(entries[i].url),
-                    ),
-                  ),
-          ),
+          Expanded(child: body),
           _BottomBar(preset: state.preset, hasSelection: selectedCount > 0),
         ],
       ),
@@ -86,51 +97,106 @@ class _EntryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    final radius = BorderRadius.circular(tokens.radiusMd);
+    final duration = formatDuration(entry.durationSec);
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: radius,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: ColoredBox(
-                    color: scheme.surfaceContainerHighest,
-                    child: Icon(
-                      entry.isImage
-                          ? Icons.image_outlined
-                          : Icons.movie_outlined,
-                      color: scheme.onSurfaceVariant,
-                      size: 36,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: selected
+                    ? Border.all(color: scheme.primary, width: 2)
+                    : null,
+              ),
+              child: ClipRRect(
+                borderRadius: radius,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _EntryThumb(entry: entry),
+                    Positioned(
+                      top: tokens.spaceXs,
+                      left: tokens.spaceXs,
+                      child: _SelectionBadge(selected: selected),
                     ),
-                  ),
+                  ],
                 ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Icon(
-                    selected
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                    color: selected ? scheme.primary : Colors.white70,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: tokens.spaceXs),
           Text(
             entry.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: theme.textTheme.bodySmall,
           ),
+          if (duration.isNotEmpty)
+            Text(
+              duration,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _EntryThumb extends StatelessWidget {
+  const _EntryThumb({required this.entry});
+  final MediaEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final placeholder = ColoredBox(
+      color: scheme.surfaceContainerHighest,
+      child: Icon(
+        entry.isImage ? Icons.image_outlined : Icons.movie_outlined,
+        color: scheme.onSurfaceVariant,
+        size: 36,
+      ),
+    );
+    final thumb = entry.thumbnailUrl;
+    if (thumb == null) return placeholder;
+    return Image.network(
+      thumb,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => placeholder,
+    );
+  }
+}
+
+/// Selection check for an entry; legible on a themed placeholder or a photo via
+/// a small scrim disc behind the glyph.
+class _SelectionBadge extends StatelessWidget {
+  const _SelectionBadge({required this.selected});
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.scrim.withValues(alpha: 0.45),
+        shape: BoxShape.circle,
+      ),
+      padding: const EdgeInsets.all(1),
+      child: Icon(
+        selected ? Icons.check_circle : Icons.radio_button_unchecked,
+        size: 20,
+        color: selected ? scheme.primary : Colors.white,
       ),
     );
   }
@@ -165,52 +231,63 @@ class _BottomBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     final controller = ref.read(selectionControllerProvider.notifier);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Text('Quality:'),
-                const SizedBox(width: 12),
-                DropdownButton<QualityPreset>(
-                  value: preset,
-                  onChanged: (p) => p == null ? null : controller.setPreset(p),
-                  items: [
-                    for (final p in QualityPreset.values)
-                      DropdownMenuItem(value: p, child: Text(p.label)),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: hasSelection
-                        ? () => _finish(context, controller.addToBatch, false)
-                        : null,
-                    icon: const Icon(Icons.playlist_add),
-                    label: const Text('Add to queue'),
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.all(tokens.spaceMd),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Text('Quality', style: theme.textTheme.labelLarge),
+                  SizedBox(width: tokens.spaceMd),
+                  DropdownButton<QualityPreset>(
+                    value: preset,
+                    onChanged: (p) =>
+                        p == null ? null : controller.setPreset(p),
+                    items: [
+                      for (final p in QualityPreset.values)
+                        DropdownMenuItem(value: p, child: Text(p.label)),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: hasSelection
-                        ? () => _finish(context, controller.downloadNow, true)
-                        : null,
-                    icon: const Icon(Icons.download),
-                    label: const Text('Download now'),
+                ],
+              ),
+              SizedBox(height: tokens.spaceSm),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: hasSelection
+                          ? () => _finish(context, controller.addToBatch, false)
+                          : null,
+                      icon: const Icon(Icons.playlist_add),
+                      label: const Text('Add to queue'),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  SizedBox(width: tokens.spaceMd),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: tokens.accent,
+                        foregroundColor: tokens.onAccent,
+                      ),
+                      onPressed: hasSelection
+                          ? () => _finish(context, controller.downloadNow, true)
+                          : null,
+                      icon: const Icon(Icons.download),
+                      label: const Text('Download now'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -66,7 +66,7 @@
 |---|---|---|
 | `[x]` P7c | Home — Library + Explorer views | `/` |
 | `[x]` P7d | Add Download | `/add` |
-| `[ ]` P7e | Selection | `/select` |
+| `[x]` P7e | Selection | `/select` |
 | `[ ]` P7f | Queue | `/queue` |
 | `[ ]` P7g | Item Detail | `/item/:id` |
 | `[ ]` P7h | Metadata Edit | `/item/:id/edit` |
@@ -86,6 +86,12 @@ spot-check pending — see `docs/VERIFICATION.md`.)*
 **preview card** (thumbnail + duration pill + title/uploader), and **pill** actions (tonal
 "Add to queue" + accent "Download now"); tokenized throughout. Advanced format/codec picker
 **deferred** to `docs/BACKLOG.md`. CI green (format · analyze · 159 tests · debug APK).
+
+**P7e done:** Selection restyled — entry tiles mirror the library `MediaTile` (thumbnail with
+type-icon fallback, scheme-role selection badge, duration caption), shared `EmptyState` for no
+entries, `MediaGridSkeleton` while expanding, and a tonal bottom bar with the quality dropdown +
+**pill** actions (tonal "Add to queue" + accent "Download now"). CI green (format · analyze ·
+160 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.

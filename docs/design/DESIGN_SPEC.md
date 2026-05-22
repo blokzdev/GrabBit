@@ -151,7 +151,7 @@ title/uploader/duration); quality preset chips (Simple = few presets, Advanced =
 format/codec options); two pill actions "Add to queue" (tonal) + "Download now" (accent).
 States: probing/loading · error banner with "Update engine" CTA.
 
-### `[ ]` Selection — `/select` (P7e)
+### `[x]` Selection — `/select` (P7e)
 Multi-item picker for playlists/channels/carousels. App bar with live selected-count +
 select-all; responsive grid of selectable thumbnail tiles (checkbox/ring + type icon);
 optional per-source error card; bottom bar (quality dropdown + Add/Download). States:

@@ -192,6 +192,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       downloader engine"** action (opens Settings).
 - [ ] Pasting multiple links / a playlist still routes to the Selection screen.
 
+### P7e — Selection
+- [ ] An expanded playlist/channel shows a grid of selectable **entry tiles** (thumbnail when
+      available, else a type icon); tapping toggles selection with a clear **selected** state.
+- [ ] App bar shows the live **selected/total** count; **All** / **None** work.
+- [ ] A failed link shows a per-source **error card**; a set that yields nothing shows the
+      **empty** state.
+- [ ] Bottom bar: **quality dropdown** + **tonal** "Add to queue" (held) + **accent** "Download
+      now" (starts immediately); both route home with a "View queue" snackbar.
+- [ ] Entry tiles show a **duration** caption when the source reports it.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.
