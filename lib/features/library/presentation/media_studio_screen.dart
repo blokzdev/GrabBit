@@ -9,9 +9,15 @@ import 'package:grabbit/core/engine/media_tools_engine.dart';
 import 'package:grabbit/core/engine/media_tools_ops.dart';
 import 'package:grabbit/core/engine/media_tools_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/utils/task_id.dart';
+import 'package:grabbit/core/widgets/empty_state.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/media_tools_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/media_grid.dart';
 
 /// On-device editing tools that produce a new library item, leaving the
 /// original untouched. Video: trim, frame extract, rotate/flip/mirror, reverse,
@@ -29,6 +35,7 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
   String? _jobId;
   double? _progress;
   bool _running = false;
+  String _label = '';
 
   RangeValues? _trim; // seconds
   double? _framePos; // seconds
@@ -64,6 +71,7 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
       _jobId = jobId;
       _progress = null;
       _running = true;
+      _label = label;
     });
     _sub = ref.read(mediaToolsEngineProvider).run(job).listen((p) async {
       switch (p.stage) {
@@ -115,15 +123,28 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Studio')),
       body: item.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load item: $e')),
+        loading: () => const _StudioSkeleton(),
+        error: (e, _) => ErrorView(
+          message: 'Failed to load item: $e',
+          onRetry: () => ref.invalidate(mediaItemByIdProvider(widget.itemId)),
+        ),
         data: (row) {
-          if (row == null) return const Center(child: Text('Item not found'));
+          if (row == null) {
+            return const EmptyState(
+              icon: Icons.broken_image_outlined,
+              title: 'Item not found',
+              message: 'This item may have been removed.',
+            );
+          }
           return Stack(
             children: [
               _toolsFor(row),
               if (_running)
-                _RunningOverlay(progress: _progress, onCancel: _cancel),
+                _RunningOverlay(
+                  progress: _progress,
+                  label: _label,
+                  onCancel: _cancel,
+                ),
             ],
           );
         },
@@ -134,66 +155,68 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
   Widget _toolsFor(MediaItem row) {
     if (row.type == 'image') return _imageTools(row);
     if (row.type == 'video') return _videoTools(row);
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Editing tools are available for video and image items.',
-          textAlign: TextAlign.center,
-        ),
-      ),
+    return const EmptyState(
+      icon: Icons.edit_off_outlined,
+      title: 'Editing not available',
+      message: 'Tools are available for video and image items.',
     );
   }
 
   Widget _videoTools(MediaItem row) {
     final ext = _ext(row);
+    final tokens = GrabBitTokens.of(context);
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(tokens.spaceLg),
       children: [
+        _Preview(item: row),
+        SizedBox(height: tokens.spaceLg),
         if (row.durationSec != null) ...[
-          _TrimCard(
-            durationSec: row.durationSec!,
-            values: _trim ??= RangeValues(0, row.durationSec!.toDouble()),
-            onChanged: _running ? null : (v) => setState(() => _trim = v),
-            onApply: () => _run(
-              row,
-              label: 'trim',
-              outExt: ext,
-              outDurationSec: (_trim!.end - _trim!.start).round(),
-              build: (i, o) => trimArgs(
-                input: i,
-                output: o,
-                start: Duration(milliseconds: (_trim!.start * 1000).round()),
-                duration: Duration(
-                  milliseconds: ((_trim!.end - _trim!.start) * 1000).round(),
+          _ToolCard(
+            title: 'Trim',
+            child: _TrimCard(
+              durationSec: row.durationSec!,
+              values: _trim ??= RangeValues(0, row.durationSec!.toDouble()),
+              onChanged: _running ? null : (v) => setState(() => _trim = v),
+              onApply: () => _run(
+                row,
+                label: 'trim',
+                outExt: ext,
+                outDurationSec: (_trim!.end - _trim!.start).round(),
+                build: (i, o) => trimArgs(
+                  input: i,
+                  output: o,
+                  start: Duration(milliseconds: (_trim!.start * 1000).round()),
+                  duration: Duration(
+                    milliseconds: ((_trim!.end - _trim!.start) * 1000).round(),
+                  ),
                 ),
               ),
             ),
           ),
-          const Divider(height: 32),
-          _FrameCard(
-            durationSec: row.durationSec!,
-            value: _framePos ??= 0,
-            onChanged: _running ? null : (v) => setState(() => _framePos = v),
-            onApply: () => _run(
-              row,
-              label: 'frame',
-              outExt: 'jpg',
-              build: (i, o) => frameArgs(
-                input: i,
-                output: o,
-                at: Duration(milliseconds: (_framePos! * 1000).round()),
+          SizedBox(height: tokens.spaceLg),
+          _ToolCard(
+            title: 'Extract frame',
+            child: _FrameCard(
+              durationSec: row.durationSec!,
+              value: _framePos ??= 0,
+              onChanged: _running ? null : (v) => setState(() => _framePos = v),
+              onApply: () => _run(
+                row,
+                label: 'frame',
+                outExt: 'jpg',
+                build: (i, o) => frameArgs(
+                  input: i,
+                  output: o,
+                  at: Duration(milliseconds: (_framePos! * 1000).round()),
+                ),
               ),
             ),
           ),
-          const Divider(height: 32),
+          SizedBox(height: tokens.spaceLg),
         ],
-        Text('Transform', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
+        _ToolCard(
+          title: 'Transform',
+          child: _chipWrap([
             _opChip(
               'Rotate left',
               Icons.rotate_left,
@@ -247,14 +270,12 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
                 build: (i, o) => reverseArgs(input: i, output: o),
               ),
             ),
-          ],
+          ]),
         ),
-        const Divider(height: 32),
-        Text('Convert', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: [
+        SizedBox(height: tokens.spaceLg),
+        _ToolCard(
+          title: 'Convert',
+          child: _chipWrap([
             _opChip(
               'Extract audio (M4A)',
               Icons.music_note,
@@ -265,7 +286,7 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
                 build: (i, o) => extractAudioArgs(input: i, output: o),
               ),
             ),
-          ],
+          ]),
         ),
       ],
     );
@@ -273,15 +294,15 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
 
   Widget _imageTools(MediaItem row) {
     final ext = _ext(row);
+    final tokens = GrabBitTokens.of(context);
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(tokens.spaceLg),
       children: [
-        Text('Transform', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
+        _Preview(item: row),
+        SizedBox(height: tokens.spaceLg),
+        _ToolCard(
+          title: 'Transform',
+          child: _chipWrap([
             _opChip(
               'Rotate left',
               Icons.rotate_left,
@@ -324,14 +345,12 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
                 build: (i, o) => flipArgs(input: i, output: o, vertical: true),
               ),
             ),
-          ],
+          ]),
         ),
-        const Divider(height: 32),
-        Text('Convert', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: [
+        SizedBox(height: tokens.spaceLg),
+        _ToolCard(
+          title: 'Convert',
+          child: _chipWrap([
             for (final fmt in const ['jpg', 'png', 'webp'])
               if (fmt != ext.toLowerCase())
                 _opChip(
@@ -344,9 +363,18 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
                     build: (i, o) => convertArgs(input: i, output: o),
                   ),
                 ),
-          ],
+          ]),
         ),
       ],
+    );
+  }
+
+  Widget _chipWrap(List<Widget> chips) {
+    final tokens = GrabBitTokens.of(context);
+    return Wrap(
+      spacing: tokens.spaceSm,
+      runSpacing: tokens.spaceSm,
+      children: chips,
     );
   }
 
@@ -355,6 +383,58 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
     label: Text(label),
     onPressed: _running ? null : onTap,
   );
+}
+
+/// Rounded media preview shown above the editing tools.
+class _Preview extends StatelessWidget {
+  const _Preview({required this.item});
+  final MediaItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tokens.radiusLg),
+      child: ColoredBox(
+        color: Colors.black,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: MediaThumb(item: item),
+        ),
+      ),
+    );
+  }
+}
+
+/// A titled card grouping one set of editing controls.
+class _ToolCard extends StatelessWidget {
+  const _ToolCard({required this.title, required this.child});
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: theme.colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(tokens.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: theme.textTheme.titleSmall),
+            SizedBox(height: tokens.spaceSm),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _TrimCard extends StatelessWidget {
@@ -372,20 +452,26 @@ class _TrimCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Trim', style: theme.textTheme.titleMedium),
         Text(
-          '${_fmt(values.start)} – ${_fmt(values.end)}',
-          style: theme.textTheme.bodySmall,
+          '${formatDuration(values.start.round())} – ${formatDuration(values.end.round())}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         RangeSlider(
           values: values,
           max: durationSec.toDouble(),
-          labels: RangeLabels(_fmt(values.start), _fmt(values.end)),
+          labels: RangeLabels(
+            formatDuration(values.start.round()),
+            formatDuration(values.end.round()),
+          ),
           onChanged: onChanged,
         ),
+        SizedBox(height: tokens.spaceSm),
         FilledButton.icon(
           onPressed: (onChanged == null || values.end <= values.start)
               ? null
@@ -413,17 +499,23 @@ class _FrameCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Extract frame', style: theme.textTheme.titleMedium),
-        Text('at ${_fmt(value)}', style: theme.textTheme.bodySmall),
+        Text(
+          'at ${formatDuration(value.round())}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         Slider(
           value: value,
           max: durationSec.toDouble(),
-          label: _fmt(value),
+          label: formatDuration(value.round()),
           onChanged: onChanged,
         ),
+        SizedBox(height: tokens.spaceSm),
         FilledButton.icon(
           onPressed: onChanged == null ? null : onApply,
           icon: const Icon(Icons.image_outlined),
@@ -434,26 +526,32 @@ class _FrameCard extends StatelessWidget {
   }
 }
 
-String _fmt(double s) {
-  final d = Duration(seconds: s.round());
-  final m = d.inMinutes.toString().padLeft(2, '0');
-  final sec = (d.inSeconds % 60).toString().padLeft(2, '0');
-  return '$m:$sec';
-}
-
 class _RunningOverlay extends StatelessWidget {
-  const _RunningOverlay({required this.progress, required this.onCancel});
+  const _RunningOverlay({
+    required this.progress,
+    required this.label,
+    required this.onCancel,
+  });
   final double? progress;
+  final String label;
   final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final op = label.isEmpty
+        ? 'Working…'
+        : '${label[0].toUpperCase()}${label.substring(1)}…';
     return ColoredBox(
-      color: Colors.black54,
+      color: theme.colorScheme.scrim.withValues(alpha: 0.6),
       child: Center(
         child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusXl),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(tokens.spaceXl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -464,14 +562,46 @@ class _RunningOverlay extends StatelessWidget {
                     value: progress == null ? null : progress! / 100,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(progress == null ? 'Working…' : '${progress!.round()}%'),
-                const SizedBox(height: 8),
+                SizedBox(height: tokens.spaceLg),
+                Text(op, style: theme.textTheme.titleSmall),
+                SizedBox(height: tokens.spaceXs),
+                Text(
+                  progress == null ? 'Preparing…' : '${progress!.round()}%',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: tokens.spaceSm),
                 TextButton(onPressed: onCancel, child: const Text('Cancel')),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shimmering placeholder while the item row loads.
+class _StudioSkeleton extends StatelessWidget {
+  const _StudioSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Shimmer(
+      child: ListView(
+        padding: EdgeInsets.all(tokens.spaceLg),
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Skeleton(radius: tokens.radiusLg),
+          ),
+          SizedBox(height: tokens.spaceLg),
+          Skeleton(height: 96, radius: tokens.radiusLg),
+          SizedBox(height: tokens.spaceLg),
+          Skeleton(height: 96, radius: tokens.radiusLg),
+        ],
       ),
     );
   }

@@ -70,7 +70,7 @@
 | `[x]` P7f | Queue | `/queue` |
 | `[x]` P7g | Item Detail | `/item/:id` |
 | `[x]` P7h | Metadata Edit | `/item/:id/edit` |
-| `[ ]` P7i | Media Studio | `/item/:id/studio` |
+| `[x]` P7i | Media Studio | `/item/:id/studio` |
 | `[ ]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
 | `[ ]` P7k | Settings | `/settings` |
 | `[ ]` P7l | Disclaimer + Lock | `/disclaimer`, `/lock` |
@@ -109,6 +109,12 @@ error / not-found states. Added a shared `formatBytes` util. CI green (format ·
 (Details / Tags / Collections), themed filled Title/Notes fields, tag chips + add field,
 collections checkboxes with inline "New" create, a labeled **Save** action, and
 loading-skeleton / error / not-found states. CI green (format · analyze · 169 tests · debug APK).
+
+**P7i done:** Media Studio restyled — a media **preview** header, tools grouped into **cards**
+(Trim / Extract frame / Transform / Convert), themed sliders/chips (shared `formatDuration`),
+shared empty/error/not-found + loading skeleton, and a polished **running overlay** (scrim +
+op label + % + Cancel). Engine/ops/repo untouched; **crop** stays deferred (`docs/BACKLOG.md`).
+CI green (format · analyze · 171 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.

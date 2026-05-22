@@ -237,6 +237,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Section headers (Details / Tags / Collections) and themed filled fields render cleanly;
       loading-skeleton / error / not-found states appear as expected.
 
+### P7i — Media Studio
+- [ ] A media **preview** shows above the tools; tools are grouped into clean cards.
+- [ ] **Video**: Trim (range slider + MM:SS) produces a new item; Extract frame → image;
+      rotate/flip/mirror/reverse/extract-audio each produce a new item (original kept).
+- [ ] **Image**: rotate/flip/mirror and convert (JPG/PNG/WEBP) produce a new item.
+- [ ] The **running overlay** (scrim + operation label + % + Cancel) shows during a job and
+      **Cancel** aborts it; the result opens via the snackbar "Open" action.
+- [ ] Unsupported types show the "Editing not available" empty state; loading/error/not-found
+      render. *(Crop is deferred — see `docs/BACKLOG.md`.)*
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.
