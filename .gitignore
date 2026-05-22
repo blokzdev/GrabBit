@@ -4,6 +4,10 @@
 *.pyc
 *.swp
 .DS_Store
+
+# Brand dev tooling (Node) — generated PNG masters are committed, deps are not
+tool/brand/node_modules/
+assets/brand/previews/
 .atom/
 .build/
 .buildlog/

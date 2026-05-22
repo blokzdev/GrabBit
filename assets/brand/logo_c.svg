@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Direction C — "Bold": filled ears above a solid downward arrow (iconic) -->
+  <rect x="182" y="84" width="74" height="206" rx="37" fill="#5A3FE0" transform="rotate(-15 219 187)"/>
+  <rect x="256" y="84" width="74" height="206" rx="37" fill="#5A3FE0" transform="rotate(15 293 187)"/>
+  <path d="M178 286 H334 L256 384 Z" fill="#FF8A4C"/>
+</svg>
