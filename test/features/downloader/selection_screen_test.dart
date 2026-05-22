@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Clip A'), findsOneWidget);
     expect(find.text('Photo B'), findsOneWidget);
     expect(find.text('Download now'), findsOneWidget);
-    expect(find.text('Add to batch'), findsOneWidget);
+    expect(find.text('Add to queue'), findsOneWidget);
     // Both entries selected by default → "2/2" in the title.
     expect(find.textContaining('2/2'), findsOneWidget);
   });

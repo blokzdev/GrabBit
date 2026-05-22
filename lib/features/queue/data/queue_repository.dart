@@ -86,6 +86,13 @@ class QueueRepository {
         .write(const DownloadTasksCompanion(status: Value(TaskStatus.queued)));
   }
 
+  /// Flips every `paused` task back to `queued` so the scheduler resumes them.
+  Future<void> resumeAllPaused() async {
+    await (_db.update(_db.downloadTasks)
+          ..where((t) => t.status.equals(TaskStatus.paused)))
+        .write(const DownloadTasksCompanion(status: Value(TaskStatus.queued)));
+  }
+
   Future<void> setStatus(String id, String status, {String? errorCode}) async {
     await (_db.update(_db.downloadTasks)..where((t) => t.id.equals(id))).write(
       DownloadTasksCompanion(

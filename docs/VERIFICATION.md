@@ -151,6 +151,18 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
 - [ ] i18n scaffolding present; subtitle-language selection works (if shipped).
 
+## Device-test refinements  *(v1, tracked in `docs/BACKLOG.md`)*
+- [ ] Single video → **Download now** starts immediately; **Add to queue** holds it
+      (shows "Held (batch)") until **Start all** runs it.
+- [ ] After either single-video action the app returns **Home** with a snackbar
+      ("Download started" / "Added to queue") whose **View queue** opens the queue.
+- [ ] Playlist/batch picker: **Download now** runs the selection; **Add to queue**
+      holds it; same Home + snackbar behaviour.
+- [ ] The **Queue screen always has a working back/Home** control — reachable via the
+      Home queue button (back) *and* after a download action (Home), never stranding you.
+- [ ] Queue **header summary** reflects running/queued/held/paused/done/failed counts;
+      **Resume all** re-queues paused tasks; **Pause all** / **Start all** still work.
+
 ---
 
 ## v1 release (full regression with the **release** APK)

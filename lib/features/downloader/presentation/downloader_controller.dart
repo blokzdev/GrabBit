@@ -122,8 +122,9 @@ class DownloaderController extends _$DownloaderController {
   }
 
   /// Builds the request from the probed info + chosen preset and adds it to the
-  /// download queue (progress is then shown on the queue screen).
-  Future<void> enqueue(QualityPreset preset) async {
+  /// download queue. With [startNow] the scheduler runs it immediately;
+  /// otherwise it's held until the user taps "Start all" on the queue screen.
+  Future<void> enqueue(QualityPreset preset, {bool startNow = true}) async {
     final current = state;
     final info = current.info;
     if (info == null) return;
@@ -143,21 +144,23 @@ class DownloaderController extends _$DownloaderController {
       embedThumbnail: settings.embedThumbnail,
       embedMetadata: settings.embedMetadata,
     );
-    await ref
-        .read(queueControllerProvider.notifier)
-        .enqueue(
-          QueuedDownload(
-            request: request,
-            title: info.title,
-            site: info.site,
-            durationSec: info.durationSec,
-            uploader: info.uploader,
-            originalUrl: current.url,
-            description: info.description,
-            uploadDate: info.uploadDate,
-          ),
-        );
-    // Clear the form; the UI navigates to the queue after enqueuing.
+    final download = QueuedDownload(
+      request: request,
+      title: info.title,
+      site: info.site,
+      durationSec: info.durationSec,
+      uploader: info.uploader,
+      originalUrl: current.url,
+      description: info.description,
+      uploadDate: info.uploadDate,
+    );
+    final queue = ref.read(queueControllerProvider.notifier);
+    if (startNow) {
+      await queue.enqueue(download);
+    } else {
+      await queue.enqueueHeld([download]);
+    }
+    // Clear the form; the UI navigates away after enqueuing.
     state = const DownloaderState();
   }
 }

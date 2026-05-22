@@ -130,6 +130,28 @@ class _BottomBar extends ConsumerWidget {
   final QualityPreset preset;
   final bool hasSelection;
 
+  Future<void> _finish(
+    BuildContext context,
+    Future<void> Function() action,
+    bool startNow,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    await action();
+    router.go('/');
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(startNow ? 'Downloads started' : 'Added to queue'),
+          action: SnackBarAction(
+            label: 'View queue',
+            onPressed: () => router.push('/queue'),
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(selectionControllerProvider.notifier);
@@ -159,23 +181,17 @@ class _BottomBar extends ConsumerWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: hasSelection
-                        ? () async {
-                            await controller.addToBatch();
-                            if (context.mounted) context.go('/queue');
-                          }
+                        ? () => _finish(context, controller.addToBatch, false)
                         : null,
                     icon: const Icon(Icons.playlist_add),
-                    label: const Text('Add to batch'),
+                    label: const Text('Add to queue'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: hasSelection
-                        ? () async {
-                            await controller.downloadNow();
-                            if (context.mounted) context.go('/queue');
-                          }
+                        ? () => _finish(context, controller.downloadNow, true)
                         : null,
                     icon: const Icon(Icons.download),
                     label: const Text('Download now'),

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
@@ -21,6 +22,7 @@ class QueueScreen extends ConsumerWidget {
     final runningCount = rows
         .where((t) => t.status == TaskStatus.running)
         .length;
+    final pausedCount = rows.where((t) => t.status == TaskStatus.paused).length;
     final completedCount = rows
         .where(
           (t) => t.status == TaskStatus.done || t.status == TaskStatus.canceled,
@@ -29,6 +31,16 @@ class QueueScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        // Defensive leading: when this screen is the only route (reached via a
+        // stack-replacing navigation) there is nothing to pop, so offer Home
+        // instead of leaving the user stranded.
+        leading: Navigator.of(context).canPop()
+            ? const BackButton()
+            : IconButton(
+                tooltip: 'Home',
+                icon: const Icon(Icons.home_outlined),
+                onPressed: () => context.go('/'),
+              ),
         title: const Text('Queue'),
         actions: [
           if (heldCount > 0)
@@ -45,6 +57,12 @@ class QueueScreen extends ConsumerWidget {
               },
               icon: const Icon(Icons.play_arrow),
               label: Text('Start all ($heldCount)'),
+            ),
+          if (pausedCount > 0)
+            IconButton(
+              tooltip: 'Resume all',
+              icon: const Icon(Icons.play_arrow),
+              onPressed: controller.resumeAll,
             ),
           if (runningCount > 0)
             IconButton(
@@ -70,11 +88,53 @@ class QueueScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Failed to load queue: $e')),
         data: (rows) => rows.isEmpty
             ? const Center(child: Text('No downloads in the queue'))
-            : ListView.builder(
-                itemCount: rows.length,
-                itemBuilder: (context, i) => _TaskTile(task: rows[i]),
+            : Column(
+                children: [
+                  _QueueSummary(rows: rows),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: rows.length,
+                      itemBuilder: (context, i) => _TaskTile(task: rows[i]),
+                    ),
+                  ),
+                ],
               ),
       ),
+    );
+  }
+}
+
+/// A compact count of where the queue's tasks stand, shown above the list.
+class _QueueSummary extends StatelessWidget {
+  const _QueueSummary({required this.rows});
+  final List<DownloadTask> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    int count(bool Function(DownloadTask) test) => rows.where(test).length;
+    final running = count((t) => t.status == TaskStatus.running);
+    final queued = count((t) => t.status == TaskStatus.queued);
+    final held = count((t) => t.status == TaskStatus.held);
+    final paused = count((t) => t.status == TaskStatus.paused);
+    final done = count((t) => t.status == TaskStatus.done);
+    final failed = count((t) => t.status == TaskStatus.error);
+
+    final parts = <String>[
+      if (running > 0) '$running running',
+      if (queued > 0) '$queued queued',
+      if (held > 0) '$held held',
+      if (paused > 0) '$paused paused',
+      if (done > 0) '$done done',
+      if (failed > 0) '$failed failed',
+    ];
+    if (parts.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Text(parts.join('  ·  '), style: theme.textTheme.bodySmall),
     );
   }
 }
