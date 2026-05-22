@@ -146,8 +146,18 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **P6b** Flip/mirror/rotate an image and a video; reverse; convert container /
       extract audio → each a new item.
 
-## P7 — v1 Beta & Production Readiness  *(v1)*
-- [ ] App has a custom **icon / splash / branding**.
+## P7 — Branding & Frontend Revamp  *(v1)*
+- [ ] Launcher shows the new **rabbit-motif icon** (incl. Android-13 themed/monochrome);
+      cold start shows the branded **splash** in both light and dark.
+- [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
+      motion) in light, dark, and dynamic-color modes — no leftover MVP styling.
+- [ ] **Empty / loading (skeleton) / error** states render on each screen (empty
+      library, loading grid, failed probe, etc.) — no bare spinners or raw error text.
+- [ ] Layout adapts on a **large screen / unfolded foldable** (not a stretched phone
+      layout); touch targets ≥48dp; text scales with the system font-size setting.
+- [ ] **Simple vs Advanced** mode parity preserved across the revamped screens.
+
+## P8 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
 - [ ] i18n scaffolding present; subtitle-language selection works (if shipped).
 
@@ -167,8 +177,8 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 
 ## v1 release (full regression with the **release** APK)
 1. **Release signing** configured (keystore + CI secret) so the release APK installs
-   — done in **P7**.
+   — done in **P8**.
 2. Build with **Build APK → release = true**, install the signed release APK.
-3. Run **every** section above (P0 → P7) end-to-end on a real device.
+3. Run **every** section above (P0 → P8) end-to-end on a real device.
 4. Confirm: privacy (nothing in Gallery until exported), app lock, background
    downloads, and playback all work on the AOT release build.

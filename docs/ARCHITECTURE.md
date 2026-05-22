@@ -183,7 +183,7 @@ Stripe/PayPal → webhook → Edge Function → credit grant (ledger insert)
 - Shared: all Dart (domain, data, presentation, Drift, Riverpod).
 - Divergent: only the engine impl (Pigeon/native vs Process) and storage adapter
   (MediaStore vs filesystem) and packaging.
-- Windows arrives in Roadmap P8 by adding `WindowsProcessEngine` + a desktop
+- Windows arrives in Roadmap P9 by adding `WindowsProcessEngine` + a desktop
   storage adapter + MSIX packaging — no domain/UI rewrite.
 
 ---
