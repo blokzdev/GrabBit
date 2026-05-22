@@ -111,16 +111,31 @@ class _FilterBar extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              for (final type in const [null, 'video', 'audio', 'image'])
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(type == null ? 'All' : _typeLabel(type)),
-                    selected: filter.type == type,
-                    onSelected: (_) => onType(type),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final type in const [
+                        null,
+                        'video',
+                        'audio',
+                        'image',
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Text(
+                              type == null ? 'All' : _typeLabel(type),
+                            ),
+                            selected: filter.type == type,
+                            onSelected: (_) => onType(type),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              const Spacer(),
+              ),
               Badge(
                 isLabelVisible: filter.activeFacetCount > 0,
                 label: Text('${filter.activeFacetCount}'),
