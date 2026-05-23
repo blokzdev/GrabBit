@@ -297,9 +297,33 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       layout); touch targets ≥48dp; text scales with the system font-size setting.
 - [ ] **Simple vs Advanced** mode parity preserved across the revamped screens.
 
-## P8 — v1 Beta & Production Readiness  *(v1)*
+## P8 — Download Engine Power & Intake  *(v1)*
+- [ ] **Share-sheet intake**: share a link from YouTube / Instagram / a browser → GrabBit
+      opens Add-Download pre-filled with that URL.
+- [ ] **Power options**: a rate-limit and a concurrent-fragments setting take effect; an
+      Advanced custom-arg is applied; re-running a playlist with the download archive on
+      skips already-downloaded items.
+- [ ] **Audio presets**: extract audio with a chosen codec/bitrate.
+- [ ] **Subtitles / SponsorBlock / chapters**: download with selected subtitle languages
+      (optional burn-in); SponsorBlock segments are marked/removed; chapters embed, and
+      split-chapters produces N separate library items.
+- [ ] **Advanced format picker**: pick a concrete probed format (resolution/codec) in
+      Advanced mode and the download honours it.
+
+## P9 — Library, Playback & Privacy Depth  *(v1)*
+- [ ] **DB upgrade**: a P8-era library upgrades to schema v3 cleanly (no data loss).
+- [ ] **Library power**: search by keyword; sort by date/size/name; star favorites;
+      duplicates are detected; storage-usage breakdown is shown.
+- [ ] **Player**: change playback speed, loop, gesture-seek, pick a subtitle track;
+      Picture-in-Picture works on home-press.
+- [ ] **Queue**: drag-to-reorder persists across restart; the dashboard shows aggregate
+      speed / ETA / total size.
+- [ ] **Privacy**: FLAG_SECURE blocks screenshots and hides the app in recents; auto-lock
+      re-locks after the timeout; secure-delete removes a private item.
+
+## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
-- [ ] i18n scaffolding present; subtitle-language selection works (if shipped).
+- [ ] i18n scaffolding present.
 
 ## Device-test refinements  *(v1, tracked in `docs/BACKLOG.md`)*
 - [ ] Single video → **Download now** starts immediately; **Add to queue** holds it
@@ -317,8 +341,8 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 
 ## v1 release (full regression with the **release** APK)
 1. **Release signing** configured (keystore + CI secret) so the release APK installs
-   — done in **P8**.
+   — done in **P10**.
 2. Build with **Build APK → release = true**, install the signed release APK.
-3. Run **every** section above (P0 → P8) end-to-end on a real device.
+3. Run **every** section above (P0 → P10) end-to-end on a real device.
 4. Confirm: privacy (nothing in Gallery until exported), app lock, background
    downloads, and playback all work on the AOT release build.

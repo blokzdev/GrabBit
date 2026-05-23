@@ -1,19 +1,19 @@
 # GrabBit — Multi-Phase Roadmap
 
-Status: Draft v0.2 · Last updated: 2026-05-20
+Status: Draft v0.3 · Last updated: 2026-05-23
 
 Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 **Deliverables**, **Exit criteria**, and **CI/build notes**. Phases are sequential
 by default; later phases assume earlier exit criteria are met.
 
 Legend (three version bands):
-- **v1 — Android core, free, on-device:** P0–P8 (P4 completion & refinement, P5 file
-  explorer, P6 media studio, P7 branding & frontend revamp, P8 beta & production
-  readiness / release).
+- **v1 — Android core, free, on-device:** P0–P10 (P4 completion & refinement, P5 file
+  explorer, P6 media studio, P7 branding & frontend revamp, P8 download engine power &
+  intake, P9 library/playback/privacy depth, P10 beta & production readiness / release).
 - **v2 — world-class, feature-rich, production-ready, LOCAL-ONLY (no cloud):**
-  P9 (Windows parity) · P10 (edge/local AI) · P11 (production polish).
-- **v3 — cloud AI + credit monetization:** P12 (backend + accounts) · P13 (cloud AI)
-  · P14 (public launch).
+  P11 (Windows parity) · P12 (edge/local AI) · P13 (production polish).
+- **v3 — cloud AI + credit monetization:** P14 (backend + accounts) · P15 (cloud AI)
+  · P16 (public launch).
 
 The app stays fully free and offline through v2. Money enters only in v3.
 
@@ -72,7 +72,7 @@ app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale. **Public content only** — authenticated/private content
-(cookie/login import) is deferred to **v2** (see P11).
+(cookie/login import) is deferred to **v2** (see P13).
 **Deliverables:**
 - Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
   playlists, and carousels; clear errors for unsupported/broken extractors.
@@ -139,7 +139,7 @@ already-bundled ffmpeg.
   `MediaToolsHostApi.runFfmpeg(...)` (mirroring the `YtDlpHostApi` wiring). Fallback:
   a maintained `ffmpeg_kit` fork (note APK-size cost; original retired in 2025).
 - **`MediaToolsEngine`** pure-Dart interface (like `DownloadEngine`) so Windows
-  (`ffmpeg.exe`, P9) slots behind the same contract.
+  (`ffmpeg.exe`, P11) slots behind the same contract.
 - **Editor UI** from the item viewer: video — trim, reverse, flip/mirror/rotate,
   convert (container/codec/audio-extract), extract frame(s) (first/last/scrubber →
   image); images — flip/mirror/rotate/crop/convert.
@@ -167,14 +167,67 @@ per-screen intent) lives in **`docs/design/DESIGN_SPEC.md`**.
 device (light/dark + dynamic color); new icon/splash render; no regression in the
 P0–P6 on-device checks.
 
-## P8 — v1 Beta & Production Readiness
+## P8 — Download Engine Power & Intake
+**Goals:** deepen the downloader into a power-user tool and make getting links in
+effortless. All on-device (therefore free); no cloud, no auth/cookie work. Native-heavy
+(Pigeon/Kotlin/manifest), so it's verified on-device. Ships as **4 sub-PRs** (P8a–P8d);
+the subphase breakdown lives in **`docs/design/P8-PLAN.md`**.
+**Deliverables:**
+- **P8a — Android share-sheet intake**: `ACTION_SEND`/`ACTION_SEND_MULTIPLE`
+  (`text/plain`) intent-filter so a link shared from YouTube/Instagram/etc. opens
+  GrabBit pre-filled. Hand-rolled via the existing Pigeon bridge (avoid abandoned
+  share plugins); URL extraction/normalization is pure-Dart + tested. Links-only.
+- **P8b — Engine request expansion + power-download options** (foundational native
+  batch): extend `DownloadRequest`/`DownloadRequestDto`/`YtDlpHost.kt` with rate-limit
+  (`--limit-rate`), concurrent fragments (`--concurrent-fragments`), an Advanced-mode
+  custom-args escape hatch (validated at the boundary), a download archive
+  (`--download-archive`) to skip already-downloaded items on playlist/channel re-runs,
+  and audio-extraction presets (`--audio-format`/`--audio-quality`). Mirror in
+  `SettingsModel` (no DB migration).
+- **P8c — Subtitles, SponsorBlock, chapters** (extends P8b; same APK batch): structured
+  subtitle-language selection (`--sub-langs`/`--write-auto-subs`/`--convert-subs`) with
+  an optional ffmpeg burn-in; **SponsorBlock** mark/remove
+  (`--sponsorblock-mark`/`--sponsorblock-remove`); embed/`--split-chapters` (split maps
+  N output files → N library items).
+- **P8d — Advanced format/codec + audio-preset picker** (pure Dart): in Advanced mode,
+  list probed `MediaInfo.formats` (resolution/codec/filesize) to pick a concrete format,
+  plus an audio codec/bitrate picker (pulls in the BACKLOG advanced-format item).
+**Exit criteria:** share a link from another app and it opens pre-filled; download with
+selected subtitle languages, SponsorBlock segments removed, and a concrete chosen
+format/audio preset; a re-run playlist skips already-downloaded items — all offline.
+
+## P9 — Library, Playback & Privacy Depth
+**Goals:** make managing, finding, and enjoying the private library genuinely great, and
+harden privacy with non-theatrical lock features. Mostly pure Dart (CI-green) plus **one**
+DB migration and a few native lock items. Ships as **5 sub-PRs** (P9a–P9e); the subphase
+breakdown lives in **`docs/design/P9-PLAN.md`**.
+**Deliverables:**
+- **P9a — Single v2→v3 DB migration** (do all schema changes once): `isFavorite` +
+  `contentHash` (dedupe) on `MediaItems`, `orderIndex` on `DownloadTasks` (for P9d), sort
+  columns + indices; bump `schemaVersion` to 3 with a migration test.
+- **P9b — Library power**: full-text search (indexed `LIKE`) over title/uploader/
+  description/tags; sort (date/size/name); favorites/star; smart/auto albums (by
+  site/uploader/recent); **duplicate detection** (streamed `crypto` hash, off the UI
+  isolate) + a duplicates view; storage-usage/cleanup breakdown.
+- **P9c — Player enhancements**: playback speed, loop/repeat, gesture seek, subtitle-track
+  selection (chewie); **Picture-in-Picture** (native). Background audio is deferred.
+- **P9d — Queue depth**: drag-to-reorder (persisted via `orderIndex`) + an aggregate
+  dashboard (speed/ETA/total size). Scheduling is deferred.
+- **P9e — Privacy & app-lock hardening** (ship only the non-theatrical items): a
+  **FLAG_SECURE** toggle (block screenshots / hide in recents); an **auto-lock timeout**;
+  best-effort **secure delete**. Decoy PIN, intruder selfie, and app-icon disguise are
+  deliberately cut (see `docs/BACKLOG.md`).
+**Exit criteria:** search/sort/favorite/dedupe the library and see storage usage; change
+playback speed and use PiP; reorder the queue (order persists) and see the dashboard;
+enable FLAG_SECURE and auto-lock — all offline.
+
+## P10 — v1 Beta & Production Readiness
 **Goals:** harden and ship v1.
 **Deliverables:** **release signing** (keystore + CI secret; the ship blocker);
 performance hardening (large library grid/thumbnails, DB indices, big-playlist
-picker); **i18n scaffolding** (ARB/l10n) + **subtitle-language selection** (deferred
-from P4); distribution (GitHub Release with the signed APK + README/landing install
-steps; version bump); final full `docs/VERIFICATION.md` regression on the signed
-release APK.
+picker); **i18n scaffolding** (ARB/l10n); distribution (GitHub Release with the signed
+APK + README/landing install steps; version bump); final full `docs/VERIFICATION.md`
+regression on the signed release APK. (Subtitle-language selection moved up to P8c.)
 **Exit criteria:** signed release APK installs and passes the full on-device
 regression; published for sideload. **→ v1 complete.**
 
@@ -182,7 +235,7 @@ regression; published for sideload. **→ v1 complete.**
 
 # v2 — World-class, local-only (Windows + edge AI + polish)
 
-## P9 — Windows Port
+## P11 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`),
 desktop storage adapter (filesystem export), desktop-adapted UI, **MSIX** packaging,
@@ -190,7 +243,7 @@ binary update path.
 **Exit criteria:** Windows build downloads + manages media; feature parity with v1
 core. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P10 — Edge/Local AI (free, on-device)
+## P12 — Edge/Local AI (free, on-device)
 **Goals:** the differentiator — on-device AI with graceful capability-gating. **No
 cloud, no account, no credits.**
 **Deliverables:**
@@ -205,7 +258,7 @@ cloud, no account, no credits.**
 **Exit criteria:** on a capable device, transcribe + summarize a saved item fully
 offline; on a low-end device those features are cleanly disabled with explanation.
 
-## P11 — Production Polish (public v2)
+## P13 — Production Polish (public v2)
 **Goals:** make the local-only app genuinely world-class and production-ready.
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced
 configuration, refined UX across all flows, robust update/onboarding, public v2
@@ -221,7 +274,7 @@ release candidate (Android + Windows, still local-only, still free).
 
 # v3 — Cloud AI + monetization
 
-## P12 — Backend + Accounts
+## P14 — Backend + Accounts
 **Goals:** the paid rails (cloud only).
 **Deliverables:** Supabase Auth; Postgres credit ledger + RLS (SPEC §9.1); Edge
 Functions skeleton; **Stripe/PayPal** checkout + webhooks → credit grants; account +
@@ -229,7 +282,7 @@ credits UI. The local-only experience stays fully account-free.
 **Exit criteria:** buy credits via Stripe/PayPal in a test env; balance updates via
 webhook; RLS verified.
 
-## P13 — Cloud AI
+## P15 — Cloud AI
 **Goals:** heavier multimodal AI for tasks/devices beyond on-device limits.
 **Deliverables:**
 - Cloud `InferenceEngine` impl behind the same interface; **Genkit → Gemini** Edge
@@ -241,7 +294,7 @@ webhook; RLS verified.
 **Exit criteria:** a feature runs **free locally** on a capable device and via
 **cloud (credits)** for higher quality; cost-per-call < credit price.
 
-## P14 — Launch
+## P16 — Launch
 **Goals:** public availability + growth.
 **Deliverables:** landing/download site (Android APK/AAB + Windows MSIX), install
 guides + legal disclaimer, versioned releases/changelog, basic marketing,

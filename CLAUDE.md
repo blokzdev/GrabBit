@@ -220,7 +220,7 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
 - `docs/PRD.md` — what we're building & why (product).
 - `docs/ARCHITECTURE.md` — system design blueprint.
 - `docs/SPEC.md` — implementation-level technical spec.
-- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P14, banded v1/v2/v3).
+- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P16, banded v1/v2/v3).
 - `docs/VERIFICATION.md` — per-phase on-device manual test checklist (what CI can't
   cover); used for spot-checks and full v1-release regression.
 - `docs/design/DESIGN_SPEC.md` — (P7) the living design system: brand, color/type/
@@ -228,5 +228,9 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
   frontend revamp.
 - `docs/design/P7-REVAMP-PLAN.md` — (P7) the frontend-revamp sub-roadmap: foundation
   + per-screen subphases (P7a, P7b, …).
+- `docs/design/P8-PLAN.md` — (P8) download-engine power & intake sub-roadmap (P8a–P8d:
+  share intake, engine options, subtitles/SponsorBlock/chapters, format picker).
+- `docs/design/P9-PLAN.md` — (P9) library/playback/privacy depth sub-roadmap (P9a–P9e:
+  DB v3, library power, player, queue, lock hardening).
 
 When in doubt, these four + this file win over memory.
