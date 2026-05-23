@@ -208,9 +208,9 @@ covers phones, tablets, foldables (folded = Compact, unfolded = Medium/Expanded)
 - **a11y:** ≥48dp targets (theme), search-clear tooltip, `Semantics` (selected/button) on
   selection + grid tiles, scrim-contrast bump, dynamic-type verified at 200%.
 
-**P7n (deferred, needs a foldable device):** two-pane list-detail (Library↔ItemDetail,
-Collections↔detail) on Expanded+, hinge avoidance via `MediaQuery.displayFeatures`, fold/unfold
-continuity, and tabletop posture for the player.
+**P7n (deferred to `docs/BACKLOG.md`, needs a foldable device):** two-pane list-detail
+(Library↔ItemDetail, Collections↔detail) on Expanded+, hinge avoidance via
+`MediaQuery.displayFeatures`, fold/unfold continuity, and tabletop posture for the player.
 
 ---
 

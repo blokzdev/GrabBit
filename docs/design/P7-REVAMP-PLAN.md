@@ -151,15 +151,14 @@ moved to the nav destinations. a11y: search-clear tooltip, `Semantics` on select
 scrim-contrast bump; verified no overflow at 200% text scale. CI green (format · analyze ·
 186 tests · debug APK).
 
-### `[ ]` P7n — Two-pane list-detail + foldable hinge/posture polish
-List-detail (Library↔ItemDetail, Collections↔detail) side-by-side on Expanded+; hinge
-avoidance via `MediaQuery.displayFeatures`/`hinge`, fold/unfold continuity, and optional
-tabletop posture for the player. Needs a foldable emulator/device to verify (headless CI can
-only check size-class branching).
+### `[→]` P7n — Two-pane list-detail + foldable hinge/posture polish — **moved to `docs/BACKLOG.md`**
+Deferred from the phase: it builds on the P7m foundation but needs a foldable emulator/device
+to verify (headless CI can only check size-class branching), so it's tracked as a device-tested
+backlog batch rather than blocking P7.
 
 ---
 
 ## Phase exit criteria
-All subphases done (P7n is the remaining large-screen depth item); every screen verified
-on-device in light/dark + dynamic color; new icon/splash render; no regression in the P0–P6
-on-device checks (`docs/VERIFICATION.md`).
+All subphases done (P7n deferred to the backlog); every screen verified on-device in light/dark
++ dynamic color; new icon/splash render; no regression in the P0–P6 on-device checks
+(`docs/VERIFICATION.md`).
