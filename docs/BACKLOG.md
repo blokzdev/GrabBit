@@ -8,6 +8,13 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **P7n — Two-pane list-detail + foldable hinge/posture polish.** Show list-detail
+      side-by-side on Expanded+ widths (Library↔Item Detail, Collections↔detail); avoid the
+      hinge via `MediaQuery.displayFeatures`/`hinge`; preserve selection/scroll across
+      fold/unfold; optional tabletop posture for the in-app player. Builds on the P7m
+      window-size foundation (`core/layout/window_size.dart`, `AdaptiveNavigationScaffold`).
+      **Needs a foldable emulator/device to verify** — headless CI can only check size-class
+      branching, so this is deliberately a device-tested batch. *(Deferred from P7m.)*
 - [ ] **Advanced format/codec picker** on Add Download — in Advanced mode, list the probed
       `MediaInfo.formats` (resolution / codec / filesize) and let the user pick a specific
       one. Needs `enqueue`/`DownloadRequest` to accept a concrete format selector, not just a
