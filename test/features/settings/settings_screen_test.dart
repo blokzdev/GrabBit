@@ -130,6 +130,34 @@ void main() {
 
     expect(find.text('Advanced download options'), findsOneWidget);
     expect(find.text('Extra yt-dlp arguments'), findsOneWidget);
+    expect(find.text('SponsorBlock'), findsOneWidget);
+    expect(find.text('Split into chapters'), findsOneWidget);
+  });
+
+  testWidgets('subtitle detail rows appear when subtitles are enabled', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await SettingsRepository(
+      db,
+    ).write(const SettingsModel(subtitleLangs: 'en'));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Subtitle languages'), findsOneWidget);
+    expect(find.text('Include auto-generated'), findsOneWidget);
+    expect(find.text('Subtitle format'), findsOneWidget);
   });
 
   testWidgets('lays out without overflow at 200% text scale', (tester) async {

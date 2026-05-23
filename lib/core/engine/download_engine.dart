@@ -100,7 +100,9 @@ class DownloadRequest {
     this.formatId,
     this.audioOnly = false,
     this.container,
-    this.subtitles = false,
+    this.subtitleLangs,
+    this.autoSubs = false,
+    this.subtitleFormat,
     this.embedThumbnail = false,
     this.embedMetadata = false,
     this.rateLimit,
@@ -108,6 +110,10 @@ class DownloadRequest {
     this.audioQuality,
     this.downloadArchivePath,
     this.extraArgs,
+    this.sponsorBlock,
+    this.sponsorBlockCategories,
+    this.embedChapters = false,
+    this.splitChapters = false,
   });
 
   factory DownloadRequest.fromJson(Map<String, dynamic> json) =>
@@ -119,7 +125,10 @@ class DownloadRequest {
         formatId: json['formatId'] as String?,
         audioOnly: json['audioOnly'] as bool? ?? false,
         container: json['container'] as String?,
-        subtitles: json['subtitles'] as bool? ?? false,
+        subtitleLangs: (json['subtitleLangs'] as List<dynamic>?)
+            ?.cast<String>(),
+        autoSubs: json['autoSubs'] as bool? ?? false,
+        subtitleFormat: json['subtitleFormat'] as String?,
         embedThumbnail: json['embedThumbnail'] as bool? ?? false,
         embedMetadata: json['embedMetadata'] as bool? ?? false,
         rateLimit: json['rateLimit'] as String?,
@@ -127,6 +136,11 @@ class DownloadRequest {
         audioQuality: json['audioQuality'] as String?,
         downloadArchivePath: json['downloadArchivePath'] as String?,
         extraArgs: (json['extraArgs'] as List<dynamic>?)?.cast<String>(),
+        sponsorBlock: json['sponsorBlock'] as String?,
+        sponsorBlockCategories:
+            (json['sponsorBlockCategories'] as List<dynamic>?)?.cast<String>(),
+        embedChapters: json['embedChapters'] as bool? ?? false,
+        splitChapters: json['splitChapters'] as bool? ?? false,
       );
 
   final String taskId;
@@ -136,7 +150,16 @@ class DownloadRequest {
   final String? formatId;
   final bool audioOnly;
   final String? container;
-  final bool subtitles;
+
+  /// Subtitle languages to write/embed (yt-dlp `--sub-langs`); null/empty = off.
+  final List<String>? subtitleLangs;
+
+  /// Also fetch auto-generated subtitles (`--write-auto-subs`).
+  final bool autoSubs;
+
+  /// Convert subtitles to this format (`--convert-subs`); null/`best` = native.
+  final String? subtitleFormat;
+
   final bool embedThumbnail;
   final bool embedMetadata;
 
@@ -155,6 +178,18 @@ class DownloadRequest {
   /// Raw extra yt-dlp arguments, pre-tokenized (each becomes one argv element).
   final List<String>? extraArgs;
 
+  /// SponsorBlock action: `mark` (chapters) or `remove` (cut); null = off.
+  final String? sponsorBlock;
+
+  /// SponsorBlock categories (e.g. `sponsor`); used with [sponsorBlock].
+  final List<String>? sponsorBlockCategories;
+
+  /// Embed chapter markers into the file (`--embed-chapters`).
+  final bool embedChapters;
+
+  /// Split the download into one file per chapter (`--split-chapters`).
+  final bool splitChapters;
+
   Map<String, dynamic> toJson() => {
     'taskId': taskId,
     'url': url,
@@ -163,7 +198,9 @@ class DownloadRequest {
     'formatId': formatId,
     'audioOnly': audioOnly,
     'container': container,
-    'subtitles': subtitles,
+    'subtitleLangs': subtitleLangs,
+    'autoSubs': autoSubs,
+    'subtitleFormat': subtitleFormat,
     'embedThumbnail': embedThumbnail,
     'embedMetadata': embedMetadata,
     'rateLimit': rateLimit,
@@ -171,6 +208,10 @@ class DownloadRequest {
     'audioQuality': audioQuality,
     'downloadArchivePath': downloadArchivePath,
     'extraArgs': extraArgs,
+    'sponsorBlock': sponsorBlock,
+    'sponsorBlockCategories': sponsorBlockCategories,
+    'embedChapters': embedChapters,
+    'splitChapters': splitChapters,
   };
 }
 

@@ -30,6 +30,14 @@ void main() {
       expect(s.audioQuality, 'best');
       expect(s.useDownloadArchive, isFalse);
       expect(s.extraDownloadArgs, '');
+      // P8c subtitles / SponsorBlock / chapters default off.
+      expect(s.subtitleLangs, '');
+      expect(s.subtitleAuto, isFalse);
+      expect(s.subtitleFormat, 'srt');
+      expect(s.sponsorBlockMode, 'off');
+      expect(s.sponsorBlockCategories, 'sponsor');
+      expect(s.embedChapters, isFalse);
+      expect(s.splitChapters, isFalse);
     });
 
     test('JSON round-trip preserves enums with custom values', () {
@@ -142,6 +150,34 @@ void main() {
       expect(saved.audioQuality, '192K');
       expect(saved.useDownloadArchive, isTrue);
       expect(saved.extraDownloadArgs, '--no-mtime');
+    });
+
+    test('subtitle / SponsorBlock / chapter setters persist (P8c)', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(settingsControllerProvider.notifier);
+      await container.read(settingsControllerProvider.future);
+      await notifier.setSubtitleLangs('en,es');
+      await notifier.setSubtitleAuto(true);
+      await notifier.setSubtitleFormat('vtt');
+      await notifier.setSponsorBlockMode('remove');
+      await notifier.setSponsorBlockCategories('sponsor,intro');
+      await notifier.setEmbedChapters(true);
+      await notifier.setSplitChapters(true);
+
+      final saved = await SettingsRepository(db).read();
+      expect(saved.subtitleLangs, 'en,es');
+      expect(saved.subtitleAuto, isTrue);
+      expect(saved.subtitleFormat, 'vtt');
+      expect(saved.sponsorBlockMode, 'remove');
+      expect(saved.sponsorBlockCategories, 'sponsor,intro');
+      expect(saved.embedChapters, isTrue);
+      expect(saved.splitChapters, isTrue);
     });
 
     test('acceptDisclaimer persists the flag', () async {

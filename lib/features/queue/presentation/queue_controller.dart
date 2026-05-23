@@ -14,6 +14,7 @@ import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/utils/media_type.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
+import 'package:grabbit/features/queue/data/completed_outputs.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
@@ -311,82 +312,81 @@ class QueueController extends _$QueueController {
     // the folder, the user's template names the file inside it.
     final dir = Directory('${queued.request.outputDir}/$id');
     if (!dir.existsSync()) return;
-    File? thumb;
-    File? media;
-    File? infoFile;
-    for (final entry in dir.listSync().whereType<File>()) {
-      final lower = entry.path.toLowerCase();
-      if (lower.endsWith('.info.json')) {
-        infoFile = entry;
-      } else if (lower.endsWith('.jpg')) {
-        thumb = entry;
-      } else if (lower.endsWith('.json')) {
-        // Other yt-dlp sidecars (e.g. live chat) — ignore.
-      } else {
-        media = entry;
-      }
-    }
-    if (media == null) return;
+    final outputs = classifyDownloadOutputs(dir.listSync().whereType<File>());
+    if (outputs.media.isEmpty) return;
 
-    // Rich metadata from the .info.json sidecar (full set for single AND batch
-    // downloads), falling back to whatever the queued item already carried.
+    // Rich metadata from the .info.json sidecar (shared across split-chapter
+    // files), falling back to whatever the queued item already carried.
     InfoJson? info;
-    if (infoFile != null) {
-      info = parseInfoJsonString(await infoFile.readAsString());
+    if (outputs.info != null) {
+      info = parseInfoJsonString(await outputs.info!.readAsString());
     }
+    final uploader = info?.uploader ?? queued.uploader;
+    final description = info?.description ?? queued.description;
+    final uploadDate = parseUploadDate(info?.uploadDate ?? queued.uploadDate);
+    final hasMetadata =
+        uploader != null ||
+        description != null ||
+        uploadDate != null ||
+        queued.originalUrl != null ||
+        queued.playlistId != null ||
+        info?.uploaderId != null ||
+        info?.sourceId != null ||
+        info?.tags != null;
 
-    final ext = media.path.split('.').last.toLowerCase();
     final db = ref.read(appDatabaseProvider);
-    final mediaFile = media;
+    // One library item per output file. `--split-chapters` yields N files, so
+    // each gets a unique id + its filename as the title; a normal single-file
+    // download keeps the task id and queued title unchanged.
+    final single = outputs.media.length == 1;
     await db.transaction(() async {
-      await db
-          .into(db.mediaItems)
-          .insertOnConflictUpdate(
-            MediaItemsCompanion.insert(
-              id: id,
-              title: queued.title,
-              sourceUrl: queued.request.url,
-              site: queued.site ?? info?.extractor ?? 'unknown',
-              filePath: mediaFile.path,
-              type: queued.request.audioOnly ? 'audio' : mediaTypeForExt(ext),
-              createdAt: DateTime.now(),
-              storageState: 'private',
-              durationSec: Value(queued.durationSec),
-              sizeBytes: Value(await mediaFile.length()),
-              thumbPath: Value(thumb?.path),
-            ),
-          );
-      final uploader = info?.uploader ?? queued.uploader;
-      final description = info?.description ?? queued.description;
-      final uploadDate = parseUploadDate(info?.uploadDate ?? queued.uploadDate);
-      final hasMetadata =
-          uploader != null ||
-          description != null ||
-          uploadDate != null ||
-          queued.originalUrl != null ||
-          queued.playlistId != null ||
-          info?.uploaderId != null ||
-          info?.sourceId != null ||
-          info?.tags != null;
-      if (hasMetadata) {
+      for (final (i, mediaFile) in outputs.media.indexed) {
+        final itemId = single ? id : '${id}__$i';
+        final ext = mediaFile.path.split('.').last.toLowerCase();
         await db
-            .into(db.mediaMetadata)
+            .into(db.mediaItems)
             .insertOnConflictUpdate(
-              MediaMetadataCompanion.insert(
-                itemId: id,
-                uploader: Value(uploader),
-                originalUrl: Value(queued.originalUrl),
-                description: Value(description),
-                uploadDate: Value(uploadDate),
-                uploaderId: Value(info?.uploaderId),
-                channelId: Value(info?.channelId),
-                sourceId: Value(info?.sourceId),
-                playlistId: Value(queued.playlistId),
-                playlistTitle: Value(queued.playlistTitle),
-                tags: Value(info?.tags),
+              MediaItemsCompanion.insert(
+                id: itemId,
+                title: single ? queued.title : _fileStem(mediaFile.path),
+                sourceUrl: queued.request.url,
+                site: queued.site ?? info?.extractor ?? 'unknown',
+                filePath: mediaFile.path,
+                type: queued.request.audioOnly ? 'audio' : mediaTypeForExt(ext),
+                createdAt: DateTime.now(),
+                storageState: 'private',
+                durationSec: Value(single ? queued.durationSec : null),
+                sizeBytes: Value(await mediaFile.length()),
+                thumbPath: Value(outputs.thumb?.path),
               ),
             );
+        if (hasMetadata) {
+          await db
+              .into(db.mediaMetadata)
+              .insertOnConflictUpdate(
+                MediaMetadataCompanion.insert(
+                  itemId: itemId,
+                  uploader: Value(uploader),
+                  originalUrl: Value(queued.originalUrl),
+                  description: Value(description),
+                  uploadDate: Value(uploadDate),
+                  uploaderId: Value(info?.uploaderId),
+                  channelId: Value(info?.channelId),
+                  sourceId: Value(info?.sourceId),
+                  playlistId: Value(queued.playlistId),
+                  playlistTitle: Value(queued.playlistTitle),
+                  tags: Value(info?.tags),
+                ),
+              );
+        }
       }
     });
+  }
+
+  /// Filename without directory or extension — the per-chapter title for splits.
+  String _fileStem(String path) {
+    final name = path.split('/').last;
+    final dot = name.lastIndexOf('.');
+    return dot > 0 ? name.substring(0, dot) : name;
   }
 }

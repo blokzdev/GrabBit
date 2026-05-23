@@ -48,8 +48,12 @@ class MediaInfoDto { String title; String? uploader; int? durationSec;
   String? thumbnailUrl; String? site; String? description; String? uploadDate;
   List<FormatDto> formats; }
 class DownloadRequestDto { String taskId; String url; String? formatId;
-  bool audioOnly; String? container; bool subtitles; bool embedThumbnail;
-  bool embedMetadata; String outputDir; String filenameTemplate; }
+  bool audioOnly; String? container; List<String>? subtitleLangs; bool autoSubs;
+  String? subtitleFormat; bool embedThumbnail; bool embedMetadata;
+  String outputDir; String filenameTemplate; String? rateLimit;
+  int? concurrentFragments; String? audioQuality; String? downloadArchivePath;
+  List<String>? extraArgs; String? sponsorBlock;
+  List<String>? sponsorBlockCategories; bool embedChapters; bool splitChapters; }
 class ProgressDto { String taskId; double percent; double speedBps; int? etaSec;
   String stage; /* probing|downloading|merging|done|error|canceled */ String? error; }
 
@@ -124,6 +128,13 @@ drop user data without migration. Add a schema test on bump.
   "audioQuality": "best",           // P8b; --audio-quality (e.g. 192K); best = omit
   "useDownloadArchive": false,      // P8b; --download-archive to skip already-fetched
   "extraDownloadArgs": "",          // P8b; raw extra yt-dlp args (Advanced escape hatch)
+  "subtitleLangs": "",              // P8c; CSV langs (e.g. en,es); "" = off
+  "subtitleAuto": false,            // P8c; --write-auto-subs
+  "subtitleFormat": "srt",          // P8c; --convert-subs (srt|vtt|ass|best)
+  "sponsorBlockMode": "off",        // P8c; off|mark|remove
+  "sponsorBlockCategories": "sponsor", // P8c; CSV SponsorBlock categories
+  "embedChapters": false,           // P8c; --embed-chapters
+  "splitChapters": false,           // P8c; --split-chapters (N library items)
   "wifiOnly": false,
   "theme": "system",                // system|light|dark
   "dynamicColor": true,

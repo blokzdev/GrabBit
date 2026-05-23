@@ -330,7 +330,9 @@ data class DownloadRequestDto (
   val formatId: String? = null,
   val audioOnly: Boolean,
   val container: String? = null,
-  val subtitles: Boolean,
+  val subtitleLangs: List<String>? = null,
+  val autoSubs: Boolean,
+  val subtitleFormat: String? = null,
   val embedThumbnail: Boolean,
   val embedMetadata: Boolean,
   val outputDir: String,
@@ -339,7 +341,11 @@ data class DownloadRequestDto (
   val concurrentFragments: Long? = null,
   val audioQuality: String? = null,
   val downloadArchivePath: String? = null,
-  val extraArgs: List<String>? = null
+  val extraArgs: List<String>? = null,
+  val sponsorBlock: String? = null,
+  val sponsorBlockCategories: List<String>? = null,
+  val embedChapters: Boolean,
+  val splitChapters: Boolean
 )
  {
   companion object {
@@ -349,17 +355,23 @@ data class DownloadRequestDto (
       val formatId = pigeonVar_list[2] as String?
       val audioOnly = pigeonVar_list[3] as Boolean
       val container = pigeonVar_list[4] as String?
-      val subtitles = pigeonVar_list[5] as Boolean
-      val embedThumbnail = pigeonVar_list[6] as Boolean
-      val embedMetadata = pigeonVar_list[7] as Boolean
-      val outputDir = pigeonVar_list[8] as String
-      val filenameTemplate = pigeonVar_list[9] as String
-      val rateLimit = pigeonVar_list[10] as String?
-      val concurrentFragments = pigeonVar_list[11] as Long?
-      val audioQuality = pigeonVar_list[12] as String?
-      val downloadArchivePath = pigeonVar_list[13] as String?
-      val extraArgs = pigeonVar_list[14] as List<String>?
-      return DownloadRequestDto(taskId, url, formatId, audioOnly, container, subtitles, embedThumbnail, embedMetadata, outputDir, filenameTemplate, rateLimit, concurrentFragments, audioQuality, downloadArchivePath, extraArgs)
+      val subtitleLangs = pigeonVar_list[5] as List<String>?
+      val autoSubs = pigeonVar_list[6] as Boolean
+      val subtitleFormat = pigeonVar_list[7] as String?
+      val embedThumbnail = pigeonVar_list[8] as Boolean
+      val embedMetadata = pigeonVar_list[9] as Boolean
+      val outputDir = pigeonVar_list[10] as String
+      val filenameTemplate = pigeonVar_list[11] as String
+      val rateLimit = pigeonVar_list[12] as String?
+      val concurrentFragments = pigeonVar_list[13] as Long?
+      val audioQuality = pigeonVar_list[14] as String?
+      val downloadArchivePath = pigeonVar_list[15] as String?
+      val extraArgs = pigeonVar_list[16] as List<String>?
+      val sponsorBlock = pigeonVar_list[17] as String?
+      val sponsorBlockCategories = pigeonVar_list[18] as List<String>?
+      val embedChapters = pigeonVar_list[19] as Boolean
+      val splitChapters = pigeonVar_list[20] as Boolean
+      return DownloadRequestDto(taskId, url, formatId, audioOnly, container, subtitleLangs, autoSubs, subtitleFormat, embedThumbnail, embedMetadata, outputDir, filenameTemplate, rateLimit, concurrentFragments, audioQuality, downloadArchivePath, extraArgs, sponsorBlock, sponsorBlockCategories, embedChapters, splitChapters)
     }
   }
   fun toList(): List<Any?> {
@@ -369,7 +381,9 @@ data class DownloadRequestDto (
       formatId,
       audioOnly,
       container,
-      subtitles,
+      subtitleLangs,
+      autoSubs,
+      subtitleFormat,
       embedThumbnail,
       embedMetadata,
       outputDir,
@@ -379,6 +393,10 @@ data class DownloadRequestDto (
       audioQuality,
       downloadArchivePath,
       extraArgs,
+      sponsorBlock,
+      sponsorBlockCategories,
+      embedChapters,
+      splitChapters,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -389,7 +407,7 @@ data class DownloadRequestDto (
       return true
     }
     val other = other as DownloadRequestDto
-    return EnginePigeonPigeonUtils.deepEquals(this.taskId, other.taskId) && EnginePigeonPigeonUtils.deepEquals(this.url, other.url) && EnginePigeonPigeonUtils.deepEquals(this.formatId, other.formatId) && EnginePigeonPigeonUtils.deepEquals(this.audioOnly, other.audioOnly) && EnginePigeonPigeonUtils.deepEquals(this.container, other.container) && EnginePigeonPigeonUtils.deepEquals(this.subtitles, other.subtitles) && EnginePigeonPigeonUtils.deepEquals(this.embedThumbnail, other.embedThumbnail) && EnginePigeonPigeonUtils.deepEquals(this.embedMetadata, other.embedMetadata) && EnginePigeonPigeonUtils.deepEquals(this.outputDir, other.outputDir) && EnginePigeonPigeonUtils.deepEquals(this.filenameTemplate, other.filenameTemplate) && EnginePigeonPigeonUtils.deepEquals(this.rateLimit, other.rateLimit) && EnginePigeonPigeonUtils.deepEquals(this.concurrentFragments, other.concurrentFragments) && EnginePigeonPigeonUtils.deepEquals(this.audioQuality, other.audioQuality) && EnginePigeonPigeonUtils.deepEquals(this.downloadArchivePath, other.downloadArchivePath) && EnginePigeonPigeonUtils.deepEquals(this.extraArgs, other.extraArgs)
+    return EnginePigeonPigeonUtils.deepEquals(this.taskId, other.taskId) && EnginePigeonPigeonUtils.deepEquals(this.url, other.url) && EnginePigeonPigeonUtils.deepEquals(this.formatId, other.formatId) && EnginePigeonPigeonUtils.deepEquals(this.audioOnly, other.audioOnly) && EnginePigeonPigeonUtils.deepEquals(this.container, other.container) && EnginePigeonPigeonUtils.deepEquals(this.subtitleLangs, other.subtitleLangs) && EnginePigeonPigeonUtils.deepEquals(this.autoSubs, other.autoSubs) && EnginePigeonPigeonUtils.deepEquals(this.subtitleFormat, other.subtitleFormat) && EnginePigeonPigeonUtils.deepEquals(this.embedThumbnail, other.embedThumbnail) && EnginePigeonPigeonUtils.deepEquals(this.embedMetadata, other.embedMetadata) && EnginePigeonPigeonUtils.deepEquals(this.outputDir, other.outputDir) && EnginePigeonPigeonUtils.deepEquals(this.filenameTemplate, other.filenameTemplate) && EnginePigeonPigeonUtils.deepEquals(this.rateLimit, other.rateLimit) && EnginePigeonPigeonUtils.deepEquals(this.concurrentFragments, other.concurrentFragments) && EnginePigeonPigeonUtils.deepEquals(this.audioQuality, other.audioQuality) && EnginePigeonPigeonUtils.deepEquals(this.downloadArchivePath, other.downloadArchivePath) && EnginePigeonPigeonUtils.deepEquals(this.extraArgs, other.extraArgs) && EnginePigeonPigeonUtils.deepEquals(this.sponsorBlock, other.sponsorBlock) && EnginePigeonPigeonUtils.deepEquals(this.sponsorBlockCategories, other.sponsorBlockCategories) && EnginePigeonPigeonUtils.deepEquals(this.embedChapters, other.embedChapters) && EnginePigeonPigeonUtils.deepEquals(this.splitChapters, other.splitChapters)
   }
 
   override fun hashCode(): Int {
@@ -399,7 +417,9 @@ data class DownloadRequestDto (
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.formatId)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.audioOnly)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.container)
-    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.subtitles)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.subtitleLangs)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.autoSubs)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.subtitleFormat)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.embedThumbnail)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.embedMetadata)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.outputDir)
@@ -409,6 +429,10 @@ data class DownloadRequestDto (
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.audioQuality)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.downloadArchivePath)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.extraArgs)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.sponsorBlock)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.sponsorBlockCategories)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.embedChapters)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.splitChapters)
     return result
   }
 }

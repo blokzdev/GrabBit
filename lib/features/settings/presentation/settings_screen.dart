@@ -107,9 +107,34 @@ class _SettingsList extends ConsumerWidget {
                 subtitle: const Text(
                   'Write and embed subtitles when available',
                 ),
-                value: settings.defaultSubtitles,
-                onChanged: controller.setDefaultSubtitles,
+                value: settings.subtitleLangs.isNotEmpty,
+                onChanged: (v) => controller.setSubtitleLangs(v ? 'en' : ''),
               ),
+              if (settings.subtitleLangs.isNotEmpty) ...[
+                _SubtitleLangsTile(langs: settings.subtitleLangs),
+                SwitchListTile(
+                  title: const Text('Include auto-generated'),
+                  subtitle: const Text(
+                    'Fetch auto-captions when no human ones',
+                  ),
+                  value: settings.subtitleAuto,
+                  onChanged: controller.setSubtitleAuto,
+                ),
+                ListTile(
+                  title: const Text('Subtitle format'),
+                  trailing: DropdownButton<String>(
+                    value: settings.subtitleFormat,
+                    onChanged: (v) =>
+                        v == null ? null : controller.setSubtitleFormat(v),
+                    items: const [
+                      DropdownMenuItem(value: 'srt', child: Text('SRT')),
+                      DropdownMenuItem(value: 'vtt', child: Text('VTT')),
+                      DropdownMenuItem(value: 'ass', child: Text('ASS')),
+                      DropdownMenuItem(value: 'best', child: Text('Native')),
+                    ],
+                  ),
+                ),
+              ],
               SwitchListTile(
                 title: const Text('Embed thumbnail'),
                 value: settings.embedThumbnail,
@@ -201,6 +226,36 @@ class _SettingsList extends ConsumerWidget {
                   ),
                   value: settings.useDownloadArchive,
                   onChanged: controller.setUseDownloadArchive,
+                ),
+                ListTile(
+                  title: const Text('SponsorBlock'),
+                  subtitle: const Text('Mark or remove sponsor segments'),
+                  trailing: DropdownButton<String>(
+                    value: settings.sponsorBlockMode,
+                    onChanged: (v) =>
+                        v == null ? null : controller.setSponsorBlockMode(v),
+                    items: const [
+                      DropdownMenuItem(value: 'off', child: Text('Off')),
+                      DropdownMenuItem(value: 'mark', child: Text('Mark')),
+                      DropdownMenuItem(value: 'remove', child: Text('Remove')),
+                    ],
+                  ),
+                ),
+                if (settings.sponsorBlockMode != 'off')
+                  _SponsorCategories(selected: settings.sponsorBlockCategories),
+                SwitchListTile(
+                  title: const Text('Embed chapters'),
+                  subtitle: const Text('Add chapter markers to the file'),
+                  value: settings.embedChapters,
+                  onChanged: controller.setEmbedChapters,
+                ),
+                SwitchListTile(
+                  title: const Text('Split into chapters'),
+                  subtitle: const Text(
+                    'Save each chapter as a separate library item',
+                  ),
+                  value: settings.splitChapters,
+                  onChanged: controller.setSplitChapters,
                 ),
                 _ExtraArgsTile(value: settings.extraDownloadArgs),
               ],
@@ -476,6 +531,103 @@ class _ExtraArgsTileState extends ConsumerState<_ExtraArgsTile> {
                 .read(settingsControllerProvider.notifier)
                 .setExtraDownloadArgs(v),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Comma-separated subtitle-language input (e.g. `en,es`).
+class _SubtitleLangsTile extends ConsumerStatefulWidget {
+  const _SubtitleLangsTile({required this.langs});
+  final String langs;
+
+  @override
+  ConsumerState<_SubtitleLangsTile> createState() => _SubtitleLangsTileState();
+}
+
+class _SubtitleLangsTileState extends ConsumerState<_SubtitleLangsTile> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.langs,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        tokens.spaceSm,
+        tokens.spaceLg,
+        tokens.spaceMd,
+      ),
+      child: TextField(
+        controller: _controller,
+        decoration: const InputDecoration(
+          isDense: true,
+          labelText: 'Subtitle languages',
+          helperText: 'Comma-separated, e.g. en,es,en-US',
+        ),
+        onChanged: (v) =>
+            ref.read(settingsControllerProvider.notifier).setSubtitleLangs(v),
+      ),
+    );
+  }
+}
+
+/// Selectable SponsorBlock categories rendered as filter chips.
+class _SponsorCategories extends ConsumerWidget {
+  const _SponsorCategories({required this.selected});
+  final String selected;
+
+  static const _all = [
+    'sponsor',
+    'selfpromo',
+    'interaction',
+    'intro',
+    'outro',
+    'preview',
+    'music_offtopic',
+    'filler',
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = GrabBitTokens.of(context);
+    final current = selected.split(',').where((c) => c.isNotEmpty).toSet();
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        0,
+        tokens.spaceLg,
+        tokens.spaceMd,
+      ),
+      child: Wrap(
+        spacing: tokens.spaceSm,
+        runSpacing: tokens.spaceXs,
+        children: [
+          for (final cat in _all)
+            FilterChip(
+              label: Text(cat),
+              selected: current.contains(cat),
+              onSelected: (on) {
+                final next = {...current};
+                if (on) {
+                  next.add(cat);
+                } else {
+                  next.remove(cat);
+                }
+                ref
+                    .read(settingsControllerProvider.notifier)
+                    .setSponsorBlockCategories(next.join(','));
+              },
+            ),
         ],
       ),
     );

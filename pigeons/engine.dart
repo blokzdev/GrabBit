@@ -66,18 +66,24 @@ class DownloadRequestDto {
     required this.taskId,
     required this.url,
     required this.audioOnly,
-    required this.subtitles,
+    required this.autoSubs,
     required this.embedThumbnail,
     required this.embedMetadata,
     required this.outputDir,
     required this.filenameTemplate,
+    required this.embedChapters,
+    required this.splitChapters,
     this.formatId,
     this.container,
+    this.subtitleLangs,
+    this.subtitleFormat,
     this.rateLimit,
     this.concurrentFragments,
     this.audioQuality,
     this.downloadArchivePath,
     this.extraArgs,
+    this.sponsorBlock,
+    this.sponsorBlockCategories,
   });
 
   String taskId;
@@ -85,7 +91,9 @@ class DownloadRequestDto {
   String? formatId;
   bool audioOnly;
   String? container;
-  bool subtitles;
+  List<String>? subtitleLangs;
+  bool autoSubs;
+  String? subtitleFormat;
   bool embedThumbnail;
   bool embedMetadata;
   String outputDir;
@@ -95,6 +103,10 @@ class DownloadRequestDto {
   String? audioQuality;
   String? downloadArchivePath;
   List<String>? extraArgs;
+  String? sponsorBlock;
+  List<String>? sponsorBlockCategories;
+  bool embedChapters;
+  bool splitChapters;
 }
 
 class ProgressDto {

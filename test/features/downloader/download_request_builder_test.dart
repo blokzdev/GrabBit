@@ -106,6 +106,78 @@ void main() {
     });
   });
 
+  group('subtitles / SponsorBlock / chapters', () {
+    test('subtitle langs parse from CSV; off when empty', () {
+      final on = buildDownloadRequest(
+        taskId: 't',
+        url: 'u',
+        outputDir: '/m',
+        settings: const SettingsModel(
+          subtitleLangs: 'en, es',
+          subtitleAuto: true,
+          subtitleFormat: 'vtt',
+        ),
+        audioOnly: false,
+      );
+      expect(on.subtitleLangs, ['en', 'es']);
+      expect(on.autoSubs, isTrue);
+      expect(on.subtitleFormat, 'vtt');
+
+      final off = buildDownloadRequest(
+        taskId: 't',
+        url: 'u',
+        outputDir: '/m',
+        settings: const SettingsModel(),
+        audioOnly: false,
+      );
+      expect(off.subtitleLangs, isNull);
+    });
+
+    test('SponsorBlock only populated when mode != off', () {
+      final off = buildDownloadRequest(
+        taskId: 't',
+        url: 'u',
+        outputDir: '/m',
+        settings: const SettingsModel(sponsorBlockCategories: 'sponsor'),
+        audioOnly: false,
+      );
+      expect(off.sponsorBlock, isNull);
+      expect(off.sponsorBlockCategories, isNull);
+
+      final on = buildDownloadRequest(
+        taskId: 't',
+        url: 'u',
+        outputDir: '/m',
+        settings: const SettingsModel(
+          sponsorBlockMode: 'remove',
+          sponsorBlockCategories: 'sponsor,selfpromo',
+        ),
+        audioOnly: false,
+      );
+      expect(on.sponsorBlock, 'remove');
+      expect(on.sponsorBlockCategories, ['sponsor', 'selfpromo']);
+    });
+
+    test('chapter flags pass through', () {
+      final req = buildDownloadRequest(
+        taskId: 't',
+        url: 'u',
+        outputDir: '/m',
+        settings: const SettingsModel(embedChapters: true, splitChapters: true),
+        audioOnly: false,
+      );
+      expect(req.embedChapters, isTrue);
+      expect(req.splitChapters, isTrue);
+    });
+  });
+
+  group('parseCsvList', () {
+    test('splits on commas and whitespace, drops empties', () {
+      expect(parseCsvList('en, es ,  en-US'), ['en', 'es', 'en-US']);
+      expect(parseCsvList(''), isEmpty);
+    });
+  });
+
   group('parseExtraArgs', () {
     test('splits on whitespace and drops empties', () {
       expect(parseExtraArgs('  --no-mtime   --retries 3 '), [

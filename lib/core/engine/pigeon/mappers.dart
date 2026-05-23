@@ -39,7 +39,9 @@ extension DownloadRequestMapper on DownloadRequest {
     formatId: formatId,
     audioOnly: audioOnly,
     container: container,
-    subtitles: subtitles,
+    subtitleLangs: subtitleLangs,
+    autoSubs: autoSubs,
+    subtitleFormat: subtitleFormat,
     embedThumbnail: embedThumbnail,
     embedMetadata: embedMetadata,
     outputDir: outputDir,
@@ -49,6 +51,10 @@ extension DownloadRequestMapper on DownloadRequest {
     audioQuality: audioQuality,
     downloadArchivePath: downloadArchivePath,
     extraArgs: extraArgs,
+    sponsorBlock: sponsorBlock,
+    sponsorBlockCategories: sponsorBlockCategories,
+    embedChapters: embedChapters,
+    splitChapters: splitChapters,
   );
 }
 

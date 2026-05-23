@@ -164,6 +164,7 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
 
   Widget _videoTools(MediaItem row) {
     final ext = _ext(row);
+    final subs = _subtitleSidecars(row);
     final tokens = GrabBitTokens.of(context);
     return ListView(
       padding: EdgeInsets.all(tokens.spaceLg),
@@ -288,8 +289,54 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
             ),
           ]),
         ),
+        SizedBox(height: tokens.spaceLg),
+        _ToolCard(
+          title: 'Subtitles',
+          child: subs.isEmpty
+              ? Text(
+                  'No subtitle file found. Re-download with subtitles enabled '
+                  'to burn them in.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : _chipWrap([
+                  for (final sub in subs)
+                    _opChip(
+                      'Burn in ${_subLabel(sub.path)}',
+                      Icons.subtitles,
+                      () => _run(
+                        row,
+                        label: 'subtitled',
+                        outExt: ext,
+                        outDurationSec: row.durationSec,
+                        build: (i, o) => burnInSubtitlesArgs(
+                          input: i,
+                          output: o,
+                          subtitlePath: sub.path,
+                        ),
+                      ),
+                    ),
+                ]),
+        ),
       ],
     );
+  }
+
+  /// Subtitle sidecar files (`.srt`/`.vtt`/…) alongside the item's media file.
+  List<File> _subtitleSidecars(MediaItem row) {
+    final dir = File(row.filePath).parent;
+    if (!dir.existsSync()) return const [];
+    const exts = {'srt', 'vtt', 'ass', 'ssa'};
+    return dir.listSync().whereType<File>().where((f) {
+      return exts.contains(f.path.split('.').last.toLowerCase());
+    }).toList();
+  }
+
+  /// The language tag from a subtitle filename (`clip.en.srt` → `en`).
+  String _subLabel(String path) {
+    final parts = path.split('/').last.split('.');
+    return parts.length >= 3 ? parts[parts.length - 2] : parts.first;
   }
 
   Widget _imageTools(MediaItem row) {
