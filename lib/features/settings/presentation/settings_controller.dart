@@ -40,6 +40,24 @@ class SettingsController extends _$SettingsController {
   Future<void> setMaxConcurrentDownloads(int value) async =>
       _update((await future).copyWith(maxConcurrentDownloads: value));
 
+  Future<void> setConcurrentFragments(int value) async =>
+      _update((await future).copyWith(concurrentFragments: value));
+
+  Future<void> setRateLimit(String value) async =>
+      _update((await future).copyWith(rateLimit: value));
+
+  Future<void> setAudioFormat(String value) async =>
+      _update((await future).copyWith(audioFormat: value));
+
+  Future<void> setAudioQuality(String value) async =>
+      _update((await future).copyWith(audioQuality: value));
+
+  Future<void> setUseDownloadArchive(bool value) async =>
+      _update((await future).copyWith(useDownloadArchive: value));
+
+  Future<void> setExtraDownloadArgs(String value) async =>
+      _update((await future).copyWith(extraDownloadArgs: value));
+
   Future<void> setFilenameTemplate(String template) async =>
       _update((await future).copyWith(filenameTemplate: template));
 

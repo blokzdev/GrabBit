@@ -3,8 +3,8 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
-import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/core/utils/task_id.dart';
+import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
@@ -155,20 +155,14 @@ class SelectionController extends Notifier<SelectionState> {
     return [
       for (final (i, e) in entries.indexed)
         QueuedDownload(
-          request: DownloadRequest(
+          request: buildDownloadRequest(
             taskId: newTaskId(),
             url: e.url,
             outputDir: dir.path,
-            filenameTemplate: resolveOutputTemplate(
-              settings.filenameTemplate,
-              index: i + 1,
-            ),
-            formatId: preset.formatSelector,
+            settings: settings,
             audioOnly: preset.audioOnly,
-            container: preset.audioOnly ? 'm4a' : 'mp4',
-            subtitles: settings.defaultSubtitles,
-            embedThumbnail: settings.embedThumbnail,
-            embedMetadata: settings.embedMetadata,
+            formatSelector: preset.formatSelector,
+            index: i + 1,
           ),
           title: e.title,
           durationSec: e.durationSec,

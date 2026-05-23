@@ -82,6 +82,56 @@ void main() {
     expect(find.textContaining('Rick Astley'), findsOneWidget);
   });
 
+  testWidgets('Faster downloads (beta) toggle persists 4 fragments', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Faster downloads (beta)'));
+    await tester.pumpAndSettle();
+
+    expect((await SettingsRepository(db).read()).concurrentFragments, 4);
+  });
+
+  testWidgets('advanced download options appear only in advanced mode', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    // Seed advanced mode so the gated section renders.
+    await SettingsRepository(
+      db,
+    ).write(const SettingsModel(mode: UiMode.advanced));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Advanced download options'), findsOneWidget);
+    expect(find.text('Extra yt-dlp arguments'), findsOneWidget);
+  });
+
   testWidgets('lays out without overflow at 200% text scale', (tester) async {
     tester.view.physicalSize = const Size(1000, 3000);
     tester.view.devicePixelRatio = 1.0;

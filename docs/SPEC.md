@@ -118,6 +118,12 @@ drop user data without migration. Add a schema test on bump.
   "exportFolder": null,             // user-picked dir for export/auto-store
   "filenameTemplate": "%(title)s.%(ext)s",
   "maxConcurrentDownloads": 2,
+  "concurrentFragments": 1,         // P8b; >1 = parallel fragments ("Faster downloads")
+  "rateLimit": "",                  // P8b; yt-dlp --limit-rate (e.g. 1M); "" = unlimited
+  "audioFormat": "m4a",             // P8b; audio-only codec (yt-dlp --audio-format)
+  "audioQuality": "best",           // P8b; --audio-quality (e.g. 192K); best = omit
+  "useDownloadArchive": false,      // P8b; --download-archive to skip already-fetched
+  "extraDownloadArgs": "",          // P8b; raw extra yt-dlp args (Advanced escape hatch)
   "wifiOnly": false,
   "theme": "system",                // system|light|dark
   "dynamicColor": true,
@@ -125,6 +131,12 @@ drop user data without migration. Add a schema test on bump.
   "appLock": { "enabled": false, "biometric": false }
 }
 ```
+
+**P8b power options** are global, **Advanced-mode** settings (except the friendly
+"Faster downloads (beta)" toggle, which sets `concurrentFragments` to 4/1 and is shown in
+both modes). They default to current behavior, flow into every `DownloadRequest` via
+`buildDownloadRequest` (single + batch), and map to yt-dlp flags in `YtDlpHost.kt`.
+`extraDownloadArgs` is tokenized on whitespace and passed straight to yt-dlp (no shell).
 
 **App-lock (P2-C) deviation:** settings JSON holds only `appLock.enabled` and
 `appLock.biometric`. The PIN is **never** stored here — `PinRepository` keeps a

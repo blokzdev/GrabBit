@@ -41,7 +41,7 @@
   handling, manifest `ACTION_SEND`/`ACTION_SEND_MULTIPLE` filter, `ShareIntakeService` +
   `extractSharedUrl` with tests, Add-Download pre-fill). **Pending on-device verification.**
 
-### `[ ]` P8b — Engine request expansion + power-download options *(foundational native batch)*
+### `[~]` P8b — Engine request expansion + power-download options *(foundational native batch)*
 - Add fields to `DownloadRequest` (`lib/core/engine/download_engine.dart`),
   `DownloadRequestDto` (`pigeons/engine.dart`), and the arg-builder in
   `android/app/src/main/kotlin/dev/blokz/grabbit/YtDlpHost.kt`:
@@ -57,6 +57,10 @@
   freezed/json codegen. Pure-Dart + tested: settings serialization, arg-mapping validation.
 - **Exit / review:** set a rate-limit + concurrent-fragments, add a custom arg, and re-run a
   playlist with the archive on → already-downloaded items are skipped.
+- **Status:** implemented — 5 new `DownloadRequest`/DTO fields + `YtDlpHost.kt` arg mapping;
+  6 new settings; shared `download_request_builder` (single + batch) with tested `parseExtraArgs`;
+  "Faster downloads (beta)" toggle + Advanced "Advanced download options" section. CI-green
+  (builder/mapper/settings tests). **Pending on-device verification.**
 
 ### `[ ]` P8c — Subtitles, SponsorBlock, chapters *(extends P8b; same APK batch)*
 - **Subtitles:** replace the `subtitles` bool with `subtitleLangs: List<String>`,

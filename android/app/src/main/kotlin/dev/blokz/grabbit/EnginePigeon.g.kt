@@ -334,7 +334,12 @@ data class DownloadRequestDto (
   val embedThumbnail: Boolean,
   val embedMetadata: Boolean,
   val outputDir: String,
-  val filenameTemplate: String
+  val filenameTemplate: String,
+  val rateLimit: String? = null,
+  val concurrentFragments: Long? = null,
+  val audioQuality: String? = null,
+  val downloadArchivePath: String? = null,
+  val extraArgs: List<String>? = null
 )
  {
   companion object {
@@ -349,7 +354,12 @@ data class DownloadRequestDto (
       val embedMetadata = pigeonVar_list[7] as Boolean
       val outputDir = pigeonVar_list[8] as String
       val filenameTemplate = pigeonVar_list[9] as String
-      return DownloadRequestDto(taskId, url, formatId, audioOnly, container, subtitles, embedThumbnail, embedMetadata, outputDir, filenameTemplate)
+      val rateLimit = pigeonVar_list[10] as String?
+      val concurrentFragments = pigeonVar_list[11] as Long?
+      val audioQuality = pigeonVar_list[12] as String?
+      val downloadArchivePath = pigeonVar_list[13] as String?
+      val extraArgs = pigeonVar_list[14] as List<String>?
+      return DownloadRequestDto(taskId, url, formatId, audioOnly, container, subtitles, embedThumbnail, embedMetadata, outputDir, filenameTemplate, rateLimit, concurrentFragments, audioQuality, downloadArchivePath, extraArgs)
     }
   }
   fun toList(): List<Any?> {
@@ -364,6 +374,11 @@ data class DownloadRequestDto (
       embedMetadata,
       outputDir,
       filenameTemplate,
+      rateLimit,
+      concurrentFragments,
+      audioQuality,
+      downloadArchivePath,
+      extraArgs,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -374,7 +389,7 @@ data class DownloadRequestDto (
       return true
     }
     val other = other as DownloadRequestDto
-    return EnginePigeonPigeonUtils.deepEquals(this.taskId, other.taskId) && EnginePigeonPigeonUtils.deepEquals(this.url, other.url) && EnginePigeonPigeonUtils.deepEquals(this.formatId, other.formatId) && EnginePigeonPigeonUtils.deepEquals(this.audioOnly, other.audioOnly) && EnginePigeonPigeonUtils.deepEquals(this.container, other.container) && EnginePigeonPigeonUtils.deepEquals(this.subtitles, other.subtitles) && EnginePigeonPigeonUtils.deepEquals(this.embedThumbnail, other.embedThumbnail) && EnginePigeonPigeonUtils.deepEquals(this.embedMetadata, other.embedMetadata) && EnginePigeonPigeonUtils.deepEquals(this.outputDir, other.outputDir) && EnginePigeonPigeonUtils.deepEquals(this.filenameTemplate, other.filenameTemplate)
+    return EnginePigeonPigeonUtils.deepEquals(this.taskId, other.taskId) && EnginePigeonPigeonUtils.deepEquals(this.url, other.url) && EnginePigeonPigeonUtils.deepEquals(this.formatId, other.formatId) && EnginePigeonPigeonUtils.deepEquals(this.audioOnly, other.audioOnly) && EnginePigeonPigeonUtils.deepEquals(this.container, other.container) && EnginePigeonPigeonUtils.deepEquals(this.subtitles, other.subtitles) && EnginePigeonPigeonUtils.deepEquals(this.embedThumbnail, other.embedThumbnail) && EnginePigeonPigeonUtils.deepEquals(this.embedMetadata, other.embedMetadata) && EnginePigeonPigeonUtils.deepEquals(this.outputDir, other.outputDir) && EnginePigeonPigeonUtils.deepEquals(this.filenameTemplate, other.filenameTemplate) && EnginePigeonPigeonUtils.deepEquals(this.rateLimit, other.rateLimit) && EnginePigeonPigeonUtils.deepEquals(this.concurrentFragments, other.concurrentFragments) && EnginePigeonPigeonUtils.deepEquals(this.audioQuality, other.audioQuality) && EnginePigeonPigeonUtils.deepEquals(this.downloadArchivePath, other.downloadArchivePath) && EnginePigeonPigeonUtils.deepEquals(this.extraArgs, other.extraArgs)
   }
 
   override fun hashCode(): Int {
@@ -389,6 +404,11 @@ data class DownloadRequestDto (
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.embedMetadata)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.outputDir)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.filenameTemplate)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.rateLimit)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.concurrentFragments)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.audioQuality)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.downloadArchivePath)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.extraArgs)
     return result
   }
 }

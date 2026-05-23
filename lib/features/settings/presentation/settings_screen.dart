@@ -87,6 +87,15 @@ class _SettingsList extends ConsumerWidget {
                 ),
               ),
               SwitchListTile(
+                title: const Text('Faster downloads (beta)'),
+                subtitle: const Text(
+                  'Fetch video in parallel fragments for higher speed. '
+                  'Experimental — uses more CPU and data.',
+                ),
+                value: settings.concurrentFragments > 1,
+                onChanged: (v) => controller.setConcurrentFragments(v ? 4 : 1),
+              ),
+              SwitchListTile(
                 title: const Text('Wi-Fi only'),
                 subtitle: const Text('Pause downloads on mobile data'),
                 value: settings.wifiOnly,
@@ -113,6 +122,89 @@ class _SettingsList extends ConsumerWidget {
               ),
             ],
           ),
+          if (settings.mode == UiMode.advanced)
+            _Section(
+              icon: Icons.tune,
+              title: 'Advanced download options',
+              children: [
+                ListTile(
+                  title: const Text('Concurrent fragments'),
+                  subtitle: const Text('Parallel pieces per download'),
+                  trailing: DropdownButton<int>(
+                    value: settings.concurrentFragments.clamp(1, 8),
+                    onChanged: (v) =>
+                        v == null ? null : controller.setConcurrentFragments(v),
+                    items: [
+                      for (var i = 1; i <= 8; i++)
+                        DropdownMenuItem(value: i, child: Text('$i')),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  title: const Text('Download speed limit'),
+                  trailing: DropdownButton<String>(
+                    value: settings.rateLimit,
+                    onChanged: (v) =>
+                        v == null ? null : controller.setRateLimit(v),
+                    items: const [
+                      DropdownMenuItem(value: '', child: Text('Unlimited')),
+                      DropdownMenuItem(value: '500K', child: Text('500 KB/s')),
+                      DropdownMenuItem(value: '1M', child: Text('1 MB/s')),
+                      DropdownMenuItem(value: '2M', child: Text('2 MB/s')),
+                      DropdownMenuItem(value: '5M', child: Text('5 MB/s')),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  title: const Text('Audio format'),
+                  subtitle: const Text('Codec for audio-only downloads'),
+                  trailing: DropdownButton<String>(
+                    value: settings.audioFormat,
+                    onChanged: (v) =>
+                        v == null ? null : controller.setAudioFormat(v),
+                    items: const [
+                      DropdownMenuItem(value: 'm4a', child: Text('M4A (AAC)')),
+                      DropdownMenuItem(value: 'mp3', child: Text('MP3')),
+                      DropdownMenuItem(value: 'opus', child: Text('Opus')),
+                      DropdownMenuItem(value: 'vorbis', child: Text('Vorbis')),
+                      DropdownMenuItem(value: 'aac', child: Text('AAC')),
+                      DropdownMenuItem(value: 'flac', child: Text('FLAC')),
+                      DropdownMenuItem(value: 'wav', child: Text('WAV')),
+                      DropdownMenuItem(
+                        value: 'best',
+                        child: Text('Best (source)'),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  title: const Text('Audio quality'),
+                  trailing: DropdownButton<String>(
+                    value: settings.audioQuality,
+                    onChanged: (v) =>
+                        v == null ? null : controller.setAudioQuality(v),
+                    items: const [
+                      DropdownMenuItem(value: 'best', child: Text('Best')),
+                      DropdownMenuItem(value: '320K', child: Text('320 kbps')),
+                      DropdownMenuItem(value: '256K', child: Text('256 kbps')),
+                      DropdownMenuItem(value: '192K', child: Text('192 kbps')),
+                      DropdownMenuItem(value: '128K', child: Text('128 kbps')),
+                      DropdownMenuItem(value: '96K', child: Text('96 kbps')),
+                    ],
+                  ),
+                ),
+                SwitchListTile(
+                  title: const Text('Skip already-downloaded'),
+                  subtitle: const Text(
+                    'Keep an archive of fetched items; re-adding one is '
+                    'skipped (no new file).',
+                  ),
+                  value: settings.useDownloadArchive,
+                  onChanged: controller.setUseDownloadArchive,
+                ),
+                _ExtraArgsTile(value: settings.extraDownloadArgs),
+              ],
+            ),
           _Section(
             icon: Icons.system_update_alt,
             title: 'Downloader engine',
@@ -326,6 +418,63 @@ class _FilenameTemplateTileState extends ConsumerState<_FilenameTemplateTile> {
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Advanced-only multi-line input for raw yt-dlp arguments (the escape hatch).
+class _ExtraArgsTile extends ConsumerStatefulWidget {
+  const _ExtraArgsTile({required this.value});
+  final String value;
+
+  @override
+  ConsumerState<_ExtraArgsTile> createState() => _ExtraArgsTileState();
+}
+
+class _ExtraArgsTileState extends ConsumerState<_ExtraArgsTile> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.value,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        tokens.spaceSm,
+        tokens.spaceLg,
+        tokens.spaceMd,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Extra yt-dlp arguments', style: theme.textTheme.titleMedium),
+          SizedBox(height: tokens.spaceSm),
+          TextField(
+            controller: _controller,
+            minLines: 1,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              isDense: true,
+              hintText: '--no-mtime --retries 3',
+              helperText:
+                  'Advanced. Passed straight to yt-dlp — wrong flags can '
+                  'break downloads.',
+            ),
+            onChanged: (v) => ref
+                .read(settingsControllerProvider.notifier)
+                .setExtraDownloadArgs(v),
           ),
         ],
       ),
