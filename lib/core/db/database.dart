@@ -25,6 +25,11 @@ class MediaItems extends Table {
     #id,
     onDelete: KeyAction.setNull,
   )();
+  // P9: starred item (P9b), content hash for duplicate detection (P9b, filled
+  // lazily), and last-played timestamp (P9c) for "recent" browsing/sort (P9b).
+  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
+  TextColumn get contentHash => text().nullable()();
+  DateTimeColumn get lastAccessedAt => dateTime().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -105,6 +110,8 @@ class DownloadTasks extends Table {
   TextColumn get errorCode => text().nullable()();
   IntColumn get retries => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();
+  // P9d: user-defined queue order (drag-to-reorder); ties broken by createdAt.
+  IntColumn get orderIndex => integer().withDefault(const Constant(0))();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -137,7 +144,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -155,8 +162,14 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(mediaMetadata, mediaMetadata.playlistId);
         await m.addColumn(mediaMetadata, mediaMetadata.playlistTitle);
         await m.addColumn(mediaMetadata, mediaMetadata.tags);
-        await _createIndices();
       }
+      if (from < 3) {
+        await m.addColumn(mediaItems, mediaItems.isFavorite);
+        await m.addColumn(mediaItems, mediaItems.contentHash);
+        await m.addColumn(mediaItems, mediaItems.lastAccessedAt);
+        await m.addColumn(downloadTasks, downloadTasks.orderIndex);
+      }
+      await _createIndices();
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -180,6 +193,16 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_media_metadata_playlist_id ON media_metadata (playlist_id)',
+    );
+    // P9: favorites filter, dedupe lookups, and the default (date) library sort.
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_items_favorite ON media_items (is_favorite)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_items_content_hash ON media_items (content_hash)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_items_created_at ON media_items (created_at)',
     );
   }
 }

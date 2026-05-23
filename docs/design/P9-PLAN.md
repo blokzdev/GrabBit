@@ -22,7 +22,7 @@
 
 ---
 
-### `[ ]` P9a — Single v2→v3 DB migration *(do all schema changes once)*
+### `[~]` P9a — Single v2→v3 DB migration *(do all schema changes once)*
 - In `lib/core/db/database.dart`, bump `schemaVersion` to **3** with one `from < 3`
   `onUpgrade` branch (precedent: the existing v1→v2 block). Add:
   - `isFavorite` (bool) on `MediaItems`
@@ -31,6 +31,9 @@
   - sort/`lastAccessed` columns as needed, plus indices (favorite, hash, createdAt/title/size)
 - Add a migration test (the repo already has v1→v2 migration-test precedent).
 - **Exit / review:** a P8-era library upgrades to v3 cleanly with no data loss.
+- **Status:** implemented — `schemaVersion` 3 with a `from < 3` branch adding the four columns +
+  indices (favorite/content_hash/created_at); v2→v3 upgrade test added. Columns are unused until
+  P9b–P9d. CI-green. **Pending on-device upgrade spot-check.**
 
 ### `[ ]` P9b — Library power *(pure Dart)*
 - Over `lib/features/library/data/library_repository.dart` + `library_view.dart` /

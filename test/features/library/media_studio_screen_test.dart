@@ -17,6 +17,7 @@ MediaItem _item({required String type, int? durationSec}) => MediaItem(
   durationSec: durationSec,
   createdAt: DateTime.utc(2026, 5, 3),
   storageState: 'private',
+  isFavorite: false,
 );
 
 void main() {
