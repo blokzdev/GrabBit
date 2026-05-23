@@ -10,10 +10,14 @@ import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/error_banner.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
+import 'package:grabbit/core/utils/byte_format.dart';
+import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
+import 'package:grabbit/features/settings/data/settings_model.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 class AddDownloadScreen extends ConsumerStatefulWidget {
   const AddDownloadScreen({super.key});
@@ -84,6 +88,7 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
     });
     final state = ref.watch(downloaderControllerProvider);
     final controller = ref.read(downloaderControllerProvider.notifier);
+    final settings = ref.watch(settingsControllerProvider).asData?.value;
     final tokens = GrabBitTokens.of(context);
     final probing = state.phase == DownloaderPhase.probing;
 
@@ -139,28 +144,47 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
                 ),
               if (probing) const _PreviewSkeleton(),
               if (state.info != null) _MediaPreview(info: state.info!),
-              if (state.phase == DownloaderPhase.ready)
-                _PresetPicker(
+              if (state.phase == DownloaderPhase.ready && state.info != null)
+                _FormatPicker(
                   presets: state.availablePresets,
-                  onAction: (preset, startNow) async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final router = GoRouter.of(context);
-                    await controller.enqueue(preset, startNow: startNow);
-                    router.go('/');
-                    messenger
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            startNow ? 'Download started' : 'Added to queue',
-                          ),
-                          action: SnackBarAction(
-                            label: 'View queue',
-                            onPressed: () => router.go('/queue'),
-                          ),
-                        ),
-                      );
-                  },
+                  formats: state.info!.formats,
+                  advanced: settings?.mode == UiMode.advanced,
+                  defaultAudioFormat: settings?.audioFormat ?? 'm4a',
+                  defaultAudioQuality: settings?.audioQuality ?? 'best',
+                  onAction:
+                      ({
+                        formatSelector,
+                        required audioOnly,
+                        audioFormat,
+                        audioQuality,
+                        required startNow,
+                      }) async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final router = GoRouter.of(context);
+                        await controller.enqueue(
+                          formatSelector: formatSelector,
+                          audioOnly: audioOnly,
+                          audioFormat: audioFormat,
+                          audioQuality: audioQuality,
+                          startNow: startNow,
+                        );
+                        router.go('/');
+                        messenger
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                startNow
+                                    ? 'Download started'
+                                    : 'Added to queue',
+                              ),
+                              action: SnackBarAction(
+                                label: 'View queue',
+                                onPressed: () => router.go('/queue'),
+                              ),
+                            ),
+                          );
+                      },
                 ),
             ],
           ),
@@ -298,22 +322,100 @@ class _DurationPill extends StatelessWidget {
   }
 }
 
-class _PresetPicker extends StatefulWidget {
-  const _PresetPicker({required this.presets, required this.onAction});
-  final List<QualityPreset> presets;
-  final void Function(QualityPreset preset, bool startNow) onAction;
+/// Enqueue callback: a resolved yt-dlp `-f` selector + audio choices.
+typedef _EnqueueAction =
+    void Function({
+      String? formatSelector,
+      required bool audioOnly,
+      String? audioFormat,
+      String? audioQuality,
+      required bool startNow,
+    });
 
-  @override
-  State<_PresetPicker> createState() => _PresetPickerState();
+bool _hasVideo(MediaFormat f) => f.vcodec != null && f.vcodec != 'none';
+
+String _formatTitle(MediaFormat f) {
+  if (_hasVideo(f)) {
+    return f.height != null
+        ? '${f.height}p'
+        : (f.label.isNotEmpty ? f.label : f.id);
+  }
+  return 'Audio';
 }
 
-class _PresetPickerState extends State<_PresetPicker> {
-  late QualityPreset _selected = widget.presets.first;
+String _formatSubtitle(MediaFormat f) {
+  final codec = _hasVideo(f) ? (f.vcodec ?? '') : (f.acodec ?? '');
+  final size = formatBytes(f.filesize);
+  return [
+    f.ext,
+    codec,
+    if (size.isNotEmpty) size,
+  ].where((s) => s.isNotEmpty).join(' · ');
+}
+
+/// Quality/format chooser: preset chips for everyone, plus (Advanced) a list of
+/// the concrete probed formats and a per-download audio codec/bitrate override.
+class _FormatPicker extends StatefulWidget {
+  const _FormatPicker({
+    required this.presets,
+    required this.formats,
+    required this.advanced,
+    required this.defaultAudioFormat,
+    required this.defaultAudioQuality,
+    required this.onAction,
+  });
+  final List<QualityPreset> presets;
+  final List<MediaFormat> formats;
+  final bool advanced;
+  final String defaultAudioFormat;
+  final String defaultAudioQuality;
+  final _EnqueueAction onAction;
 
   @override
-  void didUpdateWidget(_PresetPicker oldWidget) {
+  State<_FormatPicker> createState() => _FormatPickerState();
+}
+
+class _FormatPickerState extends State<_FormatPicker> {
+  late QualityPreset? _preset = widget.presets.first;
+  MediaFormat? _format;
+  late String _audioFormat = widget.defaultAudioFormat;
+  late String _audioQuality = widget.defaultAudioQuality;
+
+  @override
+  void didUpdateWidget(_FormatPicker oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.presets.contains(_selected)) _selected = widget.presets.first;
+    if (_preset != null && !widget.presets.contains(_preset)) {
+      _preset = widget.presets.first;
+      _format = null;
+    }
+  }
+
+  bool get _audioSelected => _format != null
+      ? formatSelectorFor(_format!).audioOnly
+      : (_preset?.audioOnly ?? false);
+
+  List<MediaFormat> get _sorted {
+    final list = [...widget.formats];
+    list.sort((a, b) {
+      final av = _hasVideo(a), bv = _hasVideo(b);
+      if (av != bv) return av ? -1 : 1; // video first
+      final h = (b.height ?? 0).compareTo(a.height ?? 0);
+      return h != 0 ? h : (b.tbr ?? 0).compareTo(a.tbr ?? 0);
+    });
+    return list;
+  }
+
+  void _fire(bool startNow) {
+    final sel = _format != null
+        ? formatSelectorFor(_format!)
+        : (selector: _preset!.formatSelector, audioOnly: _preset!.audioOnly);
+    widget.onAction(
+      formatSelector: sel.selector,
+      audioOnly: sel.audioOnly,
+      audioFormat: sel.audioOnly ? _audioFormat : null,
+      audioQuality: sel.audioOnly ? _audioQuality : null,
+      startNow: startNow,
+    );
   }
 
   @override
@@ -335,17 +437,40 @@ class _PresetPickerState extends State<_PresetPicker> {
                   size: 18,
                 ),
                 label: Text(preset.label),
-                selected: _selected == preset,
-                onSelected: (_) => setState(() => _selected = preset),
+                selected: _format == null && _preset == preset,
+                onSelected: (_) => setState(() {
+                  _preset = preset;
+                  _format = null;
+                }),
               ),
           ],
         ),
+        if (widget.advanced && _sorted.isNotEmpty) ...[
+          SizedBox(height: tokens.spaceMd),
+          _FormatList(
+            formats: _sorted,
+            selected: _format,
+            onSelected: (f) => setState(() {
+              _format = f;
+              _preset = null;
+            }),
+          ),
+        ],
+        if (_audioSelected) ...[
+          SizedBox(height: tokens.spaceMd),
+          _AudioOptions(
+            format: _audioFormat,
+            quality: _audioQuality,
+            onFormat: (v) => setState(() => _audioFormat = v),
+            onQuality: (v) => setState(() => _audioQuality = v),
+          ),
+        ],
         SizedBox(height: tokens.spaceLg),
         Row(
           children: [
             Expanded(
               child: FilledButton.tonalIcon(
-                onPressed: () => widget.onAction(_selected, false),
+                onPressed: () => _fire(false),
                 icon: const Icon(Icons.playlist_add),
                 label: const Text('Add to queue'),
               ),
@@ -357,12 +482,117 @@ class _PresetPickerState extends State<_PresetPicker> {
                   backgroundColor: tokens.accent,
                   foregroundColor: tokens.onAccent,
                 ),
-                onPressed: () => widget.onAction(_selected, true),
+                onPressed: () => _fire(true),
                 icon: const Icon(Icons.download),
                 label: const Text('Download now'),
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Expandable list of concrete probed formats (Advanced mode).
+class _FormatList extends StatelessWidget {
+  const _FormatList({
+    required this.formats,
+    required this.selected,
+    required this.onSelected,
+  });
+  final List<MediaFormat> formats;
+  final MediaFormat? selected;
+  final ValueChanged<MediaFormat> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: theme.colorScheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
+      ),
+      child: ExpansionTile(
+        title: Text(
+          selected == null
+              ? 'Choose a specific format'
+              : 'Format: ${_formatTitle(selected!)}',
+        ),
+        initiallyExpanded: selected != null,
+        children: [
+          for (final f in formats)
+            ListTile(
+              selected: selected?.id == f.id,
+              leading: Icon(
+                selected?.id == f.id
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+              ),
+              title: Text(_formatTitle(f)),
+              subtitle: Text(_formatSubtitle(f)),
+              onTap: () => onSelected(f),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Per-download audio codec + bitrate (overrides the global settings).
+class _AudioOptions extends StatelessWidget {
+  const _AudioOptions({
+    required this.format,
+    required this.quality,
+    required this.onFormat,
+    required this.onQuality,
+  });
+  final String format;
+  final String quality;
+  final ValueChanged<String> onFormat;
+  final ValueChanged<String> onQuality;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Audio format'),
+          trailing: DropdownButton<String>(
+            value: format,
+            onChanged: (v) => v == null ? null : onFormat(v),
+            items: const [
+              DropdownMenuItem(value: 'm4a', child: Text('M4A (AAC)')),
+              DropdownMenuItem(value: 'mp3', child: Text('MP3')),
+              DropdownMenuItem(value: 'opus', child: Text('Opus')),
+              DropdownMenuItem(value: 'vorbis', child: Text('Vorbis')),
+              DropdownMenuItem(value: 'aac', child: Text('AAC')),
+              DropdownMenuItem(value: 'flac', child: Text('FLAC')),
+              DropdownMenuItem(value: 'wav', child: Text('WAV')),
+              DropdownMenuItem(value: 'best', child: Text('Best (source)')),
+            ],
+          ),
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Audio quality'),
+          trailing: DropdownButton<String>(
+            value: quality,
+            onChanged: (v) => v == null ? null : onQuality(v),
+            items: const [
+              DropdownMenuItem(value: 'best', child: Text('Best')),
+              DropdownMenuItem(value: '320K', child: Text('320 kbps')),
+              DropdownMenuItem(value: '256K', child: Text('256 kbps')),
+              DropdownMenuItem(value: '192K', child: Text('192 kbps')),
+              DropdownMenuItem(value: '128K', child: Text('128 kbps')),
+              DropdownMenuItem(value: '96K', child: Text('96 kbps')),
+            ],
+          ),
         ),
       ],
     );

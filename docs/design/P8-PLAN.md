@@ -82,13 +82,17 @@
   Burn-in shipped as a Media Studio tool (`burnInSubtitlesArgs`, sidecar discovery). CI-green.
   **Pending on-device verification.**
 
-### `[ ]` P8d — Advanced format/codec + audio-preset picker *(pure Dart, CI-green)*
+### `[~]` P8d — Advanced format/codec + audio-preset picker *(pure Dart, CI-green)*
 - In `add_download_screen.dart` (Advanced mode), list the probed `MediaInfo.formats`
   (resolution / codec / filesize from the existing `probe`) and let the user pick a concrete
   `formatId`; add an audio codec/bitrate picker feeding the P8b fields. Pulls in the BACKLOG
   advanced-format-picker item. Widget-tested.
 - **Exit / review:** in Advanced mode, pick a specific format and an audio codec/bitrate; the
   download honours both.
+- **Status:** implemented — pure-Dart `formatSelectorFor` (video-only auto-merges `+bestaudio`);
+  generalized `enqueue` with per-download audio overrides; `_FormatPicker` adds an Advanced
+  "Choose a specific format" list + audio codec/bitrate dropdowns. CI-green. **Pending on-device
+  verification.** *(Completes P8.)*
 
 ---
 

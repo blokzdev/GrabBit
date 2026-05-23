@@ -1,12 +1,17 @@
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
+import 'package:grabbit/features/settings/data/settings_model.dart';
+import 'package:grabbit/features/settings/data/settings_repository.dart';
 
 class _FakeEngine implements DownloadEngine {
   _FakeEngine(this.info);
@@ -60,11 +65,14 @@ void main() {
       ),
     );
 
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           downloadEngineProvider.overrideWithValue(engine),
           mediaStorageProvider.overrideWithValue(_FakeStorage()),
+          appDatabaseProvider.overrideWithValue(db),
         ],
         child: const MaterialApp(home: AddDownloadScreen()),
       ),
@@ -91,6 +99,8 @@ void main() {
   });
 
   testWidgets('offers a paste affordance on the URL field', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -98,11 +108,56 @@ void main() {
             _FakeEngine(const MediaInfo(title: 't', formats: [])),
           ),
           mediaStorageProvider.overrideWithValue(_FakeStorage()),
+          appDatabaseProvider.overrideWithValue(db),
         ],
         child: const MaterialApp(home: AddDownloadScreen()),
       ),
     );
+    await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.content_paste), findsOneWidget);
+  });
+
+  testWidgets('advanced mode reveals the specific-format picker', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await SettingsRepository(
+      db,
+    ).write(const SettingsModel(mode: UiMode.advanced));
+    final engine = _FakeEngine(
+      const MediaInfo(
+        title: 'clip',
+        formats: [
+          MediaFormat(
+            id: '137',
+            ext: 'mp4',
+            label: '1080p',
+            audioOnly: false,
+            height: 1080,
+            vcodec: 'avc1',
+            acodec: 'none',
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          downloadEngineProvider.overrideWithValue(engine),
+          mediaStorageProvider.overrideWithValue(_FakeStorage()),
+          appDatabaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(home: AddDownloadScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'https://x/v');
+    await tester.tap(find.text('Check link(s)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Choose a specific format'), findsOneWidget);
   });
 }

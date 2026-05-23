@@ -178,6 +178,35 @@ void main() {
     });
   });
 
+  group('formatSelectorFor', () {
+    MediaFormat fmt({String? vcodec, String? acodec}) => MediaFormat(
+      id: '137',
+      ext: 'mp4',
+      label: 'x',
+      audioOnly: vcodec == null && acodec != null,
+      vcodec: vcodec,
+      acodec: acodec,
+    );
+
+    test('video-only merges +bestaudio with a fallback', () {
+      final r = formatSelectorFor(fmt(vcodec: 'avc1', acodec: 'none'));
+      expect(r.selector, '137+bestaudio/137');
+      expect(r.audioOnly, isFalse);
+    });
+
+    test('audio-only is flagged audioOnly', () {
+      final r = formatSelectorFor(fmt(vcodec: 'none', acodec: 'mp4a'));
+      expect(r.selector, '137');
+      expect(r.audioOnly, isTrue);
+    });
+
+    test('progressive (video + audio) is used as-is', () {
+      final r = formatSelectorFor(fmt(vcodec: 'avc1', acodec: 'mp4a'));
+      expect(r.selector, '137');
+      expect(r.audioOnly, isFalse);
+    });
+  });
+
   group('parseExtraArgs', () {
     test('splits on whitespace and drops empties', () {
       expect(parseExtraArgs('  --no-mtime   --retries 3 '), [

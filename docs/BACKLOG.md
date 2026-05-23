@@ -26,7 +26,7 @@ _(nothing active — pick the next batch from below)_
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
-- [→] **Advanced format/codec picker** on Add Download → scheduled as **P8d**
+- [x] **Advanced format/codec picker** on Add Download → shipped in **P8d**
   (`docs/design/P8-PLAN.md`). *(Was deferred from P7d.)*
 - [→] Queue **drag-to-reorder** + aggregate **dashboard** (speed / ETA / total size) →
   scheduled as **P9d** (`docs/design/P9-PLAN.md`).

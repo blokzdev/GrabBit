@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -159,7 +160,7 @@ void main() {
 
       final controller = container.read(downloaderControllerProvider.notifier);
       await controller.probe('https://example.com/video');
-      await controller.enqueue(QualityPreset.best, startNow: false);
+      await controller.enqueue(audioOnly: false, startNow: false);
 
       await Future<void>.delayed(const Duration(milliseconds: 30));
       expect(await repo.countByStatus(TaskStatus.held), 1);
@@ -174,12 +175,57 @@ void main() {
 
       final controller = container.read(downloaderControllerProvider.notifier);
       await controller.probe('https://example.com/video');
-      await controller.enqueue(QualityPreset.best, startNow: true);
+      await controller.enqueue(audioOnly: false, startNow: true);
 
       await _waitFor(
         () async => await repo.countByStatus(TaskStatus.running) == 1,
       );
       expect(await repo.countByStatus(TaskStatus.held), 0);
     });
+
+    test('passes a concrete format selector to the request', () async {
+      final container = wiredContainer();
+      addTearDown(container.dispose);
+      await container.read(queueControllerProvider.future);
+
+      final controller = container.read(downloaderControllerProvider.notifier);
+      await controller.probe('https://example.com/video');
+      await controller.enqueue(
+        formatSelector: '137+bestaudio/137',
+        audioOnly: false,
+        startNow: false,
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect((await _queuedRequest(db)).formatId, '137+bestaudio/137');
+    });
+
+    test('audio override flows into container + audio quality', () async {
+      final container = wiredContainer();
+      addTearDown(container.dispose);
+      await container.read(queueControllerProvider.future);
+
+      final controller = container.read(downloaderControllerProvider.notifier);
+      await controller.probe('https://example.com/video');
+      await controller.enqueue(
+        audioOnly: true,
+        audioFormat: 'mp3',
+        audioQuality: '192K',
+        startNow: false,
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      final req = await _queuedRequest(db);
+      expect(req.audioOnly, isTrue);
+      expect(req.container, 'mp3');
+      expect(req.audioQuality, '192K');
+    });
   });
+}
+
+/// Decodes the single queued task's persisted [DownloadRequest].
+Future<DownloadRequest> _queuedRequest(AppDatabase db) async {
+  final rows = await db.select(db.downloadTasks).get();
+  final json = jsonDecode(rows.single.requestJson) as Map<String, dynamic>;
+  return DownloadRequest.fromJson(json['request'] as Map<String, dynamic>);
 }
