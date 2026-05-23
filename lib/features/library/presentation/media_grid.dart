@@ -59,55 +59,60 @@ class MediaTile extends StatelessWidget {
     final theme = Theme.of(context);
     final tokens = GrabBitTokens.of(context);
     final radius = BorderRadius.circular(tokens.radiusMd);
-    return InkWell(
-      onTap: onTap != null
-          ? () => onTap!(item)
-          : () => context.push('/item/${item.id}'),
-      onLongPress: onLongPress == null ? null : () => onLongPress!(item),
-      borderRadius: radius,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Hero(
-              tag: mediaHeroTag(item.id),
-              child: ClipRRect(
-                borderRadius: radius,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    MediaThumb(item: item),
-                    if (item.type == 'video') const _PlayBadge(),
-                    if (item.storageState == 'exported')
-                      const Positioned(
-                        top: 6,
-                        right: 6,
-                        child: _OverlayBadge(icon: Icons.save_alt),
-                      ),
-                    if (selectionMode)
-                      Positioned(
-                        top: 6,
-                        left: 6,
-                        child: _OverlayBadge(
-                          icon: selected
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          tint: selected ? theme.colorScheme.primary : null,
+    return Semantics(
+      button: true,
+      selected: selectionMode ? selected : null,
+      label: item.title,
+      child: InkWell(
+        onTap: onTap != null
+            ? () => onTap!(item)
+            : () => context.push('/item/${item.id}'),
+        onLongPress: onLongPress == null ? null : () => onLongPress!(item),
+        borderRadius: radius,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Hero(
+                tag: mediaHeroTag(item.id),
+                child: ClipRRect(
+                  borderRadius: radius,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      MediaThumb(item: item),
+                      if (item.type == 'video') const _PlayBadge(),
+                      if (item.storageState == 'exported')
+                        const Positioned(
+                          top: 6,
+                          right: 6,
+                          child: _OverlayBadge(icon: Icons.save_alt),
                         ),
-                      ),
-                  ],
+                      if (selectionMode)
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: _OverlayBadge(
+                            icon: selected
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            tint: selected ? theme.colorScheme.primary : null,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          SizedBox(height: tokens.spaceXs),
-          Text(
-            item.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium,
-          ),
-        ],
+            SizedBox(height: tokens.spaceXs),
+            Text(
+              item.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
@@ -35,59 +36,62 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
     final controller = ref.read(libraryFilterProvider.notifier);
     final filtering = filter.search.isNotEmpty || filter.type != null;
 
-    return Column(
-      children: [
-        _FilterBar(
-          controller: _searchController,
-          filter: filter,
-          onSearch: controller.setSearch,
-          onType: controller.setType,
-          onFilters: () => showLibraryFilters(context),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async => ref.invalidate(filteredLibraryProvider),
-            child: items.when(
-              loading: () => const MediaGridSkeleton(),
-              error: (e, _) => ErrorView(
-                message: 'Failed to load library: $e',
-                onRetry: () => ref.invalidate(filteredLibraryProvider),
-              ),
-              data: (rows) => rows.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.sizeOf(context).height * 0.6,
-                          child: EmptyState(
-                            icon: filtering
-                                ? Icons.search_off
-                                : Icons.video_library_outlined,
-                            title: filtering
-                                ? 'No matches'
-                                : 'Your library is empty',
-                            message: filtering
-                                ? 'Try a different search or filter.'
-                                : 'Downloads will appear here.',
-                            action: filtering
-                                ? null
-                                : FilledButton.icon(
-                                    onPressed: () => context.push('/add'),
-                                    icon: const Icon(Icons.add),
-                                    label: const Text('Add'),
-                                  ),
+    return ContentBounds(
+      maxWidth: 1280,
+      child: Column(
+        children: [
+          _FilterBar(
+            controller: _searchController,
+            filter: filter,
+            onSearch: controller.setSearch,
+            onType: controller.setType,
+            onFilters: () => showLibraryFilters(context),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async => ref.invalidate(filteredLibraryProvider),
+              child: items.when(
+                loading: () => const MediaGridSkeleton(),
+                error: (e, _) => ErrorView(
+                  message: 'Failed to load library: $e',
+                  onRetry: () => ref.invalidate(filteredLibraryProvider),
+                ),
+                data: (rows) => rows.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 0.6,
+                            child: EmptyState(
+                              icon: filtering
+                                  ? Icons.search_off
+                                  : Icons.video_library_outlined,
+                              title: filtering
+                                  ? 'No matches'
+                                  : 'Your library is empty',
+                              message: filtering
+                                  ? 'Try a different search or filter.'
+                                  : 'Downloads will appear here.',
+                              action: filtering
+                                  ? null
+                                  : FilledButton.icon(
+                                      onPressed: () => context.push('/add'),
+                                      icon: const Icon(Icons.add),
+                                      label: const Text('Add'),
+                                    ),
+                            ),
                           ),
-                        ),
-                      ],
-                    )
-                  : MediaGrid(
-                      items: rows,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                    ),
+                        ],
+                      )
+                    : MediaGrid(
+                        items: rows,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                      ),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -130,6 +134,7 @@ class _FilterBar extends StatelessWidget {
                   ? null
                   : IconButton(
                       icon: const Icon(Icons.clear),
+                      tooltip: 'Clear search',
                       onPressed: () {
                         controller.clear();
                         onSearch('');

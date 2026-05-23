@@ -31,7 +31,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Library'), findsOneWidget);
+    // 'Library' now appears in both the nav destination and the
+    // Library/Explorer toggle.
+    expect(find.text('Library'), findsWidgets);
     expect(find.text('Your library is empty'), findsOneWidget);
   });
 }

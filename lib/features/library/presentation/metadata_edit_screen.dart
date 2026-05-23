@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
@@ -39,54 +40,56 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
         title: const Text('Edit'),
         actions: [TextButton(onPressed: _save, child: const Text('Save'))],
       ),
-      body: item.when(
-        loading: () => const _FormSkeleton(),
-        error: (e, _) => ErrorView(
-          message: 'Failed to load item: $e',
-          onRetry: () => ref.invalidate(mediaItemByIdProvider(widget.itemId)),
-        ),
-        data: (row) {
-          if (row == null) {
-            return const EmptyState(
-              icon: Icons.broken_image_outlined,
-              title: 'Item not found',
-              message: 'This item may have been removed.',
-            );
-          }
-          if (!_loaded) {
-            _titleController.text = row.title;
-            _notesController.text = row.notes ?? '';
-            _loaded = true;
-          }
-          return ListView(
-            padding: EdgeInsets.symmetric(vertical: tokens.spaceMd),
-            children: [
-              const SectionHeader('Details'),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(labelText: 'Title'),
-                    ),
-                    SizedBox(height: tokens.spaceMd),
-                    TextField(
-                      controller: _notesController,
-                      minLines: 2,
-                      maxLines: 5,
-                      decoration: const InputDecoration(labelText: 'Notes'),
-                    ),
-                  ],
+      body: ContentBounds(
+        child: item.when(
+          loading: () => const _FormSkeleton(),
+          error: (e, _) => ErrorView(
+            message: 'Failed to load item: $e',
+            onRetry: () => ref.invalidate(mediaItemByIdProvider(widget.itemId)),
+          ),
+          data: (row) {
+            if (row == null) {
+              return const EmptyState(
+                icon: Icons.broken_image_outlined,
+                title: 'Item not found',
+                message: 'This item may have been removed.',
+              );
+            }
+            if (!_loaded) {
+              _titleController.text = row.title;
+              _notesController.text = row.notes ?? '';
+              _loaded = true;
+            }
+            return ListView(
+              padding: EdgeInsets.symmetric(vertical: tokens.spaceMd),
+              children: [
+                const SectionHeader('Details'),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: tokens.spaceLg),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(labelText: 'Title'),
+                      ),
+                      SizedBox(height: tokens.spaceMd),
+                      TextField(
+                        controller: _notesController,
+                        minLines: 2,
+                        maxLines: 5,
+                        decoration: const InputDecoration(labelText: 'Notes'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: tokens.spaceLg),
-              _TagsEditor(itemId: widget.itemId, controller: _tagController),
-              SizedBox(height: tokens.spaceLg),
-              _CollectionsEditor(itemId: widget.itemId),
-            ],
-          );
-        },
+                SizedBox(height: tokens.spaceLg),
+                _TagsEditor(itemId: widget.itemId, controller: _tagController),
+                SizedBox(height: tokens.spaceLg),
+                _CollectionsEditor(itemId: widget.itemId),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

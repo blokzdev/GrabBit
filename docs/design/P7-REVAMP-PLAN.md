@@ -139,14 +139,27 @@ P7b components → empty/loading/error + Simple/Advanced parity → on-device re
 
 ## Cross-cutting
 
-### `[ ]` P7m — Responsive / foldable / accessibility
-Large-screen + unfolded-foldable layouts (wider column / two-pane, not stretched phone);
-touch targets ≥48dp; semantics labels; dynamic-type; AA contrast — swept across all
-screens. Closes the phase.
+**P7m done:** Adaptive-layout foundation + unified navigation + a11y sweep. Added a
+window-size-class utility (`core/layout/window_size.dart`: Compact/Medium/Expanded/Large/
+Extra-large) and a `ContentBounds` max-width wrapper so single-column screens (Add, Settings,
+Metadata Edit, Item Detail, Queue, Collections list, Disclaimer) center/cap (~640) instead of
+stretching, and galleries cap (~1280) on desktop while still adding columns. Navigation unified
+into a `StatefulShellRoute` (Library · Queue · Collections · Settings) rendered as a bottom
+`NavigationBar` on Compact → `NavigationRail` on Medium/Expanded → **extended rail** on
+Large/desktop (`AdaptiveNavigationScaffold`); the Queue running-dot/badge + Collections count
+moved to the nav destinations. a11y: search-clear tooltip, `Semantics` on selection tiles,
+scrim-contrast bump; verified no overflow at 200% text scale. CI green (format · analyze ·
+186 tests · debug APK).
+
+### `[ ]` P7n — Two-pane list-detail + foldable hinge/posture polish
+List-detail (Library↔ItemDetail, Collections↔detail) side-by-side on Expanded+; hinge
+avoidance via `MediaQuery.displayFeatures`/`hinge`, fold/unfold continuity, and optional
+tabletop posture for the player. Needs a foldable emulator/device to verify (headless CI can
+only check size-class branching).
 
 ---
 
 ## Phase exit criteria
-All subphases done; every screen verified on-device in light/dark + dynamic color;
-new icon/splash render; no regression in the P0–P6 on-device checks
-(`docs/VERIFICATION.md`). → open the P7 PR into `main`.
+All subphases done (P7n is the remaining large-screen depth item); every screen verified
+on-device in light/dark + dynamic color; new icon/splash render; no regression in the P0–P6
+on-device checks (`docs/VERIFICATION.md`).

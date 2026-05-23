@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
@@ -22,28 +23,30 @@ class CollectionsScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('New collection'),
       ),
-      body: collections.when(
-        loading: () => const ListSkeleton(),
-        error: (e, _) => ErrorView(
-          message: 'Failed to load collections: $e',
-          onRetry: () => ref.invalidate(collectionsProvider),
-        ),
-        data: (list) => list.isEmpty
-            ? EmptyState(
-                icon: Icons.collections_bookmark_outlined,
-                title: 'No collections yet',
-                message: 'Group items into collections to find them fast.',
-                action: FilledButton.icon(
-                  onPressed: () => _create(context, ref),
-                  icon: const Icon(Icons.add),
-                  label: const Text('New collection'),
+      body: ContentBounds(
+        child: collections.when(
+          loading: () => const ListSkeleton(),
+          error: (e, _) => ErrorView(
+            message: 'Failed to load collections: $e',
+            onRetry: () => ref.invalidate(collectionsProvider),
+          ),
+          data: (list) => list.isEmpty
+              ? EmptyState(
+                  icon: Icons.collections_bookmark_outlined,
+                  title: 'No collections yet',
+                  message: 'Group items into collections to find them fast.',
+                  action: FilledButton.icon(
+                    onPressed: () => _create(context, ref),
+                    icon: const Icon(Icons.add),
+                    label: const Text('New collection'),
+                  ),
+                )
+              : ListView(
+                  children: [
+                    for (final c in list) _CollectionTile(collection: c),
+                  ],
                 ),
-              )
-            : ListView(
-                children: [
-                  for (final c in list) _CollectionTile(collection: c),
-                ],
-              ),
+        ),
       ),
     );
   }
@@ -144,21 +147,25 @@ class CollectionDetailScreen extends ConsumerWidget {
     final items = ref.watch(collectionItemsProvider(collectionId));
     return Scaffold(
       appBar: AppBar(title: Text(name ?? 'Collection')),
-      body: items.when(
-        loading: () => const MediaGridSkeleton(),
-        error: (e, _) => ErrorView(
-          message: 'Failed to load collection: $e',
-          onRetry: () => ref.invalidate(collectionItemsProvider(collectionId)),
+      body: ContentBounds(
+        maxWidth: 1280,
+        child: items.when(
+          loading: () => const MediaGridSkeleton(),
+          error: (e, _) => ErrorView(
+            message: 'Failed to load collection: $e',
+            onRetry: () =>
+                ref.invalidate(collectionItemsProvider(collectionId)),
+          ),
+          data: (rows) => rows.isEmpty
+              ? const EmptyState(
+                  icon: Icons.video_library_outlined,
+                  title: 'This collection is empty',
+                  message:
+                      'Add items to this collection from their detail '
+                      'screen.',
+                )
+              : MediaGrid(items: rows),
         ),
-        data: (rows) => rows.isEmpty
-            ? const EmptyState(
-                icon: Icons.video_library_outlined,
-                title: 'This collection is empty',
-                message:
-                    'Add items to this collection from their detail '
-                    'screen.',
-              )
-            : MediaGrid(items: rows),
       ),
     );
   }

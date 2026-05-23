@@ -10,16 +10,6 @@ import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_view.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 
-DownloadTask _task(String status) => DownloadTask(
-  id: 't1',
-  url: 'u',
-  requestJson: '{}',
-  status: status,
-  progress: 0,
-  retries: 0,
-  createdAt: DateTime.utc(2026),
-);
-
 void main() {
   Future<void> pumpHome(
     WidgetTester tester, {
@@ -66,19 +56,5 @@ void main() {
 
     expect(find.byType(ExplorerView), findsOneWidget);
     expect(find.byType(LibraryView), findsNothing);
-  });
-
-  testWidgets('queue shows a running dot while a download runs', (
-    tester,
-  ) async {
-    await pumpHome(tester, tasks: [_task(TaskStatus.running)]);
-    expect(find.byKey(const Key('queueRunningDot')), findsOneWidget);
-  });
-
-  testWidgets('queue has no running dot when nothing is running', (
-    tester,
-  ) async {
-    await pumpHome(tester, tasks: [_task(TaskStatus.queued)]);
-    expect(find.byKey(const Key('queueRunningDot')), findsNothing);
   });
 }

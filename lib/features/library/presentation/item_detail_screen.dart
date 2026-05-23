@@ -8,6 +8,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
@@ -59,19 +60,21 @@ class ItemDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: item.when(
-        loading: () => const _DetailSkeleton(),
-        error: (e, _) => ErrorView(
-          message: 'Failed to load item: $e',
-          onRetry: () => ref.invalidate(mediaItemByIdProvider(itemId)),
+      body: ContentBounds(
+        child: item.when(
+          loading: () => const _DetailSkeleton(),
+          error: (e, _) => ErrorView(
+            message: 'Failed to load item: $e',
+            onRetry: () => ref.invalidate(mediaItemByIdProvider(itemId)),
+          ),
+          data: (row) => row == null
+              ? const EmptyState(
+                  icon: Icons.broken_image_outlined,
+                  title: 'Item not found',
+                  message: 'This item may have been removed.',
+                )
+              : _ItemBody(item: row),
         ),
-        data: (row) => row == null
-            ? const EmptyState(
-                icon: Icons.broken_image_outlined,
-                title: 'Item not found',
-                message: 'This item may have been removed.',
-              )
-            : _ItemBody(item: row),
       ),
     );
   }

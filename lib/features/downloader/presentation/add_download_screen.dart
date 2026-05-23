@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/error_banner.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
@@ -65,76 +66,81 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add download')),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(tokens.spaceLg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _urlController,
-              autofocus: true,
-              minLines: 1,
-              maxLines: 4,
-              keyboardType: TextInputType.multiline,
-              decoration: InputDecoration(
-                labelText: 'Paste one or more links',
-                hintText: 'https://…  (playlists & multiple links supported)',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.content_paste),
-                  tooltip: 'Paste',
-                  onPressed: _paste,
+      body: ContentBounds(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(tokens.spaceLg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _urlController,
+                autofocus: true,
+                minLines: 1,
+                maxLines: 4,
+                keyboardType: TextInputType.multiline,
+                decoration: InputDecoration(
+                  labelText: 'Paste one or more links',
+                  hintText: 'https://…  (playlists & multiple links supported)',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.content_paste),
+                    tooltip: 'Paste',
+                    onPressed: _paste,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: tokens.spaceMd),
-            FilledButton.icon(
-              onPressed: probing ? null : _check,
-              icon: const Icon(Icons.search),
-              label: const Text('Check link(s)'),
-            ),
-            SizedBox(height: tokens.spaceLg),
-            if (state.errorMessage != null)
-              Padding(
-                padding: EdgeInsets.only(bottom: tokens.spaceLg),
-                child: ErrorBanner(
-                  message: friendlyError(state.errorCode, state.errorMessage!),
-                  actions: suggestsEngineUpdate(state.errorCode)
-                      ? [
-                          TextButton.icon(
-                            onPressed: () => context.push('/settings'),
-                            icon: const Icon(Icons.system_update_alt),
-                            label: const Text('Update the downloader engine'),
+              SizedBox(height: tokens.spaceMd),
+              FilledButton.icon(
+                onPressed: probing ? null : _check,
+                icon: const Icon(Icons.search),
+                label: const Text('Check link(s)'),
+              ),
+              SizedBox(height: tokens.spaceLg),
+              if (state.errorMessage != null)
+                Padding(
+                  padding: EdgeInsets.only(bottom: tokens.spaceLg),
+                  child: ErrorBanner(
+                    message: friendlyError(
+                      state.errorCode,
+                      state.errorMessage!,
+                    ),
+                    actions: suggestsEngineUpdate(state.errorCode)
+                        ? [
+                            TextButton.icon(
+                              onPressed: () => context.go('/settings'),
+                              icon: const Icon(Icons.system_update_alt),
+                              label: const Text('Update the downloader engine'),
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+              if (probing) const _PreviewSkeleton(),
+              if (state.info != null) _MediaPreview(info: state.info!),
+              if (state.phase == DownloaderPhase.ready)
+                _PresetPicker(
+                  presets: state.availablePresets,
+                  onAction: (preset, startNow) async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final router = GoRouter.of(context);
+                    await controller.enqueue(preset, startNow: startNow);
+                    router.go('/');
+                    messenger
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            startNow ? 'Download started' : 'Added to queue',
                           ),
-                        ]
-                      : null,
+                          action: SnackBarAction(
+                            label: 'View queue',
+                            onPressed: () => router.go('/queue'),
+                          ),
+                        ),
+                      );
+                  },
                 ),
-              ),
-            if (probing) const _PreviewSkeleton(),
-            if (state.info != null) _MediaPreview(info: state.info!),
-            if (state.phase == DownloaderPhase.ready)
-              _PresetPicker(
-                presets: state.availablePresets,
-                onAction: (preset, startNow) async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final router = GoRouter.of(context);
-                  await controller.enqueue(preset, startNow: startNow);
-                  router.go('/');
-                  messenger
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          startNow ? 'Download started' : 'Added to queue',
-                        ),
-                        action: SnackBarAction(
-                          label: 'View queue',
-                          onPressed: () => router.push('/queue'),
-                        ),
-                      ),
-                    );
-                },
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

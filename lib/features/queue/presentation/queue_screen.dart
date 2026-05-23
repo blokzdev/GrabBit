@@ -7,6 +7,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
@@ -88,30 +89,32 @@ class QueueScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: tasks.when(
-        loading: () => const ListSkeleton(),
-        error: (e, _) => ErrorView(
-          message: 'Failed to load queue: $e',
-          onRetry: () => ref.invalidate(queueTasksProvider),
-        ),
-        data: (rows) => rows.isEmpty
-            ? const EmptyState(
-                icon: Icons.download_done_outlined,
-                title: 'No downloads in the queue',
-                message: 'Links you add will download here.',
-              )
-            : Column(
-                children: [
-                  _QueueSummary(rows: rows),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      itemCount: rows.length,
-                      itemBuilder: (context, i) => _TaskTile(task: rows[i]),
+      body: ContentBounds(
+        child: tasks.when(
+          loading: () => const ListSkeleton(),
+          error: (e, _) => ErrorView(
+            message: 'Failed to load queue: $e',
+            onRetry: () => ref.invalidate(queueTasksProvider),
+          ),
+          data: (rows) => rows.isEmpty
+              ? const EmptyState(
+                  icon: Icons.download_done_outlined,
+                  title: 'No downloads in the queue',
+                  message: 'Links you add will download here.',
+                )
+              : Column(
+                  children: [
+                    _QueueSummary(rows: rows),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: rows.length,
+                        itemBuilder: (context, i) => _TaskTile(task: rows[i]),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }
