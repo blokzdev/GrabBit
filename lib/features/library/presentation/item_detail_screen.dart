@@ -8,6 +8,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
@@ -29,10 +30,22 @@ class ItemDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final item = ref.watch(mediaItemByIdProvider(itemId));
+    final row = item.asData?.value;
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.asData?.value?.title ?? 'Item'),
+        title: Text(row?.title ?? 'Item'),
         actions: [
+          if (row != null)
+            IconButton(
+              icon: Icon(row.isFavorite ? Icons.star : Icons.star_outline),
+              tooltip: row.isFavorite ? 'Unfavorite' : 'Favorite',
+              onPressed: () async {
+                await ref
+                    .read(metadataRepositoryProvider)
+                    .toggleFavorite(itemId, !row.isFavorite);
+                ref.invalidate(mediaItemByIdProvider(itemId));
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.drive_file_move_outlined),
             tooltip: 'Move to folder',
@@ -58,6 +71,30 @@ class ItemDetailScreen extends ConsumerWidget {
             tooltip: 'Edit info',
             onPressed: () => context.push('/item/$itemId/edit'),
           ),
+          if (row != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete',
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final router = GoRouter.of(context);
+                final ok = await confirm(
+                  context,
+                  title: 'Delete this item?',
+                  message:
+                      'Permanently removes the downloaded file from GrabBit. '
+                      'This cannot be undone.',
+                  confirmLabel: 'Delete',
+                  destructive: true,
+                );
+                if (!ok) return;
+                await ref.read(libraryRepositoryProvider).deleteItem(row);
+                if (router.canPop()) router.pop();
+                messenger
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(const SnackBar(content: Text('Deleted')));
+              },
+            ),
         ],
       ),
       body: ContentBounds(

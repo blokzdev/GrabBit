@@ -3,7 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 
-enum LibrarySort { newest, oldest, titleAsc, largest }
+enum LibrarySort {
+  newest,
+  oldest,
+  titleAsc,
+  titleDesc,
+  largest,
+  smallest,
+  recentlyPlayed,
+}
 
 /// Search / filter / sort parameters for the library grid.
 class LibraryQuery {
@@ -15,6 +23,7 @@ class LibraryQuery {
     this.site,
     this.uploader,
     this.playlistId,
+    this.favoritesOnly = false,
   });
 
   final String search; // matches title OR description
@@ -24,6 +33,7 @@ class LibraryQuery {
   final String? site; // platform facet
   final String? uploader; // channel facet
   final String? playlistId; // playlist facet
+  final bool favoritesOnly;
 
   /// Active metadata facets (excludes search/type/sort/collection).
   int get activeFacetCount =>
@@ -39,6 +49,7 @@ class LibraryQuery {
     String? Function()? site,
     String? Function()? uploader,
     String? Function()? playlistId,
+    bool? favoritesOnly,
   }) => LibraryQuery(
     search: search ?? this.search,
     type: type != null ? type() : this.type,
@@ -47,6 +58,7 @@ class LibraryQuery {
     site: site != null ? site() : this.site,
     uploader: uploader != null ? uploader() : this.uploader,
     playlistId: playlistId != null ? playlistId() : this.playlistId,
+    favoritesOnly: favoritesOnly ?? this.favoritesOnly,
   );
 }
 
@@ -84,6 +96,9 @@ class MetadataRepository {
     if (q.site != null) {
       query.where((t) => t.site.equals(q.site!));
     }
+    if (q.favoritesOnly) {
+      query.where((t) => t.isFavorite.equals(true));
+    }
     if (q.collectionId != null) {
       query.where(
         (t) => t.id.isInQuery(
@@ -116,10 +131,23 @@ class MetadataRepository {
         LibrarySort.newest => (t) => OrderingTerm.desc(t.createdAt),
         LibrarySort.oldest => (t) => OrderingTerm.asc(t.createdAt),
         LibrarySort.titleAsc => (t) => OrderingTerm.asc(t.title),
+        LibrarySort.titleDesc => (t) => OrderingTerm.desc(t.title),
         LibrarySort.largest => (t) => OrderingTerm.desc(t.sizeBytes),
+        LibrarySort.smallest => (t) => OrderingTerm.asc(t.sizeBytes),
+        // NULLs (never played) sort last on DESC in SQLite.
+        LibrarySort.recentlyPlayed => (t) => OrderingTerm.desc(
+          t.lastAccessedAt,
+        ),
       },
     ]);
     return query.watch();
+  }
+
+  /// Stars or unstars a library item (P9b).
+  Future<void> toggleFavorite(String itemId, bool value) async {
+    await (_db.update(_db.mediaItems)..where((t) => t.id.equals(itemId))).write(
+      MediaItemsCompanion(isFavorite: Value(value)),
+    );
   }
 
   /// Distinct platform/site values present in the library (for the facet picker).

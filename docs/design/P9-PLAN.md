@@ -35,19 +35,21 @@
   indices (favorite/content_hash/created_at); v2→v3 upgrade test added. Columns are unused until
   P9b–P9d. CI-green. **Pending on-device upgrade spot-check.**
 
-### `[ ]` P9b — Library power *(pure Dart)*
-- Over `lib/features/library/data/library_repository.dart` + `library_view.dart` /
-  `library_filter_sheet.dart`:
-  - **Search:** indexed `LIKE` over title/uploader/description/tags (FTS5 only if perf
-    demands — deferred otherwise).
-  - **Sort:** date / size / name.
-  - **Favorites / star**; **smart/auto albums** (by site / uploader / recent).
-  - **Duplicate detection:** streamed `crypto` hash (partial content + size), computed off
-    the UI isolate (never load whole videos into memory), surfaced in a "duplicates" view.
-  - **Storage-usage / cleanup** breakdown view.
-- All unit/widget-testable.
-- **Exit / review:** search by keyword, sort, star favorites, see a storage breakdown, and
-  detect duplicates — all offline.
+### `[~]` P9b — Library power *(pure Dart; split into 3 PRs)*
+Search / sort / faceted filtering already existed (P2/P5c), so P9b is additive depth, shipped as
+three PRs:
+- **`[~]` P9b-1 — Favorites, sort polish & item delete:** `favoritesOnly` filter + star toggle
+  (tile overlay + item-detail), extra sorts (`titleDesc`/`smallest`/`recentlyPlayed`), and
+  `LibraryRepository.deleteItem` (file + thumb + DB cascade) with a confirmation-gated delete in
+  item detail. Tests for the filter/sorts/toggle/delete. **Implemented; pending on-device check.**
+- **`[ ]` P9b-2 — Smart/auto albums:** a browse surface listing query-defined albums (by platform
+  via `watchDistinctSites`, by channel via `watchDistinctUploaders`, recently added/played), each
+  opening a `watchFiltered` grid.
+- **`[ ]` P9b-3 — Duplicates & storage:** off-isolate (`compute`) content-hash service populating
+  `contentHash` (size + head/tail bytes); `watchDuplicates` + a `/duplicates` view; storage-usage
+  aggregation (by type/site + total) + a `/storage` view; both reuse P9b-1's `deleteItem`.
+- **Exit / review:** search by keyword, sort, star favorites, see a storage breakdown, and detect
+  duplicates — all offline.
 
 ### `[ ]` P9c — Player enhancements *(mixed)*
 - **Cheap wins (chewie/video_player)** in `item_detail_screen.dart`: playback **speed**,

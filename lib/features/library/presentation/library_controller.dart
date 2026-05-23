@@ -38,6 +38,8 @@ class LibraryFilter extends Notifier<LibraryQuery> {
   void setSite(String? site) => state = state.copyWith(site: () => site);
   void setUploader(String? u) => state = state.copyWith(uploader: () => u);
   void setPlaylist(String? id) => state = state.copyWith(playlistId: () => id);
+  void setFavoritesOnly(bool value) =>
+      state = state.copyWith(favoritesOnly: value);
   void clearFacets() => state = state.copyWith(
     site: () => null,
     uploader: () => null,

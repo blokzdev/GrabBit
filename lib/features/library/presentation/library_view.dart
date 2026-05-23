@@ -34,7 +34,8 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
     final items = ref.watch(filteredLibraryProvider);
     final filter = ref.watch(libraryFilterProvider);
     final controller = ref.read(libraryFilterProvider.notifier);
-    final filtering = filter.search.isNotEmpty || filter.type != null;
+    final filtering =
+        filter.search.isNotEmpty || filter.type != null || filter.favoritesOnly;
 
     return ContentBounds(
       maxWidth: 1280,
@@ -45,6 +46,7 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
             filter: filter,
             onSearch: controller.setSearch,
             onType: controller.setType,
+            onFavorites: controller.setFavoritesOnly,
             onFilters: () => showLibraryFilters(context),
           ),
           Expanded(
@@ -102,6 +104,7 @@ class _FilterBar extends StatelessWidget {
     required this.filter,
     required this.onSearch,
     required this.onType,
+    required this.onFavorites,
     required this.onFilters,
   });
 
@@ -109,6 +112,7 @@ class _FilterBar extends StatelessWidget {
   final LibraryQuery filter;
   final ValueChanged<String> onSearch;
   final ValueChanged<String?> onType;
+  final ValueChanged<bool> onFavorites;
   final VoidCallback onFilters;
 
   @override
@@ -167,6 +171,17 @@ class _FilterBar extends StatelessWidget {
                             onSelected: (_) => onType(type),
                           ),
                         ),
+                      FilterChip(
+                        avatar: Icon(
+                          filter.favoritesOnly
+                              ? Icons.star
+                              : Icons.star_outline,
+                          size: 18,
+                        ),
+                        label: const Text('Favorites'),
+                        selected: filter.favoritesOnly,
+                        onSelected: onFavorites,
+                      ),
                     ],
                   ),
                 ),
