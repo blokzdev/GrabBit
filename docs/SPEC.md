@@ -94,8 +94,9 @@ TextColumn id; TextColumn title; TextColumn sourceUrl; TextColumn site;
 TextColumn filePath; TextColumn type;            // video|audio|image
 IntColumn? durationSec; IntColumn? sizeBytes; IntColumn? width; IntColumn? height;
 TextColumn? thumbPath; DateTimeColumn createdAt; TextColumn storageState; // private|exported
-TextColumn? notes;
-// metadata
+TextColumn? notes; IntColumn? folderId;                  // v2: virtual Explorer folder
+BoolColumn isFavorite; TextColumn? contentHash; DateTimeColumn? lastAccessedAt; // v3 (P9)
+// metadata (v2 adds uploaderId, channelId, sourceId, playlistId, playlistTitle, tags)
 TextColumn itemId; TextColumn? uploader; DateTimeColumn? uploadDate;
 TextColumn? description; TextColumn? originalUrl;
 // tags(id,name) + media_tags(itemId,tagId)
@@ -103,11 +104,15 @@ TextColumn? description; TextColumn? originalUrl;
 // download_tasks
 TextColumn id; TextColumn url; TextColumn requestJson; TextColumn status;
 RealColumn progress; TextColumn? errorCode; IntColumn retries; DateTimeColumn createdAt;
+IntColumn orderIndex;                                    // v3 (P9d): queue reorder
 // settings (key/value JSON, single row)
 ```
 
-Migration strategy: Drift `schemaVersion`; write `MigrationStrategy` steps; never
-drop user data without migration. Add a schema test on bump.
+Migration strategy: Drift `schemaVersion` (currently **3**); write `MigrationStrategy`
+steps; never drop user data without migration. Add a schema test on bump (v1→v2 and
+v2→v3 upgrade tests live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
+`media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
+indices on `is_favorite`/`content_hash`/`created_at`.
 
 ---
 

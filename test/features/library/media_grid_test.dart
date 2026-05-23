@@ -12,6 +12,7 @@ MediaItem _item({required String id, required String type}) => MediaItem(
   type: type,
   createdAt: DateTime.utc(2026),
   storageState: 'private',
+  isFavorite: false,
 );
 
 Widget _host(MediaItem item) => MaterialApp(

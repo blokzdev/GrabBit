@@ -17,6 +17,7 @@ DownloadTask _task(String status) => DownloadTask(
   progress: 0,
   retries: 0,
   createdAt: DateTime.utc(2026),
+  orderIndex: 0,
 );
 
 Future<void> _pumpApp(

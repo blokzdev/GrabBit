@@ -21,6 +21,7 @@ MediaItem _item() => MediaItem(
   type: 'video',
   createdAt: DateTime.utc(2026),
   storageState: 'private',
+  isFavorite: false,
 );
 
 void main() {

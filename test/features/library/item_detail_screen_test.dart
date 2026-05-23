@@ -21,6 +21,7 @@ MediaItem _item({String storageState = 'private'}) => MediaItem(
   height: 1080,
   createdAt: DateTime.utc(2026, 5, 3),
   storageState: storageState,
+  isFavorite: false,
 );
 
 void main() {
