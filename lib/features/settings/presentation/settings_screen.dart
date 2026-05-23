@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
+import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/filename_template.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
@@ -18,8 +21,11 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: settings.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load settings: $e')),
+        loading: () => const ListSkeleton(),
+        error: (e, _) => ErrorView(
+          message: 'Failed to load settings: $e',
+          onRetry: () => ref.invalidate(settingsControllerProvider),
+        ),
         data: (s) => _SettingsList(settings: s),
       ),
     );
@@ -32,132 +38,204 @@ class _SettingsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = GrabBitTokens.of(context);
     final controller = ref.read(settingsControllerProvider.notifier);
     return ListView(
+      padding: EdgeInsets.only(bottom: tokens.spaceLg),
       children: [
-        const SectionHeader('Downloads'),
-        SwitchListTile(
-          title: const Text('Advanced mode'),
-          subtitle: const Text('Show all format and quality options'),
-          value: settings.mode == UiMode.advanced,
-          onChanged: (v) =>
-              controller.setMode(v ? UiMode.advanced : UiMode.simple),
-        ),
-        ListTile(
-          title: const Text('Default quality'),
-          trailing: DropdownButton<String>(
-            value: settings.defaultQuality,
-            onChanged: (v) =>
-                v == null ? null : controller.setDefaultQuality(v),
-            items: const [
-              DropdownMenuItem(value: 'best', child: Text('Best')),
-              DropdownMenuItem(value: '1080p', child: Text('1080p')),
-              DropdownMenuItem(value: '720p', child: Text('720p')),
-              DropdownMenuItem(value: 'audio_only', child: Text('Audio only')),
-            ],
-          ),
-        ),
-        ListTile(
-          title: const Text('Max concurrent downloads'),
-          trailing: DropdownButton<int>(
-            value: settings.maxConcurrentDownloads,
-            onChanged: (v) =>
-                v == null ? null : controller.setMaxConcurrentDownloads(v),
-            items: [
-              for (var i = 1; i <= 5; i++)
-                DropdownMenuItem(value: i, child: Text('$i')),
-            ],
-          ),
-        ),
-        SwitchListTile(
-          title: const Text('Wi-Fi only'),
-          subtitle: const Text('Pause downloads on mobile data'),
-          value: settings.wifiOnly,
-          onChanged: controller.setWifiOnly,
-        ),
-        _FilenameTemplateTile(template: settings.filenameTemplate),
-        SwitchListTile(
-          title: const Text('Download subtitles'),
-          subtitle: const Text('Write and embed subtitles when available'),
-          value: settings.defaultSubtitles,
-          onChanged: controller.setDefaultSubtitles,
-        ),
-        SwitchListTile(
-          title: const Text('Embed thumbnail'),
-          value: settings.embedThumbnail,
-          onChanged: controller.setEmbedThumbnail,
-        ),
-        SwitchListTile(
-          title: const Text('Embed metadata'),
-          value: settings.embedMetadata,
-          onChanged: controller.setEmbedMetadata,
-        ),
-        const Divider(),
-        const SectionHeader('Downloader engine'),
-        const _EngineUpdateTile(),
-        SwitchListTile(
-          title: const Text('Check for updates on app open'),
-          subtitle: const Text(
-            'Keep yt-dlp current automatically (recommended for YouTube)',
-          ),
-          value: settings.autoCheckEngineUpdate,
-          onChanged: controller.setAutoCheckEngineUpdate,
-        ),
-        const Divider(),
-        const SectionHeader('Storage'),
-        SwitchListTile(
-          title: const Text('Auto-save to device'),
-          subtitle: const Text('Export every download to your gallery folder'),
-          value: settings.storagePolicy == StoragePolicy.autoExport,
-          onChanged: (v) => controller.setStoragePolicy(
-            v ? StoragePolicy.autoExport : StoragePolicy.private,
-          ),
-        ),
-        ListTile(
-          title: const Text('Export folder'),
-          subtitle: Text(
-            settings.exportFolder == null
-                ? 'Default: gallery (Movies/Music/Pictures/GrabBit)'
-                : settings.exportFolder!,
-          ),
-          trailing: settings.exportFolder == null
-              ? const Icon(Icons.folder_open)
-              : IconButton(
-                  icon: const Icon(Icons.clear),
-                  tooltip: 'Use gallery default',
-                  onPressed: () => controller.setExportFolder(null),
-                ),
-          onTap: () async {
-            final uri = await ref.read(mediaExportServiceProvider).pickFolder();
-            if (uri != null) await controller.setExportFolder(uri);
-          },
-        ),
-        const Divider(),
-        const SectionHeader('Appearance'),
-        ListTile(
-          title: const Text('Theme'),
-          trailing: DropdownButton<ThemeChoice>(
-            value: settings.theme,
-            onChanged: (v) => v == null ? null : controller.setTheme(v),
-            items: const [
-              DropdownMenuItem(
-                value: ThemeChoice.system,
-                child: Text('System'),
+        _Section(
+          icon: Icons.download_outlined,
+          title: 'Downloads',
+          children: [
+            SwitchListTile(
+              title: const Text('Advanced mode'),
+              subtitle: const Text('Show all format and quality options'),
+              value: settings.mode == UiMode.advanced,
+              onChanged: (v) =>
+                  controller.setMode(v ? UiMode.advanced : UiMode.simple),
+            ),
+            ListTile(
+              title: const Text('Default quality'),
+              trailing: DropdownButton<String>(
+                value: settings.defaultQuality,
+                onChanged: (v) =>
+                    v == null ? null : controller.setDefaultQuality(v),
+                items: const [
+                  DropdownMenuItem(value: 'best', child: Text('Best')),
+                  DropdownMenuItem(value: '1080p', child: Text('1080p')),
+                  DropdownMenuItem(value: '720p', child: Text('720p')),
+                  DropdownMenuItem(
+                    value: 'audio_only',
+                    child: Text('Audio only'),
+                  ),
+                ],
               ),
-              DropdownMenuItem(value: ThemeChoice.light, child: Text('Light')),
-              DropdownMenuItem(value: ThemeChoice.dark, child: Text('Dark')),
-            ],
+            ),
+            ListTile(
+              title: const Text('Max concurrent downloads'),
+              trailing: DropdownButton<int>(
+                value: settings.maxConcurrentDownloads,
+                onChanged: (v) =>
+                    v == null ? null : controller.setMaxConcurrentDownloads(v),
+                items: [
+                  for (var i = 1; i <= 5; i++)
+                    DropdownMenuItem(value: i, child: Text('$i')),
+                ],
+              ),
+            ),
+            SwitchListTile(
+              title: const Text('Wi-Fi only'),
+              subtitle: const Text('Pause downloads on mobile data'),
+              value: settings.wifiOnly,
+              onChanged: controller.setWifiOnly,
+            ),
+            _FilenameTemplateTile(template: settings.filenameTemplate),
+            SwitchListTile(
+              title: const Text('Download subtitles'),
+              subtitle: const Text('Write and embed subtitles when available'),
+              value: settings.defaultSubtitles,
+              onChanged: controller.setDefaultSubtitles,
+            ),
+            SwitchListTile(
+              title: const Text('Embed thumbnail'),
+              value: settings.embedThumbnail,
+              onChanged: controller.setEmbedThumbnail,
+            ),
+            SwitchListTile(
+              title: const Text('Embed metadata'),
+              value: settings.embedMetadata,
+              onChanged: controller.setEmbedMetadata,
+            ),
+          ],
+        ),
+        _Section(
+          icon: Icons.system_update_alt,
+          title: 'Downloader engine',
+          children: [
+            const _EngineUpdateTile(),
+            SwitchListTile(
+              title: const Text('Check for updates on app open'),
+              subtitle: const Text(
+                'Keep yt-dlp current automatically (recommended for YouTube)',
+              ),
+              value: settings.autoCheckEngineUpdate,
+              onChanged: controller.setAutoCheckEngineUpdate,
+            ),
+          ],
+        ),
+        _Section(
+          icon: Icons.sd_storage_outlined,
+          title: 'Storage',
+          children: [
+            SwitchListTile(
+              title: const Text('Auto-save to device'),
+              subtitle: const Text(
+                'Export every download to your gallery folder',
+              ),
+              value: settings.storagePolicy == StoragePolicy.autoExport,
+              onChanged: (v) => controller.setStoragePolicy(
+                v ? StoragePolicy.autoExport : StoragePolicy.private,
+              ),
+            ),
+            ListTile(
+              title: const Text('Export folder'),
+              subtitle: Text(
+                settings.exportFolder ??
+                    'Default: gallery (Movies/Music/Pictures/GrabBit)',
+              ),
+              trailing: settings.exportFolder == null
+                  ? const Icon(Icons.folder_open)
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: 'Use gallery default',
+                      onPressed: () => controller.setExportFolder(null),
+                    ),
+              onTap: () async {
+                final uri = await ref
+                    .read(mediaExportServiceProvider)
+                    .pickFolder();
+                if (uri != null) await controller.setExportFolder(uri);
+              },
+            ),
+          ],
+        ),
+        _Section(
+          icon: Icons.palette_outlined,
+          title: 'Appearance',
+          children: [
+            ListTile(
+              title: const Text('Theme'),
+              trailing: DropdownButton<ThemeChoice>(
+                value: settings.theme,
+                onChanged: (v) => v == null ? null : controller.setTheme(v),
+                items: const [
+                  DropdownMenuItem(
+                    value: ThemeChoice.system,
+                    child: Text('System'),
+                  ),
+                  DropdownMenuItem(
+                    value: ThemeChoice.light,
+                    child: Text('Light'),
+                  ),
+                  DropdownMenuItem(
+                    value: ThemeChoice.dark,
+                    child: Text('Dark'),
+                  ),
+                ],
+              ),
+            ),
+            SwitchListTile(
+              title: const Text('Dynamic color'),
+              subtitle: const Text('Use colors from your wallpaper'),
+              value: settings.dynamicColor,
+              onChanged: controller.setDynamicColor,
+            ),
+          ],
+        ),
+        _Section(
+          icon: Icons.lock_outline,
+          title: 'Security',
+          children: [_AppLockSection(appLock: settings.appLock)],
+        ),
+      ],
+    );
+  }
+}
+
+/// A titled, icon-led settings section: a [SectionHeader] above a rounded card
+/// holding the section's rows.
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.icon,
+    required this.title,
+    required this.children,
+  });
+  final IconData icon;
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(title, icon: icon),
+        Card(
+          margin: EdgeInsets.fromLTRB(
+            tokens.spaceLg,
+            0,
+            tokens.spaceLg,
+            tokens.spaceLg,
           ),
+          color: theme.colorScheme.surfaceContainerLow,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
+          ),
+          child: Column(children: children),
         ),
-        SwitchListTile(
-          title: const Text('Dynamic color'),
-          subtitle: const Text('Use colors from your wallpaper'),
-          value: settings.dynamicColor,
-          onChanged: controller.setDynamicColor,
-        ),
-        const Divider(),
-        const SectionHeader('Security'),
-        _AppLockSection(appLock: settings.appLock),
       ],
     );
   }
@@ -199,18 +277,23 @@ class _FilenameTemplateTileState extends ConsumerState<_FilenameTemplateTile> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        tokens.spaceSm,
+        tokens.spaceLg,
+        tokens.spaceMd,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Download filename', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
+          SizedBox(height: tokens.spaceSm),
           TextField(
             controller: _controller,
             decoration: const InputDecoration(
               isDense: true,
-              border: OutlineInputBorder(),
               helperText:
                   'Tap a tag to add it. The extension is added for you.',
             ),
@@ -219,10 +302,10 @@ class _FilenameTemplateTileState extends ConsumerState<_FilenameTemplateTile> {
               setState(() {});
             },
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: tokens.spaceSm),
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
+            spacing: tokens.spaceSm,
+            runSpacing: tokens.spaceXs,
             children: [
               for (final t in filenameTokens)
                 ActionChip(
@@ -231,7 +314,7 @@ class _FilenameTemplateTileState extends ConsumerState<_FilenameTemplateTile> {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: tokens.spaceSm),
           Text(
             'Preview: ${renderPreview(_controller.text)}',
             style: theme.textTheme.bodySmall?.copyWith(

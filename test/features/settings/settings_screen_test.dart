@@ -9,6 +9,34 @@ import 'package:grabbit/features/settings/data/settings_repository.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
 
 void main() {
+  testWidgets('renders all settings sections', (tester) async {
+    // Tall surface so the lazy ListView realizes every section header.
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (final section in const [
+      'Downloads',
+      'Downloader engine',
+      'Storage',
+      'Appearance',
+      'Security',
+    ]) {
+      expect(find.text(section), findsOneWidget);
+    }
+  });
+
   testWidgets('toggling advanced mode persists to settings', (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);

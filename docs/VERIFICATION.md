@@ -255,6 +255,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Empty states render for no-collections and for an empty collection; loading shows the
       skeleton, load failure shows error+retry.
 
+### P7k — Settings
+- [ ] Each section (Downloads / Downloader engine / Storage / Appearance / Security) renders as
+      an **icon header + grouped card**; loading shows the skeleton, load failure shows error+retry.
+- [ ] Every control persists: Advanced mode, default quality, max-concurrent (1–5), Wi-Fi only,
+      filename template (token chips + live preview), subtitles/thumbnail/metadata.
+- [ ] Engine tile shows the yt-dlp version + **Update** (progress while running) + auto-check switch.
+- [ ] Storage: auto-save switch + export-folder picker (and clear-to-default).
+- [ ] Appearance: theme dropdown + dynamic-color switch apply live.
+- [ ] Security: app-lock switch prompts a PIN; biometric switch appears only when lock is on.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.
