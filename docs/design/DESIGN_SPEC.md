@@ -124,12 +124,12 @@ status pills. Tokens are read via `GrabBitTokens.of(context)`. Reused per-screen
 Anatomy + required states for each route. Status ticks as each subphase ships
 (see `P7-REVAMP-PLAN.md`). `[ ]` = not yet revamped.
 
-### `[ ]` Disclaimer — `/disclaimer` (P7l)
+### `[x]` Disclaimer — `/disclaimer` (P7l)
 First-run welcome/legal. Centered: rabbit mark + shield, "Welcome to GrabBit", 2–3
 scrollable disclaimer paragraphs, full-width pill primary "I understand and agree"
 (loading variant). Calm, premium onboarding.
 
-### `[ ]` App Lock — `/lock` (P7l)
+### `[x]` App Lock — `/lock` (P7l)
 Centered branded lock icon, obscured PIN field (numeric), full-width "Unlock", secondary
 "Use biometrics" when enabled. Error variant ("Wrong PIN") with subtle shake. No nav.
 
