@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
 
 /// Hero tag for an item's thumbnail (tile → detail flight). Shared so the
 /// detail screen can match it.
@@ -88,6 +90,12 @@ class MediaTile extends StatelessWidget {
                           right: 6,
                           child: _OverlayBadge(icon: Icons.save_alt),
                         ),
+                      if (!selectionMode)
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: _FavoriteStar(item: item),
+                        ),
                       if (selectionMode)
                         Positioned(
                           top: 6,
@@ -112,6 +120,30 @@ class MediaTile extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tap-to-toggle favorite star overlay (P9b). Hit area is padded so the small
+/// badge is comfortably tappable without opening the detail screen.
+class _FavoriteStar extends ConsumerWidget {
+  const _FavoriteStar({required this.item});
+  final MediaItem item;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final on = item.isFavorite;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () =>
+          ref.read(metadataRepositoryProvider).toggleFavorite(item.id, !on),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: _OverlayBadge(
+          icon: on ? Icons.star : Icons.star_outline,
+          tint: on ? GrabBitTokens.of(context).accent : null,
         ),
       ),
     );

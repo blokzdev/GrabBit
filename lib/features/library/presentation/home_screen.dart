@@ -111,8 +111,14 @@ class _SortAction extends ConsumerWidget {
       itemBuilder: (context) => const [
         PopupMenuItem(value: LibrarySort.newest, child: Text('Newest')),
         PopupMenuItem(value: LibrarySort.oldest, child: Text('Oldest')),
+        PopupMenuItem(
+          value: LibrarySort.recentlyPlayed,
+          child: Text('Recently played'),
+        ),
         PopupMenuItem(value: LibrarySort.titleAsc, child: Text('Title A–Z')),
+        PopupMenuItem(value: LibrarySort.titleDesc, child: Text('Title Z–A')),
         PopupMenuItem(value: LibrarySort.largest, child: Text('Largest')),
+        PopupMenuItem(value: LibrarySort.smallest, child: Text('Smallest')),
       ],
     );
   }

@@ -85,6 +85,44 @@ void main() {
     expect(rows.first.id, 'b');
   });
 
+  test('sorts by smallest size', () async {
+    await seed('a', 'A', 'video', size: 10);
+    await seed('b', 'B', 'video', size: 99);
+    final rows = await repo
+        .watchFiltered(const LibraryQuery(sort: LibrarySort.smallest))
+        .first;
+    expect(rows.first.id, 'a');
+  });
+
+  test('toggleFavorite persists and favoritesOnly filters', () async {
+    await seed('a', 'A', 'video');
+    await seed('b', 'B', 'video');
+    await repo.toggleFavorite('a', true);
+    final favs = await repo
+        .watchFiltered(const LibraryQuery(favoritesOnly: true))
+        .first;
+    expect(favs.map((r) => r.id), ['a']);
+
+    await repo.toggleFavorite('a', false);
+    final none = await repo
+        .watchFiltered(const LibraryQuery(favoritesOnly: true))
+        .first;
+    expect(none, isEmpty);
+  });
+
+  test('recentlyPlayed sorts by lastAccessedAt, nulls last', () async {
+    await seed('a', 'A', 'video');
+    await seed('b', 'B', 'video');
+    // Only 'b' has been played.
+    await (db.update(db.mediaItems)..where((t) => t.id.equals('b'))).write(
+      MediaItemsCompanion(lastAccessedAt: Value(DateTime.utc(2026, 5, 23))),
+    );
+    final rows = await repo
+        .watchFiltered(const LibraryQuery(sort: LibrarySort.recentlyPlayed))
+        .first;
+    expect(rows.map((r) => r.id), ['b', 'a']);
+  });
+
   test('tags: add, list, remove', () async {
     await seed('a', 'A', 'video');
     await repo.addTagToItem('a', 'funny');

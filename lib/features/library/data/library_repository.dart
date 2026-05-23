@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
@@ -26,6 +28,25 @@ class LibraryRepository {
     await (_db.update(_db.mediaItems)..where((t) => t.id.equals(item.id)))
         .write(const MediaItemsCompanion(storageState: Value('exported')));
     return savedUri;
+  }
+
+  /// Permanently removes an item: deletes its own media + thumbnail files
+  /// (best-effort) then the DB row (metadata/tags/collections cascade via FK).
+  /// Only the item's files are removed — the per-task folder may hold
+  /// split-chapter siblings, so it's left in place.
+  Future<void> deleteItem(MediaItem item) async {
+    for (final path in [item.filePath, item.thumbPath]) {
+      if (path == null) continue;
+      final file = File(path);
+      if (file.existsSync()) {
+        try {
+          await file.delete();
+        } on FileSystemException {
+          // Best-effort: a missing/locked file shouldn't block DB removal.
+        }
+      }
+    }
+    await (_db.delete(_db.mediaItems)..where((t) => t.id.equals(item.id))).go();
   }
 }
 
