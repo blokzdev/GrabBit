@@ -78,6 +78,25 @@ class YtDlpHost(
                         addOption("--write-auto-subs")
                         addOption("--embed-subs")
                     }
+                    // P8b power options.
+                    request.rateLimit?.takeIf { it.isNotEmpty() }?.let {
+                        addOption("--limit-rate", it)
+                    }
+                    request.concurrentFragments?.takeIf { it > 1 }?.let {
+                        addOption("--concurrent-fragments", it.toString())
+                    }
+                    if (request.audioOnly) {
+                        request.audioQuality?.takeIf { it.isNotEmpty() }?.let {
+                            addOption("--audio-quality", it)
+                        }
+                    }
+                    request.downloadArchivePath?.takeIf { it.isNotEmpty() }?.let {
+                        addOption("--download-archive", it)
+                    }
+                    // Raw escape-hatch args, pre-tokenized in Dart (each is one argv).
+                    request.extraArgs?.forEach { arg ->
+                        arg?.takeIf { it.isNotEmpty() }?.let { addOption(it) }
+                    }
                 }
                 YoutubeDL.getInstance().execute(ytReq, request.taskId) { progress, etaInSeconds, line ->
                     val stage = if (line.contains("[Merger]") || line.contains("Merging")) {

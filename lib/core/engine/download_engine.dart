@@ -103,6 +103,11 @@ class DownloadRequest {
     this.subtitles = false,
     this.embedThumbnail = false,
     this.embedMetadata = false,
+    this.rateLimit,
+    this.concurrentFragments,
+    this.audioQuality,
+    this.downloadArchivePath,
+    this.extraArgs,
   });
 
   factory DownloadRequest.fromJson(Map<String, dynamic> json) =>
@@ -117,6 +122,11 @@ class DownloadRequest {
         subtitles: json['subtitles'] as bool? ?? false,
         embedThumbnail: json['embedThumbnail'] as bool? ?? false,
         embedMetadata: json['embedMetadata'] as bool? ?? false,
+        rateLimit: json['rateLimit'] as String?,
+        concurrentFragments: json['concurrentFragments'] as int?,
+        audioQuality: json['audioQuality'] as String?,
+        downloadArchivePath: json['downloadArchivePath'] as String?,
+        extraArgs: (json['extraArgs'] as List<dynamic>?)?.cast<String>(),
       );
 
   final String taskId;
@@ -130,6 +140,21 @@ class DownloadRequest {
   final bool embedThumbnail;
   final bool embedMetadata;
 
+  /// yt-dlp `--limit-rate` value (e.g. `1M`, `500K`); null/empty = unlimited.
+  final String? rateLimit;
+
+  /// yt-dlp `--concurrent-fragments`; applied only when `> 1`.
+  final int? concurrentFragments;
+
+  /// yt-dlp `--audio-quality` (e.g. `192K`); applied only when [audioOnly].
+  final String? audioQuality;
+
+  /// Path to a yt-dlp `--download-archive` file; null = don't track/skip.
+  final String? downloadArchivePath;
+
+  /// Raw extra yt-dlp arguments, pre-tokenized (each becomes one argv element).
+  final List<String>? extraArgs;
+
   Map<String, dynamic> toJson() => {
     'taskId': taskId,
     'url': url,
@@ -141,6 +166,11 @@ class DownloadRequest {
     'subtitles': subtitles,
     'embedThumbnail': embedThumbnail,
     'embedMetadata': embedMetadata,
+    'rateLimit': rateLimit,
+    'concurrentFragments': concurrentFragments,
+    'audioQuality': audioQuality,
+    'downloadArchivePath': downloadArchivePath,
+    'extraArgs': extraArgs,
   };
 }
 

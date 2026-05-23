@@ -2,8 +2,8 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
-import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/core/utils/task_id.dart';
+import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
@@ -132,17 +132,13 @@ class DownloaderController extends _$DownloaderController {
     final taskId = newTaskId();
     final dir = await ref.read(mediaStorageProvider).mediaDirectory();
     final settings = await ref.read(settingsControllerProvider.future);
-    final request = DownloadRequest(
+    final request = buildDownloadRequest(
       taskId: taskId,
       url: current.url,
       outputDir: dir.path,
-      filenameTemplate: resolveOutputTemplate(settings.filenameTemplate),
-      formatId: preset.formatSelector,
+      settings: settings,
       audioOnly: preset.audioOnly,
-      container: preset.audioOnly ? 'm4a' : 'mp4',
-      subtitles: settings.defaultSubtitles,
-      embedThumbnail: settings.embedThumbnail,
-      embedMetadata: settings.embedMetadata,
+      formatSelector: preset.formatSelector,
     );
     final download = QueuedDownload(
       request: request,

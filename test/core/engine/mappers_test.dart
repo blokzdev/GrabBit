@@ -66,6 +66,11 @@ void main() {
         subtitles: true,
         embedThumbnail: true,
         embedMetadata: true,
+        rateLimit: '1M',
+        concurrentFragments: 4,
+        audioQuality: '192K',
+        downloadArchivePath: '/data/media/.download-archive.txt',
+        extraArgs: ['--no-mtime', '--retries', '3'],
       );
       final dto = req.toDto();
       expect(dto.taskId, 't1');
@@ -75,6 +80,11 @@ void main() {
       expect(dto.audioOnly, isTrue);
       expect(dto.container, 'm4a');
       expect(dto.subtitles, isTrue);
+      expect(dto.rateLimit, '1M');
+      expect(dto.concurrentFragments, 4);
+      expect(dto.audioQuality, '192K');
+      expect(dto.downloadArchivePath, '/data/media/.download-archive.txt');
+      expect(dto.extraArgs, ['--no-mtime', '--retries', '3']);
     });
   });
 

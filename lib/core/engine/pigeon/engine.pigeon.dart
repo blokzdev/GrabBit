@@ -295,6 +295,11 @@ class DownloadRequestDto {
     required this.embedMetadata,
     required this.outputDir,
     required this.filenameTemplate,
+    this.rateLimit,
+    this.concurrentFragments,
+    this.audioQuality,
+    this.downloadArchivePath,
+    this.extraArgs,
   });
 
   String taskId;
@@ -317,6 +322,16 @@ class DownloadRequestDto {
 
   String filenameTemplate;
 
+  String? rateLimit;
+
+  int? concurrentFragments;
+
+  String? audioQuality;
+
+  String? downloadArchivePath;
+
+  List<String>? extraArgs;
+
   List<Object?> _toList() {
     return <Object?>[
       taskId,
@@ -329,6 +344,11 @@ class DownloadRequestDto {
       embedMetadata,
       outputDir,
       filenameTemplate,
+      rateLimit,
+      concurrentFragments,
+      audioQuality,
+      downloadArchivePath,
+      extraArgs,
     ];
   }
 
@@ -349,6 +369,11 @@ class DownloadRequestDto {
       embedMetadata: result[7]! as bool,
       outputDir: result[8]! as String,
       filenameTemplate: result[9]! as String,
+      rateLimit: result[10] as String?,
+      concurrentFragments: result[11] as int?,
+      audioQuality: result[12] as String?,
+      downloadArchivePath: result[13] as String?,
+      extraArgs: (result[14] as List<Object?>?)?.cast<String>(),
     );
   }
 
@@ -370,7 +395,12 @@ class DownloadRequestDto {
         _deepEquals(embedThumbnail, other.embedThumbnail) &&
         _deepEquals(embedMetadata, other.embedMetadata) &&
         _deepEquals(outputDir, other.outputDir) &&
-        _deepEquals(filenameTemplate, other.filenameTemplate);
+        _deepEquals(filenameTemplate, other.filenameTemplate) &&
+        _deepEquals(rateLimit, other.rateLimit) &&
+        _deepEquals(concurrentFragments, other.concurrentFragments) &&
+        _deepEquals(audioQuality, other.audioQuality) &&
+        _deepEquals(downloadArchivePath, other.downloadArchivePath) &&
+        _deepEquals(extraArgs, other.extraArgs);
   }
 
   @override

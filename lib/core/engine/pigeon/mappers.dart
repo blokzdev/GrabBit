@@ -44,6 +44,11 @@ extension DownloadRequestMapper on DownloadRequest {
     embedMetadata: embedMetadata,
     outputDir: outputDir,
     filenameTemplate: filenameTemplate,
+    rateLimit: rateLimit,
+    concurrentFragments: concurrentFragments,
+    audioQuality: audioQuality,
+    downloadArchivePath: downloadArchivePath,
+    extraArgs: extraArgs,
   );
 }
 

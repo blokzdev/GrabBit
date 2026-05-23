@@ -23,6 +23,13 @@ void main() {
       expect(s.theme, ThemeChoice.system);
       expect(s.dynamicColor, isTrue);
       expect(s.appLock, const AppLockSettings());
+      // P8b power options default to current behavior.
+      expect(s.concurrentFragments, 1);
+      expect(s.rateLimit, '');
+      expect(s.audioFormat, 'm4a');
+      expect(s.audioQuality, 'best');
+      expect(s.useDownloadArchive, isFalse);
+      expect(s.extraDownloadArgs, '');
     });
 
     test('JSON round-trip preserves enums with custom values', () {
@@ -109,6 +116,32 @@ void main() {
       );
       // Persisted to DB.
       expect((await SettingsRepository(db).read()).mode, UiMode.advanced);
+    });
+
+    test('power-option setters persist (P8b)', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(settingsControllerProvider.notifier);
+      await container.read(settingsControllerProvider.future);
+      await notifier.setConcurrentFragments(4);
+      await notifier.setRateLimit('1M');
+      await notifier.setAudioFormat('mp3');
+      await notifier.setAudioQuality('192K');
+      await notifier.setUseDownloadArchive(true);
+      await notifier.setExtraDownloadArgs('--no-mtime');
+
+      final saved = await SettingsRepository(db).read();
+      expect(saved.concurrentFragments, 4);
+      expect(saved.rateLimit, '1M');
+      expect(saved.audioFormat, 'mp3');
+      expect(saved.audioQuality, '192K');
+      expect(saved.useDownloadArchive, isTrue);
+      expect(saved.extraDownloadArgs, '--no-mtime');
     });
 
     test('acceptDisclaimer persists the flag', () async {

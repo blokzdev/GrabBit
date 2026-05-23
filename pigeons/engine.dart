@@ -73,6 +73,11 @@ class DownloadRequestDto {
     required this.filenameTemplate,
     this.formatId,
     this.container,
+    this.rateLimit,
+    this.concurrentFragments,
+    this.audioQuality,
+    this.downloadArchivePath,
+    this.extraArgs,
   });
 
   String taskId;
@@ -85,6 +90,11 @@ class DownloadRequestDto {
   bool embedMetadata;
   String outputDir;
   String filenameTemplate;
+  String? rateLimit;
+  int? concurrentFragments;
+  String? audioQuality;
+  String? downloadArchivePath;
+  List<String>? extraArgs;
 }
 
 class ProgressDto {
