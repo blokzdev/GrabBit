@@ -16,6 +16,11 @@ DownloadRequest buildDownloadRequest({
   int index = 1,
 }) {
   final extra = parseExtraArgs(settings.extraDownloadArgs);
+  final subLangs = parseCsvList(settings.subtitleLangs);
+  final sponsorOn = settings.sponsorBlockMode != 'off';
+  final sponsorCats = sponsorOn
+      ? parseCsvList(settings.sponsorBlockCategories)
+      : const <String>[];
   return DownloadRequest(
     taskId: taskId,
     url: url,
@@ -28,7 +33,9 @@ DownloadRequest buildDownloadRequest({
     audioOnly: audioOnly,
     // For audio, the container doubles as the codec (yt-dlp --audio-format).
     container: audioOnly ? settings.audioFormat : settings.defaultContainer,
-    subtitles: settings.defaultSubtitles,
+    subtitleLangs: subLangs.isEmpty ? null : subLangs,
+    autoSubs: settings.subtitleAuto,
+    subtitleFormat: settings.subtitleFormat,
     embedThumbnail: settings.embedThumbnail,
     embedMetadata: settings.embedMetadata,
     rateLimit: settings.rateLimit.isEmpty ? null : settings.rateLimit,
@@ -42,8 +49,20 @@ DownloadRequest buildDownloadRequest({
         ? '$outputDir/.download-archive.txt'
         : null,
     extraArgs: extra.isEmpty ? null : extra,
+    sponsorBlock: sponsorOn ? settings.sponsorBlockMode : null,
+    sponsorBlockCategories: sponsorCats.isEmpty ? null : sponsorCats,
+    embedChapters: settings.embedChapters,
+    splitChapters: settings.splitChapters,
   );
 }
+
+/// Splits a comma/whitespace-separated list (subtitle langs, SponsorBlock
+/// categories) into trimmed, non-empty tokens.
+List<String> parseCsvList(String raw) => raw
+    .split(RegExp(r'[,\s]+'))
+    .map((t) => t.trim())
+    .where((t) => t.isNotEmpty)
+    .toList();
 
 /// Tokenizes the raw "extra yt-dlp args" string into argv elements (whitespace
 /// split, empties dropped). Boundary validation for the Advanced escape hatch:

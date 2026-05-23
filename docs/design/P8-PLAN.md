@@ -62,7 +62,7 @@
   "Faster downloads (beta)" toggle + Advanced "Advanced download options" section. CI-green
   (builder/mapper/settings tests). **Pending on-device verification.**
 
-### `[ ]` P8c — Subtitles, SponsorBlock, chapters *(extends P8b; same APK batch)*
+### `[~]` P8c — Subtitles, SponsorBlock, chapters *(extends P8b; same APK batch)*
 - **Subtitles:** replace the `subtitles` bool with `subtitleLangs: List<String>`,
   `subtitleFormat`, `autoSubs`, `burnIn` → `--sub-langs` / `--write-auto-subs` /
   `--convert-subs`. **Burn-in is a post-download ffmpeg step** (`-vf subtitles=…`) via the
@@ -75,6 +75,12 @@
   threaded metadata.
 - **Exit / review:** download with chosen subtitle languages (optionally burned-in),
   SponsorBlock segments removed, and chapters embedded / split into separate items.
+- **Status:** implemented — structured subtitle fields (`--sub-langs`/`--write-auto-subs`/
+  `--convert-subs`/`--embed-subs`) replacing the `subtitles` bool; SponsorBlock mark/remove +
+  category chips; embed/split chapters. Completion handler hardened via a unit-tested
+  `classifyDownloadOutputs` (excludes subtitle/JSON sidecars) + N-file import for split-chapters.
+  Burn-in shipped as a Media Studio tool (`burnInSubtitlesArgs`, sidecar discovery). CI-green.
+  **Pending on-device verification.**
 
 ### `[ ]` P8d — Advanced format/codec + audio-preset picker *(pure Dart, CI-green)*
 - In `add_download_screen.dart` (Advanced mode), list the probed `MediaInfo.formats`

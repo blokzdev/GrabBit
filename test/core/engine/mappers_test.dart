@@ -63,7 +63,9 @@ void main() {
         formatId: '137',
         audioOnly: true,
         container: 'm4a',
-        subtitles: true,
+        subtitleLangs: ['en', 'es'],
+        autoSubs: true,
+        subtitleFormat: 'srt',
         embedThumbnail: true,
         embedMetadata: true,
         rateLimit: '1M',
@@ -71,6 +73,10 @@ void main() {
         audioQuality: '192K',
         downloadArchivePath: '/data/media/.download-archive.txt',
         extraArgs: ['--no-mtime', '--retries', '3'],
+        sponsorBlock: 'remove',
+        sponsorBlockCategories: ['sponsor', 'selfpromo'],
+        embedChapters: true,
+        splitChapters: true,
       );
       final dto = req.toDto();
       expect(dto.taskId, 't1');
@@ -79,12 +85,18 @@ void main() {
       expect(dto.formatId, '137');
       expect(dto.audioOnly, isTrue);
       expect(dto.container, 'm4a');
-      expect(dto.subtitles, isTrue);
+      expect(dto.subtitleLangs, ['en', 'es']);
+      expect(dto.autoSubs, isTrue);
+      expect(dto.subtitleFormat, 'srt');
       expect(dto.rateLimit, '1M');
       expect(dto.concurrentFragments, 4);
       expect(dto.audioQuality, '192K');
       expect(dto.downloadArchivePath, '/data/media/.download-archive.txt');
       expect(dto.extraArgs, ['--no-mtime', '--retries', '3']);
+      expect(dto.sponsorBlock, 'remove');
+      expect(dto.sponsorBlockCategories, ['sponsor', 'selfpromo']);
+      expect(dto.embedChapters, isTrue);
+      expect(dto.splitChapters, isTrue);
     });
   });
 

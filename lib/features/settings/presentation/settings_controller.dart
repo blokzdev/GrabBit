@@ -64,8 +64,26 @@ class SettingsController extends _$SettingsController {
   Future<void> setWifiOnly(bool value) async =>
       _update((await future).copyWith(wifiOnly: value));
 
-  Future<void> setDefaultSubtitles(bool value) async =>
-      _update((await future).copyWith(defaultSubtitles: value));
+  Future<void> setSubtitleLangs(String value) async =>
+      _update((await future).copyWith(subtitleLangs: value));
+
+  Future<void> setSubtitleAuto(bool value) async =>
+      _update((await future).copyWith(subtitleAuto: value));
+
+  Future<void> setSubtitleFormat(String value) async =>
+      _update((await future).copyWith(subtitleFormat: value));
+
+  Future<void> setSponsorBlockMode(String value) async =>
+      _update((await future).copyWith(sponsorBlockMode: value));
+
+  Future<void> setSponsorBlockCategories(String value) async =>
+      _update((await future).copyWith(sponsorBlockCategories: value));
+
+  Future<void> setEmbedChapters(bool value) async =>
+      _update((await future).copyWith(embedChapters: value));
+
+  Future<void> setSplitChapters(bool value) async =>
+      _update((await future).copyWith(splitChapters: value));
 
   Future<void> setEmbedThumbnail(bool value) async =>
       _update((await future).copyWith(embedThumbnail: value));

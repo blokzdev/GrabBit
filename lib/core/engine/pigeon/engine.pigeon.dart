@@ -290,7 +290,9 @@ class DownloadRequestDto {
     this.formatId,
     required this.audioOnly,
     this.container,
-    required this.subtitles,
+    this.subtitleLangs,
+    required this.autoSubs,
+    this.subtitleFormat,
     required this.embedThumbnail,
     required this.embedMetadata,
     required this.outputDir,
@@ -300,6 +302,10 @@ class DownloadRequestDto {
     this.audioQuality,
     this.downloadArchivePath,
     this.extraArgs,
+    this.sponsorBlock,
+    this.sponsorBlockCategories,
+    required this.embedChapters,
+    required this.splitChapters,
   });
 
   String taskId;
@@ -312,7 +318,11 @@ class DownloadRequestDto {
 
   String? container;
 
-  bool subtitles;
+  List<String>? subtitleLangs;
+
+  bool autoSubs;
+
+  String? subtitleFormat;
 
   bool embedThumbnail;
 
@@ -332,6 +342,14 @@ class DownloadRequestDto {
 
   List<String>? extraArgs;
 
+  String? sponsorBlock;
+
+  List<String>? sponsorBlockCategories;
+
+  bool embedChapters;
+
+  bool splitChapters;
+
   List<Object?> _toList() {
     return <Object?>[
       taskId,
@@ -339,7 +357,9 @@ class DownloadRequestDto {
       formatId,
       audioOnly,
       container,
-      subtitles,
+      subtitleLangs,
+      autoSubs,
+      subtitleFormat,
       embedThumbnail,
       embedMetadata,
       outputDir,
@@ -349,6 +369,10 @@ class DownloadRequestDto {
       audioQuality,
       downloadArchivePath,
       extraArgs,
+      sponsorBlock,
+      sponsorBlockCategories,
+      embedChapters,
+      splitChapters,
     ];
   }
 
@@ -364,16 +388,22 @@ class DownloadRequestDto {
       formatId: result[2] as String?,
       audioOnly: result[3]! as bool,
       container: result[4] as String?,
-      subtitles: result[5]! as bool,
-      embedThumbnail: result[6]! as bool,
-      embedMetadata: result[7]! as bool,
-      outputDir: result[8]! as String,
-      filenameTemplate: result[9]! as String,
-      rateLimit: result[10] as String?,
-      concurrentFragments: result[11] as int?,
-      audioQuality: result[12] as String?,
-      downloadArchivePath: result[13] as String?,
-      extraArgs: (result[14] as List<Object?>?)?.cast<String>(),
+      subtitleLangs: (result[5] as List<Object?>?)?.cast<String>(),
+      autoSubs: result[6]! as bool,
+      subtitleFormat: result[7] as String?,
+      embedThumbnail: result[8]! as bool,
+      embedMetadata: result[9]! as bool,
+      outputDir: result[10]! as String,
+      filenameTemplate: result[11]! as String,
+      rateLimit: result[12] as String?,
+      concurrentFragments: result[13] as int?,
+      audioQuality: result[14] as String?,
+      downloadArchivePath: result[15] as String?,
+      extraArgs: (result[16] as List<Object?>?)?.cast<String>(),
+      sponsorBlock: result[17] as String?,
+      sponsorBlockCategories: (result[18] as List<Object?>?)?.cast<String>(),
+      embedChapters: result[19]! as bool,
+      splitChapters: result[20]! as bool,
     );
   }
 
@@ -391,7 +421,9 @@ class DownloadRequestDto {
         _deepEquals(formatId, other.formatId) &&
         _deepEquals(audioOnly, other.audioOnly) &&
         _deepEquals(container, other.container) &&
-        _deepEquals(subtitles, other.subtitles) &&
+        _deepEquals(subtitleLangs, other.subtitleLangs) &&
+        _deepEquals(autoSubs, other.autoSubs) &&
+        _deepEquals(subtitleFormat, other.subtitleFormat) &&
         _deepEquals(embedThumbnail, other.embedThumbnail) &&
         _deepEquals(embedMetadata, other.embedMetadata) &&
         _deepEquals(outputDir, other.outputDir) &&
@@ -400,7 +432,11 @@ class DownloadRequestDto {
         _deepEquals(concurrentFragments, other.concurrentFragments) &&
         _deepEquals(audioQuality, other.audioQuality) &&
         _deepEquals(downloadArchivePath, other.downloadArchivePath) &&
-        _deepEquals(extraArgs, other.extraArgs);
+        _deepEquals(extraArgs, other.extraArgs) &&
+        _deepEquals(sponsorBlock, other.sponsorBlock) &&
+        _deepEquals(sponsorBlockCategories, other.sponsorBlockCategories) &&
+        _deepEquals(embedChapters, other.embedChapters) &&
+        _deepEquals(splitChapters, other.splitChapters);
   }
 
   @override

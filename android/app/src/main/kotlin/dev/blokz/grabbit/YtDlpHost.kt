@@ -73,11 +73,27 @@ class YtDlpHost(
                     addOption("--write-info-json")
                     if (request.embedThumbnail) addOption("--embed-thumbnail")
                     if (request.embedMetadata) addOption("--embed-metadata")
-                    if (request.subtitles) {
-                        addOption("--write-subs")
-                        addOption("--write-auto-subs")
-                        addOption("--embed-subs")
-                    }
+                    request.subtitleLangs?.filterNotNull()
+                        ?.takeIf { it.isNotEmpty() }?.let { langs ->
+                            addOption("--write-subs")
+                            if (request.autoSubs) addOption("--write-auto-subs")
+                            addOption("--sub-langs", langs.joinToString(","))
+                            request.subtitleFormat?.takeIf { it != "best" }?.let {
+                                addOption("--convert-subs", it)
+                            }
+                            addOption("--embed-subs")
+                        }
+                    // SponsorBlock (mark = chapters, remove = cut segments).
+                    request.sponsorBlockCategories?.filterNotNull()
+                        ?.takeIf { it.isNotEmpty() }?.let { cats ->
+                            val joined = cats.joinToString(",")
+                            when (request.sponsorBlock) {
+                                "mark" -> addOption("--sponsorblock-mark", joined)
+                                "remove" -> addOption("--sponsorblock-remove", joined)
+                            }
+                        }
+                    if (request.embedChapters) addOption("--embed-chapters")
+                    if (request.splitChapters) addOption("--split-chapters")
                     // P8b power options.
                     request.rateLimit?.takeIf { it.isNotEmpty() }?.let {
                         addOption("--limit-rate", it)

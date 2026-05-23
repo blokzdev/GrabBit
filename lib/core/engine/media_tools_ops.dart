@@ -82,3 +82,12 @@ List<String> convertArgs({required String input, required String output}) => [
   input,
   output,
 ];
+
+/// Hard-bakes a subtitle file into the video (`-vf subtitles=`). A re-encode,
+/// so it's slower and lossy — but the captions are permanent. The path is
+/// single-quoted inside the filter so spaces/specials don't break it.
+List<String> burnInSubtitlesArgs({
+  required String input,
+  required String output,
+  required String subtitlePath,
+}) => ['-y', '-i', input, '-vf', "subtitles='$subtitlePath'", output];

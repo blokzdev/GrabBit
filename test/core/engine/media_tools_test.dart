@@ -4,6 +4,24 @@ import 'package:grabbit/core/engine/media_tools_ops.dart';
 
 void main() {
   group('arg builders', () {
+    test('burnInSubtitlesArgs re-encodes with a quoted subtitles filter', () {
+      expect(
+        burnInSubtitlesArgs(
+          input: '/in.mp4',
+          output: '/out.mp4',
+          subtitlePath: '/subs/clip.en.srt',
+        ),
+        [
+          '-y',
+          '-i',
+          '/in.mp4',
+          '-vf',
+          "subtitles='/subs/clip.en.srt'",
+          '/out.mp4',
+        ],
+      );
+    });
+
     test('trimArgs input-seeks, copies, and bounds duration', () {
       final args = trimArgs(
         input: '/in.mp4',
