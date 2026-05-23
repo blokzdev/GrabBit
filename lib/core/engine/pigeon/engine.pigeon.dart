@@ -807,6 +807,89 @@ abstract class ServiceFlutterApi {
   }
 }
 
+/// Delivers text/URLs shared into the app via the Android share sheet
+/// (`ACTION_SEND` / `ACTION_SEND_MULTIPLE`). See docs/design/P8-PLAN.md (P8a).
+class ShareHostApi {
+  /// Constructor for [ShareHostApi].  The [binaryMessenger] named argument is
+  /// available for dependency injection.  If it is left null, the default
+  /// BinaryMessenger will be used which routes to the host platform.
+  ShareHostApi({
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) : pigeonVar_binaryMessenger = binaryMessenger,
+       pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty
+           ? '.$messageChannelSuffix'
+           : '';
+  final BinaryMessenger? pigeonVar_binaryMessenger;
+
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  final String pigeonVar_messageChannelSuffix;
+
+  /// The shared text the app was cold-launched with, consumed once (cleared on
+  /// read). Null when the launch wasn't a share.
+  Future<String?> takeInitialSharedText() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.grabbit.ShareHostApi.takeInitialSharedText$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+}
+
+abstract class ShareFlutterApi {
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  /// A share arrived while the app was already running (`onNewIntent`).
+  void onSharedText(String text);
+
+  static void setUp(
+    ShareFlutterApi? api, {
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty
+        ? '.$messageChannelSuffix'
+        : '';
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.grabbit.ShareFlutterApi.onSharedText$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final String arg_text = args[0]! as String;
+          try {
+            api.onSharedText(arg_text);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+  }
+}
+
 /// Export a private library file to the device. [type] is video|audio|image.
 class StorageHostApi {
   /// Constructor for [StorageHostApi].  The [binaryMessenger] named argument is

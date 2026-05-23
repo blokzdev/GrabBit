@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/routing/app_router.dart';
 import 'package:grabbit/core/theme/app_theme.dart';
+import 'package:grabbit/features/downloader/data/share_intake_service.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
@@ -18,11 +21,39 @@ class GrabBitApp extends ConsumerStatefulWidget {
 
 class _GrabBitAppState extends ConsumerState<GrabBitApp>
     with WidgetsBindingObserver {
+  StreamSubscription<String>? _shareSub;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoUpdate());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeAutoUpdate();
+      _initShareIntake();
+    });
+  }
+
+  /// Routes links shared into the app (Android share sheet, P8a) to the
+  /// Add-Download screen, pre-filled. Covers both the cold-start share and any
+  /// that arrive while the app is running.
+  void _initShareIntake() {
+    final service = ref.read(shareIntakeProvider);
+    if (service == null) return;
+    _shareSub = service.sharedUrls.listen(_openShared);
+    unawaited(
+      service
+          .takeInitialUrl()
+          .then((url) {
+            if (url != null) _openShared(url);
+          })
+          .catchError((_) {}),
+    );
+  }
+
+  void _openShared(String url) {
+    if (!mounted) return;
+    ref.read(pendingSharedUrlProvider.notifier).put(url);
+    ref.read(appRouterProvider).go('/add');
   }
 
   /// Throttled, non-blocking yt-dlp self-update on launch (keeps the engine
@@ -47,6 +78,7 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
 
   @override
   void dispose() {
+    _shareSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

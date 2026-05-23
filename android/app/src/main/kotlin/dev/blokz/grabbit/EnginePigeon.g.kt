@@ -783,6 +783,73 @@ class ServiceFlutterApi(private val binaryMessenger: BinaryMessenger, private va
   }
 }
 /**
+ * Delivers text/URLs shared into the app via the Android share sheet
+ * (`ACTION_SEND` / `ACTION_SEND_MULTIPLE`). See docs/design/P8-PLAN.md (P8a).
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface ShareHostApi {
+  /**
+   * The shared text the app was cold-launched with, consumed once (cleared on
+   * read). Null when the launch wasn't a share.
+   */
+  fun takeInitialSharedText(): String?
+
+  companion object {
+    /** The codec used by ShareHostApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+    /** Sets up an instance of `ShareHostApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: ShareHostApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.ShareHostApi.takeInitialSharedText$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.takeInitialSharedText())
+            } catch (exception: Throwable) {
+              EnginePigeonPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}
+/** Generated class from Pigeon that represents Flutter messages that can be called from Kotlin. */
+class ShareFlutterApi(private val binaryMessenger: BinaryMessenger, private val messageChannelSuffix: String = "") {
+  companion object {
+    /** The codec used by ShareFlutterApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+  }
+  /** A share arrived while the app was already running (`onNewIntent`). */
+  fun onSharedText(textArg: String, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.grabbit.ShareFlutterApi.onSharedText$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(textArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(EnginePigeonPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+}
+/**
  * Export a private library file to the device. [type] is video|audio|image.
  *
  * Generated interface from Pigeon that represents a handler of messages from Flutter.

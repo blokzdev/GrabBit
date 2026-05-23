@@ -10,6 +10,7 @@ import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/error_banner.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
+import 'package:grabbit/features/downloader/data/share_intake_service.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
@@ -25,9 +26,27 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
   final _urlController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // A link shared into the app (P8a) lands here pre-filled; consume it once
+    // the first frame is up so the field and probe are ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _consumeSharedUrl());
+  }
+
+  @override
   void dispose() {
     _urlController.dispose();
     super.dispose();
+  }
+
+  void _consumeSharedUrl() {
+    if (!mounted) return;
+    final url = ref.read(pendingSharedUrlProvider.notifier).take();
+    if (url == null || url.isEmpty) return;
+    _urlController
+      ..text = url
+      ..selection = TextSelection.collapsed(offset: url.length);
+    _check();
   }
 
   Future<void> _paste() async {
@@ -59,6 +78,10 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // A share that arrives while this screen is already open re-fills the field.
+    ref.listen(pendingSharedUrlProvider, (_, next) {
+      if (next != null && next.isNotEmpty) _consumeSharedUrl();
+    });
     final state = ref.watch(downloaderControllerProvider);
     final controller = ref.read(downloaderControllerProvider.notifier);
     final tokens = GrabBitTokens.of(context);

@@ -182,7 +182,7 @@ enum DownloadErrorCode {
 - **Android:** debug APK for CI artifact; release builds signed with a keystore
   (secrets in CI, never committed). Provide AAB for the future landing site.
   `minSdk` chosen to satisfy youtubedl-android (confirm at P0).
-- **Windows (P9):** bundle `yt-dlp.exe` + `ffmpeg.exe` in install dir; package as
+- **Windows (P11):** bundle `yt-dlp.exe` + `ffmpeg.exe` in install dir; package as
   **MSIX**; verify binary update path.
 
 ---
