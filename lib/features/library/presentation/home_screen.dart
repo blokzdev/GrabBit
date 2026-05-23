@@ -7,7 +7,6 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/explorer_view.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_view.dart';
-import 'package:grabbit/features/queue/data/queue_repository.dart';
 
 enum HomeView { library, explorer }
 
@@ -32,15 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const _BrandTitle(),
-        actions: [
-          if (library) ...[const _SortAction(), const _CollectionsAction()],
-          const _QueueAction(),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
+        actions: [if (library) const _SortAction()],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(52),
           child: Padding(
@@ -106,53 +97,6 @@ class _BrandTitle extends StatelessWidget {
   }
 }
 
-/// Queue action: count badge for pending work + an accent "running" dot shown
-/// only while a download is actively in progress.
-class _QueueAction extends ConsumerWidget {
-  const _QueueAction();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = GrabBitTokens.of(context);
-    final tasks = ref.watch(queueTasksProvider).asData?.value ?? const [];
-    final pending = tasks
-        .where(
-          (t) => t.status != TaskStatus.done && t.status != TaskStatus.canceled,
-        )
-        .length;
-    final anyRunning = tasks.any((t) => t.status == TaskStatus.running);
-
-    return IconButton(
-      tooltip: 'Queue',
-      onPressed: () => context.push('/queue'),
-      icon: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Badge(
-            isLabelVisible: pending > 0,
-            label: Text('$pending'),
-            child: const Icon(Icons.download_outlined),
-          ),
-          if (anyRunning)
-            Positioned(
-              left: -1,
-              top: -1,
-              child: Container(
-                key: const Key('queueRunningDot'),
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: tokens.accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SortAction extends ConsumerWidget {
   const _SortAction();
 
@@ -170,24 +114,6 @@ class _SortAction extends ConsumerWidget {
         PopupMenuItem(value: LibrarySort.titleAsc, child: Text('Title A–Z')),
         PopupMenuItem(value: LibrarySort.largest, child: Text('Largest')),
       ],
-    );
-  }
-}
-
-class _CollectionsAction extends ConsumerWidget {
-  const _CollectionsAction();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(collectionsProvider).asData?.value.length ?? 0;
-    return IconButton(
-      icon: Badge(
-        isLabelVisible: count > 0,
-        label: Text('$count'),
-        child: const Icon(Icons.collections_bookmark_outlined),
-      ),
-      tooltip: 'Collections',
-      onPressed: () => context.push('/collections'),
     );
   }
 }

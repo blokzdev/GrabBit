@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_banner.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
@@ -65,21 +66,24 @@ class SelectionScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          for (final s in state.sources.where((s) => s.error != null))
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.spaceMd,
-                tokens.spaceMd,
-                tokens.spaceMd,
-                0,
+      body: ContentBounds(
+        maxWidth: 1280,
+        child: Column(
+          children: [
+            for (final s in state.sources.where((s) => s.error != null))
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  tokens.spaceMd,
+                  tokens.spaceMd,
+                  tokens.spaceMd,
+                  0,
+                ),
+                child: ErrorBanner(message: '${s.url} — ${s.error!}'),
               ),
-              child: ErrorBanner(message: '${s.url} — ${s.error!}'),
-            ),
-          Expanded(child: body),
-          _BottomBar(preset: state.preset, hasSelection: selectedCount > 0),
-        ],
+            Expanded(child: body),
+            _BottomBar(preset: state.preset, hasSelection: selectedCount > 0),
+          ],
+        ),
       ),
     );
   }
@@ -103,51 +107,56 @@ class _EntryTile extends StatelessWidget {
     final radius = BorderRadius.circular(tokens.radiusMd);
     final duration = formatDuration(entry.durationSec);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: radius,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: radius,
-                border: selected
-                    ? Border.all(color: scheme.primary, width: 2)
-                    : null,
-              ),
-              child: ClipRRect(
-                borderRadius: radius,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _EntryThumb(entry: entry),
-                    Positioned(
-                      top: tokens.spaceXs,
-                      left: tokens.spaceXs,
-                      child: _SelectionBadge(selected: selected),
-                    ),
-                  ],
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: entry.title,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  border: selected
+                      ? Border.all(color: scheme.primary, width: 2)
+                      : null,
+                ),
+                child: ClipRRect(
+                  borderRadius: radius,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _EntryThumb(entry: entry),
+                      Positioned(
+                        top: tokens.spaceXs,
+                        left: tokens.spaceXs,
+                        child: _SelectionBadge(selected: selected),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          SizedBox(height: tokens.spaceXs),
-          Text(
-            entry.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall,
-          ),
-          if (duration.isNotEmpty)
+            SizedBox(height: tokens.spaceXs),
             Text(
-              duration,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              entry.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall,
             ),
-        ],
+            if (duration.isNotEmpty)
+              Text(
+                duration,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -189,7 +198,7 @@ class _SelectionBadge extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: scheme.scrim.withValues(alpha: 0.45),
+        color: scheme.scrim.withValues(alpha: 0.55),
         shape: BoxShape.circle,
       ),
       padding: const EdgeInsets.all(1),
@@ -223,7 +232,7 @@ class _BottomBar extends ConsumerWidget {
           content: Text(startNow ? 'Downloads started' : 'Added to queue'),
           action: SnackBarAction(
             label: 'View queue',
-            onPressed: () => router.push('/queue'),
+            onPressed: () => router.go('/queue'),
           ),
         ),
       );

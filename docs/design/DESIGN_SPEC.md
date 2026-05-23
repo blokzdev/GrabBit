@@ -195,9 +195,22 @@ auto-check switch); Storage (auto-save switch, export folder picker); Appearance
 dropdown, dynamic-color switch); Security (app lock switch, conditional biometric switch).
 Simple vs Advanced parity.
 
-### `[ ]` Cross-cutting — Responsive / foldable / a11y (P7m)
-Large-screen/unfolded layouts adapt (wider content column / two-pane, not a stretched
-phone layout); touch targets ≥48dp; semantics labels; dynamic-type support; AA contrast.
+### `[x]` Cross-cutting — Adaptive layout + a11y (P7m)
+Layout reacts to the **window-size class** (`core/layout/window_size.dart`: Compact <600 /
+Medium 600–839 / Expanded 840–1199 / Large 1200–1599 / Extra-large ≥1600 dp), so the same code
+covers phones, tablets, foldables (folded = Compact, unfolded = Medium/Expanded) and desktops.
+- **`ContentBounds`** (`core/widgets/content_bounds.dart`) caps + centers content: single-column
+  screens at ~640, galleries at ~1280 — no edge-to-edge stretching on wide windows.
+- **Unified navigation** (`AdaptiveNavigationScaffold` over a `StatefulShellRoute`): the four
+  top-level destinations (Library · Queue · Collections · Settings) render as a bottom
+  `NavigationBar` on Compact → `NavigationRail` on Medium/Expanded → **extended rail** on
+  Large/desktop. Queue/Collections badges live on the destinations.
+- **a11y:** ≥48dp targets (theme), search-clear tooltip, `Semantics` (selected/button) on
+  selection + grid tiles, scrim-contrast bump, dynamic-type verified at 200%.
+
+**P7n (deferred, needs a foldable device):** two-pane list-detail (Library↔ItemDetail,
+Collections↔detail) on Expanded+, hinge avoidance via `MediaQuery.displayFeatures`, fold/unfold
+continuity, and tabletop posture for the player.
 
 ---
 

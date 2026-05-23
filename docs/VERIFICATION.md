@@ -272,6 +272,22 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       **wrong PIN** shows the error **and a shake**, and there's no back/nav escape.
 - [ ] When biometric unlock is enabled, the biometric prompt appears and unlocks.
 
+### P7m — Adaptive layout + a11y
+- [ ] **Phone (Compact):** a bottom **NavigationBar** with Library · Queue · Collections ·
+      Settings; the Queue tab shows the pending **badge** + accent **running dot**, Collections
+      shows its count badge; tapping a tab switches and keeps each tab's state.
+- [ ] **Rotate / resize / tablet / unfolded foldable (Medium+):** the bottom bar becomes a
+      **NavigationRail**; on a **laptop/desktop** window (Large+) the rail is **extended**
+      (labels shown). Folding/unfolding moves between these without losing your place.
+- [ ] Single-column screens (Add, Settings, Edit, Item Detail, Queue, Collections list,
+      Disclaimer) are **centered and width-capped** on wide windows — not stretched edge-to-edge;
+      the media **grids add columns** then cap/center on very wide/desktop windows.
+- [ ] **TalkBack** announces the search-clear button and the **selected** state of
+      selection/grid tiles; touch targets stay ≥48dp; at **200% font scale** nothing clips
+      into an error.
+- [ ] *(Deferred to P7n — needs a foldable device):* two-pane list-detail, hinge avoidance,
+      tabletop posture.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.

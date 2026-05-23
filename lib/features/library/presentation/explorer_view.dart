@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
+import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
@@ -147,17 +148,20 @@ class _ExplorerViewState extends ConsumerState<ExplorerView> {
           : _grid(context, folders, items, selecting);
     }
 
-    return Column(
-      children: [
-        _Breadcrumb(crumbs: crumbs, onTap: _open),
-        Expanded(child: body),
-        if (selecting)
-          _SelectionBar(
-            count: _selected.length,
-            onMove: _moveSelected,
-            onClear: () => setState(_selected.clear),
-          ),
-      ],
+    return ContentBounds(
+      maxWidth: 1280,
+      child: Column(
+        children: [
+          _Breadcrumb(crumbs: crumbs, onTap: _open),
+          Expanded(child: body),
+          if (selecting)
+            _SelectionBar(
+              count: _selected.length,
+              onMove: _moveSelected,
+              onClear: () => setState(_selected.clear),
+            ),
+        ],
+      ),
     );
   }
 
