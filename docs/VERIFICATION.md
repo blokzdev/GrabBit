@@ -265,6 +265,13 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Appearance: theme dropdown + dynamic-color switch apply live.
 - [ ] Security: app-lock switch prompts a PIN; biometric switch appears only when lock is on.
 
+### P7l — Disclaimer + App Lock
+- [ ] First run shows the **branded disclaimer** (rabbit mark + shield + scrollable terms);
+      tapping "I understand and agree" persists and leaves the screen (loading variant shows).
+- [ ] With app-lock enabled, relaunch shows the **lock screen**; the correct PIN unlocks, a
+      **wrong PIN** shows the error **and a shake**, and there's no back/nav escape.
+- [ ] When biometric unlock is enabled, the biometric prompt appears and unlocks.
+
 ### P7 (overall)
 - [ ] Every screen reflects the new **Material 3 Expressive** design (color/type/shape/
       motion) in light, dark, and dynamic-color modes — no leftover MVP styling.

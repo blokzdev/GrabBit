@@ -73,7 +73,7 @@
 | `[x]` P7i | Media Studio | `/item/:id/studio` |
 | `[x]` P7j | Collections (list + detail) | `/collections`, `/collection/:id` |
 | `[x]` P7k | Settings | `/settings` |
-| `[ ]` P7l | Disclaimer + Lock | `/disclaimer`, `/lock` |
+| `[x]` P7l | Disclaimer + Lock | `/disclaimer`, `/lock` |
 
 **P7c done:** Home shell rebranded (mark + wordmark app bar, queue running dot, tokenized
 toggle); Explorer revamped to a **unified folder + media grid** (folder cards with glyph /
@@ -125,6 +125,12 @@ mirrors the folder counts). CI green (format · analyze · 175 tests · debug AP
 Appearance / Security) is an **icon-led `SectionHeader` + grouped card** (`SectionHeader` gained
 an optional `icon`); themed filled filename field (token chips + preview); shared skeleton/error
 states; all controls + logic unchanged. CI green (format · analyze · 176 tests · debug APK).
+
+**P7l done:** Disclaimer + App Lock rebranded — Disclaimer leads with the **brand mark** + a
+shield "Your responsibility" subheader over the scrollable terms and a full-width pill accept;
+Lock gets a branded lock badge, a themed filled PIN field, a full-width Unlock, biometrics
+secondary, and a **shake** on wrong PIN. Added a Lock-screen widget test. CI green
+(format · analyze · 177 tests · debug APK).
 
 Each screen subphase: confirm intent in `DESIGN_SPEC.md §7` → implement with P7a tokens +
 P7b components → empty/loading/error + Simple/Advanced parity → on-device review → tick.

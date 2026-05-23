@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 /// One-time, user-responsibility disclaimer shown before first use (PRD §13).
@@ -23,26 +25,45 @@ class _DisclaimerScreenState extends ConsumerState<DisclaimerScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(tokens.spaceXl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 16),
-              Icon(
-                Icons.shield_outlined,
-                size: 56,
-                color: theme.colorScheme.primary,
+              SizedBox(height: tokens.spaceMd),
+              SvgPicture.asset(
+                'assets/brand/logo.svg',
+                height: 72,
+                semanticsLabel: 'GrabBit',
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: tokens.spaceLg),
               Text(
                 'Welcome to GrabBit',
                 style: theme.textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: tokens.spaceXl),
+              Row(
+                children: [
+                  Icon(
+                    Icons.verified_user_outlined,
+                    size: 18,
+                    color: scheme.primary,
+                  ),
+                  SizedBox(width: tokens.spaceSm),
+                  Text(
+                    'Your responsibility',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: scheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: tokens.spaceSm),
               const Expanded(
                 child: SingleChildScrollView(
                   child: Column(
@@ -67,7 +88,7 @@ class _DisclaimerScreenState extends ConsumerState<DisclaimerScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: tokens.spaceLg),
               FilledButton(
                 onPressed: _accepting ? null : _accept,
                 child: _accepting
@@ -92,9 +113,11 @@ class _Paragraph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+      padding: EdgeInsets.only(bottom: tokens.spaceLg),
+      child: Text(text, style: theme.textTheme.bodyLarge),
     );
   }
 }
