@@ -121,24 +121,38 @@ class DownloaderController extends _$DownloaderController {
     }
   }
 
-  /// Builds the request from the probed info + chosen preset and adds it to the
-  /// download queue. With [startNow] the scheduler runs it immediately;
-  /// otherwise it's held until the user taps "Start all" on the queue screen.
-  Future<void> enqueue(QualityPreset preset, {bool startNow = true}) async {
+  /// Builds the request from the probed info + the resolved format selection and
+  /// adds it to the download queue. [formatSelector] is a yt-dlp `-f` expression
+  /// (from a preset or a concrete probed format); [audioFormat]/[audioQuality]
+  /// override the global audio settings for this download only. With [startNow]
+  /// the scheduler runs it immediately; otherwise it's held until "Start all".
+  Future<void> enqueue({
+    String? formatSelector,
+    required bool audioOnly,
+    String? audioFormat,
+    String? audioQuality,
+    bool startNow = true,
+  }) async {
     final current = state;
     final info = current.info;
     if (info == null) return;
 
     final taskId = newTaskId();
     final dir = await ref.read(mediaStorageProvider).mediaDirectory();
-    final settings = await ref.read(settingsControllerProvider.future);
+    var settings = await ref.read(settingsControllerProvider.future);
+    if (audioOnly && (audioFormat != null || audioQuality != null)) {
+      settings = settings.copyWith(
+        audioFormat: audioFormat ?? settings.audioFormat,
+        audioQuality: audioQuality ?? settings.audioQuality,
+      );
+    }
     final request = buildDownloadRequest(
       taskId: taskId,
       url: current.url,
       outputDir: dir.path,
       settings: settings,
-      audioOnly: preset.audioOnly,
-      formatSelector: preset.formatSelector,
+      audioOnly: audioOnly,
+      formatSelector: formatSelector,
     );
     final download = QueuedDownload(
       request: request,

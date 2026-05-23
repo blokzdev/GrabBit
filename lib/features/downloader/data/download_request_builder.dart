@@ -64,6 +64,18 @@ List<String> parseCsvList(String raw) => raw
     .where((t) => t.isNotEmpty)
     .toList();
 
+/// Resolves a probed [MediaFormat] into a yt-dlp `-f` selector + whether it's
+/// audio-only (P8d). A video-only stream is paired with `+bestaudio` (falling
+/// back to the bare stream) so the result always carries sound when available.
+({String selector, bool audioOnly}) formatSelectorFor(MediaFormat f) {
+  final hasVideo = f.vcodec != null && f.vcodec != 'none';
+  final hasAudio = f.acodec != null && f.acodec != 'none';
+  if (hasVideo && !hasAudio) {
+    return (selector: '${f.id}+bestaudio/${f.id}', audioOnly: false);
+  }
+  return (selector: f.id, audioOnly: hasAudio && !hasVideo);
+}
+
 /// Tokenizes the raw "extra yt-dlp args" string into argv elements (whitespace
 /// split, empties dropped). Boundary validation for the Advanced escape hatch:
 /// each token is passed to yt-dlp as one argument (no shell, no interpolation).
