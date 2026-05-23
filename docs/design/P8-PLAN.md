@@ -23,7 +23,7 @@
 
 ---
 
-### `[ ]` P8a — Android share-sheet intake
+### `[~]` P8a — Android share-sheet intake
 - `ACTION_SEND` / `ACTION_SEND_MULTIPLE` (`text/plain`) `<intent-filter>` on `MainActivity`
   in `android/app/src/main/AndroidManifest.xml` (launchMode is already `singleTop`, so
   `onNewIntent` handles warm-start delivery).
@@ -37,6 +37,9 @@
   tracking params). Links-only — shared local files are out of scope here.
 - **Exit / review:** share a link from the YouTube / Instagram app (and a browser) → GrabBit
   opens Add-Download pre-filled with that URL.
+- **Status:** implemented (Pigeon `ShareHostApi`/`ShareFlutterApi`, `MainActivity` intent
+  handling, manifest `ACTION_SEND`/`ACTION_SEND_MULTIPLE` filter, `ShareIntakeService` +
+  `extractSharedUrl` with tests, Add-Download pre-fill). **Pending on-device verification.**
 
 ### `[ ]` P8b — Engine request expansion + power-download options *(foundational native batch)*
 - Add fields to `DownloadRequest` (`lib/core/engine/download_engine.dart`),

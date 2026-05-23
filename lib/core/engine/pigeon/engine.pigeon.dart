@@ -10,9 +10,9 @@ import 'package:flutter/services.dart';
 import 'package:meta/meta.dart' show immutable, protected, visibleForTesting;
 
 Object? _extractReplyValueOrThrow(
-  List<Object?>? replyList,
-  String channelName, {
-  required bool isNullValid,
+    List<Object?>? replyList,
+    String channelName, {
+    required bool isNullValid,
 }) {
   if (replyList == null) {
     throw PlatformException(
@@ -34,11 +34,8 @@ Object? _extractReplyValueOrThrow(
   return replyList.firstOrNull;
 }
 
-List<Object?> wrapResponse({
-  Object? result,
-  PlatformException? error,
-  bool empty = false,
-}) {
+
+List<Object?> wrapResponse({Object? result, PlatformException? error, bool empty = false}) {
   if (empty) {
     return <Object?>[];
   }
@@ -47,7 +44,6 @@ List<Object?> wrapResponse({
   }
   return <Object?>[error.code, error.message, error.details];
 }
-
 bool _deepEquals(Object? a, Object? b) {
   if (identical(a, b)) {
     return true;
@@ -60,9 +56,8 @@ bool _deepEquals(Object? a, Object? b) {
   }
   if (a is List && b is List) {
     return a.length == b.length &&
-        a.indexed.every(
-          ((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]),
-        );
+        a.indexed
+            .every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
   }
   if (a is Map && b is Map) {
     if (a.length != b.length) {
@@ -111,6 +106,7 @@ int _deepHash(Object? value) {
   return value.hashCode;
 }
 
+
 class FormatDto {
   FormatDto({
     required this.id,
@@ -157,8 +153,7 @@ class FormatDto {
   }
 
   Object encode() {
-    return _toList();
-  }
+    return _toList();  }
 
   static FormatDto decode(Object result) {
     result as List<Object?>;
@@ -184,15 +179,7 @@ class FormatDto {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(id, other.id) &&
-        _deepEquals(ext, other.ext) &&
-        _deepEquals(height, other.height) &&
-        _deepEquals(tbr, other.tbr) &&
-        _deepEquals(vcodec, other.vcodec) &&
-        _deepEquals(acodec, other.acodec) &&
-        _deepEquals(audioOnly, other.audioOnly) &&
-        _deepEquals(filesize, other.filesize) &&
-        _deepEquals(label, other.label);
+    return _deepEquals(id, other.id) && _deepEquals(ext, other.ext) && _deepEquals(height, other.height) && _deepEquals(tbr, other.tbr) && _deepEquals(vcodec, other.vcodec) && _deepEquals(acodec, other.acodec) && _deepEquals(audioOnly, other.audioOnly) && _deepEquals(filesize, other.filesize) && _deepEquals(label, other.label);
   }
 
   @override
@@ -242,8 +229,7 @@ class MediaInfoDto {
   }
 
   Object encode() {
-    return _toList();
-  }
+    return _toList();  }
 
   static MediaInfoDto decode(Object result) {
     result as List<Object?>;
@@ -268,14 +254,7 @@ class MediaInfoDto {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(title, other.title) &&
-        _deepEquals(uploader, other.uploader) &&
-        _deepEquals(durationSec, other.durationSec) &&
-        _deepEquals(thumbnailUrl, other.thumbnailUrl) &&
-        _deepEquals(site, other.site) &&
-        _deepEquals(description, other.description) &&
-        _deepEquals(uploadDate, other.uploadDate) &&
-        _deepEquals(formats, other.formats);
+    return _deepEquals(title, other.title) && _deepEquals(uploader, other.uploader) && _deepEquals(durationSec, other.durationSec) && _deepEquals(thumbnailUrl, other.thumbnailUrl) && _deepEquals(site, other.site) && _deepEquals(description, other.description) && _deepEquals(uploadDate, other.uploadDate) && _deepEquals(formats, other.formats);
   }
 
   @override
@@ -333,8 +312,7 @@ class DownloadRequestDto {
   }
 
   Object encode() {
-    return _toList();
-  }
+    return _toList();  }
 
   static DownloadRequestDto decode(Object result) {
     result as List<Object?>;
@@ -361,16 +339,7 @@ class DownloadRequestDto {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(taskId, other.taskId) &&
-        _deepEquals(url, other.url) &&
-        _deepEquals(formatId, other.formatId) &&
-        _deepEquals(audioOnly, other.audioOnly) &&
-        _deepEquals(container, other.container) &&
-        _deepEquals(subtitles, other.subtitles) &&
-        _deepEquals(embedThumbnail, other.embedThumbnail) &&
-        _deepEquals(embedMetadata, other.embedMetadata) &&
-        _deepEquals(outputDir, other.outputDir) &&
-        _deepEquals(filenameTemplate, other.filenameTemplate);
+    return _deepEquals(taskId, other.taskId) && _deepEquals(url, other.url) && _deepEquals(formatId, other.formatId) && _deepEquals(audioOnly, other.audioOnly) && _deepEquals(container, other.container) && _deepEquals(subtitles, other.subtitles) && _deepEquals(embedThumbnail, other.embedThumbnail) && _deepEquals(embedMetadata, other.embedMetadata) && _deepEquals(outputDir, other.outputDir) && _deepEquals(filenameTemplate, other.filenameTemplate);
   }
 
   @override
@@ -401,12 +370,18 @@ class ProgressDto {
   String? error;
 
   List<Object?> _toList() {
-    return <Object?>[taskId, percent, speedBps, etaSec, stage, error];
+    return <Object?>[
+      taskId,
+      percent,
+      speedBps,
+      etaSec,
+      stage,
+      error,
+    ];
   }
 
   Object encode() {
-    return _toList();
-  }
+    return _toList();  }
 
   static ProgressDto decode(Object result) {
     result as List<Object?>;
@@ -429,18 +404,14 @@ class ProgressDto {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(taskId, other.taskId) &&
-        _deepEquals(percent, other.percent) &&
-        _deepEquals(speedBps, other.speedBps) &&
-        _deepEquals(etaSec, other.etaSec) &&
-        _deepEquals(stage, other.stage) &&
-        _deepEquals(error, other.error);
+    return _deepEquals(taskId, other.taskId) && _deepEquals(percent, other.percent) && _deepEquals(speedBps, other.speedBps) && _deepEquals(etaSec, other.etaSec) && _deepEquals(stage, other.stage) && _deepEquals(error, other.error);
   }
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -449,16 +420,16 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    } else if (value is FormatDto) {
+    }    else if (value is FormatDto) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
-    } else if (value is MediaInfoDto) {
+    }    else if (value is MediaInfoDto) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    } else if (value is DownloadRequestDto) {
+    }    else if (value is DownloadRequestDto) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
-    } else if (value is ProgressDto) {
+    }    else if (value is ProgressDto) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
     } else {
@@ -487,13 +458,9 @@ class YtDlpHostApi {
   /// Constructor for [YtDlpHostApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  YtDlpHostApi({
-    BinaryMessenger? binaryMessenger,
-    String messageChannelSuffix = '',
-  }) : pigeonVar_binaryMessenger = binaryMessenger,
-       pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty
-           ? '.$messageChannelSuffix'
-           : '';
+  YtDlpHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
+      : pigeonVar_binaryMessenger = binaryMessenger,
+        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
@@ -501,92 +468,83 @@ class YtDlpHostApi {
   final String pigeonVar_messageChannelSuffix;
 
   Future<MediaInfoDto> probe(String url) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.YtDlpHostApi.probe$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.YtDlpHostApi.probe$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[url],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[url]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: false,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
     return pigeonVar_replyValue! as MediaInfoDto;
   }
 
   /// Raw `yt-dlp --flat-playlist -J <url>` stdout (parsed in Dart). Returns a
   /// single-video JSON when the URL isn't a playlist/carousel.
   Future<String> expandRaw(String url) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.YtDlpHostApi.expandRaw$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.YtDlpHostApi.expandRaw$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[url],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[url]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: false,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
     return pigeonVar_replyValue! as String;
   }
 
   Future<void> startDownload(DownloadRequestDto request) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.YtDlpHostApi.startDownload$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.YtDlpHostApi.startDownload$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[request],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[request]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
   }
 
   Future<void> cancel(String taskId) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.YtDlpHostApi.cancel$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.YtDlpHostApi.cancel$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[taskId],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[taskId]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
   }
 
   Future<String> engineVersions() async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.YtDlpHostApi.engineVersions$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.YtDlpHostApi.engineVersions$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -596,16 +554,16 @@ class YtDlpHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: false,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
     return pigeonVar_replyValue! as String;
   }
 
   Future<void> updateEngine() async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.YtDlpHostApi.updateEngine$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.YtDlpHostApi.updateEngine$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -615,10 +573,11 @@ class YtDlpHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
   }
 }
 
@@ -627,20 +586,12 @@ abstract class YtDlpFlutterApi {
 
   void onProgress(ProgressDto progress);
 
-  static void setUp(
-    YtDlpFlutterApi? api, {
-    BinaryMessenger? binaryMessenger,
-    String messageChannelSuffix = '',
-  }) {
-    messageChannelSuffix = messageChannelSuffix.isNotEmpty
-        ? '.$messageChannelSuffix'
-        : '';
+  static void setUp(YtDlpFlutterApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.grabbit.YtDlpFlutterApi.onProgress$messageChannelSuffix',
-        pigeonChannelCodec,
-        binaryMessenger: binaryMessenger,
-      );
+          'dev.flutter.pigeon.grabbit.YtDlpFlutterApi.onProgress$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -652,10 +603,8 @@ abstract class YtDlpFlutterApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          } catch (e) {
-            return wrapResponse(
-              error: PlatformException(code: 'error', message: e.toString()),
-            );
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
           }
         });
       }
@@ -668,70 +617,53 @@ class ServiceHostApi {
   /// Constructor for [ServiceHostApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  ServiceHostApi({
-    BinaryMessenger? binaryMessenger,
-    String messageChannelSuffix = '',
-  }) : pigeonVar_binaryMessenger = binaryMessenger,
-       pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty
-           ? '.$messageChannelSuffix'
-           : '';
+  ServiceHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
+      : pigeonVar_binaryMessenger = binaryMessenger,
+        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
 
   final String pigeonVar_messageChannelSuffix;
 
-  Future<void> startService(
-    String text,
-    int progress,
-    bool indeterminate,
-  ) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.ServiceHostApi.startService$pigeonVar_messageChannelSuffix';
+  Future<void> startService(String text, int progress, bool indeterminate) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.ServiceHostApi.startService$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[text, progress, indeterminate],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[text, progress, indeterminate]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
   }
 
-  Future<void> updateNotification(
-    String text,
-    int progress,
-    bool indeterminate,
-  ) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.ServiceHostApi.updateNotification$pigeonVar_messageChannelSuffix';
+  Future<void> updateNotification(String text, int progress, bool indeterminate) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.ServiceHostApi.updateNotification$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[text, progress, indeterminate],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[text, progress, indeterminate]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
   }
 
   Future<void> stopService() async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.ServiceHostApi.stopService$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.ServiceHostApi.stopService$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -741,15 +673,15 @@ class ServiceHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
   }
 
   Future<bool> isUnmetered() async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.ServiceHostApi.isUnmetered$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.ServiceHostApi.isUnmetered$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -759,10 +691,11 @@ class ServiceHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: false,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
     return pigeonVar_replyValue! as bool;
   }
 }
@@ -773,20 +706,12 @@ abstract class ServiceFlutterApi {
   /// The notification's "Stop" action was tapped.
   void onStopRequested();
 
-  static void setUp(
-    ServiceFlutterApi? api, {
-    BinaryMessenger? binaryMessenger,
-    String messageChannelSuffix = '',
-  }) {
-    messageChannelSuffix = messageChannelSuffix.isNotEmpty
-        ? '.$messageChannelSuffix'
-        : '';
+  static void setUp(ServiceFlutterApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
     {
       final pigeonVar_channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.grabbit.ServiceFlutterApi.onStopRequested$messageChannelSuffix',
-        pigeonChannelCodec,
-        binaryMessenger: binaryMessenger,
-      );
+          'dev.flutter.pigeon.grabbit.ServiceFlutterApi.onStopRequested$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
       if (api == null) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
@@ -796,10 +721,77 @@ abstract class ServiceFlutterApi {
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
-          } catch (e) {
-            return wrapResponse(
-              error: PlatformException(code: 'error', message: e.toString()),
-            );
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+  }
+}
+
+/// Delivers text/URLs shared into the app via the Android share sheet
+/// (`ACTION_SEND` / `ACTION_SEND_MULTIPLE`). See docs/design/P8-PLAN.md (P8a).
+class ShareHostApi {
+  /// Constructor for [ShareHostApi].  The [binaryMessenger] named argument is
+  /// available for dependency injection.  If it is left null, the default
+  /// BinaryMessenger will be used which routes to the host platform.
+  ShareHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
+      : pigeonVar_binaryMessenger = binaryMessenger,
+        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+  final BinaryMessenger? pigeonVar_binaryMessenger;
+
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  final String pigeonVar_messageChannelSuffix;
+
+  /// The shared text the app was cold-launched with, consumed once (cleared on
+  /// read). Null when the launch wasn't a share.
+  Future<String?> takeInitialSharedText() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.ShareHostApi.takeInitialSharedText$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+    return pigeonVar_replyValue as String?;
+  }
+}
+
+abstract class ShareFlutterApi {
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  /// A share arrived while the app was already running (`onNewIntent`).
+  void onSharedText(String text);
+
+  static void setUp(ShareFlutterApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.grabbit.ShareFlutterApi.onSharedText$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final String arg_text = args[0]! as String;
+          try {
+            api.onSharedText(arg_text);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
           }
         });
       }
@@ -812,13 +804,9 @@ class StorageHostApi {
   /// Constructor for [StorageHostApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  StorageHostApi({
-    BinaryMessenger? binaryMessenger,
-    String messageChannelSuffix = '',
-  }) : pigeonVar_binaryMessenger = binaryMessenger,
-       pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty
-           ? '.$messageChannelSuffix'
-           : '';
+  StorageHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
+      : pigeonVar_binaryMessenger = binaryMessenger,
+        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
@@ -827,8 +815,7 @@ class StorageHostApi {
 
   /// Launches the SAF folder picker; returns the persisted tree URI or null.
   Future<String?> pickExportFolder() async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.StorageHostApi.pickExportFolder$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.StorageHostApi.pickExportFolder$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -838,63 +825,51 @@ class StorageHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: true,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
     return pigeonVar_replyValue as String?;
   }
 
   /// Copies the file into a user-picked SAF tree; returns the saved doc URI.
-  Future<String> exportToTree(
-    String filePath,
-    String treeUri,
-    String type,
-    String? subdir,
-  ) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.StorageHostApi.exportToTree$pigeonVar_messageChannelSuffix';
+  Future<String> exportToTree(String filePath, String treeUri, String type, String? subdir) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.StorageHostApi.exportToTree$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[filePath, treeUri, type, subdir],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[filePath, treeUri, type, subdir]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: false,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
     return pigeonVar_replyValue! as String;
   }
 
   /// Copies the file into the public MediaStore (gallery-visible, API 29+).
-  Future<String> exportToMediaStore(
-    String filePath,
-    String type,
-    String? subdir,
-  ) async {
-    final pigeonVar_channelName =
-        'dev.flutter.pigeon.grabbit.StorageHostApi.exportToMediaStore$pigeonVar_messageChannelSuffix';
+  Future<String> exportToMediaStore(String filePath, String type, String? subdir) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.grabbit.StorageHostApi.exportToMediaStore$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
-      <Object?>[filePath, type, subdir],
-    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[filePath, type, subdir]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-      pigeonVar_replyList,
-      pigeonVar_channelName,
-      isNullValid: false,
-    );
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
     return pigeonVar_replyValue! as String;
   }
 }

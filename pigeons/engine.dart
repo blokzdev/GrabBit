@@ -150,6 +150,21 @@ abstract class ServiceFlutterApi {
   void onStopRequested();
 }
 
+/// Delivers text/URLs shared into the app via the Android share sheet
+/// (`ACTION_SEND` / `ACTION_SEND_MULTIPLE`). See docs/design/P8-PLAN.md (P8a).
+@HostApi()
+abstract class ShareHostApi {
+  /// The shared text the app was cold-launched with, consumed once (cleared on
+  /// read). Null when the launch wasn't a share.
+  String? takeInitialSharedText();
+}
+
+@FlutterApi()
+abstract class ShareFlutterApi {
+  /// A share arrived while the app was already running (`onNewIntent`).
+  void onSharedText(String text);
+}
+
 /// Export a private library file to the device. [type] is video|audio|image.
 @HostApi()
 abstract class StorageHostApi {
