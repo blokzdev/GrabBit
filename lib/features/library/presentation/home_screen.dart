@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/brand_badge.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/explorer_view.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
@@ -85,11 +85,7 @@ class _BrandTitle extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SvgPicture.asset(
-          'assets/brand/logo.svg',
-          height: 24,
-          semanticsLabel: 'GrabBit',
-        ),
+        const BrandBadge(),
         SizedBox(width: tokens.spaceSm),
         Text('GrabBit', style: Theme.of(context).textTheme.titleLarge),
       ],

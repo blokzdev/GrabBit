@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
+import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
@@ -81,6 +82,25 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
     }
   }
 
+  /// Updates the yt-dlp engine in place, then re-checks the link — no navigation
+  /// (the engine also auto-updates on launch; this is the manual fallback).
+  Future<void> _updateAndRetry() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('Updating the downloader engine…')),
+      );
+    try {
+      await ref.read(downloadEngineProvider).update();
+    } catch (_) {
+      // Surfaced as the re-check's error if it still fails.
+    }
+    if (!mounted) return;
+    messenger.hideCurrentSnackBar();
+    await _check();
+  }
+
   @override
   Widget build(BuildContext context) {
     // A share that arrives while this screen is already open re-fills the field.
@@ -132,12 +152,13 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
                       state.errorCode,
                       state.errorMessage!,
                     ),
+                    details: state.errorMessage,
                     actions: suggestsEngineUpdate(state.errorCode)
                         ? [
                             TextButton.icon(
-                              onPressed: () => context.go('/settings'),
+                              onPressed: probing ? null : _updateAndRetry,
                               icon: const Icon(Icons.system_update_alt),
-                              label: const Text('Update the downloader engine'),
+                              label: const Text('Update & retry'),
                             ),
                           ]
                         : null,
