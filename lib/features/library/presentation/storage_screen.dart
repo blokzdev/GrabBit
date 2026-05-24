@@ -12,6 +12,7 @@ import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/storage_maintenance.dart';
+import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
@@ -241,6 +242,7 @@ class _LargestRow extends ConsumerWidget {
         },
       ),
       onTap: () => context.push('/item/${item.id}'),
+      onLongPress: () => showMediaActions(context, ref, item),
     );
   }
 }

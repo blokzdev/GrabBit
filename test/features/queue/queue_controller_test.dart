@@ -635,6 +635,38 @@ void main() {
     await waitFor(() async => engine.running.contains('t1'));
   });
 
+  test('moveToTop / moveToBottom reorder the queue (P9g)', () async {
+    final db2 = AppDatabase(NativeDatabase.memory());
+    addTearDown(db2.close);
+    final repo2 = QueueRepository(db2);
+    await repo2.enqueueAll([_qd('a'), _qd('b'), _qd('c')]);
+
+    // Reuse the controller's helper against a stand-in repo via a fresh
+    // container so the scheduler doesn't claim the queued tasks.
+    final container2 = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db2),
+        downloadEngineProvider.overrideWithValue(ControllableEngine()),
+        foregroundServiceProvider.overrideWithValue(FakeForegroundService()),
+        networkMonitorProvider.overrideWithValue(FakeNetworkMonitor()),
+        diskSpaceServiceProvider.overrideWithValue(FakeDiskSpaceService()),
+        batteryServiceProvider.overrideWithValue(FakeBatteryService()),
+        mediaStorageProvider.overrideWithValue(FakeMediaStorage(mediaDir)),
+        // Hold everything so the scheduler leaves the order intact.
+        queueConfigProvider.overrideWithValue(const QueueConfig()),
+      ],
+    );
+    addTearDown(container2.dispose);
+    final c2 = container2.read(queueControllerProvider.notifier);
+    await container2.read(queueControllerProvider.future);
+
+    await c2.moveToBottom('a');
+    expect([for (final r in await repo2.watch().first) r.id], ['b', 'c', 'a']);
+
+    await c2.moveToTop('a');
+    expect([for (final r in await repo2.watch().first) r.id], ['a', 'b', 'c']);
+  });
+
   test('power-save mode holds downloads when the gate is on', () async {
     await container
         .read(settingsControllerProvider.notifier)

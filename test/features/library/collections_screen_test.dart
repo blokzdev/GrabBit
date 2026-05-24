@@ -55,7 +55,12 @@ void main() {
 
       expect(find.text('Faves'), findsOneWidget);
       expect(find.text('3 items'), findsOneWidget);
-      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+
+      // Rename + Delete now live behind the row's overflow menu (P9g).
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      expect(find.text('Rename'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
@@ -10,6 +11,7 @@ import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/features/library/data/dedupe_service.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
@@ -172,6 +174,8 @@ class _DuplicateRow extends ConsumerWidget {
             ..showSnackBar(const SnackBar(content: Text('Deleted')));
         },
       ),
+      onTap: () => context.push('/item/${item.id}'),
+      onLongPress: () => showMediaActions(context, ref, item),
     );
   }
 }

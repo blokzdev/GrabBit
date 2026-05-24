@@ -362,6 +362,19 @@ class QueueController extends _$QueueController {
     await _repo.setOrder(ids);
   }
 
+  /// Jumps a task to the front of the queue (P9g).
+  Future<void> moveToTop(String id) => _moveTo(id, top: true);
+
+  /// Sends a task to the back of the queue (P9g).
+  Future<void> moveToBottom(String id) => _moveTo(id, top: false);
+
+  Future<void> _moveTo(String id, {required bool top}) async {
+    final ids = [for (final r in await _repo.watch().first) r.id];
+    if (!ids.remove(id)) return;
+    top ? ids.insert(0, id) : ids.add(id);
+    await _repo.setOrder(ids);
+  }
+
   Duration _backoff(int retries, QueueConfig config) {
     final ms = config.baseRetryDelay.inMilliseconds * (1 << retries);
     return Duration(

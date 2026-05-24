@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
@@ -452,9 +454,40 @@ class _TaskTile extends ConsumerWidget {
             ),
             SizedBox(width: tokens.spaceSm),
             _actions(context, controller),
+            _overflow(context, ref, controller),
           ],
         ),
       ),
+    );
+  }
+
+  /// Per-task overflow: reorder shortcuts + source-link actions (P9g).
+  Widget _overflow(
+    BuildContext context,
+    WidgetRef ref,
+    QueueController controller,
+  ) {
+    return PopupMenuButton<String>(
+      tooltip: 'More',
+      onSelected: (value) async {
+        switch (value) {
+          case 'top':
+            await controller.moveToTop(task.id);
+          case 'bottom':
+            await controller.moveToBottom(task.id);
+          case 'copy':
+            await Clipboard.setData(ClipboardData(text: task.url));
+            if (context.mounted) _notify(context, 'Copied source URL');
+          case 'open':
+            await ref.read(externalShareServiceProvider).openUrl(task.url);
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'top', child: Text('Move to top')),
+        PopupMenuItem(value: 'bottom', child: Text('Move to bottom')),
+        PopupMenuItem(value: 'copy', child: Text('Copy source URL')),
+        PopupMenuItem(value: 'open', child: Text('Open source link')),
+      ],
     );
   }
 

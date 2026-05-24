@@ -118,6 +118,24 @@ three PRs:
   recovery; cleanup reclaims space; Storage shows device free/total. **Implemented; pending
   on-device check (StatFs + battery need a manual APK build).**
 
+### `[~]` P9g — Item context menu & sharing *(on-device, FREE)*
+- **Shared media action menu** (`media_actions.dart`): long-press any tile (Library, Collections,
+  Smart Albums, Storage "largest", Duplicates) → a bottom sheet with Open · Favorite · Save to
+  device · Add to collection · Move to folder · Edit info · Edit in Studio · Share · Copy/Open
+  source URL · Delete. Reusable list-based helpers (so P9h's bulk bar reuses them) wrap the existing
+  repo actions + `confirm`/`pickFolder`.
+- **Outbound share/launch** (`ExternalShareService`, `share_plus` + `url_launcher`): share a file via
+  the OS sheet, open the source link, copy the URL (Clipboard). Manifest gains a `<queries>` https
+  intent.
+- **Queue task overflow** — Move to top/bottom (`QueueController.moveToTop/moveToBottom`), Copy/Open
+  source URL.
+- **Collection rename** — `MetadataRepository.renameCollection` + a Rename/Delete overflow on
+  collection tiles.
+- **Gesture model:** long-press = menu; a "Select" entry (P9h) will enter multi-select.
+- **Exit / review:** every grid surface long-presses to a menu; Save/Move/Add-to-collection/Delete
+  work without leaving the grid; Share opens the OS sheet; queue task moves to top/bottom; rename a
+  collection. **Implemented; pending on-device check (share/url_launcher need a manual APK build).**
+
 ---
 
 ## Deferred (cut from P9 → `docs/BACKLOG.md`), with rationale

@@ -357,6 +357,14 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       by past deletions and reports the amount; library items are untouched.
 - [ ] **Device space (P9f)**: the Storage screen shows real device usage ("X used of Y, Z free"),
       not just GrabBit's own usage.
+- [ ] **Item context menu (P9g)**: long-press a tile in the Library / a Collection / a Smart album /
+      Storage-largest / Duplicates → the action sheet opens; Save to device, Add to collection, Move
+      to folder, and Delete all work without opening the detail screen.
+- [ ] **Share & links (P9g)**: "Share file" opens the Android share sheet with the actual file;
+      "Open source link" opens the source in a browser; "Copy source URL" puts it on the clipboard.
+- [ ] **Queue task menu (P9g)**: a task's ⋮ menu moves it to the top/bottom of the queue (persists)
+      and copies/opens its source URL.
+- [ ] **Collection rename (P9g)**: a collection's ⋮ menu renames it (and still deletes).
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
