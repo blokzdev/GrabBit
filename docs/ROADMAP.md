@@ -199,7 +199,7 @@ format/audio preset; a re-run playlist skips already-downloaded items — all of
 ## P9 — Library, Playback & Privacy Depth
 **Goals:** make managing, finding, and enjoying the private library genuinely great, and
 harden privacy with non-theatrical lock features. Mostly pure Dart (CI-green) plus **one**
-DB migration and a few native lock items. Ships as **5 sub-PRs** (P9a–P9e); the subphase
+DB migration and a few native lock items. Ships as **6 sub-PRs** (P9a–P9f); the subphase
 breakdown lives in **`docs/design/P9-PLAN.md`**.
 **Deliverables:**
 - **P9a — Single v2→v3 DB migration** (do all schema changes once): `isFavorite` +
@@ -215,11 +215,14 @@ breakdown lives in **`docs/design/P9-PLAN.md`**.
   dashboard (speed/ETA/total size). Scheduling is deferred.
 - **P9e — Privacy & app-lock hardening** (ship only the non-theatrical items): a
   **FLAG_SECURE** toggle (block screenshots / hide in recents); an **auto-lock timeout**;
-  best-effort **secure delete**. Decoy PIN, intruder selfie, and app-icon disguise are
-  deliberately cut (see `docs/BACKLOG.md`).
+  best-effort **secure delete**; PIN UX + failed-attempt lockout. Decoy PIN, intruder selfie,
+  and app-icon disguise are deliberately cut (see `docs/BACKLOG.md`).
+- **P9f — Storage & download safety**: a proactive **low-storage guard** (pre-flight free-space
+  gate) and **battery-aware pause** on the scheduler; **orphaned-file cleanup**; and **device
+  free/total** on the Storage screen. (PiP from P9c deferred to v2/P13; scheduling deferred.)
 **Exit criteria:** search/sort/favorite/dedupe the library and see storage usage; change
-playback speed and use PiP; reorder the queue (order persists) and see the dashboard;
-enable FLAG_SECURE and auto-lock — all offline.
+playback speed and pick subtitles; reorder the queue (order persists) and see the dashboard;
+enable FLAG_SECURE and auto-lock; downloads pause on low storage/battery — all offline.
 
 ## P10 — v1 Beta & Production Readiness
 **Goals:** harden and ship v1.
@@ -253,6 +256,11 @@ cloud, no account, no credits.**
 - **On-demand model download** + integrity check + caching (keeps install lean).
 - First local feature set: transcription, summarization, translation, OCR, smart
   tagging / semantic search.
+- **Summarization tiers** (capability-gated): a **zero-dependency, pure-Dart extractive
+  baseline (TextRank)** over captured descriptions/subtitles/transcripts that runs on *any*
+  device — the always-available floor — with the **LiteRT/MediaPipe LLM** abstractive
+  summary layered on top for capable devices. Keeps a useful TL;DR available even on
+  low-end hardware. (Considered for v1/P9 and deliberately deferred here.)
 - **AI-powered library organization** (the on-device, free counterpart to P9b's
   deterministic SQL albums/search — layered *beside*, not replacing, them; every
   feature `DeviceCapability`-gated):

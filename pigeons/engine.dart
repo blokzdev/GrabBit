@@ -191,6 +191,14 @@ abstract class ShareFlutterApi {
   void onSharedText(String text);
 }
 
+/// Free + total bytes of the filesystem backing a path (P9f).
+class DiskSpaceDto {
+  DiskSpaceDto({required this.freeBytes, required this.totalBytes});
+
+  int freeBytes;
+  int totalBytes;
+}
+
 /// Export a private library file to the device. [type] is video|audio|image.
 @HostApi()
 abstract class StorageHostApi {
@@ -210,6 +218,10 @@ abstract class StorageHostApi {
   /// Copies the file into the public MediaStore (gallery-visible, API 29+).
   @async
   String exportToMediaStore(String filePath, String type, String? subdir);
+
+  /// Free + total bytes of the volume holding [path] (`StatFs`), for the
+  /// low-storage download guard and the Storage screen (P9f).
+  DiskSpaceDto diskSpace(String path);
 }
 
 /// Privacy window flags (P9e). [setSecureFlag] toggles `FLAG_SECURE`, which

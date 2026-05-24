@@ -104,6 +104,44 @@ class _SettingsList extends ConsumerWidget {
                 value: settings.wifiOnly,
                 onChanged: controller.setWifiOnly,
               ),
+              ListTile(
+                title: const Text('Pause when storage is low'),
+                subtitle: const Text('Hold downloads below this free space'),
+                trailing: DropdownButton<int>(
+                  value: settings.minFreeSpaceMb,
+                  onChanged: (v) =>
+                      v == null ? null : controller.setMinFreeSpaceMb(v),
+                  items: const [
+                    DropdownMenuItem(value: 0, child: Text('Off')),
+                    DropdownMenuItem(value: 500, child: Text('500 MB')),
+                    DropdownMenuItem(value: 1024, child: Text('1 GB')),
+                    DropdownMenuItem(value: 2048, child: Text('2 GB')),
+                  ],
+                ),
+              ),
+              SwitchListTile(
+                title: const Text('Pause on low battery'),
+                subtitle: const Text(
+                  'Hold downloads when the battery is low or in power saver',
+                ),
+                value: settings.pauseOnLowBattery,
+                onChanged: controller.setPauseOnLowBattery,
+              ),
+              if (settings.pauseOnLowBattery)
+                ListTile(
+                  title: const Text('Low-battery threshold'),
+                  trailing: DropdownButton<int>(
+                    value: settings.lowBatteryThreshold,
+                    onChanged: (v) =>
+                        v == null ? null : controller.setLowBatteryThreshold(v),
+                    items: const [
+                      DropdownMenuItem(value: 10, child: Text('10%')),
+                      DropdownMenuItem(value: 15, child: Text('15%')),
+                      DropdownMenuItem(value: 20, child: Text('20%')),
+                      DropdownMenuItem(value: 30, child: Text('30%')),
+                    ],
+                  ),
+                ),
               _FilenameTemplateTile(template: settings.filenameTemplate),
               SwitchListTile(
                 title: const Text('Download subtitles'),

@@ -9,7 +9,10 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/core/battery/battery_service.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
+import 'package:grabbit/core/storage/disk_space_service.dart';
+import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
@@ -129,6 +132,36 @@ class FakeNetworkMonitor implements NetworkMonitor {
   Stream<void> get onChanged => _controller.stream;
 }
 
+/// Disk-space probe with a settable free-byte value.
+class FakeDiskSpaceService implements DiskSpaceService {
+  int freeBytes = 1 << 40; // 1 TiB by default → never blocks
+  @override
+  Future<DiskSpace> query(String path) async =>
+      (freeBytes: freeBytes, totalBytes: 1 << 40);
+}
+
+/// Battery probe with settable level / power-save and a manual change event.
+class FakeBatteryService implements BatteryService {
+  int batteryLevel = 100;
+  bool powerSave = false;
+  final _controller = StreamController<void>.broadcast();
+  void fireChange() => _controller.add(null);
+  @override
+  Future<int> level() async => batteryLevel;
+  @override
+  Future<bool> isPowerSave() async => powerSave;
+  @override
+  Stream<void> get onChanged => _controller.stream;
+}
+
+/// MediaStorage pointed at a fixed temp dir (no path_provider in tests).
+class FakeMediaStorage extends MediaStorage {
+  FakeMediaStorage(this._dir);
+  final Directory _dir;
+  @override
+  Future<Directory> mediaDirectory() async => _dir;
+}
+
 QueuedDownload _qd(
   String id, {
   String outputDir = '/tmp',
@@ -172,6 +205,9 @@ void main() {
   late QueueController controller;
   late FakeForegroundService fakeService;
   late FakeNetworkMonitor fakeNetwork;
+  late FakeDiskSpaceService fakeDisk;
+  late FakeBatteryService fakeBattery;
+  late Directory mediaDir;
 
   ProviderContainer makeContainer() => ProviderContainer(
     overrides: [
@@ -179,6 +215,9 @@ void main() {
       downloadEngineProvider.overrideWithValue(engine),
       foregroundServiceProvider.overrideWithValue(fakeService),
       networkMonitorProvider.overrideWithValue(fakeNetwork),
+      diskSpaceServiceProvider.overrideWithValue(fakeDisk),
+      batteryServiceProvider.overrideWithValue(fakeBattery),
+      mediaStorageProvider.overrideWithValue(FakeMediaStorage(mediaDir)),
       queueConfigProvider.overrideWithValue(
         const QueueConfig(baseRetryDelay: Duration(milliseconds: 5)),
       ),
@@ -190,6 +229,9 @@ void main() {
     engine = ControllableEngine();
     fakeService = FakeForegroundService();
     fakeNetwork = FakeNetworkMonitor();
+    fakeDisk = FakeDiskSpaceService();
+    fakeBattery = FakeBatteryService();
+    mediaDir = Directory.systemTemp.createTempSync('grabbit_qmedia_');
     container = makeContainer();
     repo = container.read(queueRepositoryProvider);
     controller = container.read(queueControllerProvider.notifier);
@@ -199,6 +241,7 @@ void main() {
   tearDown(() async {
     container.dispose();
     await db.close();
+    if (mediaDir.existsSync()) mediaDir.deleteSync(recursive: true);
   });
 
   test('requestJson round-trips through QueuedDownload', () {
@@ -544,5 +587,66 @@ void main() {
     await repo2.setOrder(['c', 'b', 'a']);
     expect((await repo2.nextQueued())!.id, 'c');
     expect([for (final r in await repo2.watch().first) r.id], ['c', 'b', 'a']);
+  });
+
+  test('low storage holds tasks queued until space frees up', () async {
+    fakeDisk.freeBytes = 100 * 1024 * 1024; // 100 MB < default 500 MB
+    await controller.enqueue(_qd('t1'));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(engine.running, isEmpty);
+    expect(await repo.countByStatus(TaskStatus.queued), 1);
+    expect(
+      container.read(queuePauseReasonProvider),
+      QueuePauseReason.lowStorage,
+    );
+
+    fakeDisk.freeBytes = 1 << 40; // space freed
+    fakeNetwork.fireChange(); // any signal re-pumps
+    await waitFor(() async => engine.running.contains('t1'));
+    expect(container.read(queuePauseReasonProvider), QueuePauseReason.none);
+  });
+
+  test('minFreeSpaceMb = 0 disables the storage guard', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setMinFreeSpaceMb(0);
+    fakeDisk.freeBytes = 1; // effectively nothing free
+    await controller.enqueue(_qd('t1'));
+    await waitFor(() async => engine.running.contains('t1'));
+  });
+
+  test('low battery holds tasks until the battery recovers', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setPauseOnLowBattery(true);
+    fakeBattery.batteryLevel = 5; // below default 15%
+    await controller.enqueue(_qd('t1'));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(engine.running, isEmpty);
+    expect(
+      container.read(queuePauseReasonProvider),
+      QueuePauseReason.lowBattery,
+    );
+
+    fakeBattery.batteryLevel = 80;
+    fakeBattery.fireChange();
+    await waitFor(() async => engine.running.contains('t1'));
+  });
+
+  test('power-save mode holds downloads when the gate is on', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setPauseOnLowBattery(true);
+    fakeBattery.powerSave = true;
+    await controller.enqueue(_qd('t1'));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(engine.running, isEmpty);
+    expect(
+      container.read(queuePauseReasonProvider),
+      QueuePauseReason.lowBattery,
+    );
   });
 }

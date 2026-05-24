@@ -101,6 +101,23 @@ three PRs:
   timeout (not on a quick return); secure-delete removes a private item; PIN lockout + Change-PIN
   work. **Implemented; pending on-device check (FLAG_SECURE needs a manual APK build).**
 
+### `[~]` P9f — Storage & download safety *(closes P9; all on-device, FREE)*
+- **Low-storage guard** — a new `minFreeSpaceMb` setting (default 500; 0 = off) gates the scheduler
+  in `_doPump` (mirrors the Wi-Fi-only gate): below the threshold, new downloads hold and a queue
+  banner shows the reason. Free space comes from a native `StatFs` probe via a new `diskSpace`
+  Pigeon method behind `DiskSpaceService`.
+- **Battery-aware pause** — `pauseOnLowBattery` + `lowBatteryThreshold` (default 15%): holds
+  downloads under the threshold or in OS power-save, via `BatteryService` (`battery_plus`); the
+  queue re-pumps on `onChanged`.
+- **Orphaned-file cleanup** — `StorageMaintenance.cleanupOrphans` reconciles on-disk files against
+  the library and prunes leftovers + empty dirs; a confirm-gated "Clean up leftover files" action on
+  the Storage screen. `deleteItem` also prunes a now-empty per-task folder.
+- **Device free/total** — the Storage screen now shows real device usage ("X used of Y, Z free"),
+  not just app usage.
+- **Exit / review:** downloads hold below the storage/battery thresholds with a banner and resume on
+  recovery; cleanup reclaims space; Storage shows device free/total. **Implemented; pending
+  on-device check (StatFs + battery need a manual APK build).**
+
 ---
 
 ## Deferred (cut from P9 → `docs/BACKLOG.md`), with rationale

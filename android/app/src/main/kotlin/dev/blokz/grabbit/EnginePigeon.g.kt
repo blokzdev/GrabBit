@@ -498,6 +498,48 @@ data class ProgressDto (
     return result
   }
 }
+
+/**
+ * Free + total bytes of the filesystem backing a path (P9f).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class DiskSpaceDto (
+  val freeBytes: Long,
+  val totalBytes: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): DiskSpaceDto {
+      val freeBytes = pigeonVar_list[0] as Long
+      val totalBytes = pigeonVar_list[1] as Long
+      return DiskSpaceDto(freeBytes, totalBytes)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      freeBytes,
+      totalBytes,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as DiskSpaceDto
+    return EnginePigeonPigeonUtils.deepEquals(this.freeBytes, other.freeBytes) && EnginePigeonPigeonUtils.deepEquals(this.totalBytes, other.totalBytes)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.freeBytes)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.totalBytes)
+    return result
+  }
+}
 private open class EnginePigeonPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -521,6 +563,11 @@ private open class EnginePigeonPigeonCodec : StandardMessageCodec() {
           ProgressDto.fromList(it)
         }
       }
+      133.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          DiskSpaceDto.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -540,6 +587,10 @@ private open class EnginePigeonPigeonCodec : StandardMessageCodec() {
       }
       is ProgressDto -> {
         stream.write(132)
+        writeValue(stream, value.toList())
+      }
+      is DiskSpaceDto -> {
+        stream.write(133)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -913,6 +964,11 @@ interface StorageHostApi {
   fun exportToTree(filePath: String, treeUri: String, type: String, subdir: String?, callback: (Result<String>) -> Unit)
   /** Copies the file into the public MediaStore (gallery-visible, API 29+). */
   fun exportToMediaStore(filePath: String, type: String, subdir: String?, callback: (Result<String>) -> Unit)
+  /**
+   * Free + total bytes of the volume holding [path] (`StatFs`), for the
+   * low-storage download guard and the Storage screen (P9f).
+   */
+  fun diskSpace(path: String): DiskSpaceDto
 
   companion object {
     /** The codec used by StorageHostApi. */
@@ -981,6 +1037,23 @@ interface StorageHostApi {
                 reply.reply(EnginePigeonPigeonUtils.wrapResult(data))
               }
             }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.StorageHostApi.diskSpace$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              listOf(api.diskSpace(pathArg))
+            } catch (exception: Throwable) {
+              EnginePigeonPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)

@@ -52,7 +52,22 @@ class LibraryRepository {
         }
       }
     }
+    _pruneEmptyParent(item.filePath);
     await (_db.delete(_db.mediaItems)..where((t) => t.id.equals(item.id))).go();
+  }
+
+  /// Removes the item's per-task folder once it's empty (split-chapter siblings
+  /// keep it alive otherwise) so deletions don't leak directories (P9f).
+  void _pruneEmptyParent(String? filePath) {
+    if (filePath == null) return;
+    try {
+      final parent = File(filePath).parent;
+      if (parent.existsSync() && parent.listSync().isEmpty) {
+        parent.deleteSync();
+      }
+    } on FileSystemException {
+      // Best-effort.
+    }
   }
 }
 

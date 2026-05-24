@@ -348,6 +348,15 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       "Change PIN" updates it; turning app-lock off is confirm-gated and removes the PIN.
 - [ ] **Secure delete (P9e)**: with Privacy → "Secure delete" ON, deleting a private item removes
       it (best-effort overwrite; verify the file is gone and the item leaves the library).
+- [ ] **Low-storage guard (P9f)**: set "Pause when storage is low" and fill the device near the
+      threshold → new downloads stay queued with a "Paused — low storage" banner; freeing space
+      resumes them. (A download that fills the disk mid-run still fails with "Not enough storage".)
+- [ ] **Battery pause (P9f)**: enable "Pause on low battery" → downloads hold below the threshold or
+      in OS power-saver, and resume when charging / above the threshold.
+- [ ] **Cleanup (P9f)**: Storage → "Clean up leftover files" reclaims space from orphaned files left
+      by past deletions and reports the amount; library items are untouched.
+- [ ] **Device space (P9f)**: the Storage screen shows real device usage ("X used of Y, Z free"),
+      not just GrabBit's own usage.
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.

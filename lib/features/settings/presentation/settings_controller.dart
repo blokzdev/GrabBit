@@ -64,6 +64,15 @@ class SettingsController extends _$SettingsController {
   Future<void> setWifiOnly(bool value) async =>
       _update((await future).copyWith(wifiOnly: value));
 
+  Future<void> setMinFreeSpaceMb(int value) async =>
+      _update((await future).copyWith(minFreeSpaceMb: value));
+
+  Future<void> setPauseOnLowBattery(bool value) async =>
+      _update((await future).copyWith(pauseOnLowBattery: value));
+
+  Future<void> setLowBatteryThreshold(int value) async =>
+      _update((await future).copyWith(lowBatteryThreshold: value));
+
   Future<void> setSubtitleLangs(String value) async =>
       _update((await future).copyWith(subtitleLangs: value));
 

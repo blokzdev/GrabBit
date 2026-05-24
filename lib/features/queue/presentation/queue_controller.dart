@@ -10,7 +10,10 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/engine/info_json_parser.dart';
+import 'package:grabbit/core/battery/battery_service.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
+import 'package:grabbit/core/storage/disk_space_service.dart';
+import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/core/utils/media_type.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
@@ -63,8 +66,14 @@ class QueueController extends _$QueueController {
         .read(networkMonitorProvider)
         .onChanged
         .listen((_) => _pump());
+    // Likewise re-pump on battery changes so low-battery-paused tasks resume.
+    final batSub = ref
+        .read(batteryServiceProvider)
+        .onChanged
+        .listen((_) => _pump());
     ref.onDispose(() {
       netSub.cancel();
+      batSub.cancel();
       for (final t in _retryTimers.values) {
         t.cancel();
       }
@@ -156,10 +165,15 @@ class QueueController extends _$QueueController {
 
   Future<void> _doPump() async {
     final settings = await ref.read(settingsControllerProvider.future);
-    if (settings.wifiOnly && !await _service.isUnmetered()) {
+    final reason = await _blockedReason(settings);
+    if (reason != QueuePauseReason.none) {
+      // Only flag a pause when tasks are actually waiting to run.
+      final waiting = await _repo.countByStatus(TaskStatus.queued) > 0;
+      _setPauseReason(waiting ? reason : QueuePauseReason.none);
       await _syncService();
       return;
     }
+    _setPauseReason(QueuePauseReason.none);
     while (await _repo.countByStatus(TaskStatus.running) <
         settings.maxConcurrentDownloads) {
       final next = await _repo.nextQueued();
@@ -168,6 +182,32 @@ class QueueController extends _$QueueController {
     }
     await _syncService();
   }
+
+  /// Which safety gate (if any) is holding new downloads back (P9f). Checked in
+  /// priority order; mirrors the original Wi-Fi-only gate.
+  Future<QueuePauseReason> _blockedReason(SettingsModel settings) async {
+    if (settings.wifiOnly && !await _service.isUnmetered()) {
+      return QueuePauseReason.metered;
+    }
+    if (settings.minFreeSpaceMb > 0) {
+      final dir = await ref.read(mediaStorageProvider).mediaDirectory();
+      final space = await ref.read(diskSpaceServiceProvider).query(dir.path);
+      if (space.freeBytes < settings.minFreeSpaceMb * 1024 * 1024) {
+        return QueuePauseReason.lowStorage;
+      }
+    }
+    if (settings.pauseOnLowBattery) {
+      final battery = ref.read(batteryServiceProvider);
+      if (await battery.isPowerSave() ||
+          await battery.level() < settings.lowBatteryThreshold) {
+        return QueuePauseReason.lowBattery;
+      }
+    }
+    return QueuePauseReason.none;
+  }
+
+  void _setPauseReason(QueuePauseReason reason) =>
+      ref.read(queuePauseReasonProvider.notifier).set(reason);
 
   /// Starts/updates/stops the foreground service to mirror the running set.
   /// Service control is best-effort: a platform failure must never break the
@@ -437,3 +477,21 @@ class QueueLiveStats extends Notifier<Map<String, TaskLive>> {
 
 final queueLiveStatsProvider =
     NotifierProvider<QueueLiveStats, Map<String, TaskLive>>(QueueLiveStats.new);
+
+/// Why the scheduler is currently holding new downloads back (P9f), surfaced as
+/// a banner on the queue screen. `none` when nothing is gated.
+enum QueuePauseReason { none, metered, lowStorage, lowBattery }
+
+class QueuePauseReasonNotifier extends Notifier<QueuePauseReason> {
+  @override
+  QueuePauseReason build() => QueuePauseReason.none;
+
+  void set(QueuePauseReason reason) {
+    if (state != reason) state = reason;
+  }
+}
+
+final queuePauseReasonProvider =
+    NotifierProvider<QueuePauseReasonNotifier, QueuePauseReason>(
+      QueuePauseReasonNotifier.new,
+    );
