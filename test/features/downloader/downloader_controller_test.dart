@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +33,7 @@ class _FakeEngine implements DownloadEngine {
 
   @override
   Future<MediaInfo> probe(String url) async =>
-      const MediaInfo(title: 'Single clip', formats: []);
+      const MediaInfo(title: 'Single clip', formats: [], id: 'vid1');
 
   @override
   Stream<DownloadProgress> download(DownloadRequest request) =>
@@ -93,11 +94,16 @@ Future<void> _waitFor(
 }
 
 void main() {
-  ProviderContainer makeContainer(int entryCount) => ProviderContainer(
-    overrides: [
-      downloadEngineProvider.overrideWithValue(_FakeEngine(entryCount)),
-    ],
-  );
+  ProviderContainer makeContainer(int entryCount) {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    return ProviderContainer(
+      overrides: [
+        downloadEngineProvider.overrideWithValue(_FakeEngine(entryCount)),
+        appDatabaseProvider.overrideWithValue(db),
+      ],
+    );
+  }
 
   test(
     'checkSingle routes a multi-entry URL to the selection picker',
@@ -198,6 +204,41 @@ void main() {
 
       await Future<void>.delayed(const Duration(milliseconds: 30));
       expect((await _queuedRequest(db)).formatId, '137+bestaudio/137');
+    });
+
+    test('probe flags an item already in the library (P9b-4)', () async {
+      final container = wiredContainer();
+      addTearDown(container.dispose);
+      await container.read(queueControllerProvider.future);
+      // Seed a saved item whose source id matches the fake probe ('vid1').
+      await db
+          .into(db.mediaItems)
+          .insert(
+            MediaItemsCompanion.insert(
+              id: 'saved',
+              title: 'Saved',
+              sourceUrl: 'https://x/v',
+              site: 'youtube',
+              filePath: '/m/saved',
+              type: 'video',
+              createdAt: DateTime.utc(2026),
+              storageState: 'private',
+            ),
+          );
+      await db
+          .into(db.mediaMetadata)
+          .insert(
+            MediaMetadataCompanion.insert(
+              itemId: 'saved',
+              sourceId: const Value('vid1'),
+            ),
+          );
+
+      final controller = container.read(downloaderControllerProvider.notifier);
+      await controller.probe('https://example.com/video');
+
+      final state = container.read(downloaderControllerProvider);
+      expect(state.existingItem?.id, 'saved');
     });
 
     test('audio override flows into container + audio quality', () async {

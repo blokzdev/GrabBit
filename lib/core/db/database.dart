@@ -144,7 +144,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -203,6 +203,10 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_media_items_created_at ON media_items (created_at)',
+    );
+    // P9b-4: fast source-id lookups for preventive (pre-download) dedupe.
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_media_metadata_source_id ON media_metadata (source_id)',
     );
   }
 }

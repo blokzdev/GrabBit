@@ -191,6 +191,42 @@ void main() {
     expect(rows.map((r) => r.id), ['b', 'c']);
   });
 
+  test('findItemBySourceId + existingSourceIds (P9b-4)', () async {
+    await seed('a', 'A', 'video');
+    await db
+        .into(db.mediaMetadata)
+        .insert(
+          MediaMetadataCompanion.insert(
+            itemId: 'a',
+            sourceId: const Value('vid123'),
+          ),
+        );
+
+    final hit = await repo.findItemBySourceId('vid123');
+    expect(hit?.id, 'a');
+    expect(await repo.findItemBySourceId('nope'), isNull);
+    expect(await repo.existingSourceIds(), {'vid123'});
+  });
+
+  test('findItemByUrl matches with tracking params stripped (P9b-4)', () async {
+    await db
+        .into(db.mediaItems)
+        .insert(
+          MediaItemsCompanion.insert(
+            id: 'u1',
+            title: 'Clip',
+            sourceUrl: 'https://youtu.be/abc',
+            site: 'youtube',
+            filePath: '/m/u1',
+            type: 'video',
+            createdAt: DateTime.utc(2026),
+            storageState: 'private',
+          ),
+        );
+    final hit = await repo.findItemByUrl('https://youtu.be/abc?si=TRACK');
+    expect(hit?.id, 'u1');
+  });
+
   test('tags: add, list, remove', () async {
     await seed('a', 'A', 'video');
     await repo.addTagToItem('a', 'funny');

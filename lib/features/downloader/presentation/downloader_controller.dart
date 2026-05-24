@@ -1,9 +1,11 @@
+import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/features/downloader/data/download_request_builder.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
@@ -34,6 +36,7 @@ class DownloaderState {
     this.phase = DownloaderPhase.idle,
     this.url = '',
     this.info,
+    this.existingItem,
     this.errorMessage,
     this.errorCode,
   });
@@ -41,6 +44,9 @@ class DownloaderState {
   final DownloaderPhase phase;
   final String url;
   final MediaInfo? info;
+
+  /// A library item already matching this source (P9b-4); null if not a dup.
+  final MediaItem? existingItem;
   final String? errorMessage;
   final DownloadErrorCode? errorCode;
 
@@ -106,10 +112,15 @@ class DownloaderController extends _$DownloaderController {
     state = DownloaderState(phase: DownloaderPhase.probing, url: url);
     try {
       final info = await ref.read(downloadEngineProvider).probe(url);
+      final repo = ref.read(metadataRepositoryProvider);
+      final existing = info.id != null
+          ? await repo.findItemBySourceId(info.id!)
+          : await repo.findItemByUrl(url);
       state = DownloaderState(
         phase: DownloaderPhase.ready,
         url: url,
         info: info,
+        existingItem: existing,
       );
     } on DownloadException catch (e) {
       state = DownloaderState(

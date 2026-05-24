@@ -23,6 +23,7 @@ extension MediaInfoDtoMapper on MediaInfoDto {
   MediaInfo toDomain() => MediaInfo(
     title: title,
     formats: formats.map((f) => f.toDomain()).toList(),
+    id: id,
     uploader: uploader,
     durationSec: durationSec,
     thumbnailUrl: thumbnailUrl,

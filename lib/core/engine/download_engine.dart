@@ -36,6 +36,7 @@ class MediaInfo {
   const MediaInfo({
     required this.title,
     required this.formats,
+    this.id,
     this.uploader,
     this.durationSec,
     this.thumbnailUrl,
@@ -44,6 +45,8 @@ class MediaInfo {
     this.uploadDate,
   });
 
+  /// Stable source id (yt-dlp `%(id)s`); used for preventive dedupe (P9b-4).
+  final String? id;
   final String title;
   final List<MediaFormat> formats;
   final String? uploader;

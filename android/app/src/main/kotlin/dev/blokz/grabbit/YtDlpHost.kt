@@ -172,6 +172,7 @@ class YtDlpHost(
 
 private fun VideoInfo.toDto(): MediaInfoDto = MediaInfoDto(
     title = title ?: "",
+    id = id,
     uploader = uploader,
     durationSec = duration.takeIf { it > 0 }?.toLong(),
     thumbnailUrl = thumbnail,

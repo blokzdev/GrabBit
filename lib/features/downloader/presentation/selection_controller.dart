@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
@@ -6,6 +8,7 @@ import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -31,28 +34,37 @@ class SelectionState {
   const SelectionState({
     this.sources = const [],
     this.selected = const {},
+    this.savedUrls = const {},
     this.preset = QualityPreset.best,
     this.expanding = false,
+    this.hideSaved = false,
   });
 
   final List<ExpandedSource> sources;
   final Set<String> selected; // entry urls
+  final Set<String> savedUrls; // entry urls already in the library (P9b-4)
   final QualityPreset preset;
   final bool expanding;
+  final bool hideSaved;
 
   List<MediaEntry> get allEntries => [for (final s in sources) ...s.entries];
   int get totalCount => allEntries.length;
+  bool get hasSaved => savedUrls.isNotEmpty;
 
   SelectionState copyWith({
     List<ExpandedSource>? sources,
     Set<String>? selected,
+    Set<String>? savedUrls,
     QualityPreset? preset,
     bool? expanding,
+    bool? hideSaved,
   }) => SelectionState(
     sources: sources ?? this.sources,
     selected: selected ?? this.selected,
+    savedUrls: savedUrls ?? this.savedUrls,
     preset: preset ?? this.preset,
     expanding: expanding ?? this.expanding,
+    hideSaved: hideSaved ?? this.hideSaved,
   );
 }
 
@@ -72,6 +84,27 @@ class SelectionController extends Notifier<SelectionState> {
           for (final e in s.entries) e.url,
       },
     );
+    unawaited(_markSaved(sources));
+  }
+
+  /// Flags entries whose source id is already in the library (P9b-4).
+  /// Best-effort: a failure (e.g. teardown race) must not break the picker.
+  Future<void> _markSaved(List<ExpandedSource> sources) async {
+    if (!sources.any((s) => s.entries.isNotEmpty)) return;
+    try {
+      final existing = await ref
+          .read(metadataRepositoryProvider)
+          .existingSourceIds();
+      if (existing.isEmpty) return;
+      final saved = {
+        for (final s in sources)
+          for (final e in s.entries)
+            if (e.id != null && existing.contains(e.id)) e.url,
+      };
+      if (saved.isNotEmpty) state = state.copyWith(savedUrls: saved);
+    } catch (_) {
+      // Marking is advisory; ignore lookup failures.
+    }
   }
 
   /// Expands each whitespace/newline-separated URL, capturing per-URL errors.
@@ -112,6 +145,16 @@ class SelectionController extends Notifier<SelectionState> {
       selected: selected,
       expanding: false,
     );
+    await _markSaved(sources);
+  }
+
+  /// Hides already-saved entries from the picker and deselects them, so a
+  /// "download all" won't re-fetch what's already in the library.
+  void setHideSaved(bool hide) {
+    final selected = hide
+        ? ({...state.selected}..removeAll(state.savedUrls))
+        : state.selected;
+    state = state.copyWith(hideSaved: hide, selected: selected);
   }
 
   void toggle(String entryUrl) {

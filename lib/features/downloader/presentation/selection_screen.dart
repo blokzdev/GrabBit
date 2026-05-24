@@ -20,6 +20,9 @@ class SelectionScreen extends ConsumerWidget {
     final state = ref.watch(selectionControllerProvider);
     final controller = ref.read(selectionControllerProvider.notifier);
     final entries = state.allEntries;
+    final visible = state.hideSaved
+        ? entries.where((e) => !state.savedUrls.contains(e.url)).toList()
+        : entries;
     final selectedCount = state.selected.length;
     final tokens = GrabBitTokens.of(context);
 
@@ -32,6 +35,12 @@ class SelectionScreen extends ConsumerWidget {
         title: 'Nothing to download',
         message: 'These links produced no downloadable items.',
       );
+    } else if (visible.isEmpty) {
+      body = const EmptyState(
+        icon: Icons.library_add_check_outlined,
+        title: 'All already in your library',
+        message: 'Turn off "Hide already-saved" to download them again.',
+      );
     } else {
       body = GridView.builder(
         padding: EdgeInsets.all(tokens.spaceMd),
@@ -41,11 +50,12 @@ class SelectionScreen extends ConsumerWidget {
           crossAxisSpacing: tokens.spaceSm,
           mainAxisSpacing: tokens.spaceSm,
         ),
-        itemCount: entries.length,
+        itemCount: visible.length,
         itemBuilder: (context, i) => _EntryTile(
-          entry: entries[i],
-          selected: state.selected.contains(entries[i].url),
-          onTap: () => controller.toggle(entries[i].url),
+          entry: visible[i],
+          selected: state.selected.contains(visible[i].url),
+          saved: state.savedUrls.contains(visible[i].url),
+          onTap: () => controller.toggle(visible[i].url),
         ),
       );
     }
@@ -54,6 +64,15 @@ class SelectionScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text('Select items ($selectedCount/${state.totalCount})'),
         actions: [
+          if (state.hasSaved)
+            IconButton(
+              icon: Icon(
+                state.hideSaved ? Icons.visibility_off : Icons.visibility,
+              ),
+              tooltip: state.hideSaved ? 'Show saved' : 'Hide already-saved',
+              isSelected: state.hideSaved,
+              onPressed: () => controller.setHideSaved(!state.hideSaved),
+            ),
           TextButton(
             onPressed: entries.isEmpty || selectedCount == entries.length
                 ? null
@@ -94,9 +113,11 @@ class _EntryTile extends StatelessWidget {
     required this.entry,
     required this.selected,
     required this.onTap,
+    this.saved = false,
   });
   final MediaEntry entry;
   final bool selected;
+  final bool saved;
   final VoidCallback onTap;
 
   @override
@@ -136,6 +157,29 @@ class _EntryTile extends StatelessWidget {
                         left: tokens.spaceXs,
                         child: _SelectionBadge(selected: selected),
                       ),
+                      if (saved)
+                        Positioned(
+                          top: tokens.spaceXs,
+                          right: tokens.spaceXs,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: tokens.spaceSm,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: scheme.tertiary.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(
+                                tokens.radiusSm,
+                              ),
+                            ),
+                            child: Text(
+                              'Saved',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onTertiary,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

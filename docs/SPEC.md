@@ -108,12 +108,14 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 // settings (key/value JSON, single row)
 ```
 
-Migration strategy: Drift `schemaVersion` (currently **3**); write `MigrationStrategy`
-steps; never drop user data without migration. Add a schema test on bump (v1→v2 and
-v2→v3 upgrade tests live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
+Migration strategy: Drift `schemaVersion` (currently **4**); write `MigrationStrategy`
+steps; never drop user data without migration. Add a schema test on bump (upgrade tests
+live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
-indices on `is_favorite`/`content_hash`/`created_at`. `contentHash` is populated lazily by the
-P9b-3 duplicate scan (`DedupeService`, off-isolate); `lastAccessedAt` is set on playback (P9c).
+indices on `is_favorite`/`content_hash`/`created_at`. **v4 (P9b-4)** adds a
+`media_metadata.source_id` index for preventive (pre-download) source-id dedupe. `contentHash`
+is populated lazily by the P9b-3 duplicate scan (`DedupeService`, off-isolate); `lastAccessedAt`
+is set on playback (P9c). The probe (`MediaInfo`/`MediaInfoDto`) now carries the source `id`.
 
 ---
 

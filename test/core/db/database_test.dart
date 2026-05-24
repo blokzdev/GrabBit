@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 3 with all tables created', () async {
-    expect(db.schemaVersion, 3);
+  test('opens at schema version 4 with all tables created', () async {
+    expect(db.schemaVersion, 4);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -47,6 +47,16 @@ void main() {
     final rows = await db.select(db.mediaItems).get();
     expect(rows, hasLength(1));
     expect(rows.single.title, 'Test');
+  });
+
+  test('creates the source_id index (P9b-4)', () async {
+    final rows = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type='index' AND "
+          "name='idx_media_metadata_source_id'",
+        )
+        .get();
+    expect(rows, hasLength(1));
   });
 
   test('foreign key cascade deletes dependent metadata', () async {

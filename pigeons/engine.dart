@@ -43,6 +43,7 @@ class MediaInfoDto {
   MediaInfoDto({
     required this.title,
     required this.formats,
+    this.id,
     this.uploader,
     this.durationSec,
     this.thumbnailUrl,
@@ -52,6 +53,7 @@ class MediaInfoDto {
   });
 
   String title;
+  String? id;
   String? uploader;
   int? durationSec;
   String? thumbnailUrl;

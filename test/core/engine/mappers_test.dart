@@ -35,6 +35,7 @@ void main() {
     test('maps nested formats and optional fields', () {
       final info = MediaInfoDto(
         title: 'Clip',
+        id: 'vid123',
         uploader: 'Chan',
         durationSec: 42,
         thumbnailUrl: 'https://x/y.jpg',
@@ -45,6 +46,7 @@ void main() {
       ).toDomain();
 
       expect(info.title, 'Clip');
+      expect(info.id, 'vid123');
       expect(info.uploader, 'Chan');
       expect(info.durationSec, 42);
       expect(info.site, 'youtube');
