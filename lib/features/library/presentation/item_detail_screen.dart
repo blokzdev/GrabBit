@@ -9,6 +9,7 @@ import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/utils/subtitle_files.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
@@ -38,7 +39,15 @@ class ItemDetailScreen extends ConsumerWidget {
         actions: [
           if (row != null) ...[
             IconButton(
-              icon: Icon(row.isFavorite ? Icons.star : Icons.star_outline),
+              icon: AnimatedSwitcher(
+                duration: GrabBitTokens.of(context).motionShort,
+                transitionBuilder: (child, anim) =>
+                    ScaleTransition(scale: anim, child: child),
+                child: Icon(
+                  row.isFavorite ? Icons.star : Icons.star_outline,
+                  key: ValueKey(row.isFavorite),
+                ),
+              ),
               tooltip: row.isFavorite ? 'Unfavorite' : 'Favorite',
               onPressed: () async {
                 await ref
@@ -86,7 +95,8 @@ class ItemDetailScreen extends ConsumerWidget {
         ],
       ),
       body: ContentBounds(
-        child: item.when(
+        child: AsyncFade(
+          value: item,
           loading: () => const _DetailSkeleton(),
           error: (e, _) => ErrorView(
             message: 'Failed to load item: $e',

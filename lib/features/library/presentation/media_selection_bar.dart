@@ -1,6 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 
+/// Slides + fades a bottom selection bar in and out (P9l): the height grows
+/// from the bottom while the bar fades, instead of popping into the layout.
+class SelectionBarTransition extends StatelessWidget {
+  const SelectionBarTransition({
+    required this.visible,
+    required this.child,
+    super.key,
+  });
+
+  final bool visible;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = GrabBitTokens.of(context).motionMedium;
+    return AnimatedSize(
+      duration: duration,
+      alignment: Alignment.bottomCenter,
+      curve: Curves.easeOutCubic,
+      child: AnimatedSwitcher(
+        duration: duration,
+        child: visible
+            ? child
+            : const SizedBox(width: double.infinity, height: 0),
+      ),
+    );
+  }
+}
+
 /// Bottom action bar shown while multi-selecting media (P9h). Mirrors the
 /// Explorer selection bar: a count + bulk actions, reused across grids.
 class MediaSelectionBar extends StatelessWidget {

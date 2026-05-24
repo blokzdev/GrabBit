@@ -9,6 +9,7 @@ import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
@@ -137,7 +138,8 @@ class QueueScreen extends ConsumerWidget {
         ],
       ),
       body: ContentBounds(
-        child: tasks.when(
+        child: AsyncFade(
+          value: tasks,
           loading: () => const ListSkeleton(),
           error: (e, _) => ErrorView(
             message: 'Failed to load queue: $e',

@@ -10,6 +10,7 @@ import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/folder_repository.dart';
 import 'package:grabbit/features/library/presentation/folder_picker.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/library/presentation/media_selection_bar.dart';
 
 void _notify(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
@@ -153,13 +154,20 @@ class _ExplorerViewState extends ConsumerState<ExplorerView> {
       child: Column(
         children: [
           _Breadcrumb(crumbs: crumbs, onTap: _open),
-          Expanded(child: body),
-          if (selecting)
-            _SelectionBar(
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: GrabBitTokens.of(context).motionMedium,
+              child: body,
+            ),
+          ),
+          SelectionBarTransition(
+            visible: selecting,
+            child: _SelectionBar(
               count: _selected.length,
               onMove: _moveSelected,
               onClear: () => setState(_selected.clear),
             ),
+          ),
         ],
       ),
     );

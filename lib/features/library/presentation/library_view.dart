@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
@@ -90,7 +91,8 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(filteredLibraryProvider),
-              child: items.when(
+              child: AsyncFade(
+                value: items,
                 loading: () => const MediaGridSkeleton(),
                 error: (e, _) => ErrorView(
                   message: 'Failed to load library: $e',
@@ -133,8 +135,9 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
               ),
             ),
           ),
-          if (_selected.isNotEmpty)
-            MediaSelectionBar(
+          SelectionBarTransition(
+            visible: _selected.isNotEmpty,
+            child: MediaSelectionBar(
               count: _selected.length,
               onClear: _clear,
               onSelectAll: () =>
@@ -162,6 +165,7 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
               onShare: () =>
                   _runBulk(selectedItems, (items) => shareItems(ref, items)),
             ),
+          ),
         ],
       ),
     );

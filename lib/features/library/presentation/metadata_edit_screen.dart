@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
@@ -41,7 +42,8 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
         actions: [TextButton(onPressed: _save, child: const Text('Save'))],
       ),
       body: ContentBounds(
-        child: item.when(
+        child: AsyncFade(
+          value: item,
           loading: () => const _FormSkeleton(),
           error: (e, _) => ErrorView(
             message: 'Failed to load item: $e',
