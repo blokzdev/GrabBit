@@ -387,6 +387,12 @@ class MetadataRepository {
     await (_db.delete(_db.collections)..where((t) => t.id.equals(id))).go();
   }
 
+  Future<void> renameCollection(int id, String name) async {
+    await (_db.update(_db.collections)..where((t) => t.id.equals(id))).write(
+      CollectionsCompanion(name: Value(name.trim())),
+    );
+  }
+
   /// Item counts per collection (`collectionId` → count) for the list rows.
   Stream<Map<int, int>> watchCollectionItemCounts() {
     final count = _db.mediaCollections.itemId.count();

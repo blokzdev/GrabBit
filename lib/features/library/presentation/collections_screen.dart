@@ -149,27 +149,68 @@ class _CollectionTile extends ConsumerWidget {
       ),
       title: Text(collection.name),
       subtitle: Text('$count item${count == 1 ? '' : 's'}'),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete_outline),
-        tooltip: 'Delete collection',
-        onPressed: () async {
-          final ok = await confirm(
-            context,
-            title: 'Delete collection?',
-            message:
-                'Delete "${collection.name}"? The media stays in your library.',
-            confirmLabel: 'Delete',
-            destructive: true,
-          );
-          if (!ok) return;
-          await ref
-              .read(metadataRepositoryProvider)
-              .deleteCollection(collection.id);
-          if (context.mounted) _notify(context, 'Collection deleted');
+      trailing: PopupMenuButton<String>(
+        tooltip: 'More',
+        onSelected: (value) async {
+          final repo = ref.read(metadataRepositoryProvider);
+          if (value == 'rename') {
+            final name = await _promptName(context, collection.name);
+            if (name == null) return;
+            await repo.renameCollection(collection.id, name);
+            if (context.mounted) _notify(context, 'Renamed');
+          } else {
+            final ok = await confirm(
+              context,
+              title: 'Delete collection?',
+              message:
+                  'Delete "${collection.name}"? The media stays in your '
+                  'library.',
+              confirmLabel: 'Delete',
+              destructive: true,
+            );
+            if (!ok) return;
+            await repo.deleteCollection(collection.id);
+            if (context.mounted) _notify(context, 'Collection deleted');
+          }
         },
+        itemBuilder: (context) => const [
+          PopupMenuItem(value: 'rename', child: Text('Rename')),
+          PopupMenuItem(value: 'delete', child: Text('Delete')),
+        ],
       ),
       onTap: () =>
           context.push('/collection/${collection.id}', extra: collection.name),
+    );
+  }
+
+  Future<String?> _promptName(BuildContext context, String initial) {
+    final controller = TextEditingController(text: initial);
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rename collection'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Name'),
+          onSubmitted: (v) {
+            if (v.trim().isNotEmpty) Navigator.of(dialogContext).pop(v.trim());
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final v = controller.text.trim();
+              if (v.isNotEmpty) Navigator.of(dialogContext).pop(v);
+            },
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
     );
   }
 }

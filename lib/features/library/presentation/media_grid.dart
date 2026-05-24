@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/media_actions.dart';
 
 /// Hero tag for an item's thumbnail (tile → detail flight). Shared so the
 /// detail screen can match it.
@@ -37,10 +38,11 @@ const mediaGridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
   mainAxisSpacing: 12,
 );
 
-/// A single media thumbnail tile. Tapping opens the detail screen by default;
-/// pass [onTap]/[onLongPress] (e.g. for Explorer selection) to override, and
-/// [selectionMode]/[selected] to show a selection check.
-class MediaTile extends StatelessWidget {
+/// A single media thumbnail tile. Tapping opens the detail screen and
+/// long-press opens the context menu by default; pass [onTap]/[onLongPress]
+/// (e.g. for Explorer selection) to override, and [selectionMode]/[selected]
+/// to show a selection check.
+class MediaTile extends ConsumerWidget {
   const MediaTile({
     required this.item,
     this.selectionMode = false,
@@ -57,7 +59,7 @@ class MediaTile extends StatelessWidget {
   final void Function(MediaItem)? onLongPress;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final tokens = GrabBitTokens.of(context);
     final radius = BorderRadius.circular(tokens.radiusMd);
@@ -69,7 +71,9 @@ class MediaTile extends StatelessWidget {
         onTap: onTap != null
             ? () => onTap!(item)
             : () => context.push('/item/${item.id}'),
-        onLongPress: onLongPress == null ? null : () => onLongPress!(item),
+        onLongPress: onLongPress != null
+            ? () => onLongPress!(item)
+            : () => showMediaActions(context, ref, item),
         borderRadius: radius,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -278,6 +278,14 @@ void main() {
     );
   });
 
+  test('renameCollection updates the name (P9g)', () async {
+    final cId = await repo.createCollection('Old');
+    await repo.renameCollection(cId, 'New');
+    final names = [for (final c in await repo.watchCollections().first) c.name];
+    expect(names, contains('New'));
+    expect(names, isNot(contains('Old')));
+  });
+
   test('watchMetadataForItem emits the row, null when absent', () async {
     await seed('a', 'A', 'video');
     expect(await repo.watchMetadataForItem('a').first, isNull);
