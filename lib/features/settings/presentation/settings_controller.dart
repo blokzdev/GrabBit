@@ -25,6 +25,9 @@ class SettingsController extends _$SettingsController {
   Future<void> setDynamicColor(bool enabled) async =>
       _update((await future).copyWith(dynamicColor: enabled));
 
+  Future<void> setAmoledDark(bool enabled) async =>
+      _update((await future).copyWith(amoledDark: enabled));
+
   Future<void> setDefaultQuality(String quality) async =>
       _update((await future).copyWith(defaultQuality: quality));
 

@@ -223,7 +223,11 @@ breakdown lives in **`docs/design/P9-PLAN.md`**.
 - **P9g/P9h/P9i/P9j — Actions, menus & polish**: a shared per-item **context menu** + **outbound
   Share** across the grids (P9g); **library multi-select + bulk actions** (P9h); **screen-level
   action menus** — collection/album app-bar actions, whole-queue actions, item-detail richness
-  (P9i); and **Settings overflow + About screen + Studio post-op actions** (P9j, closing P9).
+  (P9i); and **Settings overflow + About screen + Studio post-op actions** (P9j).
+- **P9k/P9l/P9m — Theming/motion/state polish pass** (pre-P10 refinement): AMOLED dark theme +
+  cross-platform route transitions + motion-token adoption (P9k); skeleton→content cross-fade,
+  multi-select bar animation, favorite micro-interaction (P9l); Storage/duplicates async-state fixes
+  + empty-state CTAs (P9m).
 **Exit criteria:** search/sort/favorite/dedupe the library and see storage usage; change
 playback speed and pick subtitles; reorder the queue (order persists) and see the dashboard;
 enable FLAG_SECURE and auto-lock; downloads pause on low storage/battery; long-press a tile for

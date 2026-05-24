@@ -117,6 +117,7 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
     // a splash would only flash.
     final settings = ref.watch(settingsControllerProvider).asData?.value;
     final useDynamic = settings?.dynamicColor ?? true;
+    final amoled = settings?.amoledDark ?? false;
     final themeMode = switch (settings?.theme) {
       ThemeChoice.light => ThemeMode.light,
       ThemeChoice.dark => ThemeMode.dark,
@@ -130,6 +131,7 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
           theme: AppTheme.light(useDynamic ? lightDynamic?.harmonized() : null),
           darkTheme: AppTheme.dark(
             useDynamic ? darkDynamic?.harmonized() : null,
+            amoled,
           ),
           themeMode: themeMode,
           routerConfig: router,

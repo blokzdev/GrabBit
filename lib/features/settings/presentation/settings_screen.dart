@@ -455,6 +455,14 @@ class _SettingsList extends ConsumerWidget {
                 value: settings.dynamicColor,
                 onChanged: controller.setDynamicColor,
               ),
+              SwitchListTile(
+                title: const Text('Pure black (AMOLED)'),
+                subtitle: const Text(
+                  'True-black background for the dark theme',
+                ),
+                value: settings.amoledDark,
+                onChanged: controller.setAmoledDark,
+              ),
             ],
           ),
           _Section(

@@ -179,7 +179,34 @@ three PRs:
   the freshly-edited output (reuses P9g; nothing lost since the sheet's first entry is Open).
 - **Exit / review:** Reset reverts prefs with lock+disclaimer intact; Clear cache frees temp space;
   About shows the real version + opens licenses/disclaimer; Studio "Actions" shares/files the new item.
-  **Implemented (CI-verifiable; no APK needed).** This closes P9 (a→j).
+  **Implemented (CI-verifiable; no APK needed).** This closes the original P9 (a→j).
+
+---
+
+## Polish pass (P9k–P9m): theming, motion & state presentation
+A pre-P10 refinement pass from a three-agent audit. Split into three small, sequential PRs. Theme
+selection (light/dark/system + dynamic color) was already fully wired, so this is refinement, not new
+wiring. False positives dropped after manual check: the item-detail "bare spinner" is the video player
+initializing, and the selection-screen white icon sits on a dark scrim over media — both correct.
+
+### `[~]` P9k — Theme *(pure Dart)*
+- **AMOLED (true-black) dark theme** — new `amoledDark` setting + `setAmoledDark`; `AppTheme.dark(scheme,
+  amoled)` pushes dark surfaces to true black (graded container roles keep cards/inputs legible); wired
+  through `app.dart`; "Pure black (AMOLED)" switch in Settings → Appearance.
+- **Cross-platform route transitions** — `pageTransitionsTheme` extended beyond Android to
+  windows/linux/macOS/iOS (`FadeForwardsPageTransitionsBuilder`); future-proofs Windows v2.
+- **Motion-token adoption** — `lock_screen` shake uses `GrabBitTokens.standard.motionLong` instead of a
+  hardcoded 400ms.
+- **Exit / review:** toggle AMOLED in dark mode → true-black background, cards still distinguishable;
+  light/dynamic unaffected. **Implemented (CI-verifiable; no APK needed).**
+
+### `[ ]` P9l — Motion / animation *(pure Dart)*
+- Shared `AsyncFade` cross-fade so skeletons fade into content (applied across the async screens);
+  multi-select bar slides/fades in & out; favorite-toggle micro-interaction.
+
+### `[ ]` P9m — State fixes *(pure Dart)*
+- Storage screen gains a real loading skeleton + `ErrorView` (errors are currently swallowed to a zeroed
+  screen); duplicates loading uses `ListSkeleton`; empty-state CTAs on the empty Queue / empty folder.
 
 ---
 

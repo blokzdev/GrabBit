@@ -382,6 +382,9 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       opens the license page; the disclaimer tile opens the user-responsibility screen.
 - [ ] **Studio post-op (P9j)**: after an edit completes, the snackbar's **Actions** opens the action
       sheet for the new item — Share it out and Add it to a collection from there.
+- [ ] **AMOLED dark theme (P9k)**: Settings → Appearance → "Pure black (AMOLED)" — in dark mode the
+      background turns true black while cards/inputs/app bar stay distinguishable; light mode and
+      dynamic color are unaffected; the choice persists across restarts.
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
