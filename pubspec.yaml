@@ -72,6 +72,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
+    # The launcher-icon foreground (white bunny + amber chevron) is reused at
+    # runtime by the app-bar BrandBadge; it lives in the generated/ subfolder,
+    # which `assets/brand/` does not include.
+    - assets/brand/generated/icon_foreground.png
   # Bundled (offline, no runtime fetch) brand type. Variable fonts — weights are
   # selected via fontWeight against the wght axis.
   fonts:
