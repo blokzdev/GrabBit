@@ -42,9 +42,10 @@ three PRs:
   (tile overlay + item-detail), extra sorts (`titleDesc`/`smallest`/`recentlyPlayed`), and
   `LibraryRepository.deleteItem` (file + thumb + DB cascade) with a confirmation-gated delete in
   item detail. Tests for the filter/sorts/toggle/delete. **Implemented; pending on-device check.**
-- **`[ ]` P9b-2 — Smart/auto albums:** a browse surface listing query-defined albums (by platform
-  via `watchDistinctSites`, by channel via `watchDistinctUploaders`, recently added/played), each
-  opening a `watchFiltered` grid.
+- **`[~]` P9b-2 — Smart/auto albums:** a Collections | **Albums** segmented tab listing
+  query-defined albums — Platforms (`watchItemCountsBySite`), Channels (`watchItemCountsByUploader`),
+  and Recently played (`watchRecentlyPlayed`) — each opening a `SmartAlbumScreen` grid via
+  `/album/:kind`. Pure SQL faceting (no AI/embeddings). **Implemented; pending on-device check.**
 - **`[ ]` P9b-3 — Duplicates & storage:** off-isolate (`compute`) content-hash service populating
   `contentHash` (size + head/tail bytes); `watchDuplicates` + a `/duplicates` view; storage-usage
   aggregation (by type/site + total) + a `/storage` view; both reuse P9b-1's `deleteItem`.

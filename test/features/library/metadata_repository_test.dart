@@ -123,6 +123,40 @@ void main() {
     expect(rows.map((r) => r.id), ['b', 'a']);
   });
 
+  test('watchItemCountsBySite groups by platform', () async {
+    await seed('a', 'A', 'video', site: 'youtube');
+    await seed('b', 'B', 'video', site: 'youtube');
+    await seed('c', 'C', 'video', site: 'vimeo');
+    final counts = await repo.watchItemCountsBySite().first;
+    expect(counts, {'youtube': 2, 'vimeo': 1});
+  });
+
+  test('watchItemCountsByUploader groups by channel', () async {
+    await seed('a', 'A', 'video');
+    await seed('b', 'B', 'video');
+    await seedMeta('a', uploader: 'Rick');
+    await seedMeta('b', uploader: 'Rick');
+    final counts = await repo.watchItemCountsByUploader().first;
+    expect(counts, {'Rick': 2});
+  });
+
+  test('watchRecentlyPlayed returns only played items, newest first', () async {
+    await seed('a', 'A', 'video');
+    await seed('b', 'B', 'video');
+    await seed('c', 'C', 'video'); // never played
+    await (db.update(db.mediaItems)..where((t) => t.id.equals('a'))).write(
+      MediaItemsCompanion(lastAccessedAt: Value(DateTime.utc(2026, 5, 1))),
+    );
+    await (db.update(db.mediaItems)..where((t) => t.id.equals('b'))).write(
+      MediaItemsCompanion(lastAccessedAt: Value(DateTime.utc(2026, 5, 9))),
+    );
+    final rows = await repo.watchRecentlyPlayed().first;
+    expect(rows.map((r) => r.id), ['b', 'a']);
+
+    final limited = await repo.watchRecentlyPlayed(limit: 1).first;
+    expect(limited.map((r) => r.id), ['b']);
+  });
+
   test('tags: add, list, remove', () async {
     await seed('a', 'A', 'video');
     await repo.addTagToItem('a', 'funny');
