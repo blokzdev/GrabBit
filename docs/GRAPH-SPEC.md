@@ -57,11 +57,19 @@ the JVM/Kotlin API (JNI). We consume it through a **Pigeon→Kotlin bridge**, mi
 Kotlin host). Implications:
 
 - **No NDK cross-compile, no committed `.so`s, no `dart:ffi`, no persistent-isolate handle for v1.**
-- A new Pigeon contract (`pigeons/cozo.dart` → `CozoHostApi`) marshals **CozoScript + params-JSON in
-  → result-JSON out**. Queries run on a **Kotlin background dispatcher** (off the platform thread);
-  heavy HNSW/PageRank/community-detection work never blocks the UI.
-- Gradle: add the Maven dep and set `abiFilters` (e.g. `arm64-v8a`, `x86_64`); offer
-  `--split-per-abi` for sideload. Pin the version.
+- A new Pigeon contract (`pigeons/cozo.dart` → `CozoHostApi`, methods `openDb`/`runScript`/`closeDb`)
+  marshals **CozoScript + params-JSON in → result-JSON out** (strings only — no DTOs, no `@FlutterApi`,
+  since Cozo is request/response). Queries run on a **Kotlin background dispatcher**
+  (`Dispatchers.IO`), off the platform thread.
+- Kotlin host (`CozoHost.kt`): the class is **`org.cozodb.CozoDb`**; open with
+  `CozoDb("sqlite", path, "")`, query with **`db.query(script, paramsJson)`** (returns a JSON string;
+  errors carry `"ok": false`), release with `db.close()`.
+- **Graceful degradation (key):** the AAR bundles native `.so` for **`arm64-v8a` + `x86` only** (not
+  `armeabi-v7a`/`x86_64`). Rather than a global `abiFilters` (which would also cut the *downloader's*
+  reach via youtubedl), `CozoHost.openDb` catches `UnsatisfiedLinkError`/`NoClassDefFoundError` and
+  reports **unavailable** → the Dart `GraphStore.isAvailable` is false → graph features gate off with
+  a friendly reason; the download/manager core is untouched. Cozo loads normally on `arm64-v8a` (all
+  modern phones incl. the test S20).
 - **CI is unaffected** — the lean Ubuntu `ci.yml` just resolves a Maven dependency; no Rust/NDK
   toolchain runs. (APK builds remain the manual `build-apk.yml`.)
 
