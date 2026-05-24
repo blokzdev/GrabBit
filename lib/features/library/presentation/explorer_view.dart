@@ -141,10 +141,15 @@ class _ExplorerViewState extends ConsumerState<ExplorerView> {
       final folders = foldersAsync.value!;
       final items = itemsAsync.value!;
       body = (folders.isEmpty && items.isEmpty)
-          ? const EmptyState(
+          ? EmptyState(
               icon: Icons.folder_open_outlined,
               title: 'This folder is empty',
               message: 'Create subfolders or move media here.',
+              action: FilledButton.icon(
+                onPressed: () => createFolderFlow(context, ref),
+                icon: const Icon(Icons.create_new_folder_outlined),
+                label: const Text('Create folder'),
+              ),
             )
           : _grid(context, folders, items, selecting);
     }

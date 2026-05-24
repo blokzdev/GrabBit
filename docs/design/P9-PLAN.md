@@ -212,9 +212,16 @@ initializing, and the selection-screen white icon sits on a dark scrim over medi
 - **Exit / review:** lists/details fade in from their skeletons; the selection bar slides in/out;
   favoriting pops. **Implemented (CI-verifiable; no APK needed).**
 
-### `[ ]` P9m — State fixes *(pure Dart)*
-- Storage screen gains a real loading skeleton + `ErrorView` (errors are currently swallowed to a zeroed
-  screen); duplicates loading uses `ListSkeleton`; empty-state CTAs on the empty Queue / empty folder.
+### `[~]` P9m — State fixes *(pure Dart)*
+- **Storage screen** now gates on its three usage providers: a `_StorageSkeleton` (shimmering header +
+  usage-bar rows) while loading and an `ErrorView` with retry on failure — previously errors were
+  swallowed into a zeroed screen — cross-fading between states via `AnimatedSwitcher`.
+- **Duplicates** loading uses the shared `ListSkeleton` (via `AsyncFade`) instead of a bare spinner.
+- **Empty-state CTAs**: the empty Queue offers **"Add a link"** (→ `/add`) and an empty folder offers
+  **"Create folder"** (reusing `createFolderFlow`).
+- **Exit / review:** Storage shows a skeleton then content, and an error+retry if a query fails; the
+  empty Queue / empty folder each offer a primary action. **Implemented (CI-verifiable; no APK needed.)**
+  This closes the P9k–P9m polish pass.
 
 ---
 

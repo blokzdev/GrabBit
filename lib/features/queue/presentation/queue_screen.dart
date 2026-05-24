@@ -146,10 +146,15 @@ class QueueScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(queueTasksProvider),
           ),
           data: (rows) => rows.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: Icons.download_done_outlined,
                   title: 'No downloads in the queue',
                   message: 'Links you add will download here.',
+                  action: FilledButton.icon(
+                    onPressed: () => context.push('/add'),
+                    icon: const Icon(Icons.add_link),
+                    label: const Text('Add a link'),
+                  ),
                 )
               : Column(
                   children: [

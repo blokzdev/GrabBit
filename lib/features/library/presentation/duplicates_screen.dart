@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/dedupe_service.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
@@ -64,8 +66,9 @@ class _DuplicatesScreenState extends ConsumerState<DuplicatesScreen> {
         ],
       ),
       body: ContentBounds(
-        child: groups.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+        child: AsyncFade(
+          value: groups,
+          loading: () => const ListSkeleton(),
           error: (e, _) => ErrorView(
             message: 'Failed to load duplicates: $e',
             onRetry: () => ref.invalidate(duplicatesProvider),

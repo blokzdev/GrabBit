@@ -158,6 +158,7 @@ void main() {
   ) async {
     await pumpQueue(tester);
     expect(find.text('No downloads in the queue'), findsOneWidget);
+    expect(find.text('Add a link'), findsOneWidget);
   });
 
   testWidgets('a running task shows a progress bar and a running pill', (

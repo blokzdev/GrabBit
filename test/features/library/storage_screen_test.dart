@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
 
@@ -66,6 +70,59 @@ void main() {
 
     expect(find.textContaining('Device:'), findsOneWidget);
     expect(find.textContaining('30.0 GB free'), findsOneWidget);
+  });
+
+  testWidgets('shows a shimmering skeleton while usage loads (P9m)', (
+    tester,
+  ) async {
+    // Streams that never emit keep the providers in the loading state.
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sizeByTypeProvider.overrideWith(
+            (ref) => Completer<Map<String, int>>().future.asStream(),
+          ),
+          sizeBySiteProvider.overrideWith(
+            (ref) => Completer<Map<String, int>>().future.asStream(),
+          ),
+          largestItemsProvider.overrideWith(
+            (ref) => Completer<List<MediaItem>>().future.asStream(),
+          ),
+        ],
+        child: const MaterialApp(home: StorageScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(Shimmer), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('By type'), findsNothing);
+  });
+
+  testWidgets('surfaces an error with retry when a query fails (P9m)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sizeByTypeProvider.overrideWith(
+            (ref) => Stream<Map<String, int>>.error(Exception('boom')),
+          ),
+          sizeBySiteProvider.overrideWith(
+            (ref) => Stream.value(<String, int>{'youtube': 10}),
+          ),
+          largestItemsProvider.overrideWith(
+            (ref) => Stream.value(<MediaItem>[]),
+          ),
+        ],
+        child: const MaterialApp(home: StorageScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(ErrorView), findsOneWidget);
+    expect(find.textContaining('Failed to load storage usage'), findsOneWidget);
   });
 
   testWidgets('cleanup tile is present and confirm-gated (P9f)', (
