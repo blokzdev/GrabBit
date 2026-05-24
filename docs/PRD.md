@@ -1,6 +1,6 @@
 # GrabBit — Product Requirements Document (PRD)
 
-Status: Draft v0.2 · Owner: Founder/Architect · Last updated: 2026-05-20
+Status: Draft v0.3 · Owner: Founder/Architect · Last updated: 2026-05-24
 
 > Product-level "what & why." For system design see `ARCHITECTURE.md`; for
 > implementation detail see `SPEC.md`; for delivery sequencing see `ROADMAP.md`.
@@ -16,28 +16,30 @@ into the camera roll mixed with personal photos.
 
 **Opportunity:** a clean, trustworthy, **free, on-device** downloader that doubles
 as a **private media manager** — downloads stay organized and private inside the
-app until *you* decide to export them. Monetize later, honestly, via genuinely
-valuable cloud AI features rather than ads.
+app until *you* decide to export them — with **on-device AI + a relationship graph**
+that make the private library genuinely smart. **Free forever**, sustained by
+optional donations rather than ads or cloud fees.
 
 ## 2. Vision
 
 > GrabBit is the private, no-nonsense home for everything you save from the web —
-> free to download and manage on your device forever, with optional AI superpowers
-> when you want them.
+> free to download, manage, and *understand* on your device forever, with on-device
+> AI and a relationship graph that surface connections across your library. No cloud,
+> no accounts, no ads.
 
 **North star:** the cleanest, most private, most capable media downloader/manager
 a normal person can sideload and trust.
 
-## 3. Version Strategy (three bands)
+## 3. Version Strategy (two bands — v3/cloud dropped)
 
 | Band | Theme | Network | Money |
 |---|---|---|---|
-| **v1** | Core on-device downloader + private media manager (Android). | Offline | Free |
-| **v2** | World-class, feature-rich, production-ready, **local-only**: Windows parity + **edge/local AI** with graceful capability-gating. | Offline | Free |
-| **v3** | Introduce **Supabase** backend + **Gemini** cloud AI; **credit-based** monetization (Stripe/PayPal) for cloud-only features. | Online (opt-in) | Credits |
+| **v1** | Android, free, on-device, **AI-powered**: downloader + private media manager (P0–P9), then the **on-device AI + relationship-graph pillar** (P10–P12), then beta & launch (P13). | Offline | Free |
+| **v2** | Local-only expansion: Windows parity (P14) + production polish & authenticated/cookie import (P15). | Offline | Free |
 
-The app stays fully free and offline through v2. Money enters only in v3, and only
-for features that spend our money on cloud APIs. **No ads, ever.**
+The app is **free forever and fully offline**, sustained by an **optional donations link**. **No
+ads, no telemetry, no cloud, no accounts — ever.** AI is core to the vision, so **v1 ships *after*
+the AI work**. (The former **v3** cloud-AI/credit band is **dropped**.)
 
 ## 4. Target Users & Personas
 
@@ -47,17 +49,19 @@ for features that spend our money on cloud APIs. **No ads, ever.**
   about formats, codecs, metadata, subtitles, storage control. Lives in Advanced mode.
 - **The Privacy-conscious user** — wants downloads off the gallery and behind a
   lock; no telemetry, no account.
-- **The Creator/Researcher (v2+)** — transcribes/summarizes/translates/searches
-  saved media; benefits from on-device AI, opts into cloud AI later.
+- **The Creator/Researcher** — transcribes/summarizes/translates/searches saved media and explores
+  how items relate (graph/"related"/hubs); all **on-device** AI, free.
 
-No account is required for v1/v2. Accounts appear only in v3 (for credits).
+**No account is ever required** — there is no cloud and no credits.
 
 ## 5. Value Proposition
 
-- **Free forever** for all on-device functionality. No ads. No spyware.
+- **Free forever** for all functionality — everything is on-device. No ads. No spyware.
 - **Private by default** — in-app library; export is a deliberate choice.
 - **Powerful** — yt-dlp under the hood = broad site support, format control, bulk.
-- **Honest monetization** — pay only for cloud AI that actually costs us money.
+- **Smart, privately** — on-device AI + a relationship graph (semantic search, "related", hubs,
+  local "ask your library") that never leave the device.
+- **Donation-supported** — optional donations, never ads or cloud fees.
 
 ## 6. Top User Journeys
 
@@ -71,10 +75,11 @@ No account is required for v1/v2. Accounts appear only in v3 (for credits).
 5. **Export:** select item(s) → "Save to device" into a chosen folder; OR enable
    "automatically store media to device" with a default destination.
 6. **Lock:** enable PIN/biometric so the private library requires auth to open.
-7. **(v2) Local AI:** transcribe/summarize/translate/OCR/auto-tag a saved item,
-   fully on-device; greyed-out (and explained) on incapable devices.
-8. **(v3) Cloud AI & credits:** sign in, buy credits, run heavier multimodal Gemini
-   tools when on-device isn't enough.
+7. **Local AI (P10–P12):** transcribe/summarize/translate/OCR/auto-tag a saved item, fully
+   on-device; greyed-out (and explained) on incapable devices.
+8. **Graph & discovery (P10–P12):** see **related items**, explore an uploader/tag **hub** or the
+   interactive **graph view**, get **clustered auto-albums** and **"rediscover"** picks, and **ask
+   your library** a natural-language question (local GraphRAG) — all on-device.
 
 ## 7. Feature Set — v1 (all FREE, on-device)
 
@@ -116,56 +121,64 @@ No account is required for v1/v2. Accounts appear only in v3 (for credits).
   templates, concurrency limit, network/metered-data policy, notification behavior,
   theme (light/dark/system + dynamic color), language (i18n-ready).
 
-## 8. Feature Set — v2 (Local/Edge AI, FREE; + Windows; + polish)
+## 8. Feature Set — On-device AI + Relationship Graph (v1, P10–P12, FREE)
 
-### 8.1 Adaptive AI tiering (the differentiator)
-At first run (and on demand), GrabBit runs a **device-capability diagnostic** (RAM,
-SoC/NPU/GPU, OS version, free storage) to compute a **device tier**. A **capability
-matrix** maps each AI feature to the local model(s) the device can run. Features the
-device can't support are **gracefully disabled** with a clear, friendly explanation —
-never a crash, never a silent no-op. On-device models are **downloaded on demand**
-(not bundled) to keep the install lean.
+The differentiating pillar, all on-device and free. Deep design: `docs/AI-SPEC.md`,
+`docs/GRAPH-SPEC.md`; delivery: `docs/design/P-AI-PLAN.md`.
 
-### 8.2 Local AI features (on-device, free)
+### 8.1 On-device graph + vector foundation (P10, device-universal)
+A bundled **CozoDB** engine (relational+graph+vector) holds a **derived, rebuildable index** of the
+library (Drift stays canonical). A lightweight on-device **embedder** powers semantic features. Runs
+on *any* device. Features: **semantic search**, **Related / "More like this"**, **entity hubs**
+(uploader/playlist/tag/site), **near-duplicate clusters**, **tag suggestions**, an **interactive
+graph view**, and a pure-Dart **extractive summary** floor (TextRank).
+
+### 8.2 Adaptive AI tiering (P11)
+At first run (and on demand), GrabBit runs a **device-capability diagnostic** (RAM, SoC/NPU/GPU, OS
+version, free storage) to compute a **device tier**. A **capability matrix** maps each AI feature to
+the local model(s) the device can run; unsupported features are **gracefully disabled** with a
+clear, friendly explanation — never a crash, never a silent no-op. Models are **downloaded on
+demand** (not bundled) to keep the install lean. Runtime: **`flutter_gemma`** (MediaPipe/LiteRT-LM).
+
+### 8.3 LLM features + local GraphRAG (P12)
 - **Transcription** (whisper.cpp): audio/video → text/subtitles.
-- **Summarization** (local small LLM via LiteRT/MediaPipe): TL;DR, chapters.
+- **Summarization** (local small LLM, layered on the TextRank floor): TL;DR, chapters.
 - **Translation & OCR** (ML Kit): translate transcripts; text from images.
-- **Smart tagging / semantic search**: on-device labeling + embeddings.
+- **Smart tagging**: on-device labeling feeding the existing tags/facets.
+- **Graph-clustered auto-albums**, centrality-based **"Rediscover"**, **path/bridge** discovery.
+- **"Ask your library"** — natural-language Q&A as **local GraphRAG** (Cozo retrieval + local LLM),
+  fully on-device.
 
-### 8.3 Windows + production polish
-- Windows app at parity behind the shared engine (Process-based yt-dlp/ffmpeg).
-- Accessibility, i18n, performance hardening, advanced configuration, deep polish
-  toward a public v2 (still local-only, still free).
+## 9. Feature Set — v2 (local-only expansion)
 
-## 9. Feature Set — v3 (Cloud AI + credits)
+- **Windows** app at parity behind the shared engine (Process-based yt-dlp/ffmpeg; Cozo via the
+  C-API/FFI `GraphStore` impl). Accessibility, complete i18n, performance hardening, advanced
+  configuration, deep polish.
+- **Authenticated/private content** (deferred from v1): per-site cookie/login import, stored via
+  `flutter_secure_storage` — still on-device, no account, free.
 
-- Accounts (Supabase Auth) — needed only for cloud AI / credits.
-- Heavier multimodal **Gemini** tools (richer summarization, vision Q&A, high-quality
-  transcription/translation, generative thumbnails/clips) for tasks/devices beyond
-  on-device limits.
-- Optional **cloud fallback** for incapable devices, behind the same
-  `InferenceEngine`.
-- Credit ledger; each cloud call meters real cost. Top-ups via **Stripe/PayPal**;
-  webhook → credit grant. Local AI never requires an account or credits.
+*(The former **v3** cloud-AI + credit band — Supabase accounts, Gemini, Stripe/PayPal — is
+**dropped**. The `InferenceEngine` interface keeps a theoretical cloud seam, but it is unplanned.)*
 
 ## 10. Monetization Model
 
-**Principle: on-device = free, cloud = credits.** No ads, ever.
+**Principle: everything is on-device, and on-device = free, forever.** Sustained by an **optional
+donations link**. **No ads, no telemetry, no cloud, no accounts — ever.**
 
-| Capability | v1 | v2 | v3 | Cost |
-|---|---|---|---|---|
-| Downloads (all platforms), queue, bulk | ✅ | ✅ | ✅ | Free |
-| Private library, player, metadata, organization | ✅ | ✅ | ✅ | Free |
-| Local ffmpeg/yt-dlp tools (convert, extract audio, trim, thumbnails) | ✅ | ✅ | ✅ | Free |
-| Storage policy, export, auto-store | ✅ | ✅ | ✅ | Free |
-| App lock (PIN/biometric) | ✅ | ✅ | ✅ | Free |
-| Windows app | — | ✅ | ✅ | Free |
-| Local/edge AI (transcribe, summarize, OCR, translate, tag) | — | ✅ | ✅ | Free |
-| Cloud AI (Gemini multimodal) | — | — | ✅ | **Credits** |
-| Accounts / credit purchase (Stripe/PayPal) | — | — | ✅ | — |
+| Capability | v1 | v2 | Cost |
+|---|---|---|---|
+| Downloads (all platforms), queue, bulk | ✅ | ✅ | Free |
+| Private library, player, metadata, organization | ✅ | ✅ | Free |
+| Local ffmpeg/yt-dlp tools (convert, extract audio, trim, thumbnails) | ✅ | ✅ | Free |
+| Storage policy, export, auto-store | ✅ | ✅ | Free |
+| App lock (PIN/biometric) | ✅ | ✅ | Free |
+| On-device AI + relationship graph (semantic search, related, hubs, transcribe, summarize, OCR, translate, tag, local GraphRAG) | ✅ | ✅ | Free |
+| Windows app | — | ✅ | Free |
+| Authenticated/cookie import | — | ✅ | Free |
+| Optional donations | ✅ | ✅ | — |
 
-Off-store distribution means Google Play Billing is unavailable; v3 credits are sold
-via Stripe/PayPal and tracked in a Supabase credit ledger.
+Off-store distribution means Google Play Billing is unavailable; there are no in-app purchases —
+support is via an optional external donations link only.
 
 ## 11. Non-Goals
 
@@ -178,12 +191,11 @@ via Stripe/PayPal and tracked in a Supabase credit ledger.
 
 ## 12. Success Metrics
 
-- **v1:** stable downloads across top sites; crash-free sessions; download success
-  rate; time-to-first-download; retention of the private-library habit.
-- **v2:** Windows parity; % devices eligible for local AI; correct capability-gating
-  (zero AI crashes on low-end devices); local-AI feature adoption.
-- **v3:** credit conversion rate; cloud-AI task success; gross margin per credit
-  (price must comfortably exceed Gemini cost).
+- **v1 (core):** stable downloads across top sites; crash-free sessions; download success rate;
+  time-to-first-download; retention of the private-library habit.
+- **v1 (AI + graph):** % devices eligible for each AI tier; correct capability-gating (zero AI
+  crashes on low-end devices); adoption of related/search/graph/"ask your library".
+- **v2:** Windows parity; authenticated-content adoption.
 
 (Metrics measured locally/voluntarily; no covert analytics.)
 
@@ -193,18 +205,19 @@ via Stripe/PayPal and tracked in a Supabase credit ledger.
   site ToS and copyright. GrabBit ships/hosts no copyrighted content.
 - **Distribution:** off-Play-Store (sideload APK/AAB + landing site) due to YouTube;
   document install steps + "unknown sources" guidance. Windows via direct download/MSIX.
-- **Ad networks avoided** deliberately — most ban downloader apps and compromise
-  privacy; the AI-credit model (v3) replaces ad revenue.
+- **Ad networks avoided** deliberately — most ban downloader apps and compromise privacy. There is
+  no ad or cloud revenue; the project is supported by **optional donations** only.
+- **AI model licensing:** since GrabBit is distributed off-store, bundled/downloaded models must be
+  cleanly redistributable — **prefer Apache-2.0/MIT** (e.g. Qwen3, SmolLM, Phi); **vet Gemma's use
+  policy** before shipping. (See `docs/AI-SPEC.md` §4.) CozoDB is **MPL-2.0** (linked, not modified
+  → no obligation on our code; see `docs/GRAPH-SPEC.md` §1).
 - **Site fragility:** extractors break when sites change; mitigate with a
   user-updatable yt-dlp and clear errors. Engine stays swappable.
-- **Backend cost control (v3):** cloud AI must be credit-gated and rate-limited so
-  cost never exceeds revenue; keys only server-side (Supabase secrets).
-- **Payments/compliance (v3):** Stripe/PayPal handle PCI; store no card data.
 - **Repo stays private** (YouTube downloader); CI budget managed accordingly.
 
 ## 14. Open Questions (track, not blocking)
 
-- Exact v2 local-AI feature shortlist and per-tier model choices (Gemma sizes,
-  whisper variants, ML Kit coverage).
-- v3 credit pricing and cloud cost ceilings.
-- Whether any paid non-AI tier ever appears (currently none — core stays free).
+- Exact per-tier model choices (light/mid LLM, embedder dim, whisper variant) — confirmed at P11
+  start per `docs/AI-SPEC.md` §4.
+- APK-size budget impact of the Cozo native lib (measured in the first P10 APK build).
+- Donations provider/link for the About screen (P13).

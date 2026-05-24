@@ -1,25 +1,28 @@
 # GrabBit — Multi-Phase Roadmap
 
-Status: Draft v0.3 · Last updated: 2026-05-23
+Status: Draft v0.4 · Last updated: 2026-05-24
 
 Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 **Deliverables**, **Exit criteria**, and **CI/build notes**. Phases are sequential
 by default; later phases assume earlier exit criteria are met.
 
-Legend (three version bands):
-- **v1 — Android core, free, on-device:** P0–P10 (P4 completion & refinement, P5 file
-  explorer, P6 media studio, P7 branding & frontend revamp, P8 download engine power &
-  intake, P9 library/playback/privacy depth, P10 beta & production readiness / release).
-- **v2 — world-class, feature-rich, production-ready, LOCAL-ONLY (no cloud):**
-  P11 (Windows parity) · P12 (edge/local AI) · P13 (production polish).
-- **v3 — cloud AI + credit monetization:** P14 (backend + accounts) · P15 (cloud AI)
-  · P16 (public launch).
+Legend (two version bands — the former **v3 cloud/credits band is dropped**):
+- **v1 — Android, free, on-device, AI-powered:** P0–P13. Core downloader + private media manager
+  (P0–P9), then the **on-device AI + graph pillar** — P10 (baseline edge AI + Cozo graph/vector
+  foundation) · P11 (device-tiered edge LLM engine) · P12 (LLM features + local GraphRAG) — then
+  **P13 (beta, production readiness & launch)**. AI is core to the vision, so **v1 ships *after* it**.
+- **v2 — local-only expansion (still free/offline):** P14 (Windows parity) · P15 (production polish
+  + authenticated/cookie import).
 
-The app stays fully free and offline through v2. Money enters only in v3.
+The app is **free forever and fully offline** — sustained by an **optional donations link**, with
+**no ads and no telemetry**. (The previous **v3** Supabase/Gemini/credit phases are **deleted**; the
+`InferenceEngine` interface leaves a *theoretical* cloud seam, but it is **unplanned**.) Deep design
+for the AI/graph phases lives in `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`, and
+`docs/design/P-AI-PLAN.md`.
 
 ---
 
-# v1 — Android core (free, on-device)
+# v1 — Android, free, on-device, AI-powered
 
 ## P0 — Foundation
 **Goals:** stand up a buildable Flutter project + the architecture skeleton + CI.
@@ -72,7 +75,7 @@ app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale. **Public content only** — authenticated/private content
-(cookie/login import) is deferred to **v2** (see P13).
+(cookie/login import) is deferred to **v2** (see P15).
 **Deliverables:**
 - Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
   playlists, and carousels; clear errors for unsupported/broken extractors.
@@ -219,7 +222,7 @@ breakdown lives in **`docs/design/P9-PLAN.md`**.
   and app-icon disguise are deliberately cut (see `docs/BACKLOG.md`).
 - **P9f — Storage & download safety**: a proactive **low-storage guard** (pre-flight free-space
   gate) and **battery-aware pause** on the scheduler; **orphaned-file cleanup**; and **device
-  free/total** on the Storage screen. (PiP from P9c deferred to v2/P13; scheduling deferred.)
+  free/total** on the Storage screen. (PiP from P9c deferred to v2/P15; scheduling deferred.)
 - **P9g/P9h/P9i/P9j — Actions, menus & polish**: a shared per-item **context menu** + **outbound
   Share** across the grids (P9g); **library multi-select + bulk actions** (P9h); **screen-level
   action menus** — collection/album app-bar actions, whole-queue actions, item-detail richness
@@ -233,106 +236,100 @@ playback speed and pick subtitles; reorder the queue (order persists) and see th
 enable FLAG_SECURE and auto-lock; downloads pause on low storage/battery; long-press a tile for
 actions and share a file out — all offline.
 
-## P10 — v1 Beta & Production Readiness
-**Goals:** harden and ship v1.
-**Deliverables:** **release signing** (keystore + CI secret; the ship blocker);
-performance hardening (large library grid/thumbnails, DB indices, big-playlist
-picker); **i18n scaffolding** (ARB/l10n); distribution (GitHub Release with the signed
-APK + README/landing install steps; version bump); final full `docs/VERIFICATION.md`
-regression on the signed release APK. (Subtitle-language selection moved up to P8c.)
-**Exit criteria:** signed release APK installs and passes the full on-device
-regression; published for sideload. **→ v1 complete.**
+## P10 — Baseline edge AI + Cozo graph/vector foundation  *(device-universal)*
+**Goals:** stand up the bundled **on-device graph + vector engine** and the always-available,
+no-LLM-required feature floor. Everything here runs on *any* device. Ships as sub-PRs (P10a–d).
+**Deliverables:**
+- **Cozo foundation**: a `CozoHostApi` Pigeon→Kotlin bridge to the official Maven AAR
+  `io.github.cozodb:cozo_android:0.7.2` (mirrors the youtubedl-android wiring); a pure-Dart
+  `GraphStore` interface (`lib/core/graph/`) + Android Cozo impl; SQLite backend persisted at
+  `<support>/graph/cozo.db`; the Cozo schema + a `GraphStore` conformance-test suite.
+- **Lightweight universal embedder + index + sync**: a minimal `InferenceEngine.embed()` slice via
+  `flutter_gemma` (Gecko, embedder-only — stays device-universal); an HNSW vector relation; a
+  `GraphSyncService` (bulk build + incremental hooks + a "Rebuild index" action) with a
+  schema-fingerprint self-heal. Drift stays canonical; **Cozo is a derived, rebuildable index**.
+- **Universal graph features**: semantic search; **Related / "More like this"** (hybrid vector +
+  graph re-rank); **entity hubs** (uploader/playlist/tag/site); **near-duplicate clusters**; **tag
+  suggestions**; **interactive graph visualization** (candidate `graphview`).
+- **Extractive summaries**: a zero-dependency, pure-Dart **TextRank** floor over
+  descriptions/subtitles/transcripts.
+**Exit criteria:** on any device, the Cozo index builds & rebuilds; semantic search + "related"
+return sensible results offline; entity hubs and the graph view render; near-dup clusters and tag
+suggestions work — all with the small embedder, no LLM.
+**Refs:** `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`, `docs/design/P-AI-PLAN.md`.
+
+## P11 — Device-tiered edge LLM engine  *(minimal feature surface)*
+**Goals:** enable on-device generation + transcription with **graceful capability-gating**. No
+cloud, no account, no credits.
+**Deliverables:** `DeviceCapabilityService` + device tiers + `ModelCapabilityMatrix`; on-demand
+**model catalog + download + integrity check + caching** (install stays lean); `InferenceEngine`
+impls via **`flutter_gemma`** (generation; wraps MediaPipe LLM Inference / LiteRT-LM) and
+**whisper.cpp** (`whisper_ggml_plus` / `whisper_kit`) for transcription; ML Kit (OCR/translate)
+where it fits; capability-gating so unsupported features are clearly disabled with a friendly
+reason. **Model/licensing:** confirm current best models at phase start; **prefer Apache-2.0/MIT**
+(SmolLM-135M, Qwen3-0.6B, Phi-4-Mini); Gemma usable but **vet its use policy before bundling**.
+**Exit criteria:** on a capable device, download a model and generate/transcribe offline; on a
+low-end device those features are cleanly disabled with explanation.
+**Refs:** `docs/AI-SPEC.md` §3–4, `docs/design/P-AI-PLAN.md`.
+
+## P12 — LLM feature surface & polish (incl. local GraphRAG)
+**Goals:** the differentiating payoff, layered on P10 (graph+vector) + P11 (LLM).
+**Deliverables:**
+- **Transcription, abstractive summarization** (on the P10 TextRank floor), **translation, OCR** —
+  all capability-gated.
+- **Natural-language "Ask your library" chat as local GraphRAG** — Cozo hybrid retrieval (vector +
+  graph re-rank) feeds a small local LLM; fully on-device.
+- **Advanced graph analytics & viz**: graph-clustered auto-albums (community detection),
+  centrality-based **"Rediscover"**, path/bridge discovery, graph-view polish.
+- **Smart auto-tagging** feeding existing tags/facets; **model selector UX**.
+**Exit criteria:** ask a natural-language question and get a grounded answer citing library items
+offline; auto-albums cluster sensibly; rediscover surfaces central-but-stale items; all gated
+gracefully on low-end devices.
+**Refs:** `docs/AI-SPEC.md` §5–6, `docs/GRAPH-SPEC.md` §7.
+
+## P13 — v1 Beta, Production Readiness & Launch
+**Goals:** harden and **ship v1** (now an AI-powered downloader + private media manager).
+**Deliverables:** **release signing** (keystore + CI secret; the ship blocker); performance
+hardening (large library grid/thumbnails, DB indices, big-playlist picker, AI/graph index build);
+**i18n scaffolding** (ARB/l10n); **distribution** (GitHub Release with the signed APK + a landing
+site, install guides, README; version bump); an **optional donations link in the About screen**
+(no ads, no telemetry); final full `docs/VERIFICATION.md` regression on the signed release APK.
+**Exit criteria:** signed release APK installs and passes the full on-device regression; published
+for sideload. **→ v1 complete (Android, free, offline, AI-powered).**
 
 ---
 
-# v2 — World-class, local-only (Windows + edge AI + polish)
+# v2 — Local-only expansion (Windows + polish; still free/offline)
 
-## P11 — Windows Port
+## P14 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
-**Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`),
-desktop storage adapter (filesystem export), desktop-adapted UI, **MSIX** packaging,
-binary update path.
-**Exit criteria:** Windows build downloads + manages media; feature parity with v1
-core. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
+**Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`); desktop storage
+adapter (filesystem export); desktop-adapted UI; **MSIX** packaging; binary update path. **Cozo on
+Windows:** the C-API path — `cozo_c.dll` via `dart:ffi`/`ffigen` on a dedicated isolate (the
+`GraphStore` Windows impl), per `docs/GRAPH-SPEC.md` §2.2.
+**Exit criteria:** Windows build downloads + manages media (incl. the graph/AI features); feature
+parity with v1. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P12 — Edge/Local AI (free, on-device)
-**Goals:** the differentiator — on-device AI with graceful capability-gating. **No
-cloud, no account, no credits.**
-**Deliverables:**
-- **DeviceCapabilityService** + device tiers; **ModelCapabilityMatrix**.
-- `InferenceEngine` with on-device impls: **LiteRT / MediaPipe LLM** (Gemma-class),
-  **whisper.cpp** (transcription), **ML Kit** (OCR/translation/labeling).
-- **On-demand model download** + integrity check + caching (keeps install lean).
-- First local feature set: transcription, summarization, translation, OCR, smart
-  tagging / semantic search.
-- **Summarization tiers** (capability-gated): a **zero-dependency, pure-Dart extractive
-  baseline (TextRank)** over captured descriptions/subtitles/transcripts that runs on *any*
-  device — the always-available floor — with the **LiteRT/MediaPipe LLM** abstractive
-  summary layered on top for capable devices. Keeps a useful TL;DR available even on
-  low-end hardware. (Considered for v1/P9 and deliberately deferred here.)
-- **AI-powered library organization** (the on-device, free counterpart to P9b's
-  deterministic SQL albums/search — layered *beside*, not replacing, them; every
-  feature `DeviceCapability`-gated):
-  - **Semantic search** over titles/descriptions/notes + **whisper.cpp transcripts**
-    via local text embeddings (ML Kit / MediaPipe / a small sentence-transformer),
-    backed by an **on-device vector index** (e.g. `sqlite-vec`, ObjectBox, or an
-    in-memory ANN) — complements the existing `LIKE` search, never phones home.
-  - **Topic / content-similarity albums** ("more like this", auto-clustered albums)
-    built on those embeddings — the AI sibling of P9b-2's SQL smart albums.
-  - **Smart auto-tagging & categorization** (on-device labels/topics) that feed the
-    existing tags + faceted filters/albums.
-  - **Optional relationship/graph view** of the library (items linked by
-    channel/topic/co-occurrence) — a visualization over existing metadata + the
-    similarity index, not a new datastore requirement.
-  - Embeddings/transcripts stay **on-device/free**; a cloud embedding/index path is
-    only ever a **v3 credit** option, never required.
-- **Graceful disabling**: features the device can't run are clearly disabled with a
-  friendly reason — never a crash, never a silent no-op.
-**Exit criteria:** on a capable device, transcribe + summarize a saved item fully
-offline; on a low-end device those features are cleanly disabled with explanation.
-
-## P13 — Production Polish (public v2)
+## P15 — Production Polish + Authenticated Content
 **Goals:** make the local-only app genuinely world-class and production-ready.
-**Deliverables:** accessibility, complete i18n, performance hardening, advanced
-configuration, refined UX across all flows, robust update/onboarding, public v2
-release candidate (Android + Windows, still local-only, still free).
-- **Authenticated/private content** (deferred from v1): per-site **cookie/login
-  import** so users can download their own private/age-gated/followers-only media,
-  with cookies stored via `flutter_secure_storage`. Stays on-device — no account,
-  no cloud, still free.
-**Exit criteria:** v2 is stable, polished, and self-recommending; ready for wider
-(still off-store) distribution. **→ v2 complete.**
+**Deliverables:** accessibility, complete i18n, performance hardening, advanced configuration,
+refined UX across all flows, robust update/onboarding.
+- **Authenticated/private content** (deferred from v1): per-site **cookie/login import** so users
+  can download their own private/age-gated/followers-only media, with cookies stored via
+  `flutter_secure_storage`. Stays on-device — no account, no cloud, still free.
+**Exit criteria:** v2 is stable, polished, and self-recommending; ready for wider (still off-store)
+distribution. **→ v2 complete.**
 
 ---
 
-# v3 — Cloud AI + monetization
+# (v3 — Cloud AI + monetization) — DROPPED
 
-## P14 — Backend + Accounts
-**Goals:** the paid rails (cloud only).
-**Deliverables:** Supabase Auth; Postgres credit ledger + RLS (SPEC §9.1); Edge
-Functions skeleton; **Stripe/PayPal** checkout + webhooks → credit grants; account +
-credits UI. The local-only experience stays fully account-free.
-**Exit criteria:** buy credits via Stripe/PayPal in a test env; balance updates via
-webhook; RLS verified.
-
-## P15 — Cloud AI
-**Goals:** heavier multimodal AI for tasks/devices beyond on-device limits.
-**Deliverables:**
-- Cloud `InferenceEngine` impl behind the same interface; **Genkit → Gemini** Edge
-  Functions with credit metering + rate limits.
-- Model selector surfaces **Free — Local** vs **Cloud (credits)**; optional cloud
-  fallback for incapable devices.
-- Cloud feature set: richer summarization, vision Q&A, high-quality
-  transcription/translation, generative thumbnails/clips.
-**Exit criteria:** a feature runs **free locally** on a capable device and via
-**cloud (credits)** for higher quality; cost-per-call < credit price.
-
-## P16 — Launch
-**Goals:** public availability + growth.
-**Deliverables:** landing/download site (Android APK/AAB + Windows MSIX), install
-guides + legal disclaimer, versioned releases/changelog, basic marketing,
-release/update channel. Add repo `README`.
-**Exit criteria:** public download links live; update flow works end-to-end.
+The former v3 band (Supabase backend + accounts, Genkit→Gemini cloud AI, Stripe/PayPal credit
+monetization, public cloud launch) is **removed**. GrabBit is **free forever and fully offline**,
+sustained by an **optional donations link** (P13) — no ads, no telemetry, no accounts, no cloud. The
+`InferenceEngine` interface still leaves a *theoretical* seam for a future cloud implementation, but
+it is **not a planned phase**. (The corresponding cloud contracts in `docs/SPEC.md` §9.1–9.2 and
+`docs/ARCHITECTURE.md` §9 are retained only as a historical/optional reference, marked dropped.)
 
 ---
 
@@ -341,5 +338,5 @@ release/update channel. Add repo `README`.
   commits on `claude/init-grabbit-setup-RaBUs` (until told otherwise).
 - Conserve Actions minutes: auto CI = lint/analyze/test on ubuntu; APK/Windows
   builds are **manual/tagged** and batched (CLAUDE.md §6).
-- Privacy/legal posture (PRD §13) holds throughout: on-device-free, cloud-credits,
-  no ads, no telemetry, user-responsibility disclaimer.
+- Privacy/legal posture (PRD §13) holds throughout: **on-device, free forever**, optional
+  donations, **no ads, no telemetry, no cloud/accounts**, user-responsibility disclaimer.

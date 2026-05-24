@@ -1,6 +1,6 @@
 # GrabBit — Architecture Blueprint
 
-Status: Draft v0.1 · Last updated: 2026-05-20
+Status: Draft v0.2 · Last updated: 2026-05-24
 
 This document is the system-design source of truth. It explains *how* GrabBit is
 structured so any agent can implement a feature without re-deriving the design.
@@ -17,21 +17,19 @@ structured so any agent can implement a feature without re-deriving the design.
 ├──────────────────────────────────────────────────────────────┤
 │ Domain (pure Dart)                                             │
 │  entities · repository interfaces · use cases                  │
-│  DownloadEngine (iface) · InferenceEngine (iface, v2)          │
+│  DownloadEngine · GraphStore (P10) · InferenceEngine (P11)     │
 ├──────────────────────────────────────────────────────────────┤
 │ Data                                                           │
-│  Drift (SQLite) repos · file storage svc · settings store      │
-│  engine impls · (v3) Supabase client                           │
+│  Drift (SQLite) repos [canonical] · file storage · settings    │
+│  engine impls · GraphSyncService (Drift→Cozo derived index)    │
 ├──────────────────────────────────────────────────────────────┤
 │ Platform / Native                                              │
 │  Android: Kotlin host → Pigeon → youtubedl-android (Py+yt-dlp+ffmpeg)
-│           foreground service · MediaStore · LiteRT (v2)        │
-│  Windows: Dart Process → yt-dlp.exe / ffmpeg.exe (bundled)     │
-├──────────────────────────────────────────────────────────────┤
-│ Cloud (v3 only)                                                │
-│  Supabase: Auth · Postgres (credit ledger) · Edge Functions    │
-│           → Genkit flows → Gemini · Stripe/PayPal webhooks     │
+│           + CozoDB (cozo_android AAR) · foreground svc · MediaStore
+│           flutter_gemma (MediaPipe/LiteRT-LM) · whisper.cpp · ML Kit (P11)
+│  Windows: Dart Process → yt-dlp.exe/ffmpeg.exe · Cozo via dart:ffi (P14)
 └──────────────────────────────────────────────────────────────┘
+(Former "Cloud (v3)" layer — Supabase/Gemini/Stripe — is DROPPED; see §9.)
 ```
 
 **Layering rules:** Presentation → Domain → Data → Platform. Domain has zero
@@ -77,7 +75,7 @@ native is private, free to run, and broad. (See PRD §9.)
   `libraryProvider`, `queueProvider`, `settingsProvider`. Async state via
   `AsyncNotifier`; long operations stream from the engine.
 - **go_router** routes: `/` (library) · `/add` (paste/probe) · `/queue` ·
-  `/item/:id` (detail+player) · `/settings` · (v2) `/ai`.
+  `/item/:id` (detail+player) · `/settings` · (P10+) `/ai`, `/graph`.
 - App-lock gate is a router redirect: unauthenticated → `/lock`.
 
 ---
@@ -98,6 +96,12 @@ Tables (full schema in `docs/SPEC.md`):
   destination folder, naming template, theme, locale, lock config).
 
 Migrations: Drift schema versioning; never destructive without migration.
+
+**Drift is canonical; the graph/vector index is derived.** From P10, a bundled **CozoDB** engine
+holds a **derived, rebuildable** graph (nodes/edges) + HNSW embedding index keyed by
+`media_items.id`. No user-visible mutation lands in Cozo only — repositories write Drift first, then
+`GraphSyncService` projects into Cozo (incrementally + on-demand rebuild). A corrupt/stale index is
+never data loss — delete and rebuild. Full design: `docs/GRAPH-SPEC.md`.
 
 ---
 
@@ -132,14 +136,25 @@ Migrations: Drift schema versioning; never destructive without migration.
   `flutter_secure_storage`. Router redirect enforces lock on resume.
 - **Permissions:** least-privilege; request notification + foreground-service;
   storage access only when exporting (scoped storage, no broad MANAGE_EXTERNAL).
-- **No telemetry** in v1/v2. No secrets in client. (v3) all paid-API keys live in
-  Supabase secrets, never shipped.
+- **No telemetry, ever.** No secrets in client — there is **no backend/cloud** (v3 dropped); the
+  only network calls are downloads and a one-time, integrity-checked model download (P11).
 
 ---
 
-## 8. On-Device AI Architecture (v2)
+## 8. On-Device AI + Graph Architecture (v1, P10–P12)
 
-Mirrors the engine pattern with an `InferenceEngine` abstraction.
+Two pure-Dart seams mirror the `DownloadEngine` pattern; deep design in `docs/AI-SPEC.md` and
+`docs/GRAPH-SPEC.md`.
+
+- **`GraphStore`** (`core/graph/`, P10) — the on-device relationship graph + vector index, backed by
+  **CozoDB** (Android `cozo_android` AAR via a `CozoHostApi` Pigeon bridge; Windows via `dart:ffi` in
+  P14). Platform-branched provider, like `downloadEngineProvider`.
+- **`InferenceEngine`** (`core/ai/`, P11) — local AI runtime via **`flutter_gemma`** (embeddings +
+  generation + RAG; MediaPipe/LiteRT-LM), **whisper.cpp**, **ML Kit**.
+- `embed()` *produces* vectors; `GraphStore` *stores/searches* them; only `GraphSyncService` bridges
+  both. This lets the deterministic + similarity graph (P10) ship independent of the LLM stack (P11).
+
+The `InferenceEngine` contract:
 
 ```dart
 abstract interface class InferenceEngine {
@@ -150,31 +165,23 @@ abstract interface class InferenceEngine {
 
 - **DeviceCapabilityService** computes a `DeviceProfile` (RAM, SoC/NPU/GPU, OS
   version, free storage) → maps to a **device tier**.
-- **ModelCapabilityMatrix** maps `feature → {localModels eligible by tier,
-  cloudModels}`. Drives the **model selector** UI: shows "Free — Local" when
-  eligible, "Cloud (credits)" otherwise/optionally.
-- **LiteRT** is the primary local runtime (incl. MediaPipe LLM Inference for
-  Gemma-class models); whisper.cpp / ONNX may back specific tasks behind the same
-  interface. Models are **downloaded on demand**, cached, and verified.
-- Local inference = free (no account). Cloud inference (v3) routes through Supabase.
+- **ModelCapabilityMatrix** maps `feature → eligibleLocalModels[byTier]`. Drives capability-gating
+  and the **model selector** UI; unsupported features are clearly disabled with a friendly reason.
+- **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) is the primary local runtime for
+  embeddings + generation + on-device RAG; **whisper.cpp** backs transcription, **ML Kit** OCR/
+  translate. Models are **downloaded on demand**, cached, and integrity-checked.
+- All inference is **on-device and free**, no account, no network (beyond the one-time model
+  download). Prefer Apache-2.0/MIT models; vet Gemma's use policy (`docs/AI-SPEC.md` §4).
 
 ---
 
-## 9. Cloud Backend (v3)
+## 9. Cloud Backend — DROPPED (historical)
 
-```
-App → Supabase Edge Function (auth-checked, rate-limited)
-        → check credit balance (Postgres ledger)
-        → Genkit flow → Gemini API
-        → debit credits, return result
-Stripe/PayPal → webhook → Edge Function → credit grant (ledger insert)
-```
-
-- **Auth:** Supabase Auth; account required only for cloud AI.
-- **Credit ledger:** append-only transactions table; balance = sum; debits are
-  transactional with the AI call.
-- **Secrets:** Gemini + payment keys in Supabase secrets. Client never sees them.
-- **RLS:** row-level security so users only see their own ledger/usage.
+The former v3 cloud band (Supabase Auth + Postgres credit ledger + Edge Functions → Genkit/Gemini,
+with Stripe/PayPal webhooks) is **removed**. GrabBit is **free forever and fully offline**,
+donation-supported. The `InferenceEngine` interface still leaves a *theoretical* seam where a cloud
+implementation could one day slot behind the same contract (optionally letting incapable devices
+fall back), but it is **not a planned phase** and nothing in the app depends on it.
 
 ---
 
@@ -183,8 +190,8 @@ Stripe/PayPal → webhook → Edge Function → credit grant (ledger insert)
 - Shared: all Dart (domain, data, presentation, Drift, Riverpod).
 - Divergent: only the engine impl (Pigeon/native vs Process) and storage adapter
   (MediaStore vs filesystem) and packaging.
-- Windows arrives in Roadmap P11 by adding `WindowsProcessEngine` + a desktop
-  storage adapter + MSIX packaging — no domain/UI rewrite.
+- Windows arrives in Roadmap **P14** by adding `WindowsProcessEngine` + a desktop storage adapter +
+  the Cozo `dart:ffi` `GraphStore` impl + MSIX packaging — no domain/UI rewrite.
 
 ---
 
