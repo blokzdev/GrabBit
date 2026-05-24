@@ -253,23 +253,14 @@ Budget rules per CLAUDE.md §6: ubuntu only, cache, manual APKs, no push-builds.
 
 ## 9. AI Contracts (on-device, P10–P12)
 
-> **Banding:** On-device AI (§9.3) is a **v1** pillar (P10–P12) and never requires an account,
-> network (beyond a one-time model download), or credits. The former Supabase/cloud contracts
-> (§9.1–9.2) are **DROPPED** — kept below only as struck-through historical reference. Deep design:
-> `docs/AI-SPEC.md` (runtime/models/GraphRAG) and `docs/GRAPH-SPEC.md` (graph + vector store).
+> **Banding:** all AI is **on-device (v1, P10–P12)** and never requires an account, network
+> (beyond a one-time model download), or credits. Deep design: `docs/AI-SPEC.md`
+> (runtime/models/GraphRAG) and `docs/GRAPH-SPEC.md` (graph + vector store).
 
-### ~~9.1 Supabase tables (v3 — Postgres, RLS on)~~ — DROPPED
-- `profiles(user_id pk, created_at)`
-- `credit_ledger(id, user_id, delta int, reason, ref, created_at)` — balance = sum(delta)
-- `ai_usage(id, user_id, feature, model, tokens/seconds, cost_credits, created_at)`
-- `payments(id, user_id, provider, provider_ref, amount, credits_granted, status, created_at)`
-
-### ~~9.2 Edge Functions (v3)~~ — DROPPED
-- `POST /ai/{feature}` — auth → check balance → Genkit flow → Gemini → debit
-  (transactional) → return result. Rate-limited.
-- `POST /webhooks/stripe`, `POST /webhooks/paypal` — verify signature → grant
-  credits (ledger insert) → mark payment.
-- Keys (Gemini, Stripe, PayPal) in Supabase secrets only.
+### 9.1–9.2 Cloud backend (Supabase / Gemini / Stripe-PayPal) — DROPPED
+The former v3 cloud contracts (Postgres credit ledger, Edge Functions → Genkit/Gemini, payment
+webhooks) are **removed** — no backend, no accounts, no credits. The `InferenceEngine` keeps a
+theoretical-only cloud seam (`docs/AI-SPEC.md` §1), but it is unplanned.
 
 ### 9.3 On-device AI (v1, P10–P12)
 - `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion, freeStorageMB }`.

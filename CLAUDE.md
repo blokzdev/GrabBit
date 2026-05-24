@@ -170,8 +170,16 @@ only feedback loop. Be frugal:
 ## 7. Git Workflow
 
 - **`main`** is the default, integration branch — **never commit directly to it.**
-- **One feature branch per phase**, named **`claude/p<N>-<short-topic>`** (e.g.
-  `claude/p2-queue-media-manager`). Develop, commit, and push there.
+- **Branches are single-use per PR.** Each PR gets its own **fresh** branch, **cut from the latest
+  `main`**, named for the work it contains: **`claude/p<N><sub>-<short-topic>`** for a (sub)phase
+  (e.g. `claude/p10a-cozo-foundation`) or **`claude/<short-topic>`** for off-phase work (e.g.
+  `claude/docs-consistency-sweep`). The maintainer **deletes the branch on merge**, so a branch name
+  maps 1:1 to a single PR and is **never reused**.
+  - **Do not lock onto a branch name handed to a session at startup.** A session may be seeded with a
+    designated dev-branch name (e.g. from a prior task); treat that as valid only for the *current*
+    unmerged work. For any **new** PR, **always create a new branch from fresh `main`** — never
+    reuse a previously-merged (and now-deleted) branch name, and never stack new work on a stale
+    local branch. When in doubt, `git fetch origin main` and branch from it.
 - **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`…).
 - Small, reviewable commits. Push with `git push -u origin <branch>`; retry network
   failures with exponential backoff. Never force-push shared branches.
