@@ -26,6 +26,7 @@ class MainActivity : FlutterFragmentActivity() {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         val flutterApi = YtDlpFlutterApi(messenger)
         YtDlpHostApi.setUp(messenger, YtDlpHost(applicationContext, flutterApi))
+        CozoHostApi.setUp(messenger, CozoHost())
         ServiceHostApi.setUp(messenger, ServiceHost(applicationContext))
         DownloadService.flutterApi = ServiceFlutterApi(messenger)
         storageHost = StorageHost(this).also { StorageHostApi.setUp(messenger, it) }

@@ -401,7 +401,20 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       prompt.
 
 ## P10 — Baseline edge AI + Cozo graph/vector foundation  *(v1)*
-- [ ] **Cozo loads & persists**: the app builds the on-device index on first run; force-quit and
+
+### P10a — Cozo engine foundation  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Engine loads (arm64)**: Settings → About → **Graph engine self-test** → snackbar reads
+      **"Graph OK — N relations ready"** (N = the deterministic node/edge relations).
+- [ ] **Persists across restart**: force-quit and reopen → run the self-test again → still
+      "Graph OK" with the same N (schema not recreated; the SQLite file at `<app-support>/graph/`
+      survived).
+- [ ] **Core unaffected**: the downloader/library/queue all work exactly as before (the graph
+      engine is additive).
+- [ ] **Graceful degrade (optional)**: on a non-arm64 build (e.g. an `x86_64` emulator, where the
+      Cozo lib isn't bundled) the self-test reports **"unavailable"** and the app does **not** crash.
+
+### P10b–d (later sub-PRs)
+- [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
 - [ ] **Semantic search**: a query that isn't a literal title match still surfaces relevant items
       (beyond the existing `LIKE` search), fully offline.

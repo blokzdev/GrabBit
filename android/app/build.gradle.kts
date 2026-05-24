@@ -65,6 +65,11 @@ dependencies {
     implementation("io.github.junkfood02.youtubedl-android:library:0.17.3")
     implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.17.3")
 
+    // On-device graph + vector DB (P10): CozoDB relational-graph-vector engine,
+    // MPL-2.0. Bundles native .so for arm64-v8a + x86 only; on other ABIs the
+    // graph store degrades gracefully (see lib/core/graph/ + docs/GRAPH-SPEC.md).
+    implementation("io.github.cozodb:cozo_android:0.7.2")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     // NotificationCompat / ContextCompat for the download foreground service.
