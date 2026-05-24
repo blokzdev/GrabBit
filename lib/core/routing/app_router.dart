@@ -20,6 +20,7 @@ import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart'
 import 'package:grabbit/features/lock/lock_screen.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/presentation/queue_screen.dart';
+import 'package:grabbit/features/settings/presentation/about_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -162,6 +163,12 @@ GoRouter appRouter(Ref ref) {
         name: 'duplicates',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const DuplicatesScreen(),
+      ),
+      GoRoute(
+        path: '/about',
+        name: 'about',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AboutScreen(),
       ),
     ],
   );

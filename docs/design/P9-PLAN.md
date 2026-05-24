@@ -163,6 +163,24 @@ three PRs:
   cancel-all/clear-finished on the queue; item-detail overflow + last-played/collections.
   **Implemented (CI-verifiable; no APK needed).**
 
+### `[~]` P9j — Settings, About & Studio polish *(pure Dart; closes P9)*
+- **Settings app-bar overflow** (`settings_screen.dart`) — a `⋮` menu with **Reset to defaults**
+  (confirm → `SettingsController.resetToDefaults`, which restores prefs but **preserves the app-lock
+  and accepted disclaimer**), **Clear cache** (`clearDirectory(getTemporaryDirectory())` → "Freed X"),
+  and **About**.
+- **Clear-cache util** (`lib/core/storage/cache_cleaner.dart`) — `clearDirectory(Directory)` best-effort
+  deletes entries and tallies files/bytes; never throws on empty/missing dir. Distinct from P9f's
+  library orphan cleanup.
+- **About screen** (`about_screen.dart`, route `/about`) — app mark + version
+  (`PackageInfo.fromPlatform` → "vX.Y.Z (build N)"), on-device tagline, **Open-source licenses**
+  (`showLicensePage`), and a link to the **disclaimer**. `package_info_plus` promoted to a direct dep.
+- **Media-Studio post-op** (`media_studio_screen.dart`) — the success SnackBar's action becomes
+  **Actions**, opening the shared `showMediaActions` sheet (Open · Share · Add to collection · …) for
+  the freshly-edited output (reuses P9g; nothing lost since the sheet's first entry is Open).
+- **Exit / review:** Reset reverts prefs with lock+disclaimer intact; Clear cache frees temp space;
+  About shows the real version + opens licenses/disclaimer; Studio "Actions" shares/files the new item.
+  **Implemented (CI-verifiable; no APK needed).** This closes P9 (a→j).
+
 ---
 
 ## Deferred (cut from P9 → `docs/BACKLOG.md`), with rationale

@@ -374,6 +374,14 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       and Clear finished, each acting on the matching tasks.
 - [ ] **Item-detail (P9i)**: the app bar is Favorite + a single ⋮ menu (Save/Move/Studio/Edit/Share/
       Copy/Open/Delete); the body shows "Last played" and the collections the item belongs to.
+- [ ] **Settings overflow (P9j)**: the Settings app bar's ⋮ menu offers Reset to defaults / Clear
+      cache / About. **Reset** (after confirm) reverts download/appearance/storage/privacy prefs while
+      the app lock (PIN still works) and accepted disclaimer stay intact. **Clear cache** frees temp
+      space and reports "Freed X".
+- [ ] **About screen (P9j)**: shows the real app version "vX.Y.Z (build N)"; "Open-source licenses"
+      opens the license page; the disclaimer tile opens the user-responsibility screen.
+- [ ] **Studio post-op (P9j)**: after an edit completes, the snackbar's **Actions** opens the action
+      sheet for the new item — Share it out and Add it to a collection from there.
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.

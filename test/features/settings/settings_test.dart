@@ -299,6 +299,52 @@ void main() {
       expect(saved.lowBatteryThreshold, 20);
     });
 
+    test(
+      'resetToDefaults restores prefs but keeps lock + disclaimer',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        await SettingsRepository(db).write(
+          const SettingsModel(
+            mode: UiMode.advanced,
+            theme: ThemeChoice.dark,
+            dynamicColor: false,
+            storagePolicy: StoragePolicy.autoExport,
+            maxConcurrentDownloads: 5,
+            blockScreenshots: true,
+            secureDelete: true,
+            appLock: AppLockSettings(enabled: true, biometric: true),
+            disclaimerAccepted: true,
+          ),
+        );
+        final container = ProviderContainer(
+          overrides: [appDatabaseProvider.overrideWithValue(db)],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(settingsControllerProvider.future);
+        await container
+            .read(settingsControllerProvider.notifier)
+            .resetToDefaults();
+
+        final saved = await SettingsRepository(db).read();
+        // Prefs revert to defaults.
+        expect(saved.mode, UiMode.simple);
+        expect(saved.theme, ThemeChoice.system);
+        expect(saved.dynamicColor, isTrue);
+        expect(saved.storagePolicy, StoragePolicy.private);
+        expect(saved.maxConcurrentDownloads, 2);
+        expect(saved.blockScreenshots, isFalse);
+        expect(saved.secureDelete, isFalse);
+        // Lock + disclaimer are preserved.
+        expect(
+          saved.appLock,
+          const AppLockSettings(enabled: true, biometric: true),
+        );
+        expect(saved.disclaimerAccepted, isTrue);
+      },
+    );
+
     test('setFilenameTemplate persists the pattern', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);

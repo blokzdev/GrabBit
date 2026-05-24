@@ -38,6 +38,54 @@ void main() {
     }
   });
 
+  testWidgets('app-bar overflow exposes maintenance actions', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset to defaults'), findsOneWidget);
+    expect(find.text('Clear cache'), findsOneWidget);
+    expect(find.text('About'), findsOneWidget);
+  });
+
+  testWidgets('Reset to defaults confirms then restores prefs', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await SettingsRepository(
+      db,
+    ).write(const SettingsModel(mode: UiMode.advanced));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset to defaults'));
+    await tester.pumpAndSettle();
+
+    // Confirmation dialog, then confirm.
+    expect(find.text('Reset to defaults?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Reset'));
+    await tester.pumpAndSettle();
+
+    expect((await SettingsRepository(db).read()).mode, UiMode.simple);
+  });
+
   testWidgets('Block screenshots toggle persists (P9e)', (tester) async {
     tester.view.physicalSize = const Size(1000, 3000);
     tester.view.devicePixelRatio = 1.0;
