@@ -68,4 +68,27 @@ void main() {
     );
     expect(find.text('Details'), findsNothing);
   });
+
+  testWidgets('notice tone uses info styling and still exposes details', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ErrorBanner(
+            tone: BannerTone.notice,
+            message: "This link isn't supported yet",
+            details: 'ERROR: Unsupported URL',
+          ),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsNothing);
+    expect(find.text('Details'), findsOneWidget);
+    await tester.tap(find.text('Details'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Unsupported URL'), findsOneWidget);
+    expect(find.text('Copy'), findsOneWidget);
+  });
 }

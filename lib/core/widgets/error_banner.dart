@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 
-/// An inline error banner shown within a screen body (not a full-screen state).
+/// Visual intent for [ErrorBanner]: a real [error] (red) vs an informational
+/// [notice] (e.g. a link that isn't supported yet — not actually a failure).
+enum BannerTone { error, notice }
+
+/// An inline status banner shown within a screen body (not a full-screen state).
 /// Callers pass any contextual [actions] (e.g. an "Update engine" button) so
 /// this stays free of feature-specific routing. Optional [details] (e.g. the raw
 /// yt-dlp stderr) are revealed, and copyable, under a "Details" toggle.
@@ -11,12 +15,14 @@ class ErrorBanner extends StatefulWidget {
     required this.message,
     this.actions,
     this.details,
+    this.tone = BannerTone.error,
     super.key,
   });
 
   final String message;
   final List<Widget>? actions;
   final String? details;
+  final BannerTone tone;
 
   @override
   State<ErrorBanner> createState() => _ErrorBannerState();
@@ -30,6 +36,13 @@ class _ErrorBannerState extends State<ErrorBanner> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final tokens = GrabBitTokens.of(context);
+    final isError = widget.tone == BannerTone.error;
+    final background = isError
+        ? scheme.errorContainer
+        : scheme.tertiaryContainer;
+    final foreground = isError
+        ? scheme.onErrorContainer
+        : scheme.onTertiaryContainer;
     final details = widget.details?.trim();
     // Only offer details when they add information beyond the friendly message.
     final hasDetails =
@@ -39,7 +52,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
       width: double.infinity,
       padding: EdgeInsets.all(tokens.spaceMd),
       decoration: BoxDecoration(
-        color: scheme.errorContainer,
+        color: background,
         borderRadius: BorderRadius.circular(tokens.radiusSm),
       ),
       child: Column(
@@ -47,13 +60,16 @@ class _ErrorBannerState extends State<ErrorBanner> {
         children: [
           Row(
             children: [
-              Icon(Icons.error_outline, color: scheme.onErrorContainer),
+              Icon(
+                isError ? Icons.error_outline : Icons.info_outline,
+                color: foreground,
+              ),
               SizedBox(width: tokens.spaceSm),
               Expanded(
                 child: Text(
                   widget.message,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onErrorContainer,
+                    color: foreground,
                   ),
                 ),
               ),
@@ -62,6 +78,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
           if (hasDetails)
             _DetailsSection(
               details: details,
+              foreground: foreground,
               expanded: _expanded,
               onToggle: () => setState(() => _expanded = !_expanded),
             ),
@@ -79,11 +96,13 @@ class _ErrorBannerState extends State<ErrorBanner> {
 class _DetailsSection extends StatelessWidget {
   const _DetailsSection({
     required this.details,
+    required this.foreground,
     required this.expanded,
     required this.onToggle,
   });
 
   final String details;
+  final Color foreground;
   final bool expanded;
   final VoidCallback onToggle;
 
@@ -121,7 +140,7 @@ class _DetailsSection extends StatelessWidget {
                   details,
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontFamily: 'monospace',
-                    color: scheme.onErrorContainer,
+                    color: foreground,
                   ),
                 ),
                 Align(

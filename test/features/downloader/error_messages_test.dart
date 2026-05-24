@@ -3,9 +3,11 @@ import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 
 void main() {
-  test('suggestsEngineUpdate only for extractor-ish errors', () {
-    expect(suggestsEngineUpdate(DownloadErrorCode.unsupportedSite), isTrue);
+  test('suggestsEngineUpdate only for a site-changed extractor failure', () {
+    // A genuinely unsupported link is handled via describeUnsupportedLink, not
+    // an update prompt (updating rarely helps and shouldn't be implied).
     expect(suggestsEngineUpdate(DownloadErrorCode.extractorFailed), isTrue);
+    expect(suggestsEngineUpdate(DownloadErrorCode.unsupportedSite), isFalse);
     expect(suggestsEngineUpdate(DownloadErrorCode.network), isFalse);
     expect(suggestsEngineUpdate(null), isFalse);
   });

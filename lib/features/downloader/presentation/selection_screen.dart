@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
+import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
@@ -9,6 +10,8 @@ import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_banner.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
+import 'package:grabbit/features/downloader/presentation/error_messages.dart';
+import 'package:grabbit/features/downloader/presentation/link_support.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 
 /// Thumbnail picker for an expanded playlist/channel/carousel.
@@ -97,7 +100,7 @@ class SelectionScreen extends ConsumerWidget {
                   tokens.spaceMd,
                   0,
                 ),
-                child: ErrorBanner(message: '${s.url} — ${s.error!}'),
+                child: _sourceErrorBanner(s),
               ),
             Expanded(child: body),
             _BottomBar(preset: state.preset, hasSelection: selectedCount > 0),
@@ -106,6 +109,24 @@ class SelectionScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Per-URL banner for a multi-link paste: an unsupported link reads as an
+/// info-toned notice with platform-aware guidance; a real error keeps the error
+/// tone. Both keep the raw message under Details.
+Widget _sourceErrorBanner(ExpandedSource s) {
+  if (s.errorCode == DownloadErrorCode.unsupportedSite) {
+    final info = describeUnsupportedLink(s.url, rawError: s.error);
+    return ErrorBanner(
+      tone: BannerTone.notice,
+      message: '${s.url}\n${info.message}',
+      details: s.error,
+    );
+  }
+  return ErrorBanner(
+    message: '${s.url}\n${friendlyError(s.errorCode, s.error!)}',
+    details: s.error,
+  );
 }
 
 class _EntryTile extends StatelessWidget {
