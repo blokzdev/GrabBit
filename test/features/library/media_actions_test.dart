@@ -131,4 +131,27 @@ void main() {
 
     expect(share.sharedPaths, ['/tmp/i1.mp4']);
   });
+
+  testWidgets('no Select entry in the default menu (P9h)', (tester) async {
+    tallSurface(tester);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          externalShareServiceProvider.overrideWithValue(_FakeShare()),
+        ],
+        child: MaterialApp(
+          home: Scaffold(body: MediaGrid(items: [_item()])),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Clip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Select'), findsNothing);
+  });
 }

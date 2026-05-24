@@ -13,20 +13,41 @@ import 'package:grabbit/features/library/presentation/media_actions.dart';
 String mediaHeroTag(String itemId) => 'media-thumb-$itemId';
 
 /// Reusable thumbnail grid of media items (library + collection views).
+///
+/// Pass [selectedIds]/[onToggle] to enable multi-select, and [onSelect] to let
+/// the per-tile context menu offer an "enter selection" entry (P9h).
 class MediaGrid extends StatelessWidget {
-  const MediaGrid({required this.items, this.physics, super.key});
+  const MediaGrid({
+    required this.items,
+    this.physics,
+    this.selectedIds,
+    this.onToggle,
+    this.onSelect,
+    super.key,
+  });
   final List<MediaItem> items;
   final ScrollPhysics? physics;
+  final Set<String>? selectedIds;
+  final void Function(MediaItem)? onToggle;
+  final void Function(MediaItem)? onSelect;
 
   @override
   Widget build(BuildContext context) {
     final tokens = GrabBitTokens.of(context);
+    final selecting = selectedIds?.isNotEmpty ?? false;
     return GridView.builder(
       physics: physics,
       padding: EdgeInsets.all(tokens.spaceMd),
       gridDelegate: mediaGridDelegate,
       itemCount: items.length,
-      itemBuilder: (context, i) => MediaTile(item: items[i]),
+      itemBuilder: (context, i) => MediaTile(
+        item: items[i],
+        selectionMode: selecting,
+        selected: selectedIds?.contains(items[i].id) ?? false,
+        onTap: selecting ? onToggle : null,
+        onLongPress: selecting ? onToggle : null,
+        onSelect: onSelect,
+      ),
     );
   }
 }
@@ -49,6 +70,7 @@ class MediaTile extends ConsumerWidget {
     this.selected = false,
     this.onTap,
     this.onLongPress,
+    this.onSelect,
     super.key,
   });
 
@@ -57,6 +79,10 @@ class MediaTile extends ConsumerWidget {
   final bool selected;
   final void Function(MediaItem)? onTap;
   final void Function(MediaItem)? onLongPress;
+
+  /// When set (and no [onLongPress] override), the default context menu shows a
+  /// "Select" entry that calls this to enter multi-select (P9h).
+  final void Function(MediaItem)? onSelect;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -73,7 +99,12 @@ class MediaTile extends ConsumerWidget {
             : () => context.push('/item/${item.id}'),
         onLongPress: onLongPress != null
             ? () => onLongPress!(item)
-            : () => showMediaActions(context, ref, item),
+            : () => showMediaActions(
+                context,
+                ref,
+                item,
+                onSelect: onSelect == null ? null : () => onSelect!(item),
+              ),
         borderRadius: radius,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
