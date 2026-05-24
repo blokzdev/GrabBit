@@ -385,6 +385,14 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **AMOLED dark theme (P9k)**: Settings → Appearance → "Pure black (AMOLED)" — in dark mode the
       background turns true black while cards/inputs/app bar stay distinguishable; light mode and
       dynamic color are unaffected; the choice persists across restarts.
+- [ ] **Cross-fade loading (P9l)**: opening Library/Queue/Collections/a smart album/an item/Studio,
+      the skeleton **cross-fades** into the loaded content (no abrupt snap); pull-to-refresh still works
+      and does **not** re-trigger the fade.
+- [ ] **Selection bar animation (P9l)**: entering multi-select (library grid and folder explorer) — the
+      bottom action bar **slides/grows up and fades in**; clearing the selection collapses it back out
+      smoothly rather than popping.
+- [ ] **Favorite pop (P9l)**: on an item's detail screen, tapping the star **scale-pops** between
+      filled/outline.
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.

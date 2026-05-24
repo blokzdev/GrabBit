@@ -12,6 +12,7 @@ import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/subtitle_files.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/utils/task_id.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
@@ -131,7 +132,8 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
     final item = ref.watch(mediaItemByIdProvider(widget.itemId));
     return Scaffold(
       appBar: AppBar(title: const Text('Studio')),
-      body: item.when(
+      body: AsyncFade(
+        value: item,
         loading: () => const _StudioSkeleton(),
         error: (e, _) => ErrorView(
           message: 'Failed to load item: $e',

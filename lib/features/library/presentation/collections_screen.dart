@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
@@ -78,7 +79,8 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
 
   Widget _buildCollections() {
     final collections = ref.watch(collectionsProvider);
-    return collections.when(
+    return AsyncFade(
+      value: collections,
       loading: () => const ListSkeleton(),
       error: (e, _) => ErrorView(
         message: 'Failed to load collections: $e',
@@ -232,7 +234,8 @@ class _AlbumsView extends ConsumerWidget {
         ref.watch(uploaderCountsProvider).asData?.value ?? const {};
     final recent = ref.watch(recentlyPlayedProvider).asData?.value ?? const [];
 
-    return sites.when(
+    return AsyncFade(
+      value: sites,
       loading: () => const ListSkeleton(),
       error: (e, _) => ErrorView(
         message: 'Failed to load albums: $e',
@@ -375,7 +378,8 @@ class _CollectionDetailScreenState
       ),
       body: ContentBounds(
         maxWidth: 1280,
-        child: items.when(
+        child: AsyncFade(
+          value: items,
           loading: () => const MediaGridSkeleton(),
           error: (e, _) => ErrorView(
             message: 'Failed to load collection: $e',

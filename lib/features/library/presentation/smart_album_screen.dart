@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/share/external_share_service.dart';
+import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
@@ -57,7 +58,8 @@ class _SmartAlbumScreenState extends ConsumerState<SmartAlbumScreen> {
       ),
       body: ContentBounds(
         maxWidth: 1280,
-        child: items.when(
+        child: AsyncFade(
+          value: items,
           loading: () => const MediaGridSkeleton(),
           error: (e, _) => ErrorView(
             message: 'Failed to load album: $e',

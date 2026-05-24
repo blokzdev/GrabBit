@@ -200,9 +200,17 @@ initializing, and the selection-screen white icon sits on a dark scrim over medi
 - **Exit / review:** toggle AMOLED in dark mode → true-black background, cards still distinguishable;
   light/dynamic unaffected. **Implemented (CI-verifiable; no APK needed).**
 
-### `[ ]` P9l — Motion / animation *(pure Dart)*
-- Shared `AsyncFade` cross-fade so skeletons fade into content (applied across the async screens);
-  multi-select bar slides/fades in & out; favorite-toggle micro-interaction.
+### `[~]` P9l — Motion / animation *(pure Dart)*
+- **`AsyncFade`** (`core/widgets/async_fade.dart`) — a drop-in `AsyncValue.when` replacement that
+  cross-fades loading→error→data, keyed on the load phase so ordinary data refreshes don't re-fade.
+  Applied across the async screens: library, explorer, queue, collections (list/platforms/detail),
+  smart album, item detail, metadata edit, studio.
+- **`SelectionBarTransition`** (`media_selection_bar.dart`) — `AnimatedSize` + `AnimatedSwitcher` so the
+  multi-select bar grows/fades in from the bottom and collapses out, instead of popping the layout.
+  Used by both the library and explorer selection bars.
+- **Favorite-toggle micro-interaction** — the item-detail star swaps with a `ScaleTransition` pop.
+- **Exit / review:** lists/details fade in from their skeletons; the selection bar slides in/out;
+  favoriting pops. **Implemented (CI-verifiable; no APK needed).**
 
 ### `[ ]` P9m — State fixes *(pure Dart)*
 - Storage screen gains a real loading skeleton + `ErrorView` (errors are currently swallowed to a zeroed
