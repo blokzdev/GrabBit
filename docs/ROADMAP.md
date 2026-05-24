@@ -199,7 +199,7 @@ format/audio preset; a re-run playlist skips already-downloaded items — all of
 ## P9 — Library, Playback & Privacy Depth
 **Goals:** make managing, finding, and enjoying the private library genuinely great, and
 harden privacy with non-theatrical lock features. Mostly pure Dart (CI-green) plus **one**
-DB migration and a few native lock items. Ships as a series of sub-PRs (P9a–P9i); the subphase
+DB migration and a few native lock items. Ships as a series of sub-PRs (P9a–P9j); the subphase
 breakdown lives in **`docs/design/P9-PLAN.md`**.
 **Deliverables:**
 - **P9a — Single v2→v3 DB migration** (do all schema changes once): `isFavorite` +
@@ -220,10 +220,10 @@ breakdown lives in **`docs/design/P9-PLAN.md`**.
 - **P9f — Storage & download safety**: a proactive **low-storage guard** (pre-flight free-space
   gate) and **battery-aware pause** on the scheduler; **orphaned-file cleanup**; and **device
   free/total** on the Storage screen. (PiP from P9c deferred to v2/P13; scheduling deferred.)
-- **P9g/P9h/P9i — Actions & menus**: a shared per-item **context menu** + **outbound Share** across
-  the grids (P9g); **library multi-select + bulk actions** (P9h); and **screen-level/utility menus**
-  — collection/album app-bar actions, whole-queue actions, item-detail richness, Settings + About
-  (P9i).
+- **P9g/P9h/P9i/P9j — Actions, menus & polish**: a shared per-item **context menu** + **outbound
+  Share** across the grids (P9g); **library multi-select + bulk actions** (P9h); **screen-level
+  action menus** — collection/album app-bar actions, whole-queue actions, item-detail richness
+  (P9i); and **Settings overflow + About screen + Studio post-op actions** (P9j, closing P9).
 **Exit criteria:** search/sort/favorite/dedupe the library and see storage usage; change
 playback speed and pick subtitles; reorder the queue (order persists) and see the dashboard;
 enable FLAG_SECURE and auto-lock; downloads pause on low storage/battery; long-press a tile for

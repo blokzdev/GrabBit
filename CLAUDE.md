@@ -165,15 +165,19 @@ only feedback loop. Be frugal:
 - **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`…).
 - Small, reviewable commits. Push with `git push -u origin <branch>`; retry network
   failures with exponential backoff. Never force-push shared branches.
-- **Phase = PR**: when a phase is complete — all CI gates green (format · analyze ·
-  test) **and** the phase's exit criteria met — open a PR into `main` for the
-  maintainer to review and merge. The maintainer merges and deletes the branch; the
-  agent then syncs local `main` and starts the next phase's branch.
+- **Subphase = PR**: at the end of each completed (sub)phase — all CI gates green
+  (format · analyze · test) **and** the (sub)phase's exit criteria met — the agent
+  **opens a PR into `main`** as the final step of its execution, without waiting for
+  a maintainer trigger. The maintainer reviews, merges, and deletes the branch, then
+  tells the agent; the agent syncs local `main` and starts the next (sub)phase's
+  branch. (A "phase" with no subphases opens one PR; a phase split into subphases
+  opens one PR per subphase.)
 - **Always update `docs/VERIFICATION.md`** in the same PR whenever it adds
   user-facing behavior: add the on-device checks CI can't cover (real downloads,
   native, notifications, biometrics, etc.). Keeping it current is mandatory — it's
   the v1-release regression checklist.
-- Outside a phase boundary, do **not** open a PR unless explicitly asked.
+- Mid-(sub)phase — i.e. work that doesn't yet meet a boundary — do **not** open a PR
+  unless explicitly asked.
 
 ---
 

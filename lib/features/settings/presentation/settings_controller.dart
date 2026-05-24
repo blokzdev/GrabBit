@@ -117,4 +117,17 @@ class SettingsController extends _$SettingsController {
 
   Future<void> setLastEngineCheck(DateTime when) async =>
       _update((await future).copyWith(lastEngineCheck: when));
+
+  /// Restores all preferences to their defaults, but preserves the app-lock
+  /// (its PIN lives in secure storage) and the accepted disclaimer (resetting
+  /// it would force re-onboarding).
+  Future<void> resetToDefaults() async {
+    final current = await future;
+    await _update(
+      SettingsModel(
+        appLock: current.appLock,
+        disclaimerAccepted: current.disclaimerAccepted,
+      ),
+    );
+  }
 }

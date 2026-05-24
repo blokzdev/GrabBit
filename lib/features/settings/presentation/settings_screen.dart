@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/storage/cache_cleaner.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
@@ -15,6 +17,7 @@ import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -23,7 +26,10 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsControllerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        actions: const [_SettingsOverflow()],
+      ),
       body: settings.when(
         loading: () => const ListSkeleton(),
         error: (e, _) => ErrorView(
@@ -31,6 +37,64 @@ class SettingsScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(settingsControllerProvider),
         ),
         data: (s) => _SettingsList(settings: s),
+      ),
+    );
+  }
+}
+
+/// App-bar overflow: maintenance actions that don't belong inside a section.
+class _SettingsOverflow extends ConsumerWidget {
+  const _SettingsOverflow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        switch (value) {
+          case 'reset':
+            _reset(context, ref);
+          case 'cache':
+            _clearCache(context);
+          case 'about':
+            context.push('/about');
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'reset', child: Text('Reset to defaults')),
+        PopupMenuItem(value: 'cache', child: Text('Clear cache')),
+        PopupMenuItem(value: 'about', child: Text('About')),
+      ],
+    );
+  }
+
+  Future<void> _reset(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await confirm(
+      context,
+      title: 'Reset to defaults?',
+      message:
+          'All download, appearance, storage and privacy preferences return '
+          'to their defaults. Your app lock and accepted disclaimer are kept.',
+      confirmLabel: 'Reset',
+      destructive: true,
+    );
+    if (!ok) return;
+    await ref.read(settingsControllerProvider.notifier).resetToDefaults();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Settings reset to defaults')),
+    );
+  }
+
+  Future<void> _clearCache(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await clearDirectory(await getTemporaryDirectory());
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          result.bytes == 0
+              ? 'Cache already empty'
+              : 'Freed ${formatBytes(result.bytes)}',
+        ),
       ),
     );
   }

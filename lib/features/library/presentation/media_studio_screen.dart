@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/engine/media_tools_engine.dart';
 import 'package:grabbit/core/engine/media_tools_ops.dart';
@@ -18,6 +17,7 @@ import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/media_tools_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 
 /// On-device editing tools that produce a new library item, leaving the
@@ -96,8 +96,8 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
             SnackBar(
               content: Text('Saved "$label" as a new item'),
               action: SnackBarAction(
-                label: 'Open',
-                onPressed: () => context.push('/item/$jobId'),
+                label: 'Actions',
+                onPressed: () => _showActions(jobId),
               ),
             ),
           );
@@ -114,6 +114,14 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
   Future<void> _cancel() async {
     final id = _jobId;
     if (id != null) await ref.read(mediaToolsEngineProvider).cancel(id);
+  }
+
+  /// Opens the shared per-item action sheet (Open · Share · Add to collection · …)
+  /// for the freshly-edited output.
+  Future<void> _showActions(String id) async {
+    final item = await ref.read(mediaItemByIdProvider(id).future);
+    if (!mounted || item == null) return;
+    await showMediaActions(context, ref, item);
   }
 
   String _ext(MediaItem row) => row.filePath.split('.').last;
