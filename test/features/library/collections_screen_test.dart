@@ -85,6 +85,50 @@ void main() {
   );
 
   testWidgets(
+    'Albums tab lists platforms with counts',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            collectionsProvider.overrideWith(
+              (ref) => Stream.value(<Collection>[]),
+            ),
+            collectionItemCountsProvider.overrideWith(
+              (ref) => Stream.value(<int, int>{}),
+            ),
+            distinctSitesProvider.overrideWith(
+              (ref) => Stream.value(['youtube']),
+            ),
+            siteCountsProvider.overrideWith(
+              (ref) => Stream.value(<String, int>{'youtube': 2}),
+            ),
+            distinctUploadersProvider.overrideWith(
+              (ref) => Stream.value(<String>[]),
+            ),
+            uploaderCountsProvider.overrideWith(
+              (ref) => Stream.value(<String, int>{}),
+            ),
+            recentlyPlayedProvider.overrideWith(
+              (ref) => Stream.value(<MediaItem>[]),
+            ),
+          ],
+          child: const MaterialApp(home: CollectionsScreen()),
+        ),
+      );
+      await settle(tester);
+
+      await tester.tap(find.text('Albums'));
+      await settle(tester);
+
+      expect(find.text('Platforms'), findsOneWidget);
+      expect(find.text('youtube'), findsOneWidget);
+      expect(find.text('2 items'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
     'detail shows the scoped media grid',
     (tester) async {
       await tester.pumpWidget(

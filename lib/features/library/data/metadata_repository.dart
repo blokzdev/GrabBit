@@ -185,6 +185,46 @@ class MetadataRepository {
     }).watch();
   }
 
+  // --- Smart / auto albums (P9b-2) ---
+
+  /// Item counts per platform (`site` → count), for the Platforms albums.
+  Stream<Map<String, int>> watchItemCountsBySite() {
+    final count = _db.mediaItems.id.count();
+    final query = _db.selectOnly(_db.mediaItems)
+      ..addColumns([_db.mediaItems.site, count])
+      ..groupBy([_db.mediaItems.site]);
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows)
+          row.read(_db.mediaItems.site)!: row.read(count) ?? 0,
+      },
+    );
+  }
+
+  /// Item counts per channel (`uploader` → count), for the Channels albums.
+  Stream<Map<String, int>> watchItemCountsByUploader() {
+    final count = _db.mediaMetadata.itemId.count();
+    final query = _db.selectOnly(_db.mediaMetadata)
+      ..addColumns([_db.mediaMetadata.uploader, count])
+      ..where(_db.mediaMetadata.uploader.isNotNull())
+      ..groupBy([_db.mediaMetadata.uploader]);
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows)
+          row.read(_db.mediaMetadata.uploader)!: row.read(count) ?? 0,
+      },
+    );
+  }
+
+  /// Items played at least once, most-recent first (the Recently-played album).
+  Stream<List<MediaItem>> watchRecentlyPlayed({int limit = 100}) {
+    final query = _db.select(_db.mediaItems)
+      ..where((t) => t.lastAccessedAt.isNotNull())
+      ..orderBy([(t) => OrderingTerm.desc(t.lastAccessedAt)])
+      ..limit(limit);
+    return query.watch();
+  }
+
   Stream<MediaMetadataData?> watchMetadataForItem(String itemId) => (_db.select(
     _db.mediaMetadata,
   )..where((t) => t.itemId.equals(itemId))).watchSingleOrNull();
@@ -347,3 +387,31 @@ final distinctUploadersProvider = StreamProvider<List<String>>(
 final distinctPlaylistsProvider = StreamProvider<List<PlaylistFacet>>(
   (ref) => ref.watch(metadataRepositoryProvider).watchDistinctPlaylists(),
 );
+
+// Smart / auto albums (P9b-2).
+final siteCountsProvider = StreamProvider<Map<String, int>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchItemCountsBySite(),
+);
+
+final uploaderCountsProvider = StreamProvider<Map<String, int>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchItemCountsByUploader(),
+);
+
+final recentlyPlayedProvider = StreamProvider<List<MediaItem>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchRecentlyPlayed(),
+);
+
+/// Items for a smart album, keyed by ([kind], [value]). `kind` is
+/// `site` | `channel` | `recentPlayed`.
+final smartAlbumItemsProvider =
+    StreamProvider.family<List<MediaItem>, ({String kind, String? value})>((
+      ref,
+      key,
+    ) {
+      final repo = ref.watch(metadataRepositoryProvider);
+      return switch (key.kind) {
+        'site' => repo.watchFiltered(LibraryQuery(site: key.value)),
+        'channel' => repo.watchFiltered(LibraryQuery(uploader: key.value)),
+        _ => repo.watchRecentlyPlayed(),
+      };
+    });

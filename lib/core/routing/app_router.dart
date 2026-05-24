@@ -12,6 +12,7 @@ import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
+import 'package:grabbit/features/library/presentation/smart_album_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
 import 'package:grabbit/features/lock/lock_screen.dart';
@@ -137,6 +138,15 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => CollectionDetailScreen(
           collectionId: int.parse(state.pathParameters['id']!),
           name: state.extra as String?,
+        ),
+      ),
+      GoRoute(
+        path: '/album/:kind',
+        name: 'album',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => SmartAlbumScreen(
+          kind: state.pathParameters['kind']!,
+          value: state.uri.queryParameters['v'],
         ),
       ),
     ],
