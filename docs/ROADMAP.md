@@ -253,6 +253,22 @@ cloud, no account, no credits.**
 - **On-demand model download** + integrity check + caching (keeps install lean).
 - First local feature set: transcription, summarization, translation, OCR, smart
   tagging / semantic search.
+- **AI-powered library organization** (the on-device, free counterpart to P9b's
+  deterministic SQL albums/search — layered *beside*, not replacing, them; every
+  feature `DeviceCapability`-gated):
+  - **Semantic search** over titles/descriptions/notes + **whisper.cpp transcripts**
+    via local text embeddings (ML Kit / MediaPipe / a small sentence-transformer),
+    backed by an **on-device vector index** (e.g. `sqlite-vec`, ObjectBox, or an
+    in-memory ANN) — complements the existing `LIKE` search, never phones home.
+  - **Topic / content-similarity albums** ("more like this", auto-clustered albums)
+    built on those embeddings — the AI sibling of P9b-2's SQL smart albums.
+  - **Smart auto-tagging & categorization** (on-device labels/topics) that feed the
+    existing tags + faceted filters/albums.
+  - **Optional relationship/graph view** of the library (items linked by
+    channel/topic/co-occurrence) — a visualization over existing metadata + the
+    similarity index, not a new datastore requirement.
+  - Embeddings/transcripts stay **on-device/free**; a cloud embedding/index path is
+    only ever a **v3 credit** option, never required.
 - **Graceful disabling**: features the device can't run are clearly disabled with a
   friendly reason — never a crash, never a silent no-op.
 **Exit criteria:** on a capable device, transcribe + summarize a saved item fully
