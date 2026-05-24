@@ -211,3 +211,10 @@ abstract class StorageHostApi {
   @async
   String exportToMediaStore(String filePath, String type, String? subdir);
 }
+
+/// Privacy window flags (P9e). [setSecureFlag] toggles `FLAG_SECURE`, which
+/// blocks screenshots and hides app content in the recent-apps preview.
+@HostApi()
+abstract class PrivacyHostApi {
+  void setSecureFlag(bool enabled);
+}

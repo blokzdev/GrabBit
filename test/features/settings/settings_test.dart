@@ -38,6 +38,30 @@ void main() {
       expect(s.sponsorBlockCategories, 'sponsor');
       expect(s.embedChapters, isFalse);
       expect(s.splitChapters, isFalse);
+      // P9e privacy defaults.
+      expect(s.blockScreenshots, isFalse);
+      expect(s.secureDelete, isFalse);
+      expect(s.appLock.autoLockSeconds, 60);
+    });
+
+    test('JSON round-trip preserves the P9e privacy fields', () {
+      const s = SettingsModel(
+        blockScreenshots: true,
+        secureDelete: true,
+        appLock: AppLockSettings(enabled: true, autoLockSeconds: 300),
+      );
+      expect(SettingsModel.fromJson(s.toJson()), s);
+    });
+
+    test('a legacy blob without the P9e fields decodes to defaults', () {
+      final legacy = const SettingsModel().toJson()
+        ..remove('blockScreenshots')
+        ..remove('secureDelete');
+      (legacy['appLock'] as Map).remove('autoLockSeconds');
+      final decoded = SettingsModel.fromJson(legacy);
+      expect(decoded.blockScreenshots, isFalse);
+      expect(decoded.secureDelete, isFalse);
+      expect(decoded.appLock.autoLockSeconds, 60);
     });
 
     test('JSON round-trip preserves enums with custom values', () {
@@ -221,6 +245,24 @@ void main() {
         );
       },
     );
+
+    test('privacy setters persist (P9e)', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(settingsControllerProvider.notifier);
+      await container.read(settingsControllerProvider.future);
+      await notifier.setBlockScreenshots(true);
+      await notifier.setSecureDelete(true);
+
+      final saved = await SettingsRepository(db).read();
+      expect(saved.blockScreenshots, isTrue);
+      expect(saved.secureDelete, isTrue);
+    });
 
     test('setFilenameTemplate persists the pattern', () async {
       final db = AppDatabase(NativeDatabase.memory());

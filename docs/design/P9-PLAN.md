@@ -83,16 +83,23 @@ three PRs:
 - **Exit / review:** drag-reorder persists across restart; the dashboard shows live aggregate
   speed / ETA / total. **Implemented; pending on-device check.**
 
-### `[ ]` P9e — Privacy & app-lock hardening *(ship only the non-theatrical items)*
-- **FLAG_SECURE** toggle (block screenshots / hide content in recents) — a `MainActivity`
-  window flag wired to a new setting (default off; it also blocks legitimate recording, so it
-  must be user-controlled).
-- **Auto-lock timeout** (`autoLockSeconds` setting) — a pure-Dart timer over the existing
-  router lock gate (`lib/features/lock/lock_controller.dart`). CI-testable.
-- **Secure delete** — overwrite-then-delete for removed private items; **document honestly**
-  that flash wear-leveling makes this best-effort, not a guarantee.
+### `[~]` P9e — Privacy & app-lock hardening *(ship only the non-theatrical items)*
+- **FLAG_SECURE** toggle (block screenshots / hide content in recents) — a `PrivacyHostApi` Pigeon
+  method toggling the `MainActivity` window flag, wired to a new `blockScreenshots` setting
+  (default off; it also blocks legitimate recording, so it's user-controlled). Applied at startup
+  + on toggle via `privacyServiceProvider`.
+- **Auto-lock timeout** (`appLock.autoLockSeconds`, default 1 min) — `AutoLock` controller arms a
+  Timer when backgrounded and cancels it on a quick return (`auto_lock_controller.dart`, driven by
+  the `app.dart` lifecycle observer). 0 = lock immediately. CI-tested with `fakeAsync`.
+- **Secure delete** — opt-in `secureDelete` setting (default off): `secureDeleteFile` overwrites
+  bytes (single pass) before unlinking; honestly **best-effort** on flash storage (wear-levelling).
+- **PIN UX & lockout hardening** — confirm-PIN setup + reveal toggle + digits-only (`pin_dialog.dart`),
+  a **Change PIN** action, **confirm-before-disable** (disabling wipes the PIN), and **failed-attempt
+  throttling** with an escalating, restart-surviving cooldown (`lockout_policy.dart`) shown as a
+  countdown on the lock screen (+ haptics on a wrong PIN, biometric-failure feedback).
 - **Exit / review:** FLAG_SECURE blocks recents/screenshots; the app re-locks after the
-  timeout; secure-delete removes a private item.
+  timeout (not on a quick return); secure-delete removes a private item; PIN lockout + Change-PIN
+  work. **Implemented; pending on-device check (FLAG_SECURE needs a manual APK build).**
 
 ---
 

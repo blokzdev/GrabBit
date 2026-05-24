@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/filename_template.dart';
+import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/lock/pin_dialog.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
@@ -358,6 +360,29 @@ class _SettingsList extends ConsumerWidget {
             title: 'Security',
             children: [_AppLockSection(appLock: settings.appLock)],
           ),
+          _Section(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privacy',
+            children: [
+              SwitchListTile(
+                title: const Text('Block screenshots'),
+                subtitle: const Text(
+                  'Hide content in screenshots and the recent-apps preview',
+                ),
+                value: settings.blockScreenshots,
+                onChanged: controller.setBlockScreenshots,
+              ),
+              SwitchListTile(
+                title: const Text('Secure delete'),
+                subtitle: const Text(
+                  'Overwrite files before deleting — slower, and only '
+                  'best-effort on flash storage',
+                ),
+                value: settings.secureDelete,
+                onChanged: controller.setSecureDelete,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -647,6 +672,14 @@ class _AppLockSection extends ConsumerWidget {
   const _AppLockSection({required this.appLock});
   final AppLockSettings appLock;
 
+  static const _autoLockOptions = <int, String>{
+    0: 'Immediately',
+    30: 'After 30 seconds',
+    60: 'After 1 minute',
+    300: 'After 5 minutes',
+    900: 'After 15 minutes',
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.read(settingsControllerProvider.notifier);
@@ -658,12 +691,20 @@ class _AppLockSection extends ConsumerWidget {
           value: appLock.enabled,
           onChanged: (enable) async {
             if (enable) {
-              final pin = await _askPin(context);
+              final pin = await showPinDialog(context);
               if (pin == null) return;
               await ref.read(pinRepositoryProvider).setPin(pin);
               await settings.setAppLock(appLock.copyWith(enabled: true));
               ref.read(lockControllerProvider.notifier).unlock();
             } else {
+              final ok = await confirm(
+                context,
+                title: 'Turn off app lock?',
+                message: 'Your PIN will be removed.',
+                confirmLabel: 'Turn off',
+                destructive: true,
+              );
+              if (!ok) return;
               await ref.read(pinRepositoryProvider).clear();
               await settings.setAppLock(
                 const AppLockSettings(enabled: false, biometric: false),
@@ -671,7 +712,16 @@ class _AppLockSection extends ConsumerWidget {
             }
           },
         ),
-        if (appLock.enabled)
+        if (appLock.enabled) ...[
+          ListTile(
+            title: const Text('Change PIN'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              final pin = await showPinDialog(context, title: 'Change PIN');
+              if (pin == null) return;
+              await ref.read(pinRepositoryProvider).setPin(pin);
+            },
+          ),
           SwitchListTile(
             title: const Text('Biometric unlock'),
             subtitle: const Text('Use fingerprint or face to unlock'),
@@ -679,38 +729,22 @@ class _AppLockSection extends ConsumerWidget {
             onChanged: (v) =>
                 settings.setAppLock(appLock.copyWith(biometric: v)),
           ),
-      ],
-    );
-  }
-
-  Future<String?> _askPin(BuildContext context) {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Set a PIN'),
-        content: TextField(
-          controller: controller,
-          obscureText: true,
-          keyboardType: TextInputType.number,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'At least 4 digits'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (controller.text.trim().length >= 4) {
-                Navigator.of(context).pop(controller.text.trim());
-              }
-            },
-            child: const Text('Set'),
+          ListTile(
+            title: const Text('Auto-lock'),
+            subtitle: const Text('Re-lock after leaving the app'),
+            trailing: DropdownButton<int>(
+              value: appLock.autoLockSeconds,
+              onChanged: (v) => v == null
+                  ? null
+                  : settings.setAppLock(appLock.copyWith(autoLockSeconds: v)),
+              items: [
+                for (final entry in _autoLockOptions.entries)
+                  DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+              ],
+            ),
           ),
         ],
-      ),
+      ],
     );
   }
 }

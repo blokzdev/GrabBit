@@ -989,3 +989,42 @@ interface StorageHostApi {
     }
   }
 }
+/**
+ * Privacy window flags (P9e). [setSecureFlag] toggles `FLAG_SECURE`, which
+ * blocks screenshots and hides app content in the recent-apps preview.
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface PrivacyHostApi {
+  fun setSecureFlag(enabled: Boolean)
+
+  companion object {
+    /** The codec used by PrivacyHostApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+    /** Sets up an instance of `PrivacyHostApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: PrivacyHostApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.PrivacyHostApi.setSecureFlag$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val enabledArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setSecureFlag(enabledArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              EnginePigeonPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}

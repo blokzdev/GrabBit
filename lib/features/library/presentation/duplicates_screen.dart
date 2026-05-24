@@ -11,6 +11,7 @@ import 'package:grabbit/features/library/data/dedupe_service.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 /// Finds likely-duplicate downloads (same content signature) and lets the user
 /// keep one and delete the rest (P9b-3).
@@ -160,7 +161,12 @@ class _DuplicateRow extends ConsumerWidget {
             destructive: true,
           );
           if (!ok) return;
-          await ref.read(libraryRepositoryProvider).deleteItem(item);
+          final secure =
+              ref.read(settingsControllerProvider).asData?.value.secureDelete ??
+              false;
+          await ref
+              .read(libraryRepositoryProvider)
+              .deleteItem(item, secure: secure);
           messenger
             ..hideCurrentSnackBar()
             ..showSnackBar(const SnackBar(content: Text('Deleted')));

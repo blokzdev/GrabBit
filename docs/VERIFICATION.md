@@ -335,8 +335,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       ("N downloading · M queued · K done"), combined **live speed**, longest **ETA**, and total
       size when known; it disappears once nothing is active.
       *(Picture-in-Picture (was P9c-2) is deferred — see `docs/BACKLOG.md`.)*
-- [ ] **Privacy**: FLAG_SECURE blocks screenshots and hides the app in recents; auto-lock
-      re-locks after the timeout; secure-delete removes a private item.
+- [ ] **Block screenshots (P9e)**: with the Privacy → "Block screenshots" toggle ON, a screenshot
+      is blocked and the recent-apps preview is blank; with it OFF, screenshots/recording work
+      again (the setting is honored at startup, not just after toggling).
+- [ ] **Auto-lock (P9e)**: with app-lock on and Auto-lock = 1 minute, leaving and returning within
+      a minute does **not** require the PIN, but returning after a minute (or with "Immediately")
+      shows the lock screen; a cold start always locks.
+- [ ] **PIN lockout (P9e)**: entering a wrong PIN shakes + buzzes; after 5 wrong tries the lock
+      screen shows a countdown and disables Unlock + biometrics, and the cooldown **survives an app
+      restart**; a correct PIN clears it.
+- [ ] **PIN management (P9e)**: setting a PIN requires entering it twice (mismatch is rejected);
+      "Change PIN" updates it; turning app-lock off is confirm-gated and removes the PIN.
+- [ ] **Secure delete (P9e)**: with Privacy → "Secure delete" ON, deleting a private item removes
+      it (best-effort overwrite; verify the file is gone and the item leaves the library).
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.

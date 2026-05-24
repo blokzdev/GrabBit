@@ -110,4 +110,32 @@ void main() {
     expect(await db.select(db.mediaItems).get(), isEmpty);
     expect(await db.select(db.mediaMetadata).get(), isEmpty); // cascaded
   });
+
+  test('deleteItem(secure: true) overwrites then removes the file', () async {
+    final dir = Directory.systemTemp.createTempSync('grabbit_secdel');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final media = File('${dir.path}/clip.mp4')..writeAsStringSync('secret');
+    await db
+        .into(db.mediaItems)
+        .insert(
+          MediaItemsCompanion.insert(
+            id: 's1',
+            title: 'Clip',
+            sourceUrl: 'https://y/s1',
+            site: 'youtube',
+            filePath: media.path,
+            type: 'video',
+            createdAt: DateTime.utc(2026),
+            storageState: 'private',
+          ),
+        );
+    final item = await (db.select(
+      db.mediaItems,
+    )..where((t) => t.id.equals('s1'))).getSingle();
+
+    await repo.deleteItem(item, secure: true);
+
+    expect(media.existsSync(), isFalse);
+    expect(await db.select(db.mediaItems).get(), isEmpty);
+  });
 }

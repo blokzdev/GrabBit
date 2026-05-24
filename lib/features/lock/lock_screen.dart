@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/lock/lockout_policy.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 class LockScreen extends ConsumerStatefulWidget {
@@ -19,6 +22,9 @@ class _LockScreenState extends ConsumerState<LockScreen>
   final _pinController = TextEditingController();
   String? _error;
   bool _busy = false;
+  bool _obscure = true;
+  Duration _lockout = Duration.zero;
+  Timer? _ticker;
   late final AnimationController _shake = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 400),
@@ -27,6 +33,7 @@ class _LockScreenState extends ConsumerState<LockScreen>
   @override
   void initState() {
     super.initState();
+    _refreshLockout();
     final biometric =
         ref.read(settingsControllerProvider).asData?.value.appLock.biometric ??
         false;
@@ -37,12 +44,33 @@ class _LockScreenState extends ConsumerState<LockScreen>
 
   @override
   void dispose() {
+    _ticker?.cancel();
     _pinController.dispose();
     _shake.dispose();
     super.dispose();
   }
 
+  /// Reads the remaining cooldown and, while it's active, ticks every second to
+  /// update the countdown and re-enable input when it elapses.
+  Future<void> _refreshLockout() async {
+    final remaining = await ref.read(lockoutPolicyProvider).remaining();
+    if (!mounted) return;
+    setState(() => _lockout = remaining);
+    _ticker?.cancel();
+    if (remaining > Duration.zero) {
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+        final next = _lockout - const Duration(seconds: 1);
+        if (!mounted) return;
+        setState(() => _lockout = next > Duration.zero ? next : Duration.zero);
+        if (next <= Duration.zero) _ticker?.cancel();
+      });
+    }
+  }
+
+  bool get _lockedOut => _lockout > Duration.zero;
+
   Future<void> _submitPin() async {
+    if (_lockedOut) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -56,12 +84,24 @@ class _LockScreenState extends ConsumerState<LockScreen>
         _busy = false;
       });
       _pinController.clear();
+      unawaited(HapticFeedback.heavyImpact());
       unawaited(_shake.forward(from: 0));
+      await _refreshLockout();
     }
   }
 
   Future<void> _biometric() async {
-    await ref.read(lockControllerProvider.notifier).unlockWithBiometric();
+    if (_lockedOut) return;
+    final ok = await ref
+        .read(lockControllerProvider.notifier)
+        .unlockWithBiometric();
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Biometric unlock failed')),
+        );
+    }
   }
 
   @override
@@ -110,12 +150,24 @@ class _LockScreenState extends ConsumerState<LockScreen>
                   SizedBox(height: tokens.spaceXl),
                   TextField(
                     controller: _pinController,
-                    obscureText: true,
+                    obscureText: _obscure,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    enabled: !_lockedOut,
                     autofocus: true,
                     decoration: InputDecoration(
                       labelText: 'PIN',
-                      errorText: _error,
+                      errorText: _lockedOut
+                          ? 'Too many attempts. Try again in '
+                                '${formatDuration(_lockout.inSeconds)}'
+                          : _error,
+                      suffixIcon: IconButton(
+                        tooltip: _obscure ? 'Show' : 'Hide',
+                        icon: Icon(
+                          _obscure ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                      ),
                     ),
                     onSubmitted: (_) => _submitPin(),
                   ),
@@ -123,14 +175,14 @@ class _LockScreenState extends ConsumerState<LockScreen>
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: _busy ? null : _submitPin,
+                      onPressed: (_busy || _lockedOut) ? null : _submitPin,
                       child: const Text('Unlock'),
                     ),
                   ),
                   if (biometric) ...[
                     SizedBox(height: tokens.spaceXs),
                     TextButton.icon(
-                      onPressed: _biometric,
+                      onPressed: _lockedOut ? null : _biometric,
                       icon: const Icon(Icons.fingerprint),
                       label: const Text('Use biometrics'),
                     ),

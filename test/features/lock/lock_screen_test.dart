@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/lock/lock_screen.dart';
+import 'package:grabbit/features/lock/lockout_policy.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 
 class _FakeStore implements SecureStore {
@@ -31,6 +32,9 @@ void main() {
           overrides: [
             appDatabaseProvider.overrideWithValue(db),
             pinRepositoryProvider.overrideWithValue(repo),
+            lockoutPolicyProvider.overrideWithValue(
+              LockoutPolicy(_FakeStore()),
+            ),
           ],
           child: const MaterialApp(home: LockScreen()),
         ),

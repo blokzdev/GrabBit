@@ -32,9 +32,81 @@ void main() {
       'Storage',
       'Appearance',
       'Security',
+      'Privacy',
     ]) {
       expect(find.text(section), findsOneWidget);
     }
+  });
+
+  testWidgets('Block screenshots toggle persists (P9e)', (tester) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Block screenshots'));
+    await tester.pumpAndSettle();
+
+    expect((await SettingsRepository(db).read()).blockScreenshots, isTrue);
+  });
+
+  testWidgets('Auto-lock and Change PIN appear only when app lock is on', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Lock off by default: no auto-lock / change-PIN rows.
+    expect(find.text('Auto-lock'), findsNothing);
+    expect(find.text('Change PIN'), findsNothing);
+  });
+
+  testWidgets('Auto-lock dropdown shows when app lock is enabled', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await SettingsRepository(
+      db,
+    ).write(const SettingsModel(appLock: AppLockSettings(enabled: true)));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Auto-lock'), findsOneWidget);
+    expect(find.text('Change PIN'), findsOneWidget);
+    expect(find.text('After 1 minute'), findsOneWidget); // default 60s
   });
 
   testWidgets('toggling advanced mode persists to settings', (tester) async {
