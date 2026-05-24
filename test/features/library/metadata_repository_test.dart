@@ -157,6 +157,40 @@ void main() {
     expect(limited.map((r) => r.id), ['b']);
   });
 
+  test('watchDuplicates groups items sharing a content hash', () async {
+    await seed('a', 'A', 'video');
+    await seed('b', 'B', 'video');
+    await seed('c', 'C', 'video');
+    Future<void> setHash(String id, String h) =>
+        (db.update(db.mediaItems)..where((t) => t.id.equals(id))).write(
+          MediaItemsCompanion(contentHash: Value(h)),
+        );
+    await setHash('a', 'dup');
+    await setHash('b', 'dup');
+    await setHash('c', 'unique');
+
+    final groups = await repo.watchDuplicates().first;
+    expect(groups, hasLength(1));
+    expect(groups.single.map((r) => r.id).toSet(), {'a', 'b'});
+  });
+
+  test('watchSizeByType and watchSizeBySite sum sizes', () async {
+    await seed('a', 'A', 'video', size: 100, site: 'youtube');
+    await seed('b', 'B', 'video', size: 50, site: 'vimeo');
+    await seed('c', 'C', 'audio', size: 20, site: 'youtube');
+
+    expect(await repo.watchSizeByType().first, {'video': 150, 'audio': 20});
+    expect(await repo.watchSizeBySite().first, {'youtube': 120, 'vimeo': 50});
+  });
+
+  test('watchLargestItems orders by size desc and limits', () async {
+    await seed('a', 'A', 'video', size: 10);
+    await seed('b', 'B', 'video', size: 99);
+    await seed('c', 'C', 'video', size: 50);
+    final rows = await repo.watchLargestItems(limit: 2).first;
+    expect(rows.map((r) => r.id), ['b', 'c']);
+  });
+
   test('tags: add, list, remove', () async {
     await seed('a', 'A', 'video');
     await repo.addTagToItem('a', 'funny');

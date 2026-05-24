@@ -225,6 +225,54 @@ class MetadataRepository {
     return query.watch();
   }
 
+  // --- Duplicates & storage (P9b-3) ---
+
+  /// Groups of items that share a `contentHash` (2+ each) — likely duplicates.
+  Stream<List<List<MediaItem>>> watchDuplicates() {
+    final query = _db.select(_db.mediaItems)
+      ..where((t) => t.contentHash.isNotNull())
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.contentHash),
+        (t) => OrderingTerm.asc(t.createdAt),
+      ]);
+    return query.watch().map((rows) {
+      final groups = <String, List<MediaItem>>{};
+      for (final r in rows) {
+        groups.putIfAbsent(r.contentHash!, () => []).add(r);
+      }
+      return groups.values.where((g) => g.length > 1).toList();
+    });
+  }
+
+  /// Total bytes per media type (`video`/`audio`/`image`).
+  Stream<Map<String, int>> watchSizeByType() =>
+      _watchSizeGrouped(_db.mediaItems.type);
+
+  /// Total bytes per platform (`site`).
+  Stream<Map<String, int>> watchSizeBySite() =>
+      _watchSizeGrouped(_db.mediaItems.site);
+
+  Stream<Map<String, int>> _watchSizeGrouped(GeneratedColumn<String> column) {
+    final sum = _db.mediaItems.sizeBytes.sum();
+    final query = _db.selectOnly(_db.mediaItems)
+      ..addColumns([column, sum])
+      ..groupBy([column]);
+    return query.watch().map(
+      (rows) => {
+        for (final row in rows) row.read<String>(column)!: row.read(sum) ?? 0,
+      },
+    );
+  }
+
+  /// The biggest items first (for storage cleanup).
+  Stream<List<MediaItem>> watchLargestItems({int limit = 20}) {
+    final query = _db.select(_db.mediaItems)
+      ..where((t) => t.sizeBytes.isNotNull())
+      ..orderBy([(t) => OrderingTerm.desc(t.sizeBytes)])
+      ..limit(limit);
+    return query.watch();
+  }
+
   Stream<MediaMetadataData?> watchMetadataForItem(String itemId) => (_db.select(
     _db.mediaMetadata,
   )..where((t) => t.itemId.equals(itemId))).watchSingleOrNull();
@@ -399,6 +447,23 @@ final uploaderCountsProvider = StreamProvider<Map<String, int>>(
 
 final recentlyPlayedProvider = StreamProvider<List<MediaItem>>(
   (ref) => ref.watch(metadataRepositoryProvider).watchRecentlyPlayed(),
+);
+
+// Duplicates & storage (P9b-3).
+final duplicatesProvider = StreamProvider<List<List<MediaItem>>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchDuplicates(),
+);
+
+final sizeByTypeProvider = StreamProvider<Map<String, int>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchSizeByType(),
+);
+
+final sizeBySiteProvider = StreamProvider<Map<String, int>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchSizeBySite(),
+);
+
+final largestItemsProvider = StreamProvider<List<MediaItem>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchLargestItems(),
 );
 
 /// Items for a smart album, keyed by ([kind], [value]). `kind` is

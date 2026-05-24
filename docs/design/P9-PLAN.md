@@ -46,9 +46,11 @@ three PRs:
   query-defined albums — Platforms (`watchItemCountsBySite`), Channels (`watchItemCountsByUploader`),
   and Recently played (`watchRecentlyPlayed`) — each opening a `SmartAlbumScreen` grid via
   `/album/:kind`. Pure SQL faceting (no AI/embeddings). **Implemented; pending on-device check.**
-- **`[ ]` P9b-3 — Duplicates & storage:** off-isolate (`compute`) content-hash service populating
-  `contentHash` (size + head/tail bytes); `watchDuplicates` + a `/duplicates` view; storage-usage
-  aggregation (by type/site + total) + a `/storage` view; both reuse P9b-1's `deleteItem`.
+- **`[~]` P9b-3 — Duplicates & storage:** off-isolate (`compute`) `hashFilesSync` signature
+  (size + head/tail 1 MiB) populating `contentHash` via `DedupeService.scan`; `watchDuplicates` +
+  a `/duplicates` view with per-item delete; storage aggregation (`watchSizeByType`/`BySite`/
+  `watchLargestItems`) + a `/storage` view (breakdown + largest + "Find duplicates"); entry from
+  Settings → Storage. Reuses P9b-1's `deleteItem`. **Implemented; pending on-device check.**
 - **Exit / review:** search by keyword, sort, star favorites, see a storage breakdown, and detect
   duplicates — all offline.
 
