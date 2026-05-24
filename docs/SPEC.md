@@ -1,6 +1,6 @@
 # GrabBit — Technical Specification
 
-Status: Draft v0.1 · Last updated: 2026-05-20
+Status: Draft v0.2 · Last updated: 2026-05-24
 
 Implementation-level detail. Versions are targets to confirm at scaffold time
 (P0); pin exact versions in `pubspec.yaml` and record here.
@@ -27,13 +27,15 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `flutter_native_splash` (dev) | Generate the branded (Android-12+) splash, light/dark (P7) |
 | **Bundled fonts** `Outfit` (display) + `Inter` (body) in `assets/fonts/` | Brand type, **bundled not fetched** — offline + privacy-first (no `google_fonts` runtime call) (P7) |
 | Export to device: **hand-rolled Pigeon channel** (SAF + MediaStore) — no `media_store_plus`/`shared_storage` dep (see §5) | Export to gallery / user-picked folder |
-| `dio` | HTTP (v2 model downloads; v3 backend) |
+| `dio` | HTTP (P11 on-device model downloads) |
 | `freezed`, `json_serializable` | Immutable models / JSON |
 | `intl` + `flutter_localizations` | i18n (ARB) |
 | `logger` | Structured logging |
 | **Android native:** `io.github.junkfood02.youtubedl-android:{library,ffmpeg}:0.17.3` (Maven Central; yt-dlp + ffmpeg + Python; Kotlin pkg `com.yausername.youtubedl_android`) | Download engine |
-| **v2:** LiteRT / MediaPipe LLM bindings, whisper.cpp, ML Kit | On-device/edge AI |
-| **v3:** `supabase_flutter`, Stripe/PayPal SDKs | Cloud backend + payments |
+| **Graph+vector (P10):** `io.github.cozodb:cozo_android:0.7.2` (Maven Central AAR) via a `CozoHostApi` Pigeon bridge; `ffi`+`ffigen` (dev) for the Windows `dart:ffi` impl (P14). MPL-2.0. | On-device graph + HNSW vector DB. See `docs/GRAPH-SPEC.md`. |
+| **On-device AI (P11–P12):** `flutter_gemma` (MediaPipe/LiteRT-LM — embeddings + LLM + RAG), a whisper.cpp pkg (`whisper_ggml_plus`/`whisper_kit`), ML Kit (OCR/translate) | On-device/edge AI. See `docs/AI-SPEC.md`. |
+| **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
+| ~~**v3:** `supabase_flutter`, Stripe/PayPal SDKs~~ | **Dropped** (no cloud/credits). |
 
 Add `flutter_lints`/`very_good_analysis` and a strict `analysis_options.yaml`.
 
@@ -209,6 +211,11 @@ enum DownloadErrorCode {
   adds a **proactive** pre-flight low-storage guard that holds new downloads *before* they start
   (the scheduler's `minFreeSpaceMb` gate), so the reactive code is the fallback, not the front line.
 
+**AI/graph errors (P10–P12):** `modelDownloadFailed`, `modelIntegrityFailed`,
+`modelUnsupportedOnDevice` (a *gating* state — disable the feature with a friendly reason, not a
+user-facing error), `inferenceFailed`, `transcriptionFailed`, `indexUnavailable`. Never crash; gate
+rather than fail where the device can't run a model. See `docs/AI-SPEC.md` §8 / `docs/GRAPH-SPEC.md` §8.
+
 ---
 
 ## 7. Packaging
@@ -216,8 +223,11 @@ enum DownloadErrorCode {
 - **Android:** debug APK for CI artifact; release builds signed with a keystore
   (secrets in CI, never committed). Provide AAB for the future landing site.
   `minSdk` chosen to satisfy youtubedl-android (confirm at P0).
-- **Windows (P11):** bundle `yt-dlp.exe` + `ffmpeg.exe` in install dir; package as
-  **MSIX**; verify binary update path.
+- **Android (P10):** the Cozo engine is a Maven AAR (`cozo_android`) — **no NDK/Rust build in CI**;
+  set `abiFilters` and measure APK-size impact in the first P10 APK build.
+- **Windows (P14):** bundle `yt-dlp.exe` + `ffmpeg.exe` + `cozo_c.dll` in install dir (the Cozo
+  `dart:ffi` impl, prefer the native-assets `hook/build.dart`); package as **MSIX**; verify binary
+  update path.
 
 ---
 
@@ -241,33 +251,35 @@ Budget rules per CLAUDE.md §6: ubuntu only, cache, manual APKs, no push-builds.
 
 ---
 
-## 9. AI & Backend Contracts (v2 local AI · v3 cloud)
+## 9. AI Contracts (on-device, P10–P12)
 
-> **Banding:** On-device AI (§9.3) is the **v2** priority and never requires an
-> account, network, or credits. The Supabase/cloud contracts (§9.1–9.2) are **v3**
-> and ship only when cloud AI is introduced.
+> **Banding:** On-device AI (§9.3) is a **v1** pillar (P10–P12) and never requires an account,
+> network (beyond a one-time model download), or credits. The former Supabase/cloud contracts
+> (§9.1–9.2) are **DROPPED** — kept below only as struck-through historical reference. Deep design:
+> `docs/AI-SPEC.md` (runtime/models/GraphRAG) and `docs/GRAPH-SPEC.md` (graph + vector store).
 
-### 9.1 Supabase tables (v3 — Postgres, RLS on)
+### ~~9.1 Supabase tables (v3 — Postgres, RLS on)~~ — DROPPED
 - `profiles(user_id pk, created_at)`
 - `credit_ledger(id, user_id, delta int, reason, ref, created_at)` — balance = sum(delta)
 - `ai_usage(id, user_id, feature, model, tokens/seconds, cost_credits, created_at)`
 - `payments(id, user_id, provider, provider_ref, amount, credits_granted, status, created_at)`
 
-### 9.2 Edge Functions (v3)
+### ~~9.2 Edge Functions (v3)~~ — DROPPED
 - `POST /ai/{feature}` — auth → check balance → Genkit flow → Gemini → debit
   (transactional) → return result. Rate-limited.
 - `POST /webhooks/stripe`, `POST /webhooks/paypal` — verify signature → grant
   credits (ledger insert) → mark payment.
 - Keys (Gemini, Stripe, PayPal) in Supabase secrets only.
 
-### 9.3 On-device AI (v2)
+### 9.3 On-device AI (v1, P10–P12)
 - `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion, freeStorageMB }`.
 - Device tiers (e.g. low / mid / high) → `ModelCapabilityMatrix`:
-  `feature → { eligibleLocalModels[byTier], cloudModels[] }`.
-- Local models (LiteRT/MediaPipe; whisper.cpp/ONNX where better) downloaded
-  on-demand to app storage, integrity-checked, cached.
-- Model selector resolves: show **Free — Local** if `canRun`, plus **Cloud
-  (credits)**; cloud-only when no eligible local model.
+  `feature → eligibleLocalModels[byTier]`.
+- Runtime: **`flutter_gemma`** (MediaPipe/LiteRT-LM — embeddings + LLM + RAG); **whisper.cpp**
+  (transcription); ML Kit (OCR/translate). Models downloaded on-demand, integrity-checked, cached.
+- Model selector resolves to **Free — Local** when `canRun`; otherwise the feature is **gated**
+  (disabled with a friendly reason). Prefer Apache-2.0/MIT models; vet Gemma. (`docs/AI-SPEC.md` §4.)
+- **Graph + vector store** (`GraphStore`/CozoDB) is specified separately in `docs/GRAPH-SPEC.md`.
 
 ---
 

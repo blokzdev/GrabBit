@@ -17,28 +17,30 @@ bulk downloads, metadata management, deep configurability, and an optional
 PIN/biometric app lock.
 
 Platforms: **Android first** (APK/AAB sideload, off Play Store because of YouTube),
-**Windows in v2**.
+**Windows in v2**. **AI is core to the vision** — v1 is an *AI-powered* downloader/manager and
+ships only **after** the on-device AI + graph work (P10–P12).
 
 ### Monetization principle (memorize — it governs every feature decision)
 
-> **On-device = FREE. Cloud = CREDITS.**
-> Anything that runs on the user's own device — downloads, media manager, playback,
-> metadata, organization, app lock, all local yt-dlp/ffmpeg/Dart tools, **and all
-> on-device/edge AI (v2)** — is **free forever**; it costs us nothing. Only
-> features that spend *our* money via the backend / paid cloud APIs (e.g. Gemini,
-> v3) are credit-metered. Always bias a feature toward an on-device implementation
-> when quality allows, so it stays free.
+> **Everything is on-device, and on-device = FREE, forever.**
+> Downloads, media manager, playback, metadata, organization, app lock, all local
+> yt-dlp/ffmpeg/Dart tools, **and all on-device/edge AI + the on-device graph DB** —
+> everything runs on the user's own device, costs us nothing, and is **free forever**.
+> GrabBit is sustained by an **optional donations link** (P13). **No ads, no telemetry,
+> no accounts, no cloud.** (The former cloud/credits "v3" band is **dropped**; the
+> `InferenceEngine` interface leaves a *theoretical* cloud seam, but it is unplanned.)
+> Always bias a feature toward an on-device implementation.
 
-### Version strategy (three bands)
+### Version strategy (two bands — v3/cloud dropped)
 
 | Band | Theme | Network | Money |
 |---|---|---|---|
-| **v1** | Core on-device downloader + private media manager (Android). | Offline | Free |
-| **v2** | World-class, feature-rich, production-ready, **local-only**: Windows parity + **edge/local AI** with graceful capability-gating. | Offline | Free |
-| **v3** | Introduce **Supabase** backend + **Gemini** cloud AI; **credit-based** monetization (Stripe/PayPal) for cloud-only features. | Online (opt-in) | Credits |
+| **v1** | Android, free, on-device, **AI-powered**: core downloader + private media manager (P0–P9), then the **on-device AI + graph pillar** (P10–P12), then beta & launch (P13). | Offline | Free |
+| **v2** | Local-only expansion: Windows parity (P14) + production polish & authenticated/cookie import (P15). | Offline | Free |
 
-The app stays fully free and offline through v2. Money enters only in v3, and only
-for features that spend our money on cloud APIs. No ads, ever.
+The app is **free forever and fully offline**, sustained by an optional donations link. **No ads,
+no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* the AI work**. See
+`docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`.
 
 ---
 
@@ -56,10 +58,9 @@ for features that spend our money on cloud APIs. No ads, ever.
 | Background work | Android **foreground service** + persistent queue | Reliable long downloads, OS-compliant. |
 | Secure storage | **flutter_secure_storage** | PIN hash, future tokens. |
 | App lock | **local_auth** + PIN | Biometric + fallback. |
-| Edge/Local AI (v2) | **LiteRT / MediaPipe LLM**, **whisper.cpp**, **ML Kit**, behind an `InferenceEngine` abstraction | Free local tier; swappable. |
-| Backend (v3) | **Supabase** (Auth, Postgres, Edge Functions) | Auth + credit ledger + Gemini/Genkit proxy. |
-| Cloud AI (v3) | **Gemini** via **Genkit** flows | Multimodal; for tasks/devices beyond on-device limits. |
-| Payments (v3) | **Stripe / PayPal** | Play Billing unavailable off-store. |
+| Graph + vector DB (v1, P10) | **CozoDB** — relational+graph+vector + HNSW (Android via `io.github.cozodb:cozo_android` Maven AAR + Pigeon; `dart:ffi`/`ffigen` on Windows). MPL-2.0. | One embeddable engine serves both the relationship graph and the AI vector index; derived index beside the canonical Drift DB. See `docs/GRAPH-SPEC.md`. |
+| On-device AI runtime (v1, P11–P12) | **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) for embeddings + generation + RAG; **whisper.cpp** (`whisper_ggml_plus`/`whisper_kit`); **ML Kit** (OCR/translate) — all behind an `InferenceEngine` abstraction | Free, on-device, swappable; capability-gated. Prefer Apache-2.0/MIT models (vet Gemma). See `docs/AI-SPEC.md`. |
+| Graph visualization (v1, P10) | **`graphview`** (force-directed, expand/collapse) | Interactive library relationship explorer. |
 | UI | **Material 3**, dynamic color, light/dark | Modern, themeable; Simple/Advanced modes. |
 
 > When adding a dependency, justify it in the commit and add it to `docs/SPEC.md`.
@@ -75,18 +76,19 @@ for features that spend our money on cloud APIs. No ads, ever.
 ```
 /                       repo root
   CLAUDE.md             this file
-  docs/                 PRD, ARCHITECTURE, SPEC, ROADMAP
+  docs/                 PRD, ARCHITECTURE, SPEC, ROADMAP, GRAPH-SPEC, AI-SPEC
   .github/workflows/    ci.yml, build-apk.yml
   lib/
     core/               theming, routing, db (Drift), logging, di, utils
     core/engine/        DownloadEngine interface + platform impls
-    core/ai/            (v2) InferenceEngine + DeviceCapability diagnostics
+    core/graph/         (P10) GraphStore interface + Cozo impl + GraphSyncService
+    core/ai/            (P10–P12) InferenceEngine + DeviceCapability diagnostics
     features/
       downloader/       paste-url, format select, progress
       library/          private media list + in-app player
       queue/            bulk/queue management
       settings/         config, storage policy, app lock
-      ai/               (v2) model selector, AI tools
+      ai/               (P10–P12) graph view, related, model selector, AI tools
     main.dart
   android/              Kotlin host + youtubedl-android + Pigeon glue
   windows/              (v2) desktop runner + bundled binaries
@@ -99,7 +101,8 @@ for features that spend our money on cloud APIs. No ads, ever.
   interfaces. Presentation depends on domain via Riverpod providers.
 - Never call a platform plugin directly from UI — go through a provider/repository.
 - The engine is **always** accessed through the `DownloadEngine` interface so
-  Android/Windows stay swappable. Same rule for `InferenceEngine` in v2.
+  Android/Windows stay swappable. Same rule for `InferenceEngine` (P11) and `GraphStore`
+  (P10) — never reference a concrete engine/store from UI.
 
 ---
 
@@ -115,13 +118,20 @@ Exposes at minimum: `probeFormats(url)`, `download(request) → Stream<Progress>
 Engine selection happens once via a Riverpod provider keyed on `Platform`. UI and
 queue code must be engine-agnostic.
 
-### `InferenceEngine` (v2, pure-Dart interface in `core/ai/`)
-Mirrors `DownloadEngine`. On-device implementations back local AI (LiteRT/MediaPipe
-LLM, whisper.cpp, ML Kit). A `DeviceCapability` probe (RAM/CPU/accelerator) feature-
-flags each AI feature and **gracefully disables** ones the device can't run (with a
-clear, user-friendly reason). In **v3**, a cloud `InferenceEngine` implementation
-slots behind the same interface, optionally letting incapable devices fall back to
-credit-metered cloud inference.
+### `GraphStore` (P10, pure-Dart interface in `core/graph/`)
+The on-device relationship graph + vector index. Backed by **CozoDB** (Android via the
+`cozo_android` Maven AAR + a `CozoHostApi` Pigeon bridge; Windows via `dart:ffi` in P14). **Drift
+stays canonical; Cozo is a derived, rebuildable index** keyed by `MediaItems.id`. `GraphStore` must
+not import the AI layer — only `GraphSyncService` bridges Drift → Cozo (and consumes embeddings).
+Full design in **`docs/GRAPH-SPEC.md`**.
+
+### `InferenceEngine` (P10–P12, pure-Dart interface in `core/ai/`)
+Mirrors `DownloadEngine`. On-device implementations back local AI: **`flutter_gemma`**
+(embeddings + LLM generation + RAG via MediaPipe/LiteRT-LM), **whisper.cpp**, **ML Kit**. A
+`DeviceCapability` probe (RAM/CPU/accelerator) feature-flags each AI feature and **gracefully
+disables** ones the device can't run (with a clear, user-friendly reason). `embed()` *produces*
+vectors; `GraphStore` *stores/searches* them. The interface leaves a *theoretical* cloud seam, but
+cloud inference is **unplanned** (v3 dropped). Full design in **`docs/AI-SPEC.md`**.
 
 ---
 
@@ -199,12 +209,14 @@ only feedback loop. Be frugal:
 
 ## 9. Security, Privacy & Secrets
 
-- **Privacy-first**: no telemetry/analytics in v1/v2. Downloads stay on-device.
-- Default storage = app-private dir; export to gallery is an explicit user action.
+- **Privacy-first**: no telemetry/analytics, ever. Downloads, AI inference, embeddings, transcripts,
+  and the graph index all stay **on-device**.
+- Default storage = app-private dir; export to gallery is an explicit user action. The Cozo index
+  lives in app-private support storage (never in the documents/media dirs).
 - App lock: PIN hashed (never stored plain) in `flutter_secure_storage`; biometric
   via `local_auth`.
-- **Never commit secrets.** No API keys in the client. All Gemini/paid-API calls
-  (v3) go through Supabase Edge Functions; keys live in Supabase secrets.
+- **Never commit secrets.** No API keys in the client — there is **no backend and no cloud**. The
+  only network calls are downloads and a one-time, integrity-checked model download (P11).
 - Scoped storage / least-privilege permissions only (see SPEC permissions matrix).
 
 ---
@@ -224,7 +236,11 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
 - `docs/PRD.md` — what we're building & why (product).
 - `docs/ARCHITECTURE.md` — system design blueprint.
 - `docs/SPEC.md` — implementation-level technical spec.
-- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P16, banded v1/v2/v3).
+- `docs/GRAPH-SPEC.md` — (P10) on-device graph + vector DB spec: CozoDB engine, integration,
+  schema, sync, algorithm→feature map. Source of truth for the graph pillar.
+- `docs/AI-SPEC.md` — (P10–P12) on-device edge-AI spec: `InferenceEngine`, device tiers,
+  runtime/models + licensing, local GraphRAG. Source of truth for AI.
+- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P15, two bands v1/v2; v3 dropped).
 - `docs/VERIFICATION.md` — per-phase on-device manual test checklist (what CI can't
   cover); used for spot-checks and full v1-release regression.
 - `docs/design/DESIGN_SPEC.md` — (P7) the living design system: brand, color/type/
@@ -236,5 +252,7 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
   share intake, engine options, subtitles/SponsorBlock/chapters, format picker).
 - `docs/design/P9-PLAN.md` — (P9) library/playback/privacy depth sub-roadmap (P9a–P9e:
   DB v3, library power, player, queue, lock hardening).
+- `docs/design/P-AI-PLAN.md` — (P10–P12) edge-AI + graph delivery sub-roadmap (lean; references
+  `GRAPH-SPEC.md` + `AI-SPEC.md` for the deep design).
 
-When in doubt, these four + this file win over memory.
+When in doubt, these + this file win over memory.

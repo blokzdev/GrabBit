@@ -1,7 +1,7 @@
 # GrabBit — Backlog
 
 > Living list of device-test findings and UX/feature refinements that don't map to a
-> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P16);
+> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P15);
 > `docs/VERIFICATION.md` holds the on-device checklist.
 
 ## In progress
@@ -24,7 +24,7 @@ _(nothing active — pick the next batch from below)_
 - [ ] **16 KB page-size** validation on Pixel 9 / Android 15+ (ffmpeg/python native
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 - [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
-      v2/P13: it's native, on-device-only verification, and pure polish.)*
+      v2/P15: it's native, on-device-only verification, and pure polish.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_

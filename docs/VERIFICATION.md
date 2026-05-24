@@ -400,9 +400,46 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       opens the add-download screen; in an empty folder, **"Create folder"** opens the create-folder
       prompt.
 
-## P10 — v1 Beta & Production Readiness  *(v1)*
-- [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
+## P10 — Baseline edge AI + Cozo graph/vector foundation  *(v1)*
+- [ ] **Cozo loads & persists**: the app builds the on-device index on first run; force-quit and
+      reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
+- [ ] **Semantic search**: a query that isn't a literal title match still surfaces relevant items
+      (beyond the existing `LIKE` search), fully offline.
+- [ ] **Related / "More like this"**: an item's detail shows sensible related items (same
+      uploader/playlist/tag and/or similar content).
+- [ ] **Entity hubs**: tapping an uploader / playlist / tag / site opens a hub with that entity's
+      items + related entities.
+- [ ] **Near-duplicate clusters** and **tag suggestions** appear where expected.
+- [ ] **Graph view**: the interactive graph renders; tapping a node expands its neighborhood;
+      pan/zoom work.
+- [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on
+      *any* device, no model download.
+- [ ] Runs on a **low-end device** (embedder-only) without a crash.
+
+## P11 — Device-tiered edge LLM engine  *(v1)*
+- [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
+- [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
+      stays lean until then.
+- [ ] On a **capable** device: generate text / transcribe a short clip **offline**.
+- [ ] On a **low-end** device: LLM features are **cleanly disabled with a friendly reason** (no
+      crash, no silent no-op).
+
+## P12 — LLM features + local GraphRAG  *(v1)*
+- [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
+      results back to the item.
+- [ ] **"Ask your library"**: a natural-language question returns a grounded answer citing real
+      library items — **fully offline** (airplane mode).
+- [ ] **Graph-clustered auto-albums**, **"Rediscover"** (centrality), and **path/bridge** discovery
+      produce sensible results.
+- [ ] All P12 features gate gracefully on incapable devices.
+
+## P13 — v1 Beta, Production Readiness & Launch  *(v1)*
+- [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
+      AI/graph index build doesn't jank the UI.
 - [ ] i18n scaffolding present.
+- [ ] **Donations link** in the About screen opens the external donations page; nothing is sold
+      in-app; no ads, no telemetry.
+- [ ] Distribution: signed release APK on the GitHub Release; landing-site install steps work.
 
 ## Device-test refinements  *(v1, tracked in `docs/BACKLOG.md`)*
 - [ ] Single video → **Download now** starts immediately; **Add to queue** holds it
@@ -420,8 +457,8 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 
 ## v1 release (full regression with the **release** APK)
 1. **Release signing** configured (keystore + CI secret) so the release APK installs
-   — done in **P10**.
+   — done in **P13**.
 2. Build with **Build APK → release = true**, install the signed release APK.
-3. Run **every** section above (P0 → P10) end-to-end on a real device.
-4. Confirm: privacy (nothing in Gallery until exported), app lock, background
-   downloads, and playback all work on the AOT release build.
+3. Run **every** section above (P0 → P13) end-to-end on a real device.
+4. Confirm: privacy (nothing in Gallery until exported), app lock, background downloads, playback,
+   and the **on-device AI + graph** features (incl. Cozo loading on the AOT release build) all work.
