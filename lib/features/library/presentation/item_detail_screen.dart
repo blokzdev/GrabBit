@@ -8,6 +8,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
+import 'package:grabbit/core/utils/subtitle_files.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
@@ -145,7 +146,7 @@ class _ItemBody extends StatelessWidget {
                         errorBuilder: (_, _, _) => const _BrokenMedia(),
                       ),
                     )
-                  : _PlayerView(filePath: item.filePath),
+                  : _PlayerView(itemId: item.id, filePath: item.filePath),
             ),
           ),
         ),
@@ -521,18 +522,23 @@ class _DetailSkeleton extends StatelessWidget {
   }
 }
 
-class _PlayerView extends StatefulWidget {
-  const _PlayerView({required this.filePath});
+class _PlayerView extends ConsumerStatefulWidget {
+  const _PlayerView({required this.itemId, required this.filePath});
+  final String itemId;
   final String filePath;
 
   @override
-  State<_PlayerView> createState() => _PlayerViewState();
+  ConsumerState<_PlayerView> createState() => _PlayerViewState();
 }
 
-class _PlayerViewState extends State<_PlayerView> {
+class _PlayerViewState extends ConsumerState<_PlayerView> {
   VideoPlayerController? _video;
   ChewieController? _chewie;
   String? _error;
+  bool _looping = false;
+  bool _marked = false;
+  File? _track; // selected subtitle sidecar; null = off
+  late final List<File> _tracks = subtitleSidecars(widget.filePath);
 
   @override
   void initState() {
@@ -548,22 +554,122 @@ class _PlayerViewState extends State<_PlayerView> {
         await video.dispose();
         return;
       }
+      video.addListener(_onTick);
       setState(() {
         _video = video;
-        _chewie = ChewieController(
-          videoPlayerController: video,
-          autoPlay: false,
-          looping: false,
-          aspectRatio: video.value.aspectRatio,
-        );
+        _chewie = _build(video, null);
       });
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     }
   }
 
+  /// Stamp the item "played" the first time playback actually starts.
+  void _onTick() {
+    if (!_marked && (_video?.value.isPlaying ?? false)) {
+      _marked = true;
+      ref.read(metadataRepositoryProvider).markPlayed(widget.itemId);
+    }
+  }
+
+  ChewieController _build(VideoPlayerController video, Subtitles? subtitles) =>
+      ChewieController(
+        videoPlayerController: video,
+        autoPlay: false,
+        looping: _looping,
+        allowedScreenSleep: false,
+        aspectRatio: video.value.aspectRatio,
+        playbackSpeeds: const [0.25, 0.5, 1, 1.25, 1.5, 2],
+        subtitle: subtitles,
+        // Surfaced in Chewie's options sheet alongside "Playback speed".
+        additionalOptions: (context) => [
+          OptionItem(
+            onTap: (ctx) {
+              Navigator.pop(ctx);
+              _toggleLoop();
+            },
+            iconData: _looping ? Icons.repeat_on : Icons.repeat,
+            title: 'Loop',
+            subtitle: _looping ? 'On' : 'Off',
+          ),
+          if (_tracks.isNotEmpty)
+            OptionItem(
+              onTap: (ctx) {
+                Navigator.pop(ctx);
+                _pickSubtitle(ctx);
+              },
+              iconData: Icons.subtitles,
+              title: 'Subtitles',
+              subtitle: _track == null ? 'Off' : subtitleLabel(_track!.path),
+            ),
+        ],
+      );
+
+  void _toggleLoop() {
+    final next = !_looping;
+    _video?.setLooping(next);
+    _looping = next;
+    _rebuild();
+  }
+
+  Future<void> _pickSubtitle(BuildContext context) async {
+    final chosen = await showModalBottomSheet<String?>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Off'),
+              selected: _track == null,
+              onTap: () => Navigator.pop(ctx, ''),
+            ),
+            for (final f in _tracks)
+              ListTile(
+                title: Text(subtitleLabel(f.path)),
+                selected: _track?.path == f.path,
+                onTap: () => Navigator.pop(ctx, f.path),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (chosen == null) return; // dismissed
+    await _setSubtitle(chosen.isEmpty ? null : File(chosen));
+  }
+
+  Future<void> _setSubtitle(File? file) async {
+    Subtitles? subs;
+    if (file != null) {
+      final content = await file.readAsString();
+      final isVtt = file.path.toLowerCase().endsWith('.vtt');
+      final ClosedCaptionFile parsed = isVtt
+          ? WebVTTCaptionFile(content)
+          : SubRipCaptionFile(content);
+      subs = Subtitles([
+        for (final (i, c) in parsed.captions.indexed)
+          Subtitle(index: i, start: c.start, end: c.end, text: c.text),
+      ]);
+    }
+    final video = _video;
+    if (video == null || !mounted) return;
+    _track = file;
+    _rebuild(subtitles: subs);
+  }
+
+  /// Recreates the Chewie controller (reusing the video controller, so position
+  /// and speed survive) to apply a new loop/subtitle config.
+  void _rebuild({Subtitles? subtitles}) {
+    final video = _video;
+    if (video == null) return;
+    final old = _chewie;
+    setState(() => _chewie = _build(video, subtitles));
+    old?.dispose(); // disposes the Chewie controller only, not the video
+  }
+
   @override
   void dispose() {
+    _video?.removeListener(_onTick);
     _chewie?.dispose();
     _video?.dispose();
     super.dispose();

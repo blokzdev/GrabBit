@@ -208,6 +208,20 @@ void main() {
     expect(await repo.existingSourceIds(), {'vid123'});
   });
 
+  test('markPlayed stamps lastAccessedAt and feeds recently played', () async {
+    await seed('a', 'A', 'video');
+    expect((await repo.watchRecentlyPlayed().first), isEmpty);
+
+    await repo.markPlayed('a');
+
+    final item = await (db.select(
+      db.mediaItems,
+    )..where((t) => t.id.equals('a'))).getSingle();
+    expect(item.lastAccessedAt, isNotNull);
+    final recent = await repo.watchRecentlyPlayed().first;
+    expect(recent.map((r) => r.id), ['a']);
+  });
+
   test('findItemByUrl matches with tracking params stripped (P9b-4)', () async {
     await db
         .into(db.mediaItems)

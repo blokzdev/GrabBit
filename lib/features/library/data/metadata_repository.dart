@@ -151,6 +151,13 @@ class MetadataRepository {
     );
   }
 
+  /// Stamps `lastAccessedAt` = now (P9c); feeds the "Recently played" album.
+  Future<void> markPlayed(String itemId) async {
+    await (_db.update(_db.mediaItems)..where((t) => t.id.equals(itemId))).write(
+      MediaItemsCompanion(lastAccessedAt: Value(DateTime.now())),
+    );
+  }
+
   /// Distinct platform/site values present in the library (for the facet picker).
   Stream<List<String>> watchDistinctSites() {
     final q = _db.selectOnly(_db.mediaItems, distinct: true)
