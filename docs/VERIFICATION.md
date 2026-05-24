@@ -304,19 +304,33 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       Advanced custom-arg is applied; re-running a playlist with the download archive on
       skips already-downloaded items.
 - [ ] **Audio presets**: extract audio with a chosen codec/bitrate.
-- [ ] **Subtitles / SponsorBlock / chapters**: download with selected subtitle languages
-      (optional burn-in); SponsorBlock segments are marked/removed; chapters embed, and
-      split-chapters produces N separate library items.
+- [ ] **Subtitles / SponsorBlock / chapters**: download with selected subtitle languages;
+      SponsorBlock segments are marked/removed; chapters embed, and split-chapters produces
+      N separate library items.
+- [ ] **Burn-in subtitles (Media Studio)**: an item with a subtitle sidecar → Studio →
+      "Burn in <lang>" produces a hard-subbed new item (P8c).
 - [ ] **Advanced format picker**: pick a concrete probed format (resolution/codec) in
       Advanced mode and the download honours it.
 
 ## P9 — Library, Playback & Privacy Depth  *(v1)*
-- [ ] **DB upgrade**: a P8-era library upgrades to schema v3 cleanly (no data loss).
-- [ ] **Library power**: search by keyword; sort by date/size/name; star favorites;
-      duplicates are detected; storage-usage breakdown is shown.
-- [ ] **Player**: change playback speed, loop, gesture-seek, pick a subtitle track;
-      Picture-in-Picture works on home-press.
-- [ ] **Queue**: drag-to-reorder persists across restart; the dashboard shows aggregate
+- [ ] **DB upgrade (P9a)**: a P8-era library upgrades to schema **v4** cleanly (no data loss).
+- [ ] **Favorites & sort (P9b-1)**: tap the tile star (and the item-detail star) → the Favorites
+      chip filters to starred; the new sorts (Title Z–A, Smallest, Recently played) work.
+- [ ] **Delete (P9b-1)**: item-detail Delete (confirm) removes it from the library and deletes
+      the file.
+- [ ] **Smart albums (P9b-2)**: Collections → **Albums** lists Platforms / Channels / Recently
+      played; each opens the right filtered grid.
+- [ ] **Duplicates (P9b-3)**: download the same video twice → Storage & cleanup → Find duplicates
+      → Scan groups them; deleting one resolves the group.
+- [ ] **Storage (P9b-3)**: Settings → Storage & cleanup shows total + by-type/by-platform
+      breakdown and largest items; deleting a large item frees space.
+- [ ] **Preventive dedupe (P9b-4)**: re-paste a saved URL → "Already in your library" banner
+      (Open jumps to it; download still works); a playlist with saved items shows "Saved" badges
+      and the Hide-already-saved toggle hides/deselects them.
+- [ ] **Player (P9c-1)**: change playback speed; toggle Loop; pick a subtitle track; screen stays
+      awake during playback; after playing, the item appears under Albums → Recently played.
+- [ ] **Picture-in-Picture (P9c-2)**: video continues in a PiP window on home-press / PiP button.
+- [ ] **Queue (P9d)**: drag-to-reorder persists across restart; the dashboard shows aggregate
       speed / ETA / total size.
 - [ ] **Privacy**: FLAG_SECURE blocks screenshots and hides the app in recents; auto-lock
       re-locks after the timeout; secure-delete removes a private item.

@@ -59,15 +59,18 @@ three PRs:
 - **Exit / review:** search by keyword, sort, star favorites, see a storage breakdown, and detect
   duplicates (content + by source id) — all offline.
 
-### `[ ]` P9c — Player enhancements *(mixed)*
-- **Cheap wins (chewie/video_player)** in `item_detail_screen.dart`: playback **speed**,
-  **loop/repeat**, **gesture seek**, **subtitle-track selection**. Pure Dart.
-- **Native:** **Picture-in-Picture** (`enterPictureInPictureMode`; manifest
-  `android:supportsPictureInPicture` — `configChanges` already covers screenSize).
-- **Background audio is deferred** (`docs/BACKLOG.md`) — it adds a second foreground-service
-  type to coordinate with the download service.
-- **Exit / review:** change speed/loop/seek and pick a subtitle track in-player; PiP works on
-  home-press.
+### `[~]` P9c — Player enhancements *(mixed; split into 2 PRs)*
+- **`[~]` P9c-1 — Player polish (pure Dart):** Chewie config — playback **speed** menu, **Loop**
+  toggle (`setLooping`), **keep-screen-awake**, and **subtitle-track selection** from the `.srt`/
+  `.vtt` sidecars (parsed via `video_player`'s `SubRip`/`WebVTT` parsers; controller recreated on
+  track change, reusing the video controller). **markPlayed** stamps `lastAccessedAt` on first play
+  → fills P9b-2's Recently-played album. Shared `subtitle_files` util (reused by Media Studio).
+  Also backfilled the P8/P9 VERIFICATION checklist. **Implemented; pending on-device check.**
+- **`[ ]` P9c-2 — Picture-in-Picture (native):** manifest `supportsPictureInPicture` + a Pigeon
+  `enterPip` host method (`enterPictureInPictureMode`), controls hidden in PiP. Hand-rolled (no plugin).
+- **Background audio is deferred** (`docs/BACKLOG.md`).
+- **Exit / review:** change speed/loop and pick a subtitle track in-player (P9c-1); PiP works on
+  home-press (P9c-2).
 
 ### `[ ]` P9d — Queue depth *(pure Dart)*
 - `ReorderableListView` over the queue, persisting `orderIndex` (column from P9a); an

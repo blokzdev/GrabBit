@@ -10,6 +10,7 @@ import 'package:grabbit/core/engine/media_tools_ops.dart';
 import 'package:grabbit/core/engine/media_tools_provider.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/subtitle_files.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/utils/task_id.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
@@ -164,7 +165,7 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
 
   Widget _videoTools(MediaItem row) {
     final ext = _ext(row);
-    final subs = _subtitleSidecars(row);
+    final subs = subtitleSidecars(row.filePath);
     final tokens = GrabBitTokens.of(context);
     return ListView(
       padding: EdgeInsets.all(tokens.spaceLg),
@@ -303,7 +304,7 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
               : _chipWrap([
                   for (final sub in subs)
                     _opChip(
-                      'Burn in ${_subLabel(sub.path)}',
+                      'Burn in ${subtitleLabel(sub.path)}',
                       Icons.subtitles,
                       () => _run(
                         row,
@@ -321,22 +322,6 @@ class _MediaStudioScreenState extends ConsumerState<MediaStudioScreen> {
         ),
       ],
     );
-  }
-
-  /// Subtitle sidecar files (`.srt`/`.vtt`/…) alongside the item's media file.
-  List<File> _subtitleSidecars(MediaItem row) {
-    final dir = File(row.filePath).parent;
-    if (!dir.existsSync()) return const [];
-    const exts = {'srt', 'vtt', 'ass', 'ssa'};
-    return dir.listSync().whereType<File>().where((f) {
-      return exts.contains(f.path.split('.').last.toLowerCase());
-    }).toList();
-  }
-
-  /// The language tag from a subtitle filename (`clip.en.srt` → `en`).
-  String _subLabel(String path) {
-    final parts = path.split('/').last.split('.');
-    return parts.length >= 3 ? parts[parts.length - 2] : parts.first;
   }
 
   Widget _imageTools(MediaItem row) {
