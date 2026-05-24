@@ -2,6 +2,8 @@ package dev.blokz.grabbit
 
 import android.content.Intent
 import android.view.WindowManager
+import dev.blokz.grabbit.cozo.CozoHost
+import dev.blokz.grabbit.cozo.CozoHostApi
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import kotlinx.coroutines.CoroutineScope

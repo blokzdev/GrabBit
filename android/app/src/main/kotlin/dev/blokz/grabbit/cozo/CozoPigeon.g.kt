@@ -2,7 +2,7 @@
 // See also: https://pub.dev/packages/pigeon
 @file:Suppress("UNCHECKED_CAST", "ArrayInDataClass")
 
-package dev.blokz.grabbit
+package dev.blokz.grabbit.cozo
 
 import android.util.Log
 import io.flutter.plugin.common.BasicMessageChannel

@@ -11,8 +11,9 @@ import 'package:pigeon/pigeon.dart';
 @ConfigurePigeon(
   PigeonOptions(
     dartOut: 'lib/core/graph/pigeon/cozo.pigeon.dart',
-    kotlinOut: 'android/app/src/main/kotlin/dev/blokz/grabbit/CozoPigeon.g.kt',
-    kotlinOptions: KotlinOptions(package: 'dev.blokz.grabbit'),
+    kotlinOut:
+        'android/app/src/main/kotlin/dev/blokz/grabbit/cozo/CozoPigeon.g.kt',
+    kotlinOptions: KotlinOptions(package: 'dev.blokz.grabbit.cozo'),
     dartPackageName: 'grabbit',
   ),
 )
