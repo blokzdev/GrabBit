@@ -8,7 +8,9 @@ import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
+import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
+import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/storage_maintenance.dart';
@@ -28,66 +30,98 @@ class StorageScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final tokens = GrabBitTokens.of(context);
-    final byType = ref.watch(sizeByTypeProvider).asData?.value ?? const {};
-    final bySite = ref.watch(sizeBySiteProvider).asData?.value ?? const {};
-    final largest = ref.watch(largestItemsProvider).asData?.value ?? const [];
-    final total = byType.values.fold<int>(0, (a, b) => a + b);
-    final device = ref.watch(deviceDiskSpaceProvider).asData?.value;
+    final byType = ref.watch(sizeByTypeProvider);
+    final bySite = ref.watch(sizeBySiteProvider);
+    final largest = ref.watch(largestItemsProvider);
+
+    final Widget body;
+    if (byType.hasError || bySite.hasError || largest.hasError) {
+      body = ErrorView(
+        message:
+            'Failed to load storage usage: '
+            '${byType.error ?? bySite.error ?? largest.error}',
+        onRetry: () {
+          ref.invalidate(sizeByTypeProvider);
+          ref.invalidate(sizeBySiteProvider);
+          ref.invalidate(largestItemsProvider);
+          ref.invalidate(deviceDiskSpaceProvider);
+        },
+      );
+    } else if (!byType.hasValue || !bySite.hasValue || !largest.hasValue) {
+      body = const _StorageSkeleton();
+    } else {
+      body = _content(
+        context,
+        ref,
+        byType.value!,
+        bySite.value!,
+        largest.value!,
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Storage & cleanup')),
       body: ContentBounds(
-        child: ListView(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(tokens.spaceLg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('GrabBit uses', style: theme.textTheme.labelMedium),
-                  Text(
-                    formatBytes(total),
-                    style: theme.textTheme.headlineMedium,
-                  ),
-                  if (device != null) ...[
-                    SizedBox(height: tokens.spaceMd),
-                    _DeviceSpace(
-                      freeBytes: device.freeBytes,
-                      totalBytes: device.totalBytes,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.cleaning_services_outlined),
-              title: const Text('Clean up leftover files'),
-              subtitle: const Text(
-                'Remove orphaned files left by past deletions',
-              ),
-              onTap: () => _cleanup(context, ref),
-            ),
-            const SectionHeader('By type', icon: Icons.category_outlined),
-            for (final e in byType.entries)
-              _UsageBar(label: e.key, bytes: e.value, total: total),
-            const SectionHeader('By platform', icon: Icons.public),
-            for (final e in bySite.entries)
-              _UsageBar(label: e.key, bytes: e.value, total: total),
-            ListTile(
-              leading: const Icon(Icons.content_copy_outlined),
-              title: const Text('Find duplicates'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/duplicates'),
-            ),
-            if (largest.isNotEmpty)
-              const SectionHeader('Largest items', icon: Icons.data_usage),
-            for (final item in largest) _LargestRow(item: item),
-            SizedBox(height: tokens.spaceLg),
-          ],
-        ),
+        child: AnimatedSwitcher(duration: tokens.motionMedium, child: body),
       ),
+    );
+  }
+
+  Widget _content(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, int> byType,
+    Map<String, int> bySite,
+    List<MediaItem> largest,
+  ) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final total = byType.values.fold<int>(0, (a, b) => a + b);
+    final device = ref.watch(deviceDiskSpaceProvider).asData?.value;
+
+    return ListView(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(tokens.spaceLg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('GrabBit uses', style: theme.textTheme.labelMedium),
+              Text(formatBytes(total), style: theme.textTheme.headlineMedium),
+              if (device != null) ...[
+                SizedBox(height: tokens.spaceMd),
+                _DeviceSpace(
+                  freeBytes: device.freeBytes,
+                  totalBytes: device.totalBytes,
+                ),
+              ],
+            ],
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.cleaning_services_outlined),
+          title: const Text('Clean up leftover files'),
+          subtitle: const Text('Remove orphaned files left by past deletions'),
+          onTap: () => _cleanup(context, ref),
+        ),
+        const SectionHeader('By type', icon: Icons.category_outlined),
+        for (final e in byType.entries)
+          _UsageBar(label: e.key, bytes: e.value, total: total),
+        const SectionHeader('By platform', icon: Icons.public),
+        for (final e in bySite.entries)
+          _UsageBar(label: e.key, bytes: e.value, total: total),
+        ListTile(
+          leading: const Icon(Icons.content_copy_outlined),
+          title: const Text('Find duplicates'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push('/duplicates'),
+        ),
+        if (largest.isNotEmpty)
+          const SectionHeader('Largest items', icon: Icons.data_usage),
+        for (final item in largest) _LargestRow(item: item),
+        SizedBox(height: tokens.spaceLg),
+      ],
     );
   }
 
@@ -117,6 +151,57 @@ class StorageScreen extends ConsumerWidget {
           ),
         ),
       );
+  }
+}
+
+/// Loading placeholder mirroring the usage screen: a "GrabBit uses" header and
+/// a handful of usage-bar rows.
+class _StorageSkeleton extends StatelessWidget {
+  const _StorageSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Shimmer(
+      child: ListView(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(tokens.spaceLg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Skeleton(width: 80, height: 12),
+                SizedBox(height: tokens.spaceSm),
+                const Skeleton(width: 160, height: 28),
+              ],
+            ),
+          ),
+          for (var i = 0; i < 6; i++)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.spaceLg,
+                tokens.spaceSm,
+                tokens.spaceLg,
+                0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Skeleton(width: 100, height: 12),
+                      Skeleton(width: 48, height: 12),
+                    ],
+                  ),
+                  SizedBox(height: tokens.spaceXs),
+                  const Skeleton(height: 6, radius: 3),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

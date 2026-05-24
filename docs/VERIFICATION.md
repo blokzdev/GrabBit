@@ -393,6 +393,12 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       smoothly rather than popping.
 - [ ] **Favorite pop (P9l)**: on an item's detail screen, tapping the star **scale-pops** between
       filled/outline.
+- [ ] **Storage states (P9m)**: open Storage & cleanup — a **shimmering skeleton** shows while usage
+      loads, then cross-fades to the breakdown; if a query fails the screen shows an **error with a
+      Retry** (rather than a silent zeroed screen).
+- [ ] **Empty-state CTAs (P9m)**: with an empty queue, the empty state offers **"Add a link"** that
+      opens the add-download screen; in an empty folder, **"Create folder"** opens the create-folder
+      prompt.
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.
