@@ -519,6 +519,48 @@ class ProgressDto {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// Free + total bytes of the filesystem backing a path (P9f).
+class DiskSpaceDto {
+  DiskSpaceDto({required this.freeBytes, required this.totalBytes});
+
+  int freeBytes;
+
+  int totalBytes;
+
+  List<Object?> _toList() {
+    return <Object?>[freeBytes, totalBytes];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static DiskSpaceDto decode(Object result) {
+    result as List<Object?>;
+    return DiskSpaceDto(
+      freeBytes: result[0]! as int,
+      totalBytes: result[1]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! DiskSpaceDto || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(freeBytes, other.freeBytes) &&
+        _deepEquals(totalBytes, other.totalBytes);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
   @override
@@ -538,6 +580,9 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is ProgressDto) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
+    } else if (value is DiskSpaceDto) {
+      buffer.putUint8(133);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -554,6 +599,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return DownloadRequestDto.decode(readValue(buffer)!);
       case 132:
         return ProgressDto.decode(readValue(buffer)!);
+      case 133:
+        return DiskSpaceDto.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -1056,6 +1103,29 @@ class StorageHostApi {
       isNullValid: false,
     );
     return pigeonVar_replyValue! as String;
+  }
+
+  /// Free + total bytes of the volume holding [path] (`StatFs`), for the
+  /// low-storage download guard and the Storage screen (P9f).
+  Future<DiskSpaceDto> diskSpace(String path) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.grabbit.StorageHostApi.diskSpace$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[path],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as DiskSpaceDto;
   }
 }
 

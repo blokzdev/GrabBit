@@ -49,6 +49,12 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [ ] **Download scheduling** (run at a time / wifi window) — needs WorkManager + alarm logic.
 - [ ] **Per-folder lock** — adds lock-state to the virtual-folder model + many UI gates.
 - [ ] **FTS5 full-text search** — start with indexed `LIKE` (P9b); adopt FTS5 only if perf demands.
+- [ ] **Configurable storage location** (internal vs SD / external app-specific dir) — deferred
+      from P9f: scoped-storage complexity (volume enumeration, migrating an existing library,
+      removable-media eject). The P9f low-storage guard mitigates the immediate pain.
+- [ ] **Extractive TextRank summarization** (pure-Dart, zero-dependency) — considered for P9 and
+      deferred to **P12** as the always-available baseline tier beneath the local LLM summary
+      (see `docs/ROADMAP.md` P12). Acts on captured descriptions/subtitles/transcripts.
 
 ## Done
 - [x] **Engine auto-update on launch** + Settings toggle (fresh installs were failing

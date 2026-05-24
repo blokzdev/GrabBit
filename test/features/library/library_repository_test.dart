@@ -78,7 +78,9 @@ void main() {
 
   test('deleteItem removes the files and the row (cascade)', () async {
     final dir = Directory.systemTemp.createTempSync('grabbit_del');
-    addTearDown(() => dir.deleteSync(recursive: true));
+    addTearDown(() {
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
     final media = File('${dir.path}/clip.mp4')..writeAsStringSync('x');
     final thumb = File('${dir.path}/clip.jpg')..writeAsStringSync('t');
     await db
@@ -113,7 +115,9 @@ void main() {
 
   test('deleteItem(secure: true) overwrites then removes the file', () async {
     final dir = Directory.systemTemp.createTempSync('grabbit_secdel');
-    addTearDown(() => dir.deleteSync(recursive: true));
+    addTearDown(() {
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
     final media = File('${dir.path}/clip.mp4')..writeAsStringSync('secret');
     await db
         .into(db.mediaItems)

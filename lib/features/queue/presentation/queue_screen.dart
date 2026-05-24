@@ -105,6 +105,7 @@ class QueueScreen extends ConsumerWidget {
                 )
               : Column(
                   children: [
+                    const _PauseBanner(),
                     _QueueDashboard(rows: rows),
                     _QueueSummary(rows: rows),
                     Expanded(
@@ -173,6 +174,64 @@ class QueueScreen extends ConsumerWidget {
     icon: Icons.help_outline,
   ),
 };
+
+/// A one-line notice when a safety gate is holding downloads back (P9f).
+/// Hidden when nothing is paused.
+class _PauseBanner extends ConsumerWidget {
+  const _PauseBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reason = ref.watch(queuePauseReasonProvider);
+    final (message, icon) = switch (reason) {
+      QueuePauseReason.metered => (
+        'Paused — waiting for Wi-Fi',
+        Icons.wifi_off,
+      ),
+      QueuePauseReason.lowStorage => (
+        'Paused — low storage',
+        Icons.sd_card_alert_outlined,
+      ),
+      QueuePauseReason.lowBattery => (
+        'Paused — low battery',
+        Icons.battery_alert_outlined,
+      ),
+      QueuePauseReason.none => (null, Icons.info_outline),
+    };
+    if (message == null) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.fromLTRB(
+        tokens.spaceMd,
+        tokens.spaceMd,
+        tokens.spaceMd,
+        0,
+      ),
+      padding: EdgeInsets.all(tokens.spaceMd),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: theme.colorScheme.onSecondaryContainer),
+          SizedBox(width: tokens.spaceSm),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Live aggregate header for active downloads: overall progress, counts, and
 /// (from the engine stream) combined speed / longest ETA / total size (P9d).

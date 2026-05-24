@@ -42,6 +42,21 @@ void main() {
       expect(s.blockScreenshots, isFalse);
       expect(s.secureDelete, isFalse);
       expect(s.appLock.autoLockSeconds, 60);
+      // P9f storage/battery safety defaults.
+      expect(s.minFreeSpaceMb, 500);
+      expect(s.pauseOnLowBattery, isFalse);
+      expect(s.lowBatteryThreshold, 15);
+    });
+
+    test('a legacy blob without the P9f fields decodes to defaults', () {
+      final legacy = const SettingsModel().toJson()
+        ..remove('minFreeSpaceMb')
+        ..remove('pauseOnLowBattery')
+        ..remove('lowBatteryThreshold');
+      final decoded = SettingsModel.fromJson(legacy);
+      expect(decoded.minFreeSpaceMb, 500);
+      expect(decoded.pauseOnLowBattery, isFalse);
+      expect(decoded.lowBatteryThreshold, 15);
     });
 
     test('JSON round-trip preserves the P9e privacy fields', () {
@@ -262,6 +277,26 @@ void main() {
       final saved = await SettingsRepository(db).read();
       expect(saved.blockScreenshots, isTrue);
       expect(saved.secureDelete, isTrue);
+    });
+
+    test('storage/battery safety setters persist (P9f)', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(settingsControllerProvider.notifier);
+      await container.read(settingsControllerProvider.future);
+      await notifier.setMinFreeSpaceMb(1024);
+      await notifier.setPauseOnLowBattery(true);
+      await notifier.setLowBatteryThreshold(20);
+
+      final saved = await SettingsRepository(db).read();
+      expect(saved.minFreeSpaceMb, 1024);
+      expect(saved.pauseOnLowBattery, isTrue);
+      expect(saved.lowBatteryThreshold, 20);
     });
 
     test('setFilenameTemplate persists the pattern', () async {

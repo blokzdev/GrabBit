@@ -132,6 +132,11 @@ void main() {
   testWidgets('inserting a filename token persists and updates the preview', (
     tester,
   ) async {
+    // Tall surface so the filename chips render below the new safety rows.
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 

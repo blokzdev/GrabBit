@@ -205,6 +205,9 @@ enum DownloadErrorCode {
 - Retry transient (`network`, some `extractorFailed`) up to N with exponential
   backoff; never retry `unsupportedSite`/`permissionDenied`.
 - Map each code to a user-friendly message + actionable hint; log technical detail.
+- `storageFull` stays a terminal, reactive classification of a yt-dlp "no space" failure; P9f
+  adds a **proactive** pre-flight low-storage guard that holds new downloads *before* they start
+  (the scheduler's `minFreeSpaceMb` gate), so the reactive code is the fallback, not the front line.
 
 ---
 

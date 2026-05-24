@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.StatFs
 import android.provider.MediaStore
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
@@ -125,6 +126,14 @@ class StorageHost(private val activity: Activity) : StorageHostApi {
             }
             withContext(Dispatchers.Main) { callback(result) }
         }
+    }
+
+    override fun diskSpace(path: String): DiskSpaceDto {
+        val stat = StatFs(path)
+        return DiskSpaceDto(
+            freeBytes = stat.availableBytes,
+            totalBytes = stat.totalBytes,
+        )
     }
 
     private fun mimeFor(type: String, ext: String): String {
