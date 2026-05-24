@@ -66,6 +66,7 @@ abstract class SettingsModel with _$SettingsModel {
     @Default(false) bool disclaimerAccepted,
     @Default(true) bool autoCheckEngineUpdate,
     DateTime? lastEngineCheck,
+    @Default('') String graphIndexVersion,
   }) = _SettingsModel;
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) =>

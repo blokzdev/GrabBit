@@ -4,6 +4,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
+import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/routing/app_router.dart';
 import 'package:grabbit/core/theme/app_theme.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
@@ -40,8 +41,20 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeAutoUpdate();
+      _maybeSyncGraph();
       _initShareIntake();
     });
+  }
+
+  /// Starts the graph sync listener and self-heals the derived Cozo index if its
+  /// projection shape changed (or on first run). Non-blocking; offline-safe.
+  Future<void> _maybeSyncGraph() async {
+    final settings = await ref.read(settingsControllerProvider.future);
+    final sync = ref.read(graphSyncServiceProvider); // starts the live listener
+    await sync.syncIfStale(
+      storedVersion: settings.graphIndexVersion,
+      stamp: ref.read(settingsControllerProvider.notifier).setGraphIndexVersion,
+    );
   }
 
   /// Routes links shared into the app (Android share sheet, P8a) to the

@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/graph/graph_error.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
+import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -115,9 +116,12 @@ class _GraphSelfTestTile extends ConsumerWidget {
       if (!opened || !store.isAvailable) {
         message = 'Graph engine unavailable on this device';
       } else {
-        final res = await store.runScript('::relations');
-        final count = (res['rows'] as List?)?.length ?? 0;
-        message = 'Graph OK — $count relations ready';
+        final relations =
+            (await store.runScript('::relations'))['rows'] as List?;
+        final stats = await ref.read(graphSyncServiceProvider).stats();
+        message =
+            'Graph OK — ${relations?.length ?? 0} relations · '
+            '${stats.mediaNodes} media · ${stats.edges} edges';
       }
     } on GraphException catch (e) {
       message = 'Graph self-test failed: ${e.message}';

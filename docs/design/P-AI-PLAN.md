@@ -21,10 +21,15 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   (mirrors the youtubedl-android wiring); `GraphStore` interface + Android Cozo impl; SQLite backend
   at `<support>/graph/cozo.db`; the Cozo schema; `GraphStore` conformance tests. *(see GRAPH-SPEC §2,
   §4, §5, §9)*
-- **P10b — Embedder + index + sync:** minimal `InferenceEngine.embed()` slice via `flutter_gemma`
-  (Gecko, embedder-only); HNSW vector relation; `GraphSyncService` (bulk build + incremental hooks +
-  "Rebuild index" maintenance action) + schema-fingerprint self-heal. *(AI-SPEC §3; GRAPH-SPEC §3,
-  §6)*
+- **P10b-1 — Graph sync backbone:** `GraphSyncService` projects the canonical Drift library into the
+  Cozo graph — deterministic media + entity nodes + edges, idempotent rebuild via `:replace`, a
+  debounced Drift-update listener (no repo coupling), startup schema-fingerprint self-heal, and a
+  manual "Rebuild graph index" action. Pure-Dart, no new native dep, CI-testable via a fake store.
+  *(GRAPH-SPEC §3, §6)*
+- **P10b-2 — Embedder + vectors:** minimal `InferenceEngine.embed()` slice via `flutter_gemma`
+  (Gecko, embedder-only) + on-demand embedder-model fetch; the HNSW `embedding` relation; `similarTo`
+  edges; embedding **backfill that caches vectors** (only embeds new/changed items). *(AI-SPEC §3;
+  GRAPH-SPEC §5)*
 - **P10c — Universal graph features:** semantic search; **Related / "More like this"** (hybrid
   vector + graph re-rank); **entity hubs** (uploader/playlist/tag/site); **near-duplicate clusters**;
   **tag suggestions**; **interactive graph viz** (candidate `graphview`). *(GRAPH-SPEC §7)*
