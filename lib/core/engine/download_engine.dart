@@ -228,6 +228,7 @@ class DownloadProgress {
     this.percent = 0,
     this.speedBps = 0,
     this.etaSec,
+    this.totalBytes,
     this.errorCode,
   });
 
@@ -236,6 +237,9 @@ class DownloadProgress {
   final double percent;
   final double speedBps;
   final int? etaSec;
+
+  /// Total download size in bytes when known (P9d; parsed from the yt-dlp line).
+  final int? totalBytes;
   final DownloadErrorCode? errorCode;
 }
 

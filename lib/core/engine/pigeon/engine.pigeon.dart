@@ -458,6 +458,7 @@ class ProgressDto {
     this.etaSec,
     required this.stage,
     this.error,
+    this.line,
   });
 
   String taskId;
@@ -472,8 +473,10 @@ class ProgressDto {
 
   String? error;
 
+  String? line;
+
   List<Object?> _toList() {
-    return <Object?>[taskId, percent, speedBps, etaSec, stage, error];
+    return <Object?>[taskId, percent, speedBps, etaSec, stage, error, line];
   }
 
   Object encode() {
@@ -489,6 +492,7 @@ class ProgressDto {
       etaSec: result[3] as int?,
       stage: result[4]! as String,
       error: result[5] as String?,
+      line: result[6] as String?,
     );
   }
 
@@ -506,7 +510,8 @@ class ProgressDto {
         _deepEquals(speedBps, other.speedBps) &&
         _deepEquals(etaSec, other.etaSec) &&
         _deepEquals(stage, other.stage) &&
-        _deepEquals(error, other.error);
+        _deepEquals(error, other.error) &&
+        _deepEquals(line, other.line);
   }
 
   @override

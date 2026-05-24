@@ -25,9 +25,12 @@ class QueueRepository {
 
   final AppDatabase _db;
 
-  Stream<List<DownloadTask>> watch() => (_db.select(
-    _db.downloadTasks,
-  )..orderBy([(t) => OrderingTerm.asc(t.createdAt)])).watch();
+  Stream<List<DownloadTask>> watch() =>
+      (_db.select(_db.downloadTasks)..orderBy([
+            (t) => OrderingTerm.asc(t.orderIndex),
+            (t) => OrderingTerm.asc(t.createdAt),
+          ]))
+          .watch();
 
   Future<DownloadTask?> byId(String id) => (_db.select(
     _db.downloadTasks,
@@ -44,9 +47,31 @@ class QueueRepository {
   Future<DownloadTask?> nextQueued() =>
       (_db.select(_db.downloadTasks)
             ..where((t) => t.status.equals(TaskStatus.queued))
-            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)])
+            ..orderBy([
+              (t) => OrderingTerm.asc(t.orderIndex),
+              (t) => OrderingTerm.asc(t.createdAt),
+            ])
             ..limit(1))
           .getSingleOrNull();
+
+  Future<int> _maxOrderIndex() async {
+    final max = _db.downloadTasks.orderIndex.max();
+    final query = _db.selectOnly(_db.downloadTasks)..addColumns([max]);
+    return (await query.getSingleOrNull())?.read(max) ?? 0;
+  }
+
+  /// Persists a new queue order: writes `orderIndex` = position for each id.
+  Future<void> setOrder(List<String> idsInOrder) async {
+    await _db.batch((batch) {
+      for (var i = 0; i < idsInOrder.length; i++) {
+        batch.update(
+          _db.downloadTasks,
+          DownloadTasksCompanion(orderIndex: Value(i)),
+          where: (t) => t.id.equals(idsInOrder[i]),
+        );
+      }
+    });
+  }
 
   Future<void> enqueue(
     QueuedDownload download, {
@@ -60,6 +85,9 @@ class QueueRepository {
   }) async {
     if (downloads.isEmpty) return;
     final now = DateTime.now();
+    // Append after existing tasks with distinct, increasing order indices so the
+    // queue can be reordered (P9d).
+    final base = await _maxOrderIndex() + 1;
     await _db.batch((batch) {
       for (var i = 0; i < downloads.length; i++) {
         final d = downloads[i];
@@ -72,6 +100,7 @@ class QueueRepository {
             status: status,
             // Preserve insertion order within a batch added at the same instant.
             createdAt: now.add(Duration(milliseconds: i)),
+            orderIndex: Value(base + i),
           ),
           mode: InsertMode.insertOrReplace,
         );

@@ -448,7 +448,8 @@ data class ProgressDto (
   val speedBps: Double,
   val etaSec: Long? = null,
   val stage: String,
-  val error: String? = null
+  val error: String? = null,
+  val line: String? = null
 )
  {
   companion object {
@@ -459,7 +460,8 @@ data class ProgressDto (
       val etaSec = pigeonVar_list[3] as Long?
       val stage = pigeonVar_list[4] as String
       val error = pigeonVar_list[5] as String?
-      return ProgressDto(taskId, percent, speedBps, etaSec, stage, error)
+      val line = pigeonVar_list[6] as String?
+      return ProgressDto(taskId, percent, speedBps, etaSec, stage, error, line)
     }
   }
   fun toList(): List<Any?> {
@@ -470,6 +472,7 @@ data class ProgressDto (
       etaSec,
       stage,
       error,
+      line,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -480,7 +483,7 @@ data class ProgressDto (
       return true
     }
     val other = other as ProgressDto
-    return EnginePigeonPigeonUtils.deepEquals(this.taskId, other.taskId) && EnginePigeonPigeonUtils.deepEquals(this.percent, other.percent) && EnginePigeonPigeonUtils.deepEquals(this.speedBps, other.speedBps) && EnginePigeonPigeonUtils.deepEquals(this.etaSec, other.etaSec) && EnginePigeonPigeonUtils.deepEquals(this.stage, other.stage) && EnginePigeonPigeonUtils.deepEquals(this.error, other.error)
+    return EnginePigeonPigeonUtils.deepEquals(this.taskId, other.taskId) && EnginePigeonPigeonUtils.deepEquals(this.percent, other.percent) && EnginePigeonPigeonUtils.deepEquals(this.speedBps, other.speedBps) && EnginePigeonPigeonUtils.deepEquals(this.etaSec, other.etaSec) && EnginePigeonPigeonUtils.deepEquals(this.stage, other.stage) && EnginePigeonPigeonUtils.deepEquals(this.error, other.error) && EnginePigeonPigeonUtils.deepEquals(this.line, other.line)
   }
 
   override fun hashCode(): Int {
@@ -491,6 +494,7 @@ data class ProgressDto (
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.etaSec)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.stage)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.error)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.line)
     return result
   }
 }
