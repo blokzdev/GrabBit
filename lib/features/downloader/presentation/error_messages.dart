@@ -4,9 +4,7 @@ import 'package:grabbit/core/engine/download_error.dart';
 /// raw message when there's nothing better to say).
 String friendlyError(DownloadErrorCode? code, String fallback) =>
     switch (code) {
-      DownloadErrorCode.unsupportedSite =>
-        "This link isn't supported. The site may be unsupported here, or the "
-            'downloader engine may be out of date.',
+      DownloadErrorCode.unsupportedSite => "This link isn't supported yet.",
       DownloadErrorCode.extractorFailed =>
         "Couldn't read this link. The site likely changed — updating the "
             'downloader engine often fixes this.',
@@ -19,7 +17,9 @@ String friendlyError(DownloadErrorCode? code, String fallback) =>
       _ => fallback,
     };
 
-/// Whether the error is the kind a yt-dlp self-update commonly fixes.
+/// Whether the error is the kind a yt-dlp self-update commonly fixes — i.e. a
+/// matched extractor that broke because the site changed. A genuinely
+/// unsupported link (`unsupportedSite`) is handled separately via
+/// `describeUnsupportedLink` (updating rarely helps and shouldn't be implied).
 bool suggestsEngineUpdate(DownloadErrorCode? code) =>
-    code == DownloadErrorCode.unsupportedSite ||
     code == DownloadErrorCode.extractorFailed;

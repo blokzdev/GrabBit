@@ -25,6 +25,11 @@ _(nothing active — pick the next batch from below)_
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 - [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
       v2/P15: it's native, on-device-only verification, and pure polish.)*
+- [ ] **TikTok photo/slideshow (`/photo/`) posts** aren't downloadable — an **upstream yt-dlp
+      limitation** (the TikTok extractor doesn't match `/photo/`; falls back to generic →
+      "Unsupported URL"). Tracked at yt-dlp #10870/#9990. Not fixable in-app; GrabBit now shows a
+      clear "not supported yet" notice for it (and any unsupported link) instead of a misleading
+      "update" prompt. Revisit if/when yt-dlp adds photo-post support.
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_

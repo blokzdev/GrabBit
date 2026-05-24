@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
+import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
@@ -17,6 +18,7 @@ import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
 import 'package:grabbit/features/downloader/presentation/downloader_controller.dart';
 import 'package:grabbit/features/downloader/presentation/error_messages.dart';
+import 'package:grabbit/features/downloader/presentation/link_support.dart';
 import 'package:grabbit/features/downloader/presentation/selection_controller.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -101,6 +103,37 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
     await _check();
   }
 
+  /// A genuinely unsupported link (no extractor matched) gets an info-toned
+  /// notice with platform-aware guidance — not a red error or a misleading
+  /// "update" prompt. Real errors keep the error banner + Update & retry.
+  Widget _errorBanner(DownloaderState state, bool probing) {
+    if (state.errorCode == DownloadErrorCode.unsupportedSite) {
+      final info = describeUnsupportedLink(
+        state.url,
+        rawError: state.errorMessage,
+      );
+      return ErrorBanner(
+        tone: BannerTone.notice,
+        message: info.message,
+        details: state.errorMessage,
+        actions: info.offerUpdate ? [_updateAction(probing)] : null,
+      );
+    }
+    return ErrorBanner(
+      message: friendlyError(state.errorCode, state.errorMessage!),
+      details: state.errorMessage,
+      actions: suggestsEngineUpdate(state.errorCode)
+          ? [_updateAction(probing)]
+          : null,
+    );
+  }
+
+  Widget _updateAction(bool probing) => TextButton.icon(
+    onPressed: probing ? null : _updateAndRetry,
+    icon: const Icon(Icons.system_update_alt),
+    label: const Text('Update & retry'),
+  );
+
   @override
   Widget build(BuildContext context) {
     // A share that arrives while this screen is already open re-fills the field.
@@ -147,22 +180,7 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
               if (state.errorMessage != null)
                 Padding(
                   padding: EdgeInsets.only(bottom: tokens.spaceLg),
-                  child: ErrorBanner(
-                    message: friendlyError(
-                      state.errorCode,
-                      state.errorMessage!,
-                    ),
-                    details: state.errorMessage,
-                    actions: suggestsEngineUpdate(state.errorCode)
-                        ? [
-                            TextButton.icon(
-                              onPressed: probing ? null : _updateAndRetry,
-                              icon: const Icon(Icons.system_update_alt),
-                              label: const Text('Update & retry'),
-                            ),
-                          ]
-                        : null,
-                  ),
+                  child: _errorBanner(state, probing),
                 ),
               if (state.existingItem != null)
                 Padding(

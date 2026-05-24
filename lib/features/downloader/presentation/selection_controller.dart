@@ -19,6 +19,7 @@ class ExpandedSource {
     required this.url,
     this.entries = const [],
     this.error,
+    this.errorCode,
     this.playlistId,
     this.playlistTitle,
   });
@@ -26,6 +27,7 @@ class ExpandedSource {
   final String url;
   final List<MediaEntry> entries;
   final String? error;
+  final DownloadErrorCode? errorCode;
   final String? playlistId;
   final String? playlistTitle;
 }
@@ -132,7 +134,9 @@ class SelectionController extends Notifier<SelectionState> {
           ),
         );
       } on DownloadException catch (e) {
-        sources.add(ExpandedSource(url: url, error: e.message));
+        sources.add(
+          ExpandedSource(url: url, error: e.message, errorCode: e.code),
+        );
       }
     }
     // Select everything by default.
