@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/utils/shared_url.dart';
 
 enum LibrarySort {
   newest,
@@ -223,6 +224,42 @@ class MetadataRepository {
       ..orderBy([(t) => OrderingTerm.desc(t.lastAccessedAt)])
       ..limit(limit);
     return query.watch();
+  }
+
+  // --- Preventive (source-identity) dedupe (P9b-4) ---
+
+  /// The library item with this yt-dlp source id, or null. Used to warn before
+  /// re-downloading something already saved.
+  Future<MediaItem?> findItemBySourceId(String sourceId) async {
+    final rows = await (_db.select(_db.mediaItems).join([
+      innerJoin(
+        _db.mediaMetadata,
+        _db.mediaMetadata.itemId.equalsExp(_db.mediaItems.id),
+      ),
+    ])..where(_db.mediaMetadata.sourceId.equals(sourceId))).get();
+    return rows.isEmpty ? null : rows.first.readTable(_db.mediaItems);
+  }
+
+  /// Fallback match by source URL (tracking params stripped), for items saved
+  /// without a source id.
+  Future<MediaItem?> findItemByUrl(String url) async {
+    final normalized = stripTrackingParams(url);
+    final rows =
+        await (_db.select(_db.mediaItems)
+              ..where((t) => t.sourceUrl.equals(normalized))
+              ..limit(1))
+            .get();
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  /// All source ids present in the library (one-shot), for marking playlist
+  /// entries already saved.
+  Future<Set<String>> existingSourceIds() async {
+    final q = _db.selectOnly(_db.mediaMetadata)
+      ..addColumns([_db.mediaMetadata.sourceId])
+      ..where(_db.mediaMetadata.sourceId.isNotNull());
+    final rows = await q.get();
+    return {for (final r in rows) r.read(_db.mediaMetadata.sourceId)!};
   }
 
   // --- Duplicates & storage (P9b-3) ---

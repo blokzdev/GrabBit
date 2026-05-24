@@ -51,8 +51,13 @@ three PRs:
   a `/duplicates` view with per-item delete; storage aggregation (`watchSizeByType`/`BySite`/
   `watchLargestItems`) + a `/storage` view (breakdown + largest + "Find duplicates"); entry from
   Settings → Storage. Reuses P9b-1's `deleteItem`. **Implemented; pending on-device check.**
+- **`[~]` P9b-4 — Preventive (source-identity) dedupe:** surface the source `id` at probe (engine
+  field add); `findItemBySourceId`/`findItemByUrl`/`existingSourceIds` + a `source_id` index
+  (schema v3→v4). Add-Download shows a non-blocking "Already in your library" banner; the playlist
+  picker badges already-saved entries with a "Hide already-saved" toggle. Complements P9b-3's
+  content/file dedupe. **Implemented; pending on-device check.**
 - **Exit / review:** search by keyword, sort, star favorites, see a storage breakdown, and detect
-  duplicates — all offline.
+  duplicates (content + by source id) — all offline.
 
 ### `[ ]` P9c — Player enhancements *(mixed)*
 - **Cheap wins (chewie/video_player)** in `item_detail_screen.dart`: playback **speed**,

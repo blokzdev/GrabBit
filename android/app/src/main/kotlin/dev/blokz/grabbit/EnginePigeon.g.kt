@@ -264,6 +264,7 @@ data class FormatDto (
 /** Generated class from Pigeon that represents data sent in messages. */
 data class MediaInfoDto (
   val title: String,
+  val id: String? = null,
   val uploader: String? = null,
   val durationSec: Long? = null,
   val thumbnailUrl: String? = null,
@@ -276,19 +277,21 @@ data class MediaInfoDto (
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): MediaInfoDto {
       val title = pigeonVar_list[0] as String
-      val uploader = pigeonVar_list[1] as String?
-      val durationSec = pigeonVar_list[2] as Long?
-      val thumbnailUrl = pigeonVar_list[3] as String?
-      val site = pigeonVar_list[4] as String?
-      val description = pigeonVar_list[5] as String?
-      val uploadDate = pigeonVar_list[6] as String?
-      val formats = pigeonVar_list[7] as List<FormatDto>
-      return MediaInfoDto(title, uploader, durationSec, thumbnailUrl, site, description, uploadDate, formats)
+      val id = pigeonVar_list[1] as String?
+      val uploader = pigeonVar_list[2] as String?
+      val durationSec = pigeonVar_list[3] as Long?
+      val thumbnailUrl = pigeonVar_list[4] as String?
+      val site = pigeonVar_list[5] as String?
+      val description = pigeonVar_list[6] as String?
+      val uploadDate = pigeonVar_list[7] as String?
+      val formats = pigeonVar_list[8] as List<FormatDto>
+      return MediaInfoDto(title, id, uploader, durationSec, thumbnailUrl, site, description, uploadDate, formats)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
       title,
+      id,
       uploader,
       durationSec,
       thumbnailUrl,
@@ -306,12 +309,13 @@ data class MediaInfoDto (
       return true
     }
     val other = other as MediaInfoDto
-    return EnginePigeonPigeonUtils.deepEquals(this.title, other.title) && EnginePigeonPigeonUtils.deepEquals(this.uploader, other.uploader) && EnginePigeonPigeonUtils.deepEquals(this.durationSec, other.durationSec) && EnginePigeonPigeonUtils.deepEquals(this.thumbnailUrl, other.thumbnailUrl) && EnginePigeonPigeonUtils.deepEquals(this.site, other.site) && EnginePigeonPigeonUtils.deepEquals(this.description, other.description) && EnginePigeonPigeonUtils.deepEquals(this.uploadDate, other.uploadDate) && EnginePigeonPigeonUtils.deepEquals(this.formats, other.formats)
+    return EnginePigeonPigeonUtils.deepEquals(this.title, other.title) && EnginePigeonPigeonUtils.deepEquals(this.id, other.id) && EnginePigeonPigeonUtils.deepEquals(this.uploader, other.uploader) && EnginePigeonPigeonUtils.deepEquals(this.durationSec, other.durationSec) && EnginePigeonPigeonUtils.deepEquals(this.thumbnailUrl, other.thumbnailUrl) && EnginePigeonPigeonUtils.deepEquals(this.site, other.site) && EnginePigeonPigeonUtils.deepEquals(this.description, other.description) && EnginePigeonPigeonUtils.deepEquals(this.uploadDate, other.uploadDate) && EnginePigeonPigeonUtils.deepEquals(this.formats, other.formats)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.title)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.id)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.uploader)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.durationSec)
     result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.thumbnailUrl)

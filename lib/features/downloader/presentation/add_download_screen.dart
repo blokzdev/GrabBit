@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
@@ -142,6 +143,11 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
                         : null,
                   ),
                 ),
+              if (state.existingItem != null)
+                Padding(
+                  padding: EdgeInsets.only(bottom: tokens.spaceLg),
+                  child: _AlreadySavedBanner(item: state.existingItem!),
+                ),
               if (probing) const _PreviewSkeleton(),
               if (state.info != null) _MediaPreview(info: state.info!),
               if (state.phase == DownloaderPhase.ready && state.info != null)
@@ -189,6 +195,45 @@ class _AddDownloadScreenState extends ConsumerState<AddDownloadScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Non-blocking notice that the pasted source is already saved (P9b-4). The
+/// download path stays available below — this is awareness, not a block.
+class _AlreadySavedBanner extends StatelessWidget {
+  const _AlreadySavedBanner({required this.item});
+  final MediaItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    return Container(
+      padding: EdgeInsets.all(tokens.spaceMd),
+      decoration: BoxDecoration(
+        color: scheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_outline, color: scheme.onTertiaryContainer),
+          SizedBox(width: tokens.spaceSm),
+          Expanded(
+            child: Text(
+              'Already in your library — you can still download again.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => context.push('/item/${item.id}'),
+            child: const Text('Open'),
+          ),
+        ],
       ),
     );
   }

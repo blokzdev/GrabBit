@@ -203,6 +203,7 @@ class FormatDto {
 class MediaInfoDto {
   MediaInfoDto({
     required this.title,
+    this.id,
     this.uploader,
     this.durationSec,
     this.thumbnailUrl,
@@ -213,6 +214,8 @@ class MediaInfoDto {
   });
 
   String title;
+
+  String? id;
 
   String? uploader;
 
@@ -231,6 +234,7 @@ class MediaInfoDto {
   List<Object?> _toList() {
     return <Object?>[
       title,
+      id,
       uploader,
       durationSec,
       thumbnailUrl,
@@ -249,13 +253,14 @@ class MediaInfoDto {
     result as List<Object?>;
     return MediaInfoDto(
       title: result[0]! as String,
-      uploader: result[1] as String?,
-      durationSec: result[2] as int?,
-      thumbnailUrl: result[3] as String?,
-      site: result[4] as String?,
-      description: result[5] as String?,
-      uploadDate: result[6] as String?,
-      formats: (result[7]! as List<Object?>).cast<FormatDto>(),
+      id: result[1] as String?,
+      uploader: result[2] as String?,
+      durationSec: result[3] as int?,
+      thumbnailUrl: result[4] as String?,
+      site: result[5] as String?,
+      description: result[6] as String?,
+      uploadDate: result[7] as String?,
+      formats: (result[8]! as List<Object?>).cast<FormatDto>(),
     );
   }
 
@@ -269,6 +274,7 @@ class MediaInfoDto {
       return true;
     }
     return _deepEquals(title, other.title) &&
+        _deepEquals(id, other.id) &&
         _deepEquals(uploader, other.uploader) &&
         _deepEquals(durationSec, other.durationSec) &&
         _deepEquals(thumbnailUrl, other.thumbnailUrl) &&
