@@ -119,6 +119,25 @@ class QueueController extends _$QueueController {
     await _pump();
   }
 
+  /// Re-queues every failed download (P9i).
+  Future<void> retryAllFailed() async {
+    await _repo.retryAllFailed();
+    await _pump();
+  }
+
+  /// Cancels everything active: running tasks via the engine, the rest by
+  /// flipping their status to canceled (P9i).
+  Future<void> cancelAll() async {
+    for (final id in _runners.keys.toList()) {
+      unawaited(cancel(id));
+    }
+    await _repo.cancelAllPending();
+    await _pump();
+  }
+
+  /// Removes every terminal task (done/canceled/error); returns how many (P9i).
+  Future<int> clearFinished() => _repo.clearFinished();
+
   Future<void> pause(String id) async {
     if (_runners.containsKey(id)) {
       _pausing.add(id);

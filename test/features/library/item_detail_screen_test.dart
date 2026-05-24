@@ -8,21 +8,23 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 
-MediaItem _item({String storageState = 'private'}) => MediaItem(
-  id: 'x',
-  title: 'My Clip',
-  sourceUrl: 'https://example.com/v',
-  site: 'youtube',
-  filePath: '/tmp/x.jpg',
-  type: 'image',
-  durationSec: 213,
-  sizeBytes: 12900000,
-  width: 1920,
-  height: 1080,
-  createdAt: DateTime.utc(2026, 5, 3),
-  storageState: storageState,
-  isFavorite: false,
-);
+MediaItem _item({String storageState = 'private', DateTime? lastAccessedAt}) =>
+    MediaItem(
+      id: 'x',
+      title: 'My Clip',
+      sourceUrl: 'https://example.com/v',
+      site: 'youtube',
+      filePath: '/tmp/x.jpg',
+      type: 'image',
+      durationSec: 213,
+      sizeBytes: 12900000,
+      width: 1920,
+      height: 1080,
+      createdAt: DateTime.utc(2026, 5, 3),
+      storageState: storageState,
+      isFavorite: false,
+      lastAccessedAt: lastAccessedAt,
+    );
 
 void main() {
   late AppDatabase db;
@@ -40,6 +42,9 @@ void main() {
             'x',
           ).overrideWith((ref) => Stream.value(null)),
           tagsForItemProvider('x').overrideWith((ref) => Stream.value(<Tag>[])),
+          collectionsForItemProvider(
+            'x',
+          ).overrideWith((ref) => Stream.value(<Collection>[])),
         ],
         child: const MaterialApp(home: ItemDetailScreen(itemId: 'x')),
       ),
@@ -71,6 +76,51 @@ void main() {
 
       expect(find.text('Saved to device'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Save to device'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'app bar uses Favorite + a single overflow menu (P9i)',
+    (tester) async {
+      await pump(tester, _item());
+
+      expect(find.byType(PopupMenuButton<String>), findsOneWidget);
+      expect(find.byTooltip('Favorite'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'body shows last-played and collection chips (P9i)',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            mediaItemByIdProvider('x').overrideWith(
+              (ref) => _item(lastAccessedAt: DateTime.utc(2026, 5, 10)),
+            ),
+            metadataForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(null)),
+            tagsForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<Tag>[])),
+            collectionsForItemProvider('x').overrideWith(
+              (ref) => Stream.value([
+                Collection(id: 7, name: 'Faves', createdAt: DateTime.utc(2026)),
+              ]),
+            ),
+          ],
+          child: const MaterialApp(home: ItemDetailScreen(itemId: 'x')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.textContaining('Last played'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'Faves'), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );

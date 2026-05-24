@@ -156,6 +156,39 @@ class QueueRepository {
           ))
           .go();
 
+  /// Deletes every terminal task (done/canceled/error); returns how many went.
+  Future<int> clearFinished() =>
+      (_db.delete(_db.downloadTasks)..where(
+            (t) => t.status.isIn(const [
+              TaskStatus.done,
+              TaskStatus.canceled,
+              TaskStatus.error,
+            ]),
+          ))
+          .go();
+
+  /// Re-queues every `error` task so the scheduler retries it.
+  Future<void> retryAllFailed() async {
+    await (_db.update(_db.downloadTasks)
+          ..where((t) => t.status.equals(TaskStatus.error)))
+        .write(const DownloadTasksCompanion(status: Value(TaskStatus.queued)));
+  }
+
+  /// Cancels every not-yet-running task (queued/held/paused). Running tasks are
+  /// canceled separately via the engine by the controller.
+  Future<void> cancelAllPending() async {
+    await (_db.update(_db.downloadTasks)..where(
+          (t) => t.status.isIn(const [
+            TaskStatus.queued,
+            TaskStatus.held,
+            TaskStatus.paused,
+          ]),
+        ))
+        .write(
+          const DownloadTasksCompanion(status: Value(TaskStatus.canceled)),
+        );
+  }
+
   /// On startup, any task left `running` was orphaned by process death — requeue.
   Future<void> reconcileRunning() async {
     await (_db.update(_db.downloadTasks)
