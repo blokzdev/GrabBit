@@ -37,6 +37,17 @@ class QueueScreen extends ConsumerWidget {
           (t) => t.status == TaskStatus.done || t.status == TaskStatus.canceled,
         )
         .length;
+    final failedCount = rows.where((t) => t.status == TaskStatus.error).length;
+    final activeCount = rows
+        .where(
+          (t) =>
+              t.status == TaskStatus.running ||
+              t.status == TaskStatus.queued ||
+              t.status == TaskStatus.held ||
+              t.status == TaskStatus.paused,
+        )
+        .length;
+    final finishedCount = completedCount + failedCount;
 
     return Scaffold(
       appBar: AppBar(
@@ -89,6 +100,39 @@ class QueueScreen extends ConsumerWidget {
                   _notify(context, 'Cleared $n completed');
                 }
               },
+            ),
+          if (failedCount > 0 || activeCount > 0 || finishedCount > 0)
+            PopupMenuButton<String>(
+              tooltip: 'More',
+              onSelected: (value) async {
+                switch (value) {
+                  case 'retry':
+                    await controller.retryAllFailed();
+                  case 'cancel':
+                    await controller.cancelAll();
+                    if (context.mounted) _notify(context, 'Canceled all');
+                  case 'clear':
+                    final n = await controller.clearFinished();
+                    if (context.mounted) _notify(context, 'Cleared $n');
+                }
+              },
+              itemBuilder: (context) => [
+                if (failedCount > 0)
+                  const PopupMenuItem(
+                    value: 'retry',
+                    child: Text('Retry all failed'),
+                  ),
+                if (activeCount > 0)
+                  const PopupMenuItem(
+                    value: 'cancel',
+                    child: Text('Cancel all'),
+                  ),
+                if (finishedCount > 0)
+                  const PopupMenuItem(
+                    value: 'clear',
+                    child: Text('Clear finished'),
+                  ),
+              ],
             ),
         ],
       ),

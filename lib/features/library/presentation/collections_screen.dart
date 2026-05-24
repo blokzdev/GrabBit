@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
@@ -10,6 +11,7 @@ import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/grid_sort.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 
 enum _CollectionsTab { collections, albums }
@@ -320,7 +322,7 @@ void _notify(BuildContext context, String message) {
     ..showSnackBar(SnackBar(content: Text(message)));
 }
 
-class CollectionDetailScreen extends ConsumerWidget {
+class CollectionDetailScreen extends ConsumerStatefulWidget {
   const CollectionDetailScreen({
     required this.collectionId,
     this.name,
@@ -331,10 +333,46 @@ class CollectionDetailScreen extends ConsumerWidget {
   final String? name;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(collectionItemsProvider(collectionId));
+  ConsumerState<CollectionDetailScreen> createState() =>
+      _CollectionDetailScreenState();
+}
+
+class _CollectionDetailScreenState
+    extends ConsumerState<CollectionDetailScreen> {
+  LibrarySort _sort = LibrarySort.newest;
+  late String _name = widget.name ?? 'Collection';
+
+  @override
+  Widget build(BuildContext context) {
+    final items = ref.watch(collectionItemsProvider(widget.collectionId));
+    final rows = items.asData?.value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: Text(name ?? 'Collection')),
+      appBar: AppBar(
+        title: Text(_name),
+        actions: [
+          if (rows.isNotEmpty)
+            GridSortButton(
+              value: _sort,
+              onChanged: (s) => setState(() => _sort = s),
+            ),
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (value) => switch (value) {
+              'rename' => _rename(),
+              'share' => ref.read(externalShareServiceProvider).shareFiles([
+                for (final r in rows) r.filePath,
+              ]),
+              _ => _delete(),
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'rename', child: Text('Rename')),
+              if (rows.isNotEmpty)
+                const PopupMenuItem(value: 'share', child: Text('Share all')),
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            ],
+          ),
+        ],
+      ),
       body: ContentBounds(
         maxWidth: 1280,
         child: items.when(
@@ -342,7 +380,7 @@ class CollectionDetailScreen extends ConsumerWidget {
           error: (e, _) => ErrorView(
             message: 'Failed to load collection: $e',
             onRetry: () =>
-                ref.invalidate(collectionItemsProvider(collectionId)),
+                ref.invalidate(collectionItemsProvider(widget.collectionId)),
           ),
           data: (rows) => rows.isEmpty
               ? const EmptyState(
@@ -352,9 +390,69 @@ class CollectionDetailScreen extends ConsumerWidget {
                       'Add items to this collection from their detail '
                       'screen.',
                 )
-              : MediaGrid(items: rows),
+              : MediaGrid(items: sortMediaItems(rows, _sort)),
         ),
       ),
     );
   }
+
+  Future<void> _rename() async {
+    final name = await _promptCollectionName(context, _name);
+    if (name == null) return;
+    await ref
+        .read(metadataRepositoryProvider)
+        .renameCollection(widget.collectionId, name);
+    if (mounted) setState(() => _name = name);
+  }
+
+  Future<void> _delete() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    final ok = await confirm(
+      context,
+      title: 'Delete collection?',
+      message: 'Delete "$_name"? The media stays in your library.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (!ok) return;
+    await ref
+        .read(metadataRepositoryProvider)
+        .deleteCollection(widget.collectionId);
+    if (router.canPop()) router.pop();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Collection deleted')));
+  }
+}
+
+Future<String?> _promptCollectionName(BuildContext context, String initial) {
+  final controller = TextEditingController(text: initial);
+  return showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Rename collection'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: const InputDecoration(hintText: 'Name'),
+        onSubmitted: (v) {
+          if (v.trim().isNotEmpty) Navigator.of(dialogContext).pop(v.trim());
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final v = controller.text.trim();
+            if (v.isNotEmpty) Navigator.of(dialogContext).pop(v);
+          },
+          child: const Text('Rename'),
+        ),
+      ],
+    ),
+  );
 }

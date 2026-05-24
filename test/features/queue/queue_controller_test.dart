@@ -465,6 +465,71 @@ void main() {
     expect(await repo.countByStatus(TaskStatus.held), 0);
   });
 
+  test('retryAllFailed re-queues every errored task (P9i)', () async {
+    await db
+        .into(db.downloadTasks)
+        .insert(
+          DownloadTasksCompanion.insert(
+            id: 'e1',
+            url: 'u',
+            requestJson: '{}',
+            status: TaskStatus.error,
+            createdAt: DateTime.now(),
+          ),
+        );
+    await db
+        .into(db.downloadTasks)
+        .insert(
+          DownloadTasksCompanion.insert(
+            id: 'e2',
+            url: 'u',
+            requestJson: '{}',
+            status: TaskStatus.error,
+            createdAt: DateTime.now(),
+          ),
+        );
+    await controller.retryAllFailed();
+    expect(await repo.countByStatus(TaskStatus.error), 0);
+  });
+
+  test(
+    'clearFinished removes done/canceled/error, keeps active (P9i)',
+    () async {
+      Future<void> insert(String id, String status) => db
+          .into(db.downloadTasks)
+          .insert(
+            DownloadTasksCompanion.insert(
+              id: id,
+              url: 'u',
+              requestJson: '{}',
+              status: status,
+              createdAt: DateTime.now(),
+            ),
+          );
+      await insert('d1', TaskStatus.done);
+      await insert('c1', TaskStatus.canceled);
+      await insert('e1', TaskStatus.error);
+      await insert('q1', TaskStatus.queued);
+
+      final cleared = await controller.clearFinished();
+      expect(cleared, 3);
+      expect(await repo.byId('q1'), isNotNull);
+    },
+  );
+
+  test('cancelAll cancels active tasks (P9i)', () async {
+    await controller.enqueue(_qd('t1'));
+    await controller.enqueue(_qd('t2'));
+    await controller.enqueue(_qd('t3')); // 2 run, 1 queued
+    await waitFor(() async => engine.running.length == 2);
+
+    await controller.cancelAll();
+    await waitFor(
+      () async => await repo.countByStatus(TaskStatus.running) == 0,
+    );
+    expect(await repo.countByStatus(TaskStatus.queued), 0);
+  });
+
   test('resumeAll re-queues every paused download', () async {
     await controller.enqueue(_qd('t1'));
     await controller.enqueue(_qd('t2'));

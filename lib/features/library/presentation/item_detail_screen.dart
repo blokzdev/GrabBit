@@ -14,11 +14,11 @@ import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
-import 'package:grabbit/features/library/data/folder_repository.dart';
+import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
-import 'package:grabbit/features/library/presentation/folder_picker.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
@@ -36,7 +36,7 @@ class ItemDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(row?.title ?? 'Item'),
         actions: [
-          if (row != null)
+          if (row != null) ...[
             IconButton(
               icon: Icon(row.isFavorite ? Icons.star : Icons.star_outline),
               tooltip: row.isFavorite ? 'Unfavorite' : 'Favorite',
@@ -47,64 +47,42 @@ class ItemDetailScreen extends ConsumerWidget {
                 ref.invalidate(mediaItemByIdProvider(itemId));
               },
             ),
-          IconButton(
-            icon: const Icon(Icons.drive_file_move_outlined),
-            tooltip: 'Move to folder',
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final choice = await pickFolder(context, ref);
-              if (choice == null) return;
-              await ref.read(folderRepositoryProvider).moveItems([
-                itemId,
-              ], choice.id);
-              messenger
-                ..hideCurrentSnackBar()
-                ..showSnackBar(const SnackBar(content: Text('Moved')));
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.auto_fix_high_outlined),
-            tooltip: 'Studio (edit)',
-            onPressed: () => context.push('/item/$itemId/studio'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit info',
-            onPressed: () => context.push('/item/$itemId/edit'),
-          ),
-          if (row != null)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete',
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final router = GoRouter.of(context);
-                final ok = await confirm(
-                  context,
-                  title: 'Delete this item?',
-                  message:
-                      'Permanently removes the downloaded file from GrabBit. '
-                      'This cannot be undone.',
-                  confirmLabel: 'Delete',
-                  destructive: true,
-                );
-                if (!ok) return;
-                final secure =
-                    ref
-                        .read(settingsControllerProvider)
-                        .asData
-                        ?.value
-                        .secureDelete ??
-                    false;
-                await ref
-                    .read(libraryRepositoryProvider)
-                    .deleteItem(row, secure: secure);
-                if (router.canPop()) router.pop();
-                messenger
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(const SnackBar(content: Text('Deleted')));
+            PopupMenuButton<String>(
+              tooltip: 'More',
+              onSelected: (value) async {
+                switch (value) {
+                  case 'save':
+                    await saveItems(context, ref, [row]);
+                  case 'move':
+                    await moveItemsTo(context, ref, [row]);
+                  case 'studio':
+                    await context.push('/item/$itemId/studio');
+                  case 'edit':
+                    await context.push('/item/$itemId/edit');
+                  case 'share':
+                    await shareItems(ref, [row]);
+                  case 'copy':
+                    await copyUrl(context, [row]);
+                  case 'open':
+                    await ref
+                        .read(externalShareServiceProvider)
+                        .openUrl(row.sourceUrl);
+                  case 'delete':
+                    await _deleteAndPop(context, ref, row);
+                }
               },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'save', child: Text('Save to device')),
+                PopupMenuItem(value: 'move', child: Text('Move to folder')),
+                PopupMenuItem(value: 'studio', child: Text('Edit in Studio')),
+                PopupMenuItem(value: 'edit', child: Text('Edit info')),
+                PopupMenuItem(value: 'share', child: Text('Share file')),
+                PopupMenuItem(value: 'copy', child: Text('Copy source URL')),
+                PopupMenuItem(value: 'open', child: Text('Open source link')),
+                PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
             ),
+          ],
         ],
       ),
       body: ContentBounds(
@@ -125,6 +103,35 @@ class ItemDetailScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Confirms, deletes the item (honoring the secure-delete setting), then pops
+/// the detail screen — keeping the detail-screen delete distinct from the
+/// grid menu's `deleteItems` (which stays on the list).
+Future<void> _deleteAndPop(
+  BuildContext context,
+  WidgetRef ref,
+  MediaItem row,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final router = GoRouter.of(context);
+  final ok = await confirm(
+    context,
+    title: 'Delete this item?',
+    message:
+        'Permanently removes the downloaded file from GrabBit. This cannot be '
+        'undone.',
+    confirmLabel: 'Delete',
+    destructive: true,
+  );
+  if (!ok) return;
+  final secure =
+      ref.read(settingsControllerProvider).asData?.value.secureDelete ?? false;
+  await ref.read(libraryRepositoryProvider).deleteItem(row, secure: secure);
+  if (router.canPop()) router.pop();
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(const SnackBar(content: Text('Deleted')));
 }
 
 class _ItemBody extends StatelessWidget {
@@ -167,7 +174,8 @@ class _ItemBody extends StatelessWidget {
               Text(item.title, style: theme.textTheme.headlineSmall),
               SizedBox(height: tokens.spaceXs),
               Text(
-                '${item.site}  ·  Saved ${_ymd(item.createdAt.toLocal())}',
+                '${item.site}  ·  Saved ${_ymd(item.createdAt.toLocal())}'
+                '${item.lastAccessedAt != null ? '  ·  Last played ${_ymd(item.lastAccessedAt!.toLocal())}' : ''}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -179,6 +187,7 @@ class _ItemBody extends StatelessWidget {
                 Text(item.notes!, style: theme.textTheme.bodyMedium),
               ],
               _TagsRow(itemId: item.id),
+              _CollectionsRow(itemId: item.id),
               SizedBox(height: tokens.spaceLg),
               _ExportButton(item: item),
             ],
@@ -377,6 +386,39 @@ class _TagsRow extends ConsumerWidget {
                 spacing: tokens.spaceSm,
                 runSpacing: tokens.spaceXs,
                 children: [for (final t in list) Chip(label: Text(t.name))],
+              ),
+            ),
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// The collections this item belongs to, as tappable chips (P9i).
+class _CollectionsRow extends ConsumerWidget {
+  const _CollectionsRow({required this.itemId});
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = GrabBitTokens.of(context);
+    final collections = ref.watch(collectionsForItemProvider(itemId));
+    return collections.maybeWhen(
+      data: (list) => list.isEmpty
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: EdgeInsets.only(top: tokens.spaceLg),
+              child: Wrap(
+                spacing: tokens.spaceSm,
+                runSpacing: tokens.spaceXs,
+                children: [
+                  for (final c in list)
+                    ActionChip(
+                      avatar: const Icon(Icons.collections_bookmark, size: 18),
+                      label: Text(c.name),
+                      onPressed: () =>
+                          context.push('/collection/${c.id}', extra: c.name),
+                    ),
+                ],
               ),
             ),
       orElse: () => const SizedBox.shrink(),

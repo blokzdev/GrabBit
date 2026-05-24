@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
@@ -179,4 +180,45 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
+
+  testWidgets(
+    'detail app bar shares all and exposes rename/delete (P9i)',
+    (tester) async {
+      final share = _FakeShare();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            externalShareServiceProvider.overrideWithValue(share),
+            collectionItemsProvider(
+              1,
+            ).overrideWith((ref) => Stream.value([_item()])),
+          ],
+          child: const MaterialApp(
+            home: CollectionDetailScreen(collectionId: 1, name: 'Faves'),
+          ),
+        ),
+      );
+      await settle(tester);
+
+      await tester.tap(find.byTooltip('More'));
+      await tester.pumpAndSettle();
+      expect(find.text('Rename'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+
+      await tester.tap(find.text('Share all'));
+      await tester.pumpAndSettle();
+      expect(share.sharedPaths, isNotEmpty);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+}
+
+class _FakeShare implements ExternalShareService {
+  final List<String> sharedPaths = [];
+  @override
+  Future<void> shareFiles(List<String> paths) async =>
+      sharedPaths.addAll(paths);
+  @override
+  Future<void> openUrl(String url) async {}
 }

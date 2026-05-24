@@ -368,6 +368,12 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Library multi-select (P9h)**: long-press a tile → "Select" enters multi-select; tapping more
       tiles grows the count; "Select all" and "Clear" work; the bulk bar's Delete / Save / Move /
       Add-to-collection / Favorite / Share act on every selected item.
+- [ ] **Collection/album actions (P9i)**: a collection or smart album sorts within (newest/title/
+      largest…) and "Share all" shares every file; a collection's app-bar menu renames/deletes it.
+- [ ] **Whole-queue actions (P9i)**: the queue's app-bar menu offers Retry all failed, Cancel all,
+      and Clear finished, each acting on the matching tasks.
+- [ ] **Item-detail (P9i)**: the app bar is Favorite + a single ⋮ menu (Save/Move/Studio/Edit/Share/
+      Copy/Open/Delete); the body shows "Last played" and the collections the item belongs to.
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.

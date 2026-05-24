@@ -149,6 +149,20 @@ three PRs:
   Select all + Clear work. **Implemented (CI-verifiable; no APK needed).** (Collection-detail /
   Smart-album multi-select is a cheap follow-up now that `MediaGrid` supports it.)
 
+### `[~]` P9i — Screen-level action menus *(pure Dart)*
+- **Collection & smart-album app bars** — both became `ConsumerStatefulWidget`s with a shared
+  **Sort within** menu (`grid_sort.dart`: `sortMediaItems` + `GridSortButton`) and a **Share all**
+  action; collection-detail adds a Rename/Delete/Share-all overflow (reuses `renameCollection`).
+- **Whole-queue actions** — queue app-bar overflow: **Retry all failed** / **Cancel all** /
+  **Clear finished**, backed by new `QueueRepository.retryAllFailed/clearFinished/cancelAllPending`
+  + `QueueController.retryAllFailed/cancelAll/clearFinished`.
+- **Item-detail richness** — the 5 app-bar icons collapse to **Favorite + a `⋮` overflow** (reuses
+  the P9g helpers); the body now shows **Last played** (`lastAccessedAt`) and the **collections** the
+  item is in (tappable chips via `collectionsForItemProvider`).
+- **Exit / review:** sort/share/rename/delete a collection or album from its app bar; retry-all/
+  cancel-all/clear-finished on the queue; item-detail overflow + last-played/collections.
+  **Implemented (CI-verifiable; no APK needed).**
+
 ---
 
 ## Deferred (cut from P9 → `docs/BACKLOG.md`), with rationale
