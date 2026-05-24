@@ -121,6 +121,9 @@ class SettingsController extends _$SettingsController {
   Future<void> setLastEngineCheck(DateTime when) async =>
       _update((await future).copyWith(lastEngineCheck: when));
 
+  Future<void> setGraphIndexVersion(String version) async =>
+      _update((await future).copyWith(graphIndexVersion: version));
+
   /// Restores all preferences to their defaults, but preserves the app-lock
   /// (its PIN lives in secure storage) and the accepted disclaimer (resetting
   /// it would force re-onboarding).

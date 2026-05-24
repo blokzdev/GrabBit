@@ -413,7 +413,18 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Graceful degrade (optional)**: on a non-arm64 build (e.g. an `x86_64` emulator, where the
       Cozo lib isn't bundled) the self-test reports **"unavailable"** and the app does **not** crash.
 
-### P10b–d (later sub-PRs)
+### P10b-1 — Graph sync (Drift→Cozo projection)
+- [ ] **Library projects into the graph**: with an empty library the About self-test shows
+      "0 media · 0 edges"; after downloading an item, within ~2s it shows **media/edges > 0**
+      (e.g. media ≥ 1, edges ≥ 1 for `onPlatform`).
+- [ ] **Edits reflect**: favorite/tag/move-to-folder/add-to-collection an item → counts/edges update
+      (re-run the self-test); **delete** an item → media count drops (no orphan left).
+- [ ] **Manual rebuild**: Settings → Graph database → **Rebuild graph index** → snackbar reports
+      "Graph rebuilt — M media · K edges".
+- [ ] **Persists across restart**: force-quit + reopen → self-test still reports the same counts
+      (no rebuild needed); the downloader/library are unaffected throughout.
+
+### P10b-2–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
 - [ ] **Semantic search**: a query that isn't a literal title match still surfaces relevant items

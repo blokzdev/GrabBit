@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/storage/cache_cleaner.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
@@ -493,10 +494,44 @@ class _SettingsList extends ConsumerWidget {
               ),
             ],
           ),
+          _Section(
+            icon: Icons.hub_outlined,
+            title: 'Graph database',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.refresh),
+                title: const Text('Rebuild graph index'),
+                subtitle: const Text(
+                  'Reproject your library into the on-device graph',
+                ),
+                trailing: const Icon(Icons.play_arrow_outlined),
+                onTap: () => _rebuildGraph(context, ref),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
+}
+
+Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(const SnackBar(content: Text('Rebuilding graph index…')));
+  final stats = await ref.read(graphSyncServiceProvider).rebuild();
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(
+          stats.available
+              ? 'Graph rebuilt — ${stats.mediaNodes} media · ${stats.edges} edges'
+              : 'Graph engine unavailable on this device',
+        ),
+      ),
+    );
 }
 
 /// A titled, icon-led settings section: a [SectionHeader] above a rounded card

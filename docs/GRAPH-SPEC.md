@@ -190,24 +190,33 @@ fingerprint**.
 
 ---
 
-## 6. Sync model — `GraphSyncService`
+## 6. Sync model — `GraphSyncService` (P10b-1)
 
-Single owner in the data layer (e.g. `lib/core/graph/graph_sync_service.dart`), invoked from
-repositories — **never the UI**.
+Single owner in `lib/core/graph/graph_sync_service.dart` (`AppDatabase` + `GraphStore`). No-ops
+gracefully when `GraphStore.isAvailable` is false.
 
-- **Initial bulk build / "Rebuild index" maintenance action** (Settings, beside the existing
-  `DedupeService` / storage-maintenance): read Drift rows in batches, project nodes/edges, compute
-  embeddings, **bulk-load via `cozo_import_relations`** (far faster than per-row `:put`).
-- **Incremental hooks at existing repository write points:**
-  - `onItemAdded(id)` — download-complete insert (queue/downloader completion): upsert media node +
-    entity nodes (uploader/site/playlist/folder/tags) + deterministic edges; enqueue embedding.
-  - `onItemChanged(id)` — `metadata_repository.dart`, `folder_repository.dart`
-    (rename/tag/favorite/move/collection).
-  - `onItemRemoved(id)` — `library_repository.dart` `deleteItem` (≈ line 39): delete node; edges
-    cascade in CozoScript.
-- **Idempotent** (`:put`/upsert) so a replay after a crash or partial rebuild converges.
-- **Embedding generation is the slow step** — queue it, batch it, and let it **lag** the
-  deterministic edges (the graph is useful before vectors exist).
+- **Pure projection.** `graph_projection.dart` turns a `LibrarySnapshot` (plain Drift rows) into
+  `relation → rows` in each relation's column order (`graphRelationColumns`). Pure → unit-tested.
+- **Idempotent rebuild via `:replace`.** For each relation, run
+  `?[cols] <- $rows :replace rel {schema}` with the current Drift-derived rows. `:replace` recreates
+  the relation's contents, so one rebuild reflects adds, edits **and** deletes; an empty library →
+  empty relations. (Confirmed Cozo semantics.) Used by startup self-heal, the live listener, and the
+  manual action.
+- **Stay current via a debounced Drift-update listener — no repo coupling.** Subscribe to
+  `db.tableUpdates(TableUpdateQuery.onAllTables([mediaItems, mediaMetadata, folders, tags, mediaTags,
+  collections, mediaCollections]))`, debounce (~2 s), then rebuild. Drift's own update stream is the
+  event bus, so no hooks are scattered across the 11 repo mutation sites. Cozo writes hit a separate
+  DB, so they don't re-trigger this (no loop).
+- **Startup schema-fingerprint self-heal.** `fingerprint = "<drift schemaVersion>.<edgeBuilderVer>"`
+  persisted as `settings.graphIndexVersion`. On launch (`app.dart` `_maybeSyncGraph`, mirroring
+  `_maybeAutoUpdate`), rebuild + stamp iff it changed (handles logic/schema changes the data-listener
+  wouldn't catch).
+- **Manual "Rebuild graph index"** (Settings → Graph database) + the About self-test reports
+  `media · edges` counts.
+- **P10b-1 scope:** deterministic nodes + entity/structural edges only. `duplicateOf`,
+  `coDownloadedWith`, the HNSW `embedding` relation, and `similarTo` are populated in **P10b-2**
+  (embedder); embedding backfill there must **cache vectors** so rebuilds don't re-embed, and must
+  not `:replace` the HNSW relation wholesale.
 
 ---
 
