@@ -23,6 +23,7 @@ class _PinDialogState extends State<_PinDialog> {
   final _pin = TextEditingController();
   final _confirm = TextEditingController();
   bool _obscure = true;
+  bool _confirming = false;
 
   static const _minLength = 4;
 
@@ -42,23 +43,47 @@ class _PinDialogState extends State<_PinDialog> {
 
   void _refresh() => setState(() {});
 
-  bool get _valid =>
-      _pin.text.length >= _minLength && _pin.text == _confirm.text;
+  bool get _pinLongEnough => _pin.text.length >= _minLength;
+  bool get _matches => _pin.text == _confirm.text;
 
-  String? get _error {
-    if (_confirm.text.isEmpty || _pin.text == _confirm.text) return null;
-    return "PINs don't match";
+  String? get _confirmError =>
+      _confirm.text.isEmpty || _matches ? null : "PINs don't match";
+
+  void _next() {
+    if (_pinLongEnough) setState(() => _confirming = true);
+  }
+
+  void _back() => setState(() {
+    _confirming = false;
+    _confirm.clear();
+  });
+
+  void _submit() {
+    if (_pinLongEnough && _matches) Navigator.of(context).pop(_pin.text);
   }
 
   @override
   Widget build(BuildContext context) {
     final formatters = [FilteringTextInputFormatter.digitsOnly];
-    return AlertDialog(
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
+    // Two steps (enter → confirm) so the fields never crowd each other and a
+    // typo can't silently lock the user out.
+    final field = _confirming
+        ? TextField(
+            key: const ValueKey('confirm'),
+            controller: _confirm,
+            obscureText: _obscure,
+            keyboardType: TextInputType.number,
+            inputFormatters: formatters,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Re-enter PIN',
+              helperText: 'Type the same PIN again to confirm',
+              errorText: _confirmError,
+            ),
+            onSubmitted: (_) => _submit(),
+          )
+        : TextField(
+            key: const ValueKey('pin'),
             controller: _pin,
             obscureText: _obscure,
             keyboardType: TextInputType.number,
@@ -73,32 +98,30 @@ class _PinDialogState extends State<_PinDialog> {
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
-          ),
-          TextField(
-            controller: _confirm,
-            obscureText: _obscure,
-            keyboardType: TextInputType.number,
-            inputFormatters: formatters,
-            decoration: InputDecoration(
-              labelText: 'Confirm PIN',
-              errorText: _error,
-            ),
-            onSubmitted: (_) {
-              if (_valid) Navigator.of(context).pop(_pin.text);
-            },
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _valid ? () => Navigator.of(context).pop(_pin.text) : null,
-          child: const Text('Set'),
-        ),
-      ],
+            onSubmitted: (_) => _next(),
+          );
+
+    return AlertDialog(
+      title: Text(_confirming ? 'Confirm PIN' : widget.title),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [field]),
+      actions: _confirming
+          ? [
+              TextButton(onPressed: _back, child: const Text('Back')),
+              FilledButton(
+                onPressed: (_pinLongEnough && _matches) ? _submit : null,
+                child: const Text('Set'),
+              ),
+            ]
+          : [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: _pinLongEnough ? _next : null,
+                child: const Text('Next'),
+              ),
+            ],
     );
   }
 }
