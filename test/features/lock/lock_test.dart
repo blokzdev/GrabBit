@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/routing/router_refresh.dart';
 import 'package:grabbit/features/lock/biometric_service.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/lock/lockout_policy.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 
 class FakeStore implements SecureStore {
@@ -146,6 +147,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           pinRepositoryProvider.overrideWithValue(PinRepository(store)),
+          lockoutPolicyProvider.overrideWithValue(LockoutPolicy(FakeStore())),
         ],
       );
       addTearDown(container.dispose);

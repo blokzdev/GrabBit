@@ -1,4 +1,5 @@
 import 'package:grabbit/features/lock/biometric_service.dart';
+import 'package:grabbit/features/lock/lockout_policy.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -18,7 +19,13 @@ class LockController extends _$LockController {
 
   Future<bool> unlockWithPin(String pin) async {
     final ok = await ref.read(pinRepositoryProvider).verify(pin);
-    if (ok) state = LockState.unlocked;
+    final lockout = ref.read(lockoutPolicyProvider);
+    if (ok) {
+      await lockout.recordSuccess();
+      state = LockState.unlocked;
+    } else {
+      await lockout.recordFailure();
+    }
     return ok;
   }
 

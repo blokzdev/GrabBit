@@ -94,6 +94,12 @@ class SettingsController extends _$SettingsController {
   Future<void> setAppLock(AppLockSettings appLock) async =>
       _update((await future).copyWith(appLock: appLock));
 
+  Future<void> setBlockScreenshots(bool value) async =>
+      _update((await future).copyWith(blockScreenshots: value));
+
+  Future<void> setSecureDelete(bool value) async =>
+      _update((await future).copyWith(secureDelete: value));
+
   Future<void> acceptDisclaimer() async =>
       _update((await future).copyWith(disclaimerAccepted: true));
 

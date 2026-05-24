@@ -1,6 +1,7 @@
 package dev.blokz.grabbit
 
 import android.content.Intent
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import kotlinx.coroutines.CoroutineScope
@@ -34,6 +35,18 @@ class MainActivity : FlutterFragmentActivity() {
                 val text = pendingSharedText
                 pendingSharedText = null
                 return text
+            }
+        })
+        // FLAG_SECURE blocks screenshots and hides content in the recents preview (P9e).
+        PrivacyHostApi.setUp(messenger, object : PrivacyHostApi {
+            override fun setSecureFlag(enabled: Boolean) {
+                runOnUiThread {
+                    if (enabled) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                }
             }
         })
         // Warm up the engine (first run extracts Python) so the first probe is fast.

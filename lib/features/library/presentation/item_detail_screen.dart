@@ -89,7 +89,16 @@ class ItemDetailScreen extends ConsumerWidget {
                   destructive: true,
                 );
                 if (!ok) return;
-                await ref.read(libraryRepositoryProvider).deleteItem(row);
+                final secure =
+                    ref
+                        .read(settingsControllerProvider)
+                        .asData
+                        ?.value
+                        .secureDelete ??
+                    false;
+                await ref
+                    .read(libraryRepositoryProvider)
+                    .deleteItem(row, secure: secure);
                 if (router.canPop()) router.pop();
                 messenger
                   ..hideCurrentSnackBar()

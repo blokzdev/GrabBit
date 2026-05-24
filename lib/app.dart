@@ -7,7 +7,8 @@ import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/routing/app_router.dart';
 import 'package:grabbit/core/theme/app_theme.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
-import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/lock/auto_lock_controller.dart';
+import 'package:grabbit/features/settings/data/privacy_service.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -22,11 +23,21 @@ class GrabBitApp extends ConsumerStatefulWidget {
 class _GrabBitAppState extends ConsumerState<GrabBitApp>
     with WidgetsBindingObserver {
   StreamSubscription<String>? _shareSub;
+  ProviderSubscription<bool>? _secureFlagSub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Apply the saved FLAG_SECURE preference at startup and whenever it changes.
+    _secureFlagSub = ref.listenManual(
+      settingsControllerProvider.select(
+        (s) => s.asData?.value.blockScreenshots ?? false,
+      ),
+      (_, blockScreenshots) =>
+          ref.read(privacyServiceProvider).setSecureFlag(blockScreenshots),
+      fireImmediately: true,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeAutoUpdate();
       _initShareIntake();
@@ -79,18 +90,23 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
   @override
   void dispose() {
     _shareSub?.cancel();
+    _secureFlagSub?.close();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden) {
-      final enabled =
-          ref.read(settingsControllerProvider).asData?.value.appLock.enabled ??
-          false;
-      if (enabled) ref.read(lockControllerProvider.notifier).lock();
+    final autoLock = ref.read(autoLockProvider.notifier);
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        autoLock.appBackgrounded();
+      case AppLifecycleState.resumed:
+        autoLock.appForegrounded();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
     }
   }
 

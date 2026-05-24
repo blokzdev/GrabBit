@@ -18,6 +18,7 @@ abstract class AppLockSettings with _$AppLockSettings {
   const factory AppLockSettings({
     @Default(false) bool enabled,
     @Default(false) bool biometric,
+    @Default(60) int autoLockSeconds,
   }) = _AppLockSettings;
 
   factory AppLockSettings.fromJson(Map<String, dynamic> json) =>
@@ -56,6 +57,8 @@ abstract class SettingsModel with _$SettingsModel {
     @Default(true) bool dynamicColor,
     String? locale,
     @Default(AppLockSettings()) AppLockSettings appLock,
+    @Default(false) bool blockScreenshots,
+    @Default(false) bool secureDelete,
     @Default(false) bool disclaimerAccepted,
     @Default(true) bool autoCheckEngineUpdate,
     DateTime? lastEngineCheck,

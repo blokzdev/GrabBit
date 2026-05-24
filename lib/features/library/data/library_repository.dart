@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
+import 'package:grabbit/core/utils/secure_delete.dart';
 
 /// Library-level operations beyond plain queries (currently device export).
 class LibraryRepository {
@@ -33,14 +34,19 @@ class LibraryRepository {
   /// Permanently removes an item: deletes its own media + thumbnail files
   /// (best-effort) then the DB row (metadata/tags/collections cascade via FK).
   /// Only the item's files are removed — the per-task folder may hold
-  /// split-chapter siblings, so it's left in place.
-  Future<void> deleteItem(MediaItem item) async {
+  /// split-chapter siblings, so it's left in place. When [secure], file bytes
+  /// are overwritten before unlinking (P9e; best-effort on flash storage).
+  Future<void> deleteItem(MediaItem item, {bool secure = false}) async {
     for (final path in [item.filePath, item.thumbPath]) {
       if (path == null) continue;
       final file = File(path);
       if (file.existsSync()) {
         try {
-          await file.delete();
+          if (secure) {
+            await secureDeleteFile(file);
+          } else {
+            await file.delete();
+          }
         } on FileSystemException {
           // Best-effort: a missing/locked file shouldn't block DB removal.
         }
