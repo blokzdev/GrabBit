@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/theme/tokens.dart';
+import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
@@ -104,12 +105,17 @@ class QueueScreen extends ConsumerWidget {
                 )
               : Column(
                   children: [
+                    _QueueDashboard(rows: rows),
                     _QueueSummary(rows: rows),
                     Expanded(
-                      child: ListView.builder(
+                      child: ReorderableListView.builder(
                         padding: EdgeInsets.zero,
+                        buildDefaultDragHandles: true,
                         itemCount: rows.length,
-                        itemBuilder: (context, i) => _TaskTile(task: rows[i]),
+                        onReorderItem: (oldIndex, newIndex) =>
+                            controller.reorder(oldIndex, newIndex),
+                        itemBuilder: (context, i) =>
+                            _TaskTile(key: ValueKey(rows[i].id), task: rows[i]),
                       ),
                     ),
                   ],
@@ -167,6 +173,91 @@ class QueueScreen extends ConsumerWidget {
     icon: Icons.help_outline,
   ),
 };
+
+/// Live aggregate header for active downloads: overall progress, counts, and
+/// (from the engine stream) combined speed / longest ETA / total size (P9d).
+/// Hidden when nothing is active.
+class _QueueDashboard extends ConsumerWidget {
+  const _QueueDashboard({required this.rows});
+  final List<DownloadTask> rows;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    bool active(DownloadTask t) =>
+        t.status == TaskStatus.running ||
+        t.status == TaskStatus.queued ||
+        t.status == TaskStatus.paused;
+    final activeRows = rows.where(active).toList();
+    if (activeRows.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final live = ref.watch(queueLiveStatsProvider);
+    final running = rows.where((t) => t.status == TaskStatus.running).toList();
+
+    final overall =
+        activeRows.fold<double>(0, (a, t) => a + t.progress) /
+        (activeRows.length * 100);
+    var speed = 0.0;
+    int? eta;
+    var totalBytes = 0;
+    var anySize = false;
+    for (final t in running) {
+      final s = live[t.id];
+      if (s == null) continue;
+      if (s.speedBps != null) speed += s.speedBps!;
+      final e = s.etaSec;
+      if (e != null && (eta == null || e > eta)) eta = e;
+      if (s.totalBytes != null) {
+        totalBytes += s.totalBytes!;
+        anySize = true;
+      }
+    }
+
+    final queued = rows.where((t) => t.status == TaskStatus.queued).length;
+    final done = rows.where((t) => t.status == TaskStatus.done).length;
+    final stats = <String>[
+      if (speed > 0) '${formatBytes(speed.round())}/s',
+      if (eta != null) '${formatDuration(eta)} left',
+      if (anySize) formatBytes(totalBytes),
+    ];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceMd,
+        tokens.spaceMd,
+        tokens.spaceMd,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '${running.length} downloading · $queued queued · $done done',
+            style: theme.textTheme.labelLarge,
+          ),
+          SizedBox(height: tokens.spaceXs),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            child: LinearProgressIndicator(
+              value: overall.clamp(0.0, 1.0),
+              minHeight: 6,
+            ),
+          ),
+          if (stats.isNotEmpty) ...[
+            SizedBox(height: tokens.spaceXs),
+            Text(
+              stats.join('  ·  '),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 /// A compact count of where the queue's tasks stand, shown above the list.
 class _QueueSummary extends StatelessWidget {
@@ -231,7 +322,7 @@ class _QueueSummary extends StatelessWidget {
 }
 
 class _TaskTile extends ConsumerWidget {
-  const _TaskTile({required this.task});
+  const _TaskTile({required this.task, super.key});
   final DownloadTask task;
 
   @override

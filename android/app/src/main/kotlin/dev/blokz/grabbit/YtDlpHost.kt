@@ -128,6 +128,7 @@ class YtDlpHost(
                             etaSec = etaInSeconds.takeIf { it >= 0 },
                             stage = stage,
                             error = null,
+                            line = line, // parsed in Dart for speed/total size (P9d)
                         ),
                     )
                 }

@@ -119,6 +119,7 @@ class ProgressDto {
     required this.stage,
     this.etaSec,
     this.error,
+    this.line,
   });
 
   String taskId;
@@ -127,6 +128,7 @@ class ProgressDto {
   int? etaSec;
   String stage; // probing | downloading | merging | done | error | canceled
   String? error;
+  String? line; // raw yt-dlp progress line (P9d: parsed for speed/total size)
 }
 
 @HostApi()

@@ -36,6 +36,19 @@ class ControllableEngine implements DownloadEngine {
     return c.stream;
   }
 
+  void progress(String id, {int? eta, double speed = 0, int? total}) {
+    _ctrls[id]?.add(
+      DownloadProgress(
+        taskId: id,
+        stage: DownloadStage.downloading,
+        percent: 50,
+        etaSec: eta,
+        speedBps: speed,
+        totalBytes: total,
+      ),
+    );
+  }
+
   void complete(String id) {
     _ctrls.remove(id)
       ?..add(
@@ -472,5 +485,64 @@ void main() {
         );
     await repo.reconcileRunning();
     expect((await repo.byId('orphan'))!.status, TaskStatus.queued);
+  });
+
+  test('enqueueAll assigns distinct, increasing orderIndex', () async {
+    await controller.enqueueHeld([_qd('h1'), _qd('h2'), _qd('h3')]);
+    final rows = await repo.watch().first;
+    final byId = {for (final r in rows) r.id: r.orderIndex};
+    expect(byId['h1']! < byId['h2']!, isTrue);
+    expect(byId['h2']! < byId['h3']!, isTrue);
+  });
+
+  test('reorder persists a new queue order via setOrder', () async {
+    await controller.enqueueHeld([_qd('h1'), _qd('h2'), _qd('h3')]);
+    expect(
+      [for (final r in await repo.watch().first) r.id],
+      ['h1', 'h2', 'h3'],
+    );
+
+    // Drag the first item to the end.
+    await controller.reorder(0, 2);
+    expect(
+      [for (final r in await repo.watch().first) r.id],
+      ['h2', 'h3', 'h1'],
+    );
+  });
+
+  test(
+    'a progress event populates queueLiveStats; completion clears it',
+    () async {
+      await controller.enqueue(_qd('t1'));
+      await waitFor(() async => engine.running.contains('t1'));
+
+      engine.progress('t1', eta: 42, speed: 1024, total: 2048);
+      await waitFor(
+        () async =>
+            container.read(queueLiveStatsProvider)['t1']?.speedBps == 1024,
+      );
+      final live = container.read(queueLiveStatsProvider)['t1']!;
+      expect(live.etaSec, 42);
+      expect(live.totalBytes, 2048);
+
+      engine.complete('t1');
+      await waitFor(
+        () async => !container.read(queueLiveStatsProvider).containsKey('t1'),
+      );
+    },
+  );
+
+  test('nextQueued and watch respect orderIndex after setOrder', () async {
+    // A repo-only db so the controller's scheduler doesn't claim queued tasks.
+    final db2 = AppDatabase(NativeDatabase.memory());
+    addTearDown(db2.close);
+    final repo2 = QueueRepository(db2);
+
+    await repo2.enqueueAll([_qd('a'), _qd('b'), _qd('c')]);
+    expect((await repo2.nextQueued())!.id, 'a');
+
+    await repo2.setOrder(['c', 'b', 'a']);
+    expect((await repo2.nextQueued())!.id, 'c');
+    expect([for (final r in await repo2.watch().first) r.id], ['c', 'b', 'a']);
   });
 }

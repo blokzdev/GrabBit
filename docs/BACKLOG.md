@@ -23,13 +23,16 @@ _(nothing active — pick the next batch from below)_
       *now folded into **P7 — Branding & Frontend Revamp***
 - [ ] **16 KB page-size** validation on Pixel 9 / Android 15+ (ffmpeg/python native
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
+- [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
+      v2/P13: it's native, on-device-only verification, and pure polish.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [x] **Advanced format/codec picker** on Add Download → shipped in **P8d**
   (`docs/design/P8-PLAN.md`). *(Was deferred from P7d.)*
-- [→] Queue **drag-to-reorder** + aggregate **dashboard** (speed / ETA / total size) →
-  scheduled as **P9d** (`docs/design/P9-PLAN.md`).
+- [x] Queue **drag-to-reorder** + aggregate **dashboard** (live speed / ETA / total size) →
+  shipped in **P9d** (`docs/design/P9-PLAN.md`). Speed/size are recovered by parsing the
+  yt-dlp progress line in Dart (`core/engine/progress_line.dart`).
 
 ## Cut from P8 / P9 (deliberate — kept here with rationale)
 - [ ] **aria2c external downloader** — youtubedl-android ships no aria2c binary; bundling an

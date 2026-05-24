@@ -230,6 +230,14 @@ class QueueController extends _$QueueController {
           case DownloadStage.downloading:
           case DownloadStage.merging:
             _percents[id] = p.percent;
+            ref
+                .read(queueLiveStatsProvider.notifier)
+                .set(
+                  id,
+                  etaSec: p.etaSec,
+                  speedBps: p.speedBps,
+                  totalBytes: p.totalBytes,
+                );
             await _repo.setProgress(id, p.percent);
             await _syncService();
         }
@@ -298,6 +306,20 @@ class QueueController extends _$QueueController {
   void _finish(String id) {
     _runners.remove(id);
     _percents.remove(id);
+    ref.read(queueLiveStatsProvider.notifier).remove(id);
+  }
+
+  /// Persists a manual drag-reorder of the queue. [newIndex] is the destination
+  /// already adjusted for the removed item (ReorderableListView `onReorderItem`).
+  /// The watch stream re-emits in the new order, and `nextQueued` now respects
+  /// `orderIndex` (P9d).
+  Future<void> reorder(int oldIndex, int newIndex) async {
+    final rows = await _repo.watch().first;
+    final ids = [for (final r in rows) r.id];
+    if (oldIndex < 0 || oldIndex >= ids.length) return;
+    final id = ids.removeAt(oldIndex);
+    ids.insert(newIndex.clamp(0, ids.length), id);
+    await _repo.setOrder(ids);
   }
 
   Duration _backoff(int retries, QueueConfig config) {
@@ -390,3 +412,28 @@ class QueueController extends _$QueueController {
     return dot > 0 ? name.substring(0, dot) : name;
   }
 }
+
+/// Transient per-task download stats (not persisted) for the queue dashboard.
+typedef TaskLive = ({int? etaSec, double? speedBps, int? totalBytes});
+
+/// Live speed/ETA/size per running task, fed from the engine progress stream
+/// (P9d). Transient — cleared when a task finishes.
+class QueueLiveStats extends Notifier<Map<String, TaskLive>> {
+  @override
+  Map<String, TaskLive> build() => const {};
+
+  void set(String id, {int? etaSec, double? speedBps, int? totalBytes}) {
+    state = {
+      ...state,
+      id: (etaSec: etaSec, speedBps: speedBps, totalBytes: totalBytes),
+    };
+  }
+
+  void remove(String id) {
+    if (!state.containsKey(id)) return;
+    state = {...state}..remove(id);
+  }
+}
+
+final queueLiveStatsProvider =
+    NotifierProvider<QueueLiveStats, Map<String, TaskLive>>(QueueLiveStats.new);

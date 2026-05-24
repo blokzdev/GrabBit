@@ -2,6 +2,7 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/error_mapping.dart';
 import 'package:grabbit/core/engine/pigeon/engine.pigeon.dart';
+import 'package:grabbit/core/engine/progress_line.dart';
 
 /// Conversions between the Pigeon transport DTOs and the pure-Dart domain
 /// models. Kept separate so they can be unit-tested without a platform channel.
@@ -71,12 +72,15 @@ DownloadStage _stageFromString(String stage) => switch (stage) {
 extension ProgressDtoMapper on ProgressDto {
   DownloadProgress toDomain() {
     final mappedStage = _stageFromString(stage);
+    // The native callback drops speed/total size; recover them from the raw line.
+    final parsed = parseProgressLine(line);
     return DownloadProgress(
       taskId: taskId,
       stage: mappedStage,
       percent: percent,
-      speedBps: speedBps,
+      speedBps: parsed.speedBps ?? speedBps,
       etaSec: etaSec,
+      totalBytes: parsed.totalBytes,
       errorCode: switch (mappedStage) {
         DownloadStage.error => classifyEngineError(error),
         DownloadStage.canceled => DownloadErrorCode.canceled,

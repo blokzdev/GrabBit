@@ -12,8 +12,8 @@
 - **One schema migration:** all DB changes land once in **P9a** (v2→v3). Do not bump the
   schema again later in the phase.
 - **On-device review:** APK builds are **manual / user-triggered** (CLAUDE.md §6). The
-  native parts (P9c PiP, P9e FLAG_SECURE) batch into one APK build; pure-Dart subphases
-  (P9a/P9b/P9d) ship as standalone green-CI PRs.
+  native part (P9e FLAG_SECURE) needs an APK build; pure-Dart subphases
+  (P9a/P9b/P9c-1/P9d) ship as standalone green-CI PRs. (P9c-2/PiP was deferred to BACKLOG.)
 - **PR cadence:** open the PR into `main` at phase end (per CLAUDE.md §7). No PR is opened
   automatically.
 
@@ -59,26 +59,29 @@ three PRs:
 - **Exit / review:** search by keyword, sort, star favorites, see a storage breakdown, and detect
   duplicates (content + by source id) — all offline.
 
-### `[~]` P9c — Player enhancements *(mixed; split into 2 PRs)*
-- **`[~]` P9c-1 — Player polish (pure Dart):** Chewie config — playback **speed** menu, **Loop**
+### `[x]` P9c — Player enhancements *(P9c-1 shipped; P9c-2/PiP → BACKLOG)*
+- **`[x]` P9c-1 — Player polish (pure Dart):** Chewie config — playback **speed** menu, **Loop**
   toggle (`setLooping`), **keep-screen-awake**, and **subtitle-track selection** from the `.srt`/
   `.vtt` sidecars (parsed via `video_player`'s `SubRip`/`WebVTT` parsers; controller recreated on
   track change, reusing the video controller). **markPlayed** stamps `lastAccessedAt` on first play
   → fills P9b-2's Recently-played album. Shared `subtitle_files` util (reused by Media Studio).
-  Also backfilled the P8/P9 VERIFICATION checklist. **Implemented; pending on-device check.**
-- **`[ ]` P9c-2 — Picture-in-Picture (native):** manifest `supportsPictureInPicture` + a Pigeon
-  `enterPip` host method (`enterPictureInPictureMode`), controls hidden in PiP. Hand-rolled (no plugin).
+  Also backfilled the P8/P9 VERIFICATION checklist. **Shipped.**
+- **`[→]` P9c-2 — Picture-in-Picture (native): deferred to `docs/BACKLOG.md`** (revisit v2/P13).
+  It's native, on-device-only verification, and pure polish — not worth a native APK round now.
 - **Background audio is deferred** (`docs/BACKLOG.md`).
-- **Exit / review:** change speed/loop and pick a subtitle track in-player (P9c-1); PiP works on
-  home-press (P9c-2).
+- **Exit / review:** change speed/loop and pick a subtitle track in-player (P9c-1). *(PiP backlog.)*
 
-### `[ ]` P9d — Queue depth *(pure Dart)*
-- `ReorderableListView` over the queue, persisting `orderIndex` (column from P9a); an
-  aggregate **dashboard** (speed / ETA / total size) over the existing `lib/features/queue/`
-  providers. Pulls in the BACKLOG queue reorder + dashboard items.
+### `[~]` P9d — Queue depth *(pure Dart)*
+- `ReorderableListView` over the queue, persisting `orderIndex` (column from P9a): `watch`/
+  `nextQueued` order by `orderIndex`, `enqueueAll` assigns increasing indices, `setOrder` rewrites
+  them. An aggregate **dashboard** (overall progress + counts + **live aggregate speed** / longest
+  ETA / total size) over the `lib/features/queue/` providers. Live speed/size are recovered by
+  parsing the default yt-dlp progress line in Dart (`core/engine/progress_line.dart`, unit-tested) —
+  the line is passed through youtubedl-android's callback (`--progress-template` is unsafe). Pulls
+  in the BACKLOG queue reorder + dashboard items.
 - **Scheduling is deferred** (`docs/BACKLOG.md`) — needs WorkManager + wifi-window logic.
 - **Exit / review:** drag-reorder persists across restart; the dashboard shows live aggregate
-  speed / ETA / total.
+  speed / ETA / total. **Implemented; pending on-device check.**
 
 ### `[ ]` P9e — Privacy & app-lock hardening *(ship only the non-theatrical items)*
 - **FLAG_SECURE** toggle (block screenshots / hide content in recents) — a `MainActivity`

@@ -12,6 +12,7 @@ import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
+import 'package:grabbit/features/queue/presentation/queue_controller.dart';
 import 'package:grabbit/features/queue/presentation/queue_screen.dart';
 
 class _IdleEngine implements DownloadEngine {
@@ -54,6 +55,14 @@ class _NoopService implements ForegroundService {
   Future<bool> isUnmetered() async => true;
 }
 
+/// A live-stats notifier seeded with a fixed map for dashboard rendering.
+class _FakeLiveStats extends QueueLiveStats {
+  _FakeLiveStats(this._initial);
+  final Map<String, TaskLive> _initial;
+  @override
+  Map<String, TaskLive> build() => _initial;
+}
+
 void main() {
   late AppDatabase db;
 
@@ -76,7 +85,10 @@ void main() {
   // Render the seeded rows via a synchronous stream so `.when` resolves
   // straight to data (no animating loading spinner to defeat pumpAndSettle).
   // The controller still builds against the in-memory DB for its actions.
-  Future<void> pumpQueue(WidgetTester tester) async {
+  Future<void> pumpQueue(
+    WidgetTester tester, {
+    Map<String, TaskLive>? liveStats,
+  }) async {
     final rows = await db.select(db.downloadTasks).get();
     await tester.pumpWidget(
       ProviderScope(
@@ -85,6 +97,10 @@ void main() {
           downloadEngineProvider.overrideWithValue(_IdleEngine()),
           foregroundServiceProvider.overrideWithValue(_NoopService()),
           queueTasksProvider.overrideWith((ref) => Stream.value(rows)),
+          if (liveStats != null)
+            queueLiveStatsProvider.overrideWith(
+              () => _FakeLiveStats(liveStats),
+            ),
         ],
         child: const MaterialApp(home: QueueScreen()),
       ),
@@ -151,7 +167,8 @@ void main() {
 
     await pumpQueue(tester);
 
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    // One bar in the tile, one in the active-downloads dashboard.
+    expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
     expect(find.textContaining('1 running'), findsOneWidget);
   });
 
@@ -176,5 +193,28 @@ void main() {
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(await QueueRepository(db).byId('t1'), isNotNull);
+  });
+
+  testWidgets('the task list is a ReorderableListView', (tester) async {
+    await seedRunning('r1');
+    await pumpQueue(tester);
+    expect(find.byType(ReorderableListView), findsOneWidget);
+  });
+
+  testWidgets('the dashboard shows counts, speed and ETA when active', (
+    tester,
+  ) async {
+    await seedRunning('r1', progress: 50);
+
+    await pumpQueue(
+      tester,
+      liveStats: const {
+        'r1': (etaSec: 90, speedBps: 2 * 1024 * 1024, totalBytes: null),
+      },
+    );
+
+    expect(find.textContaining('1 downloading'), findsOneWidget);
+    expect(find.textContaining('2.0 MB/s'), findsOneWidget);
+    expect(find.textContaining('1:30 left'), findsOneWidget);
   });
 }

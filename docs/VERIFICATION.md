@@ -329,9 +329,12 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       and the Hide-already-saved toggle hides/deselects them.
 - [ ] **Player (P9c-1)**: change playback speed; toggle Loop; pick a subtitle track; screen stays
       awake during playback; after playing, the item appears under Albums → Recently played.
-- [ ] **Picture-in-Picture (P9c-2)**: video continues in a PiP window on home-press / PiP button.
-- [ ] **Queue (P9d)**: drag-to-reorder persists across restart; the dashboard shows aggregate
-      speed / ETA / total size.
+- [ ] **Queue reorder (P9d)**: drag a queued task to a new position → the order persists across an
+      app restart, and the next download starts in the new order (the top queued task runs first).
+- [ ] **Queue dashboard (P9d)**: during real downloads the header shows overall progress, counts
+      ("N downloading · M queued · K done"), combined **live speed**, longest **ETA**, and total
+      size when known; it disappears once nothing is active.
+      *(Picture-in-Picture (was P9c-2) is deferred — see `docs/BACKLOG.md`.)*
 - [ ] **Privacy**: FLAG_SECURE blocks screenshots and hides the app in recents; auto-lock
       re-locks after the timeout; secure-delete removes a private item.
 
