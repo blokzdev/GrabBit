@@ -261,6 +261,24 @@ void main() {
       },
     );
 
+    test('setAmoledDark persists', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      final loaded = await container.read(settingsControllerProvider.future);
+      expect(loaded.amoledDark, isFalse);
+
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setAmoledDark(true);
+
+      expect((await SettingsRepository(db).read()).amoledDark, isTrue);
+    });
+
     test('privacy setters persist (P9e)', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
@@ -309,6 +327,7 @@ void main() {
             mode: UiMode.advanced,
             theme: ThemeChoice.dark,
             dynamicColor: false,
+            amoledDark: true,
             storagePolicy: StoragePolicy.autoExport,
             maxConcurrentDownloads: 5,
             blockScreenshots: true,
@@ -332,6 +351,7 @@ void main() {
         expect(saved.mode, UiMode.simple);
         expect(saved.theme, ThemeChoice.system);
         expect(saved.dynamicColor, isTrue);
+        expect(saved.amoledDark, isFalse);
         expect(saved.storagePolicy, StoragePolicy.private);
         expect(saved.maxConcurrentDownloads, 2);
         expect(saved.blockScreenshots, isFalse);

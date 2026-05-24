@@ -14,9 +14,22 @@ abstract final class AppTheme {
   static ThemeData light([ColorScheme? dynamicScheme]) =>
       _build(dynamicScheme ?? ColorScheme.fromSeed(seedColor: seed));
 
-  static ThemeData dark([ColorScheme? dynamicScheme]) => _build(
-    dynamicScheme ??
-        ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark),
+  static ThemeData dark([ColorScheme? dynamicScheme, bool amoled = false]) {
+    final scheme =
+        dynamicScheme ??
+        ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark);
+    return _build(amoled ? _amoled(scheme) : scheme);
+  }
+
+  /// Pushes the dark scheme to a true-black background while keeping the
+  /// container roles graded so cards / inputs / app bar stay distinguishable.
+  static ColorScheme _amoled(ColorScheme dark) => dark.copyWith(
+    surface: Colors.black,
+    surfaceContainerLowest: Colors.black,
+    surfaceContainerLow: const Color(0xFF0A0A0A),
+    surfaceContainer: const Color(0xFF121212),
+    surfaceContainerHigh: const Color(0xFF1A1A1A),
+    surfaceContainerHighest: const Color(0xFF1F1F1F),
   );
 
   static ThemeData _build(ColorScheme scheme) {
@@ -103,6 +116,10 @@ abstract final class AppTheme {
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
         },
       ),
     );

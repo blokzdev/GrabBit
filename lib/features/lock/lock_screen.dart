@@ -27,7 +27,7 @@ class _LockScreenState extends ConsumerState<LockScreen>
   Timer? _ticker;
   late final AnimationController _shake = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 400),
+    duration: GrabBitTokens.standard.motionLong,
   );
 
   @override

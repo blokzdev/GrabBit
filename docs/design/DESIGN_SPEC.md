@@ -67,6 +67,14 @@ in `lib/app.dart`) — the brand palette is the **fallback** when dynamic color 
 or unavailable. Never hardcode hex in widgets; read roles from `Theme.of(context).colorScheme`
 and brand-specific values from the `GrabBitTokens` extension (§5).
 
+**AMOLED (P9k):** an optional **true-black dark theme** (Settings → Appearance → "Pure black
+(AMOLED)"). When on, `AppTheme.dark` overrides the dark scheme's `surface`/lowest-container roles to
+`#000000` with graded near-black container roles so cards, inputs, and the app bar stay legible. Off by
+default; orthogonal to the light/dark/system choice and dynamic color.
+
+**Motion tokens** (`GrabBitTokens.motionShort/Medium/Long`, §5) are the source of truth for animation
+durations — use them for transitions instead of hardcoded `Duration`s.
+
 ---
 
 ## 4. Typography

@@ -86,6 +86,29 @@ void main() {
     expect((await SettingsRepository(db).read()).mode, UiMode.simple);
   });
 
+  testWidgets('Pure black (AMOLED) toggle persists', (tester) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pure black (AMOLED)'), findsOneWidget);
+    await tester.tap(find.text('Pure black (AMOLED)'));
+    await tester.pumpAndSettle();
+
+    expect((await SettingsRepository(db).read()).amoledDark, isTrue);
+  });
+
   testWidgets('Block screenshots toggle persists (P9e)', (tester) async {
     tester.view.physicalSize = const Size(1000, 3000);
     tester.view.devicePixelRatio = 1.0;

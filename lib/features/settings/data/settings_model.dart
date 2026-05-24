@@ -58,6 +58,7 @@ abstract class SettingsModel with _$SettingsModel {
     @Default(true) bool embedMetadata,
     @Default(ThemeChoice.system) ThemeChoice theme,
     @Default(true) bool dynamicColor,
+    @Default(false) bool amoledDark,
     String? locale,
     @Default(AppLockSettings()) AppLockSettings appLock,
     @Default(false) bool blockScreenshots,

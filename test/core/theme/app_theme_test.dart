@@ -24,6 +24,16 @@ void main() {
     expect(AppTheme.light(scheme).colorScheme.primary, scheme.primary);
   });
 
+  test('AMOLED dark uses a true-black surface; standard dark does not', () {
+    final amoled = AppTheme.dark(null, true);
+    expect(amoled.brightness, Brightness.dark);
+    expect(amoled.colorScheme.surface, Colors.black);
+    expect(amoled.scaffoldBackgroundColor, Colors.black);
+
+    final standard = AppTheme.dark();
+    expect(standard.colorScheme.surface, isNot(Colors.black));
+  });
+
   testWidgets('GrabBitTokens is reachable via Theme.of(context)', (
     tester,
   ) async {
