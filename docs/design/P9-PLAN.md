@@ -136,6 +136,19 @@ three PRs:
   work without leaving the grid; Share opens the OS sheet; queue task moves to top/bottom; rename a
   collection. **Implemented; pending on-device check (share/url_launcher need a manual APK build).**
 
+### `[~]` P9h — Library multi-select & bulk actions *(pure Dart)*
+- **Selection in the grid** — `MediaGrid`/`MediaTile` gain optional `selectedIds`/`onToggle`/
+  `onSelect` params (backward-compatible; Explorer/Collections unaffected). The P9g context menu
+  gains an optional **"Select"** entry (`showMediaActions(..., onSelect:)`).
+- **Library wiring** (`library_view.dart`) — local `Set<String> _selected`; long-press → menu →
+  **Select** enters multi-select; tap toggles; selection clears when the filter/search changes.
+- **Bulk bar** (`media_selection_bar.dart`, reusable) — count + Delete · Save · Move · Add to
+  collection, with an overflow for Favorite · Share · Select all. Each calls the P9g list helpers on
+  the selected items; Delete/Move clear the selection afterward.
+- **Exit / review:** long-press → Select → multi-select; the bar's bulk actions apply to all selected;
+  Select all + Clear work. **Implemented (CI-verifiable; no APK needed).** (Collection-detail /
+  Smart-album multi-select is a cheap follow-up now that `MediaGrid` supports it.)
+
 ---
 
 ## Deferred (cut from P9 → `docs/BACKLOG.md`), with rationale

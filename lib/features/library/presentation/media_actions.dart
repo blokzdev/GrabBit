@@ -17,8 +17,9 @@ import 'package:grabbit/features/settings/presentation/settings_controller.dart'
 Future<void> showMediaActions(
   BuildContext context,
   WidgetRef ref,
-  MediaItem item,
-) {
+  MediaItem item, {
+  VoidCallback? onSelect,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -37,6 +38,8 @@ Future<void> showMediaActions(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (onSelect != null)
+                action(Icons.check_circle_outline, 'Select', onSelect),
               action(
                 Icons.open_in_new,
                 'Open',

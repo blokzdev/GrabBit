@@ -365,6 +365,9 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Queue task menu (P9g)**: a task's ⋮ menu moves it to the top/bottom of the queue (persists)
       and copies/opens its source URL.
 - [ ] **Collection rename (P9g)**: a collection's ⋮ menu renames it (and still deletes).
+- [ ] **Library multi-select (P9h)**: long-press a tile → "Select" enters multi-select; tapping more
+      tiles grows the count; "Select all" and "Clear" work; the bulk bar's Delete / Save / Move /
+      Add-to-collection / Favorite / Share act on every selected item.
 
 ## P10 — v1 Beta & Production Readiness  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive.

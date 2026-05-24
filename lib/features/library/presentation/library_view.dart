@@ -6,10 +6,13 @@ import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
+import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_filter_sheet.dart';
+import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/library/presentation/media_selection_bar.dart';
 
 /// The Library body (search/type filter + media grid). Hosted by HomeScreen's
 /// segmented toggle; the app bar/FAB live in the shell.
@@ -22,11 +25,32 @@ class LibraryView extends ConsumerStatefulWidget {
 
 class _LibraryViewState extends ConsumerState<LibraryView> {
   final _searchController = TextEditingController();
+  final Set<String> _selected = {};
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _toggle(MediaItem item) => setState(() {
+    _selected.contains(item.id)
+        ? _selected.remove(item.id)
+        : _selected.add(item.id);
+  });
+
+  void _enterSelection(MediaItem item) =>
+      setState(() => _selected.add(item.id));
+
+  void _clear() => setState(_selected.clear);
+
+  Future<void> _runBulk(
+    List<MediaItem> selectedItems,
+    Future<void> Function(List<MediaItem>) action, {
+    bool clearAfter = false,
+  }) async {
+    await action(selectedItems);
+    if (clearAfter && mounted) _clear();
   }
 
   @override
@@ -36,6 +60,11 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
     final controller = ref.read(libraryFilterProvider.notifier);
     final filtering =
         filter.search.isNotEmpty || filter.type != null || filter.favoritesOnly;
+    final rows = items.asData?.value ?? const <MediaItem>[];
+    final selectedItems = [
+      for (final r in rows)
+        if (_selected.contains(r.id)) r,
+    ];
 
     return ContentBounds(
       maxWidth: 1280,
@@ -44,9 +73,18 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
           _FilterBar(
             controller: _searchController,
             filter: filter,
-            onSearch: controller.setSearch,
-            onType: controller.setType,
-            onFavorites: controller.setFavoritesOnly,
+            onSearch: (v) {
+              _clear();
+              controller.setSearch(v);
+            },
+            onType: (v) {
+              _clear();
+              controller.setType(v);
+            },
+            onFavorites: (v) {
+              _clear();
+              controller.setFavoritesOnly(v);
+            },
             onFilters: () => showLibraryFilters(context),
           ),
           Expanded(
@@ -88,10 +126,42 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
                     : MediaGrid(
                         items: rows,
                         physics: const AlwaysScrollableScrollPhysics(),
+                        selectedIds: _selected,
+                        onToggle: _toggle,
+                        onSelect: _enterSelection,
                       ),
               ),
             ),
           ),
+          if (_selected.isNotEmpty)
+            MediaSelectionBar(
+              count: _selected.length,
+              onClear: _clear,
+              onSelectAll: () =>
+                  setState(() => _selected.addAll(rows.map((r) => r.id))),
+              onDelete: () => _runBulk(
+                selectedItems,
+                (items) => deleteItems(context, ref, items),
+                clearAfter: true,
+              ),
+              onSave: () => _runBulk(
+                selectedItems,
+                (items) => saveItems(context, ref, items),
+              ),
+              onMove: () => _runBulk(
+                selectedItems,
+                (items) => moveItemsTo(context, ref, items),
+                clearAfter: true,
+              ),
+              onAddToCollection: () => _runBulk(
+                selectedItems,
+                (items) => addItemsToCollection(context, ref, items),
+              ),
+              onFavorite: () =>
+                  _runBulk(selectedItems, (items) => favoriteItems(ref, items)),
+              onShare: () =>
+                  _runBulk(selectedItems, (items) => shareItems(ref, items)),
+            ),
         ],
       ),
     );
