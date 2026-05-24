@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/filename_template.dart';
@@ -308,6 +309,14 @@ class _SettingsList extends ConsumerWidget {
                       .pickFolder();
                   if (uri != null) await controller.setExportFolder(uri);
                 },
+              ),
+              ListTile(
+                title: const Text('Storage & cleanup'),
+                subtitle: const Text(
+                  'Usage breakdown, largest items, duplicates',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/storage'),
               ),
             ],
           ),

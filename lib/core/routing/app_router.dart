@@ -12,7 +12,9 @@ import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
+import 'package:grabbit/features/library/presentation/duplicates_screen.dart';
 import 'package:grabbit/features/library/presentation/smart_album_screen.dart';
+import 'package:grabbit/features/library/presentation/storage_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
 import 'package:grabbit/features/lock/lock_screen.dart';
@@ -148,6 +150,18 @@ GoRouter appRouter(Ref ref) {
           kind: state.pathParameters['kind']!,
           value: state.uri.queryParameters['v'],
         ),
+      ),
+      GoRoute(
+        path: '/storage',
+        name: 'storage',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const StorageScreen(),
+      ),
+      GoRoute(
+        path: '/duplicates',
+        name: 'duplicates',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DuplicatesScreen(),
       ),
     ],
   );

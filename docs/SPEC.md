@@ -112,7 +112,8 @@ Migration strategy: Drift `schemaVersion` (currently **3**); write `MigrationStr
 steps; never drop user data without migration. Add a schema test on bump (v1→v2 and
 v2→v3 upgrade tests live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
-indices on `is_favorite`/`content_hash`/`created_at`.
+indices on `is_favorite`/`content_hash`/`created_at`. `contentHash` is populated lazily by the
+P9b-3 duplicate scan (`DedupeService`, off-isolate); `lastAccessedAt` is set on playback (P9c).
 
 ---
 
