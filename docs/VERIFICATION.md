@@ -580,6 +580,20 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       tiles shimmer while loading.
 - [ ] **5 tabs on a narrow phone** stay usable; on a tablet/foldable the rail shows all five.
 
+### P10d-2 — Dashboard: charts  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Storage by type / by platform** donuts render with a centre total and a legend (label +
+      size); percentages on the larger slices; small platforms fold into a muted **"Other"** slice
+      (visible with 6+ platforms).
+- [ ] **Library activity** bars show additions over the last 30 days; weekly date ticks (intl), no
+      clipped/overlapping labels at phone width.
+- [ ] **Honest per-tile states**: with a populated library the charts draw; on an empty/partial
+      library the tile shows its compact "no data" message; each shimmers while loading and offers
+      **Retry** on error.
+- [ ] **Dark + AMOLED**: slice colours keep contrast against the surface; "Other" reads muted but
+      visible.
+- [ ] **Dynamic colour** (Material You wallpaper): the palette retints; no clashing hard-coded hues.
+- [ ] **RTL** (e.g. Arabic): legend/axis alignment mirrors; date labels still render.
+
 ### P10e (later sub-PRs)
 - [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on
       *any* device, no model download.

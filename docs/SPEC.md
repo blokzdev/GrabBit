@@ -35,6 +35,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | **Graph+vector (P10):** `io.github.cozodb:cozo_android:0.7.2` (Maven Central AAR) via a `CozoHostApi` Pigeon bridge; `ffi`+`ffigen` (dev) for the Windows `dart:ffi` impl (P14). MPL-2.0. | On-device graph + HNSW vector DB. See `docs/GRAPH-SPEC.md`. |
 | **On-device AI (P10b-2+):** `flutter_gemma` (MediaPipe/LiteRT-LM — embeddings + LLM + RAG; added P10b-2 embedder-only), a whisper.cpp pkg (`whisper_ggml_plus`/`whisper_kit`), ML Kit (OCR/translate) | On-device/edge AI. See `docs/AI-SPEC.md`. |
 | **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
+| **Charts (P10d-2):** `fl_chart` | On-device Dashboard storage donuts + library-activity bars. Pure-Dart (CustomPainter), no native deps, no telemetry. |
 | ~~**v3:** `supabase_flutter`, Stripe/PayPal SDKs~~ | **Dropped** (no cloud/credits). |
 
 Add `flutter_lints`/`very_good_analysis` and a strict `analysis_options.yaml`.

@@ -148,7 +148,12 @@ responsive grid (2-col phone → 3 tablet → 4 desktop): library count, storage
 device "free of total" subtitle), queue pending (accent-tinted "N downloading" while
 active), collections. Tiles drill into `/library` · `/storage` · `/queue` · `/collections`.
 States: populated · empty ("Your dashboard is empty" + Add a download) · shimmer skeleton ·
-error+retry. *(P10d-2 adds `fl_chart` storage/activity charts; P10d-3 adds recent/
+error+retry. Below the stat grid, three full-width `fl_chart` chart sections (each a tonal
+card with a `SectionHeader`): **Storage by type** donut, **Storage by platform** donut (small
+platforms fold into a muted "Other" slice), and **Library activity** bars (additions over the
+last 30 days). Donuts show a centre total + a colour-swatch legend; the palette derives from
+the active `ColorScheme` so it follows dynamic colour and dark/AMOLED. Each chart tile has its
+own compact states: chart · "no data yet" · shimmer · error+retry. *(P10d-3 adds recent/
 suggestion/graph tiles.)*
 
 ### `[x]` Home — Library view — `/library` (P7c, moved off `/` in P10d)
