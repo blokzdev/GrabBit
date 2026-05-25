@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:grabbit/core/ai/inference_engine_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -64,6 +67,9 @@ class _AiSetupScreenState extends ConsumerState<AiSetupScreen> {
       });
       return;
     }
+    // Build the vector index in the background — the user shouldn't wait on the
+    // onboarding screen for it, and it's resumable/cached on later launches.
+    unawaited(ref.read(graphSyncServiceProvider).backfillEmbeddings());
     await controller.markAiSetupSeen();
   }
 

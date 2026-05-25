@@ -55,6 +55,9 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
       storedVersion: settings.graphIndexVersion,
       stamp: ref.read(settingsControllerProvider.notifier).setGraphIndexVersion,
     );
+    // Resume the vector index in the background. No-op unless the user opted into
+    // semantic search (the model is already downloaded); never blocks startup.
+    await sync.backfillEmbeddings();
   }
 
   /// Routes links shared into the app (Android share sheet, P8a) to the

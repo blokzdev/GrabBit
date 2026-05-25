@@ -103,3 +103,41 @@ String countScript(String relation) {
   final key = graphRelationColumns[relation]!.first;
   return '?[count($key)] := *$relation{$key}';
 }
+
+// --- vector index (P10b-2b) ----------------------------------------------
+//
+// The HNSW `embedding` relation is intentionally **not** in [graphSchema]: it's
+// expensive (one inference per item) and cached, so it must be excluded from the
+// deterministic `:replace` rebuild loop and maintained incrementally instead (see
+// graph_sync_service.dart `backfillEmbeddings`). Its dimension is fixed by the
+// embedder, so these are functions of `dim` rather than const entries. The store
+// schema (`ensureSchema`) stays dim-agnostic; the sync service creates these on
+// demand once the embedder is ready.
+
+/// The stored embedding relation: a per-item vector plus the hash of the text it
+/// was embedded from (the cache key — an unchanged hash means no re-embed).
+String embeddingCreateScript(int dim) =>
+    ':create embedding { id: String => v: <F32; $dim>, textHash: String }';
+
+/// The HNSW index over the embedding vectors (cosine distance). Created once,
+/// right after [embeddingCreateScript]; vector search (`~embedding:idx`) lands in
+/// P10c — this PR only builds and maintains the index.
+String embeddingHnswScript(int dim) =>
+    '::hnsw create embedding:idx { dim: $dim, dtype: F32, '
+    'fields: [v], distance: Cosine, m: 16, ef_construction: 50 }';
+
+/// Upserts the rows bound to `\$rows` (`[id, v, textHash]`) into the embedding
+/// relation, updating the HNSW index in place.
+String embeddingPutScript() =>
+    '?[id, v, textHash] <- \$rows\n:put embedding { id => v, textHash }';
+
+/// Removes the ids bound to `\$rows` (`[id]`) — prunes embeddings for items
+/// deleted from the library.
+String embeddingRemoveScript() => '?[id] <- \$rows\n:rm embedding { id }';
+
+/// Reads the cache: `[id, textHash]` for every stored embedding, so the backfill
+/// can diff against the desired set and re-embed only what changed.
+String embeddingPairsScript() => '?[id, textHash] := *embedding{id, textHash}';
+
+/// Counts stored embeddings (result has a single row `[n]`).
+String embeddingCountScript() => '?[count(id)] := *embedding{id}';

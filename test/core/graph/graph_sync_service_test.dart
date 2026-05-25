@@ -1,13 +1,18 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/ai/inference_engine.dart';
+import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
 import 'package:grabbit/core/graph/graph_sync_service.dart';
 
 /// Captures the CozoScript calls a rebuild would issue, without a real engine.
+/// [responder] lets a test supply canned `{headers, rows}` for read scripts
+/// (`::relations`, the embedding cache) — default is an empty result.
 class _FakeGraphStore implements GraphStore {
-  _FakeGraphStore({this.available = true});
+  _FakeGraphStore({this.available = true, this.responder});
   bool available;
+  final Map<String, Object?> Function(String script)? responder;
   final List<({String script, Map<String, Object?> params})> calls = [];
 
   @override
@@ -24,8 +29,34 @@ class _FakeGraphStore implements GraphStore {
     Map<String, Object?> params = const {},
   ]) async {
     calls.add((script: script, params: params));
-    return const {'rows': <List<Object?>>[]};
+    return responder?.call(script) ?? const {'rows': <List<Object?>>[]};
   }
+}
+
+/// Embedder that's always ready and returns a fixed-length zero vector.
+class _FakeInferenceEngine implements InferenceEngine {
+  int embedCalls = 0;
+
+  @override
+  EmbedderModel get model => geckoEmbedder;
+  @override
+  bool get isAvailable => true;
+  @override
+  int get dimension => geckoEmbedder.dimension;
+  @override
+  Future<bool> ensureReady() async => true;
+  @override
+  Future<void> downloadModel({
+    void Function(double progress)? onProgress,
+  }) async {}
+  @override
+  Future<List<double>> embed(String text) async {
+    embedCalls++;
+    return List<double>.filled(dimension, 0);
+  }
+
+  @override
+  Future<void> close() async {}
 }
 
 void main() {
@@ -119,5 +150,135 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 80));
 
     expect(fake.calls.any((c) => c.script.contains(':replace media')), isTrue);
+  });
+
+  test('rebuild never mutates the embedding relation', () async {
+    final db = newDb();
+    addTearDown(db.close);
+    await seedItem(db, 'a');
+    final fake = _FakeGraphStore();
+
+    await GraphSyncService(fake, db).rebuild();
+
+    // Reading the count for stats is fine; creating/replacing/putting is not —
+    // the cached vector index is owned by backfillEmbeddings, not the rebuild.
+    final mutates = fake.calls.any(
+      (c) =>
+          c.script.contains(':replace embedding') ||
+          c.script.contains(':create embedding') ||
+          c.script.contains(':put embedding') ||
+          c.script.contains(':rm embedding'),
+    );
+    expect(mutates, isFalse);
+  });
+
+  group('backfillEmbeddings', () {
+    test('no-op (no scripts) when the embedder is unavailable', () async {
+      final db = newDb();
+      addTearDown(db.close);
+      await seedItem(db, 'a');
+      final fake = _FakeGraphStore();
+
+      // Default engine is the unavailable stub.
+      final stats = await GraphSyncService(fake, db).backfillEmbeddings();
+
+      expect(stats.available, isFalse);
+      expect(fake.calls, isEmpty);
+    });
+
+    test('creates the schema once and puts only the changed items', () async {
+      final db = newDb();
+      addTearDown(db.close);
+      await seedItem(db, 'a');
+      await seedItem(db, 'b');
+      final engine = _FakeInferenceEngine();
+      final fake = _FakeGraphStore(); // ::relations + pairs both empty
+
+      final stats = await GraphSyncService(
+        fake,
+        db,
+        engine: engine,
+      ).backfillEmbeddings();
+
+      // Both items embedded; schema created (relation has no rows yet).
+      expect(engine.embedCalls, 2);
+      expect(stats.embedded, 2);
+      expect(
+        fake.calls.any((c) => c.script.contains(':create embedding')),
+        isTrue,
+      );
+      expect(
+        fake.calls.any((c) => c.script.contains('::hnsw create embedding:idx')),
+        isTrue,
+      );
+      final put = fake.calls.firstWhere(
+        (c) => c.script.contains(':put embedding'),
+      );
+      expect((put.params['rows']! as List).length, 2);
+    });
+
+    test('skips create when the relation already exists', () async {
+      final db = newDb();
+      addTearDown(db.close);
+      await seedItem(db, 'a');
+      final fake = _FakeGraphStore(
+        responder: (script) {
+          if (script == '::relations') {
+            return {
+              'headers': ['name'],
+              'rows': [
+                ['media'],
+                ['embedding'],
+              ],
+            };
+          }
+          return const {'rows': <List<Object?>>[]};
+        },
+      );
+
+      await GraphSyncService(
+        fake,
+        db,
+        engine: _FakeInferenceEngine(),
+      ).backfillEmbeddings();
+
+      expect(
+        fake.calls.any((c) => c.script.contains(':create embedding')),
+        isFalse,
+      );
+    });
+
+    test('prunes embeddings for items no longer in the library', () async {
+      final db = newDb();
+      addTearDown(db.close);
+      await seedItem(db, 'a');
+      final fake = _FakeGraphStore(
+        responder: (script) {
+          if (script.contains('*embedding{id, textHash}')) {
+            // 'a' (current) + 'gone' (deleted) — but textHash differs for 'a'
+            // so it re-embeds, and 'gone' is pruned.
+            return {
+              'rows': [
+                ['a', 'stale'],
+                ['gone', 'whatever'],
+              ],
+            };
+          }
+          return const {'rows': <List<Object?>>[]};
+        },
+      );
+
+      final stats = await GraphSyncService(
+        fake,
+        db,
+        engine: _FakeInferenceEngine(),
+      ).backfillEmbeddings();
+
+      expect(stats.pruned, 1);
+      final rm = fake.calls.firstWhere(
+        (c) => c.script.contains(':rm embedding'),
+      );
+      expect((rm.params['rows']! as List).single, ['gone']);
+    });
   });
 }

@@ -169,9 +169,14 @@ deterministic + similarity graph ship independent of the LLM stack, and keeps bo
 - `coDownloadedWith(media ↔ media => gapSec)` — `createdAt` temporal proximity
 - `similarTo(media ↔ media => score)` — materialized from vector search (lags until embeddings exist)
 
-**Vector index:** HNSW relation `embedding {id => v: <F32; DIM>}` with `::hnsw create`. **DIM** is
-fixed by the embedder (e.g. Gecko ~256/384 — confirm at impl) and **pinned in the schema
-fingerprint**.
+**Vector index (P10b-2b):** HNSW relation `embedding {id => v: <F32; DIM>, textHash}` with
+`::hnsw create embedding:idx {dim, dtype:F32, fields:[v], distance:Cosine, …}`. **DIM = 768**
+(Gecko 64 / EmbeddingGemma family). `textHash = sha256(modelId + docText)` is the **cache key** — an
+unchanged hash skips re-embedding, and a model change re-keys every hash (so vectors never mix
+spaces). The relation is **created on demand by `GraphSyncService.backfillEmbeddings()`** (which knows
+DIM via the embedder), **not** by the dim-agnostic `GraphStore.ensureSchema`, and is deliberately
+**excluded from `graphSchema`** so the deterministic `:replace` rebuild never wipes it. Query-time
+vector search (`~embedding:idx`) + `similarTo` materialization are **P10c**.
 
 **Signal reliability (from the codebase data map)** — build edges only on real signals:
 
@@ -214,9 +219,14 @@ gracefully when `GraphStore.isAvailable` is false.
 - **Manual "Rebuild graph index"** (Settings → Graph database) + the About self-test reports
   `media · edges` counts.
 - **P10b-1 scope:** deterministic nodes + entity/structural edges only. `duplicateOf`,
-  `coDownloadedWith`, the HNSW `embedding` relation, and `similarTo` are populated in **P10b-2**
-  (embedder); embedding backfill there must **cache vectors** so rebuilds don't re-embed, and must
-  not `:replace` the HNSW relation wholesale.
+  `coDownloadedWith`, and `similarTo` remain for P10c (near-duplicate + similarity features).
+- **P10b-2b (done):** `backfillEmbeddings()` maintains the HNSW `embedding` relation **incrementally
+  and cached** — it diffs the desired `id → textHash` (from `buildEmbeddingDocs`) against the stored
+  cache, `:put`s only new/changed items (in chunks), and `:rm`s ids no longer in the library. It's
+  gated on `InferenceEngine.ensureReady()` (a cheap no-op when semantic search is off / the model
+  isn't downloaded / a non-arm64 host), so it never `:replace`s the relation wholesale and never
+  re-embeds unchanged items. Triggered after the deterministic rebuild (live listener), at startup
+  (`app.dart`), and on opt-in (Settings toggle / AI-setup). The self-test reports the embedding count.
 
 ---
 
