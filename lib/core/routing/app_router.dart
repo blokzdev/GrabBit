@@ -16,6 +16,7 @@ import 'package:grabbit/features/library/presentation/duplicates_screen.dart';
 import 'package:grabbit/features/library/presentation/smart_album_screen.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
+import 'package:grabbit/features/onboarding/presentation/ai_setup_screen.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
 import 'package:grabbit/features/lock/lock_screen.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
@@ -43,6 +44,7 @@ GoRouter appRouter(Ref ref) {
       final settings = ref.read(settingsControllerProvider).asData?.value;
       return startupRedirect(
         disclaimerAccepted: settings?.disclaimerAccepted ?? true,
+        aiSetupSeen: settings?.aiSetupSeen ?? true,
         lockEnabled: settings?.appLock.enabled ?? false,
         locked: ref.read(lockControllerProvider) == LockState.locked,
         location: state.matchedLocation,
@@ -58,6 +60,11 @@ GoRouter appRouter(Ref ref) {
         path: '/lock',
         name: 'lock',
         builder: (context, state) => const LockScreen(),
+      ),
+      GoRoute(
+        path: '/ai-setup',
+        name: 'ai-setup',
+        builder: (context, state) => const AiSetupScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

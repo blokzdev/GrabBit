@@ -58,11 +58,21 @@ abstract interface class InferenceEngine {
   GPU acceleration, function calling, thinking mode). Runs Gemma 3 270M/1B, **Qwen3-0.6B**,
   Phi-4-Mini, SmolLM-135M, Gemma 3n E2B, etc., and **provides text embeddings and on-device RAG** —
   so one runtime family covers embeddings → generation → RAG.
-- **Embedder (P10): `flutter_gemma`'s text-embedding support (Gecko embedder, ~110M)** — the same
-  plugin that backs the P11 LLM, loaded **embedder-only** so this tier stays device-universal.
-  Fallback: a standalone MediaPipe Tasks Text Embedder via the Pigeon bridge.
-  **Avoid** the unmaintained `mediapipe_text` pub plugin (v0.0.1, stale/experimental). Confirm the
-  exact model and embedding **dim** at impl time; pin the dim in the `GraphStore` schema fingerprint.
+- **Embedder (P10): `flutter_gemma`'s text-embedding support, loaded embedder-only** — the same
+  plugin that backs the P11 LLM, so this tier stays device-universal. **Pinned model (P10b-2a):
+  Gecko 64** (`litert-community/Gecko-110m-en` → `Gecko_64_quant.tflite` + `sentencepiece.model`),
+  110M params, **768-d** vectors, ~110 MB, **ungated** (no HuggingFace token). Chosen as the smallest
+  ungated variant; EmbeddingGemma-300M is more accurate but gated/larger — revisit if quality
+  demands. The pinned id + dim live in `lib/core/ai/model_catalog.dart`; P10b-2b keys the Cozo HNSW
+  schema + graph fingerprint off them so a model change → re-embed.
+  **Avoid** the unmaintained `mediapipe_text` pub plugin (v0.0.1, stale/experimental).
+- **Opt-in, never auto (P10b-2a).** A `semanticSearchEnabled` setting gates the embedder; toggling it
+  on (in Settings or the first-run screen) downloads the model with progress, off = no model use —
+  consistent with the gated yt-dlp auto-update and the no-surprise-data principle. A first-run
+  **"Set up AI features (or skip)"** screen (`/ai-setup`), sequenced after the disclaimer, offers the
+  opt-in to genuinely new users only (`aiSetupSeen` defaults true on existing installs;
+  `acceptDisclaimer()` clears it). On unsupported devices the `UnavailableInferenceEngine` no-ops and
+  everything else keeps working — embeddings are an enhancement, not a dependency.
 - **Transcription (P12): whisper.cpp** via a maintained Flutter package —
   [`whisper_ggml_plus`](https://pub.dev/packages/whisper_ggml_plus) (cross-platform incl. Windows) or
   [`whisper_kit`](https://pub.dev/packages/whisper_kit) (99 languages, SRT/VTT export).
@@ -83,7 +93,7 @@ abstract interface class InferenceEngine {
 | **Light (<0.5–~0.6B)** | **SmolLM-135M**, **Qwen3-0.6B** | **Apache-2.0** | Clean; low-end-device floor. |
 | **Mid (~1–3B)** | **Phi-4-Mini** | **MIT** | Clean. |
 | **Mid (capable)** | **Gemma 3 1B / 3n E2B** | **Gemma** (custom use-policy) | Usable + strong, **but vet Gemma's use policy before bundling** — it carries prohibited-use terms. |
-| **Embedder** | Gecko (~110M) | (confirm) | Universal tier; embeddings only. |
+| **Embedder** | **Gecko 64** (110M, 768-d, ~110 MB, ungated) | (Gemma — verify) | Universal tier; embeddings only. Pinned P10b-2a. |
 | **Transcription** | whisper.cpp (tiny→large-v3-turbo) | MIT | Size-gated by tier. |
 
 ---

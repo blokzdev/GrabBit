@@ -26,16 +26,24 @@ String? lockRedirect({
 }
 
 /// Pure startup redirect: the one-time legal disclaimer gates everything, then
-/// the app-lock check applies. Extracted for testability.
+/// the one-time AI-setup screen (new users only), then the app-lock check.
+/// Extracted for testability.
+///
+/// [aiSetupSeen] defaults true on existing installs, so only a brand-new user —
+/// whose `acceptDisclaimer()` cleared it — is routed disclaimer → ai-setup →
+/// home. Both onboarding screens redirect home once their gates are satisfied.
 String? startupRedirect({
   required bool disclaimerAccepted,
+  required bool aiSetupSeen,
   required bool lockEnabled,
   required bool locked,
   required String location,
 }) {
   final atDisclaimer = location == '/disclaimer';
+  final atAiSetup = location == '/ai-setup';
   if (!disclaimerAccepted) return atDisclaimer ? null : '/disclaimer';
-  if (atDisclaimer) return '/';
+  if (!aiSetupSeen) return atAiSetup ? null : '/ai-setup';
+  if (atDisclaimer || atAiSetup) return '/';
   return lockRedirect(
     enabled: lockEnabled,
     locked: locked,

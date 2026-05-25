@@ -67,6 +67,12 @@ abstract class SettingsModel with _$SettingsModel {
     @Default(true) bool autoCheckEngineUpdate,
     DateTime? lastEngineCheck,
     @Default('') String graphIndexVersion,
+    // On-device AI (P10b-2). Opt-in: the embedder model is downloaded only when
+    // the user enables semantic search. `aiSetupSeen` defaults true so existing
+    // installs aren't shown the first-run AI-setup screen; `acceptDisclaimer()`
+    // flips it false, so only a brand-new user sees disclaimer → ai-setup.
+    @Default(false) bool semanticSearchEnabled,
+    @Default(true) bool aiSetupSeen,
   }) = _SettingsModel;
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) =>

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/ai/inference_engine_provider.dart';
+import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/storage/cache_cleaner.dart';
 import 'package:grabbit/core/storage/media_export_service.dart';
@@ -507,6 +509,8 @@ class _SettingsList extends ConsumerWidget {
                 trailing: const Icon(Icons.play_arrow_outlined),
                 onTap: () => _rebuildGraph(context, ref),
               ),
+              const _SemanticSearchTile(),
+              const _EmbedderSelfTestTile(),
             ],
           ),
         ],
@@ -532,6 +536,113 @@ Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
         ),
       ),
     );
+}
+
+/// Opt-in toggle for on-device semantic search (P10b-2). Enabling downloads the
+/// embedder model (one time, ~N MB) with a progress snackbar; disabling leaves
+/// the model untouched but stops using it. Everything works without it.
+class _SemanticSearchTile extends ConsumerStatefulWidget {
+  const _SemanticSearchTile();
+
+  @override
+  ConsumerState<_SemanticSearchTile> createState() =>
+      _SemanticSearchTileState();
+}
+
+class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
+  bool _busy = false;
+
+  Future<void> _toggle(bool value) async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!value) {
+      await controller.setSemanticSearchEnabled(false);
+      return;
+    }
+    setState(() => _busy = true);
+    await controller.setSemanticSearchEnabled(true);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('Downloading semantic-search model…')),
+      );
+    try {
+      await ref.read(inferenceEngineProvider).downloadModel();
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Semantic search ready')));
+    } on InferenceException catch (e) {
+      await controller.setSemanticSearchEnabled(false);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              e.code == InferenceErrorCode.unavailable
+                  ? 'On-device AI isn\'t available on this device'
+                  : 'Couldn\'t download the model — try again later',
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.asData?.value.semanticSearchEnabled ?? false,
+      ),
+    );
+    final model = ref.read(inferenceEngineProvider).model;
+    return SwitchListTile(
+      title: const Text('Semantic search'),
+      subtitle: Text(
+        'Search your library by meaning, on-device. '
+        'Downloads a ~${model.approxDownloadMb} MB model.',
+      ),
+      value: enabled,
+      onChanged: _busy ? null : _toggle,
+    );
+  }
+}
+
+/// On-device diagnostic: embeds a sample string and reports the engine's
+/// availability + vector dimension via a snackbar. The verification surface for
+/// the embedder foundation (mirrors the graph self-test).
+class _EmbedderSelfTestTile extends ConsumerWidget {
+  const _EmbedderSelfTestTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: const Icon(Icons.auto_awesome_outlined),
+      title: const Text('Test embedder'),
+      subtitle: const Text('Verify the on-device embedding model'),
+      trailing: const Icon(Icons.play_arrow_outlined),
+      onTap: () => _run(context, ref),
+    );
+  }
+
+  Future<void> _run(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final engine = ref.read(inferenceEngineProvider);
+    String message;
+    try {
+      final ready = await engine.ensureReady();
+      if (!ready || !engine.isAvailable) {
+        message = 'Embedder not ready — enable Semantic search first';
+      } else {
+        final vector = await engine.embed('GrabBit semantic search test');
+        message = 'Embedder OK — ${vector.length}-d vector';
+      }
+    } on InferenceException catch (e) {
+      message = 'Embedder test failed: ${e.message}';
+    }
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
 }
 
 /// A titled, icon-led settings section: a [SectionHeader] above a rounded card

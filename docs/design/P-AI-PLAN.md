@@ -26,10 +26,17 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   debounced Drift-update listener (no repo coupling), startup schema-fingerprint self-heal, and a
   manual "Rebuild graph index" action. Pure-Dart, no new native dep, CI-testable via a fake store.
   *(GRAPH-SPEC §3, §6)*
-- **P10b-2 — Embedder + vectors:** minimal `InferenceEngine.embed()` slice via `flutter_gemma`
-  (Gecko, embedder-only) + on-demand embedder-model fetch; the HNSW `embedding` relation; `similarTo`
-  edges; embedding **backfill that caches vectors** (only embeds new/changed items). *(AI-SPEC §3;
-  GRAPH-SPEC §5)*
+- **P10b-2 — Embedder + vectors** *(split: the embedder is the heaviest, riskiest piece — a new
+  native runtime + a model download)*:
+  - **P10b-2a — Embedder foundation + opt-in setup:** minimal `InferenceEngine.embed()` slice via
+    `flutter_gemma` (Gecko 64, embedder-only, 768-d, ungated ~110 MB) behind a swappable interface;
+    Android impl + graceful `UnavailableInferenceEngine`; **opt-in** model fetch (a
+    `semanticSearchEnabled` setting) with progress; a first-run **"Set up AI features (or skip)"**
+    screen sequenced after the disclaimer; a "Test embedder" self-test. **No** Cozo vectors yet.
+    *(AI-SPEC §3)*
+  - **P10b-2b — Vectors + backfill:** the HNSW `embedding` relation; `GraphSyncService.backfillEmbeddings()`
+    that **caches vectors** (only embeds new/changed items, keyed by text hash; excluded from the
+    `:replace` rebuild); `similarTo` stays query-time HNSW in P10c. *(GRAPH-SPEC §5)*
 - **P10c — Universal graph features:** semantic search; **Related / "More like this"** (hybrid
   vector + graph re-rank); **entity hubs** (uploader/playlist/tag/site); **near-duplicate clusters**;
   **tag suggestions**; **interactive graph viz** (candidate `graphview`). *(GRAPH-SPEC §7)*
