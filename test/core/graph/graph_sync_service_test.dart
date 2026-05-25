@@ -22,7 +22,7 @@ class _FakeGraphStore implements GraphStore {
   @override
   Future<void> ensureSchema() async {}
   @override
-  Future<void> close() async {}
+  Future<void> close() async => available = false;
   @override
   Future<Map<String, Object?>> runScript(
     String script, [
@@ -33,9 +33,11 @@ class _FakeGraphStore implements GraphStore {
   }
 }
 
-/// Embedder that's always ready and returns a fixed-length zero vector.
+/// Embedder that's always ready and returns fixed-length zero vectors. Counts
+/// how many items were embedded and how many batch round-trips it took.
 class _FakeInferenceEngine implements InferenceEngine {
-  int embedCalls = 0;
+  int embedded = 0;
+  int batchCalls = 0;
 
   @override
   EmbedderModel get model => geckoEmbedder;
@@ -51,12 +53,43 @@ class _FakeInferenceEngine implements InferenceEngine {
   }) async {}
   @override
   Future<List<double>> embed(String text) async {
-    embedCalls++;
+    embedded++;
     return List<double>.filled(dimension, 0);
   }
 
   @override
+  Future<List<List<double>>> embedBatch(List<String> texts) async {
+    batchCalls++;
+    embedded += texts.length;
+    return [for (final _ in texts) List<double>.filled(dimension, 0)];
+  }
+
+  @override
   Future<void> close() async {}
+}
+
+/// Canned meta matching the current Gecko model/dim, so `_ensureEmbeddingSchema`
+/// treats an existing `embedding` relation as up to date (no drop/recreate).
+Map<String, Object?> _matchingMeta(String script) {
+  if (script == '::relations') {
+    return {
+      'headers': ['name'],
+      'rows': [
+        ['media'],
+        ['embedding'],
+        ['embedding_meta'],
+      ],
+    };
+  }
+  if (script.contains('*embedding_meta{key, value}')) {
+    return {
+      'rows': [
+        ['model', geckoEmbedder.id],
+        ['dim', '${geckoEmbedder.dimension}'],
+      ],
+    };
+  }
+  return const {'rows': <List<Object?>>[]};
 }
 
 void main() {
@@ -118,7 +151,9 @@ void main() {
       storedVersion: svc.fingerprint,
       stamp: (v) async => stamped = v,
     );
-    expect(fake.calls, isEmpty);
+    // A matching fingerprint does a cheap divergence check (counts agree here:
+    // empty Drift, empty Cozo) but no rebuild and no re-stamp.
+    expect(fake.calls.any((c) => c.script.contains(':replace')), isFalse);
     expect(stamped, '');
   });
 
@@ -200,8 +235,9 @@ void main() {
         engine: engine,
       ).backfillEmbeddings();
 
-      // Both items embedded; schema created (relation has no rows yet).
-      expect(engine.embedCalls, 2);
+      // Both items embedded in one batch round-trip; schema created.
+      expect(engine.embedded, 2);
+      expect(engine.batchCalls, 1);
       expect(stats.embedded, 2);
       expect(
         fake.calls.any((c) => c.script.contains(':create embedding')),
@@ -217,24 +253,11 @@ void main() {
       expect((put.params['rows']! as List).length, 2);
     });
 
-    test('skips create when the relation already exists', () async {
+    test('skips create when the relation + meta already match', () async {
       final db = newDb();
       addTearDown(db.close);
       await seedItem(db, 'a');
-      final fake = _FakeGraphStore(
-        responder: (script) {
-          if (script == '::relations') {
-            return {
-              'headers': ['name'],
-              'rows': [
-                ['media'],
-                ['embedding'],
-              ],
-            };
-          }
-          return const {'rows': <List<Object?>>[]};
-        },
-      );
+      final fake = _FakeGraphStore(responder: _matchingMeta);
 
       await GraphSyncService(
         fake,
@@ -243,10 +266,55 @@ void main() {
       ).backfillEmbeddings();
 
       expect(
-        fake.calls.any((c) => c.script.contains(':create embedding')),
+        fake.calls.any((c) => c.script.contains(':create embedding ')),
         isFalse,
       );
+      expect(fake.calls.any((c) => c.script == '::remove embedding'), isFalse);
     });
+
+    test(
+      'drops + recreates the index when the meta model/dim differs',
+      () async {
+        final db = newDb();
+        addTearDown(db.close);
+        await seedItem(db, 'a');
+        final fake = _FakeGraphStore(
+          responder: (script) {
+            if (script == '::relations') {
+              return {
+                'headers': ['name'],
+                'rows': [
+                  ['embedding'],
+                  ['embedding_meta'],
+                ],
+              };
+            }
+            if (script.contains('*embedding_meta{key, value}')) {
+              // An older model / dimension — must trigger a rebuild.
+              return {
+                'rows': [
+                  ['model', 'old-model'],
+                  ['dim', '256'],
+                ],
+              };
+            }
+            return const {'rows': <List<Object?>>[]};
+          },
+        );
+
+        await GraphSyncService(
+          fake,
+          db,
+          engine: _FakeInferenceEngine(),
+        ).backfillEmbeddings();
+
+        expect(fake.calls.any((c) => c.script == '::remove embedding'), isTrue);
+        expect(
+          fake.calls.any((c) => c.script.contains(':create embedding ')),
+          isTrue,
+        );
+      },
+    );
 
     test('prunes embeddings for items no longer in the library', () async {
       final db = newDb();
@@ -280,5 +348,35 @@ void main() {
       );
       expect((rm.params['rows']! as List).single, ['gone']);
     });
+  });
+
+  test('releaseStore closes the store', () async {
+    final db = newDb();
+    addTearDown(db.close);
+    final fake = _FakeGraphStore();
+    await fake.open();
+    expect(fake.isAvailable, isTrue);
+
+    await GraphSyncService(fake, db).releaseStore();
+
+    expect(fake.isAvailable, isFalse);
+  });
+
+  test('syncIfStale rebuilds when Drift and Cozo media counts diverge', () async {
+    final db = newDb();
+    addTearDown(db.close);
+    await seedItem(db, 'a'); // Drift has 1 media; fake Cozo count() returns 0.
+    final fake = _FakeGraphStore();
+    final svc = GraphSyncService(fake, db);
+
+    var stamped = '';
+    // Fingerprint already matches, so only the divergence check can trigger work.
+    await svc.syncIfStale(
+      storedVersion: svc.fingerprint,
+      stamp: (v) async => stamped = v,
+    );
+
+    expect(stamped, ''); // a matching fingerprint isn't re-stamped
+    expect(fake.calls.any((c) => c.script.contains(':replace media')), isTrue);
   });
 }

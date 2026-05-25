@@ -121,6 +121,27 @@ class FlutterGemmaInferenceEngine implements InferenceEngine {
   }
 
   @override
+  Future<List<List<double>>> embedBatch(List<String> texts) async {
+    final loaded = _loaded;
+    if (loaded == null) {
+      throw const InferenceException(
+        InferenceErrorCode.unavailable,
+        'The embedder model is not loaded',
+      );
+    }
+    if (texts.isEmpty) return const [];
+    try {
+      return await loaded.generateEmbeddings(texts);
+    } catch (e) {
+      throw InferenceException(
+        InferenceErrorCode.embedFailed,
+        'Failed to embed text batch',
+        cause: e,
+      );
+    }
+  }
+
+  @override
   Future<void> close() async {
     await _loaded?.close();
     _loaded = null;

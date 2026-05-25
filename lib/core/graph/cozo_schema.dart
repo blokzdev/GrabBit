@@ -141,3 +141,21 @@ String embeddingPairsScript() => '?[id, textHash] := *embedding{id, textHash}';
 
 /// Counts stored embeddings (result has a single row `[n]`).
 String embeddingCountScript() => '?[count(id)] := *embedding{id}';
+
+/// Sidecar that records which embedder (`model`, `dim`) the `embedding` relation
+/// was built with, so a model/dimension change can drop + recreate it rather
+/// than silently mixing vector spaces. Kept out of [graphSchema] like `embedding`.
+String embeddingMetaCreateScript() =>
+    ':create embedding_meta { key: String => value: String }';
+
+/// Reads the sidecar as `[key, value]` rows.
+String embeddingMetaReadScript() =>
+    '?[key, value] := *embedding_meta{key, value}';
+
+/// Upserts the rows bound to `\$rows` (`[key, value]`) into the sidecar.
+String embeddingMetaPutScript() =>
+    '?[key, value] <- \$rows\n:put embedding_meta { key => value }';
+
+/// Drops the stored embedding relation (and its HNSW index) — used when the
+/// embedder model/dimension changes, so it's recreated fresh.
+String embeddingDropScript() => '::remove embedding';

@@ -118,6 +118,9 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
         autoLock.appBackgrounded();
+        // Release the Cozo SQLite handle while backgrounded; it reopens lazily
+        // on the next graph touch. The next foreground sync also re-checks it.
+        unawaited(ref.read(graphSyncServiceProvider).releaseStore());
       case AppLifecycleState.resumed:
         autoLock.appForegrounded();
       case AppLifecycleState.inactive:

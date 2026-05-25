@@ -106,10 +106,14 @@ any time**. Rules:
 - This keeps Cozo fully **swappable** (CLAUDE.md §3) and keeps the whole feature in the
   **on-device = free** band.
 
-**Schema fingerprint (self-healing).** Persist `cozo_index_version = hash(Drift schema v +
-embedding-model id + edge-builder v)` in the existing settings blob. On startup, if the fingerprint
-differs (a migration or model upgrade happened), mark the index **stale** and rebuild lazily. If the
-Drift item count and Cozo node count diverge beyond a threshold, offer a rebuild.
+**Schema fingerprint (self-healing).** Persist `cozo_index_version` (the
+`GraphSyncService.fingerprint`, now `"<drift schemaVersion>.<edgeBuilderVer>.<embedderModelId>"`) in
+the settings blob. On startup, if the fingerprint differs (a migration, projection change, or model
+upgrade), rebuild + re-stamp. **If the fingerprint matches, `syncIfStale` still cross-checks the Drift
+vs. Cozo `media` count and rebuilds on divergence** (catches a prior partial/failed sync). Separately,
+the embedder's **model + dimension** are recorded in an `embedding_meta` sidecar; the embedding
+relation is dropped + recreated whenever they change, so a model swap can't leave a stale-dimension
+HNSW index (P10b-3).
 
 ---
 
@@ -212,14 +216,20 @@ gracefully when `GraphStore.isAvailable` is false.
   collections, mediaCollections]))`, debounce (~2 s), then rebuild. Drift's own update stream is the
   event bus, so no hooks are scattered across the 11 repo mutation sites. Cozo writes hit a separate
   DB, so they don't re-trigger this (no loop).
-- **Startup schema-fingerprint self-heal.** `fingerprint = "<drift schemaVersion>.<edgeBuilderVer>"`
-  persisted as `settings.graphIndexVersion`. On launch (`app.dart` `_maybeSyncGraph`, mirroring
-  `_maybeAutoUpdate`), rebuild + stamp iff it changed (handles logic/schema changes the data-listener
-  wouldn't catch).
+- **Startup schema-fingerprint self-heal.**
+  `fingerprint = "<drift schemaVersion>.<edgeBuilderVer>.<embedderModelId>"` persisted as
+  `settings.graphIndexVersion`. On launch (`app.dart` `_maybeSyncGraph`, mirroring `_maybeAutoUpdate`),
+  rebuild + stamp iff it changed; if unchanged, also rebuild on a Drift↔Cozo `media` count divergence
+  (P10b-3) — handles logic/schema/model changes *and* a prior partial sync the data-listener wouldn't
+  catch.
+- **Store lifecycle (P10b-3).** The Cozo store is released on app background/detach
+  (`GraphSyncService.releaseStore()` from `app.dart`'s `didChangeAppLifecycleState`) to free the SQLite
+  handle/lock, and reopens lazily on the next graph touch via `_ensureOpen`.
 - **Manual "Rebuild graph index"** (Settings → Graph database) + the About self-test reports
-  `media · edges` counts.
-- **P10b-1 scope:** deterministic nodes + entity/structural edges only. `duplicateOf`,
-  `coDownloadedWith`, and `similarTo` remain for P10c (near-duplicate + similarity features).
+  `media · edges · embeddings` counts.
+- **P10b-1 scope:** deterministic nodes + entity/structural edges. **`duplicateOf`** (identical
+  `contentHash`) and **`coDownloadedWith`** (consecutive `createdAt` within a 5-min window) are now
+  projected deterministically (P10b-3); `similarTo` (vector-derived) remains for P10c.
 - **P10b-2b (done):** `backfillEmbeddings()` maintains the HNSW `embedding` relation **incrementally
   and cached** — it diffs the desired `id → textHash` (from `buildEmbeddingDocs`) against the stored
   cache, `:put`s only new/changed items (in chunks), and `:rm`s ids no longer in the library. It's
@@ -253,9 +263,13 @@ gracefully when `GraphStore.isAvailable` is false.
   one-impl.
 - **APK size** → SQLite backend + `abiFilters` / `--split-per-abi`; **measure in the first APK
   build** and budget.
-- **Real-device behavior** → Cozo opens & persists across restarts under the AAR; `close_db` /
-  release on app background to avoid SQLite locks. → explicit `docs/VERIFICATION.md` items.
-- **Index/Drift drift** → schema-fingerprint check + count-divergence rebuild offer (§3).
+- **Real-device behavior** → Cozo opens & persists across restarts under the AAR; **`releaseStore()`
+  closes it on app background (P10b-3)** to avoid SQLite locks, reopening lazily. → explicit
+  `docs/VERIFICATION.md` items.
+- **Index/Drift drift** → schema-fingerprint check **+ a Drift↔Cozo `media` count-divergence rebuild
+  (P10b-3)** (§3).
+- **Malformed engine output** → `runScript` guards the JSON decode and surfaces
+  `GraphErrorCode.queryFailed` instead of crashing (P10b-3).
 
 ## 9. `GraphStore` conformance-test outline
 

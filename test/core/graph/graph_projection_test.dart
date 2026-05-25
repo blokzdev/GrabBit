@@ -10,6 +10,8 @@ void main() {
     String site = 'youtube',
     String type = 'video',
     int? folderId,
+    String? contentHash,
+    DateTime? createdAt,
   }) => MediaItem(
     id: id,
     title: 'T$id',
@@ -17,10 +19,11 @@ void main() {
     site: site,
     filePath: '/p/$id',
     type: type,
-    createdAt: t0,
+    createdAt: createdAt ?? t0,
     storageState: 'private',
     isFavorite: false,
     folderId: folderId,
+    contentHash: contentHash,
   );
 
   test('projects nodes + edges from the snapshot', () {
@@ -77,9 +80,58 @@ void main() {
     expect(rels['taggedWith']!.single, ['a', 'fun']);
     expect(rels['collection']!.single, [5, 'C']);
     expect(rels['inCollection']!.single, ['b', 5]);
-    // Deferred to P10c.
+    // No contentHash set → no duplicates; both created at t0 → co-downloaded.
     expect(rels['duplicateOf'], isEmpty);
-    expect(rels['coDownloadedWith'], isEmpty);
+    expect(
+      rels['coDownloadedWith'],
+      containsAll([
+        ['a', 'b', 0],
+        ['b', 'a', 0],
+      ]),
+    );
+  });
+
+  test('duplicateOf links items sharing a non-empty contentHash', () {
+    final rels = buildGraphRelations(
+      LibrarySnapshot(
+        media: [
+          item('a', contentHash: 'h1'),
+          item('b', contentHash: 'h1'),
+          item('c', contentHash: 'h2'), // unique → no duplicate
+          item('d'), // null hash → ignored
+        ],
+      ),
+    );
+    expect(
+      rels['duplicateOf'],
+      containsAll([
+        ['a', 'b'],
+        ['b', 'a'],
+      ]),
+    );
+    expect(rels['duplicateOf']!.length, 2); // only the h1 pair, both directions
+  });
+
+  test('coDownloadedWith chains items within the window, not beyond it', () {
+    final rels = buildGraphRelations(
+      LibrarySnapshot(
+        media: [
+          item('a', createdAt: t0),
+          item('b', createdAt: t0.add(const Duration(minutes: 1))),
+          item('c', createdAt: t0.add(const Duration(hours: 1))), // far apart
+        ],
+      ),
+    );
+    final pairs = rels['coDownloadedWith']!;
+    expect(
+      pairs,
+      containsAll([
+        ['a', 'b', 60],
+        ['b', 'a', 60],
+      ]),
+    );
+    // 'c' is an hour after 'b' (> 5 min window) → not chained.
+    expect(pairs.any((r) => r.contains('c')), isFalse);
   });
 
   test('an item without metadata yields no uploader/playlist edges', () {

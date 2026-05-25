@@ -35,5 +35,8 @@ class UnavailableInferenceEngine implements InferenceEngine {
   Future<List<double>> embed(String text) async => throw _ex;
 
   @override
+  Future<List<List<double>>> embedBatch(List<String> texts) async => throw _ex;
+
+  @override
   Future<void> close() async {}
 }

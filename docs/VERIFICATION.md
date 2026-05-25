@@ -456,6 +456,22 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Non-arm64 / never-opted-in**: zero AI work; the graph's deterministic features + the whole app
       are unaffected.
 
+### P10b-3 — Cozo hardening + deterministic edges  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Close on background / reopen**: open the app, background it, return → the graph self-test
+      (About) still reports OK (store reopened cleanly, no SQLite-lock error); downloads keep working
+      across background/foreground cycles.
+- [ ] **`duplicateOf`**: download the same file/URL twice (so two items share a `contentHash`) →
+      after sync the graph edge count rises (duplicate pair recorded).
+- [ ] **`coDownloadedWith`**: queue a burst of downloads close together → edges link them; items
+      downloaded far apart (>5 min) are not linked.
+- [ ] **Model self-heal (manual/dev)**: this isn't user-triggerable in v1 (one pinned model) — only
+      relevant if the embedder model/dim ever changes; the `embedding_meta` guard then rebuilds the
+      index. No user step.
+- [ ] **Batch embedding**: enabling Semantic search on a non-trivial library still completes embedding
+      with no regression (now in batches); Test embedder reports the expected count.
+- [ ] **Malformed query**: the graph self-test / app never hard-crashes on a bad CozoScript — errors
+      surface as a friendly message.
+
 ### P10c–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
