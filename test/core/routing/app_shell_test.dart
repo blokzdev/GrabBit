@@ -31,6 +31,9 @@ Future<void> _pumpApp(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
         filteredLibraryProvider.overrideWith((ref) => Stream.value(const [])),
+        // Stub the streams the Dashboard landing aggregates; the real drift
+        // .watch() leaves a pending timer on disposal that fails the test.
+        libraryItemsProvider.overrideWith((ref) => Stream.value(<MediaItem>[])),
         queueTasksProvider.overrideWith((ref) => Stream.value(tasks)),
         collectionsProvider.overrideWith((ref) => Stream.value(<Collection>[])),
       ],

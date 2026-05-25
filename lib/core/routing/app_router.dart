@@ -5,6 +5,7 @@ import 'package:grabbit/core/routing/router_refresh.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/adaptive_navigation_scaffold.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
+import 'package:grabbit/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
@@ -34,10 +35,11 @@ part 'app_router.g.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// App navigation graph. The four top-level destinations (Library, Queue,
-/// Collections, Settings) live in a [StatefulShellRoute] so they keep their
-/// own state and share the adaptive nav chrome; flow/detail routes push over
-/// it on the root navigator (full-screen, with a back button).
+/// App navigation graph. The five top-level destinations (Dashboard, Library,
+/// Queue, Collections, Settings) live in a [StatefulShellRoute] so they keep
+/// their own state and share the adaptive nav chrome; flow/detail routes push
+/// over it on the root navigator (full-screen, with a back button). The
+/// Dashboard is the default landing (`/`); the Library lives at `/library`.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   return GoRouter(
@@ -78,6 +80,15 @@ GoRouter appRouter(Ref ref) {
             routes: [
               GoRoute(
                 path: '/',
+                name: 'dashboard',
+                builder: (context, state) => const DashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/library',
                 name: 'home',
                 builder: (context, state) => const HomeScreen(),
               ),
@@ -227,6 +238,11 @@ class _AdaptiveShell extends StatelessWidget {
         initialLocation: index == navigationShell.currentIndex,
       ),
       destinations: const [
+        AdaptiveDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard),
+          label: 'Dashboard',
+        ),
         AdaptiveDestination(
           icon: Icon(Icons.video_library_outlined),
           selectedIcon: Icon(Icons.video_library),
