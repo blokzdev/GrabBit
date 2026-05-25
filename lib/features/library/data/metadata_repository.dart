@@ -24,6 +24,7 @@ class LibraryQuery {
     this.site,
     this.uploader,
     this.playlistId,
+    this.tag,
     this.favoritesOnly = false,
   });
 
@@ -34,6 +35,7 @@ class LibraryQuery {
   final String? site; // platform facet
   final String? uploader; // channel facet
   final String? playlistId; // playlist facet
+  final String? tag; // tag facet (by tag name)
   final bool favoritesOnly;
 
   /// Active metadata facets (excludes search/type/sort/collection).
@@ -50,6 +52,7 @@ class LibraryQuery {
     String? Function()? site,
     String? Function()? uploader,
     String? Function()? playlistId,
+    String? Function()? tag,
     bool? favoritesOnly,
   }) => LibraryQuery(
     search: search ?? this.search,
@@ -59,6 +62,7 @@ class LibraryQuery {
     site: site != null ? site() : this.site,
     uploader: uploader != null ? uploader() : this.uploader,
     playlistId: playlistId != null ? playlistId() : this.playlistId,
+    tag: tag != null ? tag() : this.tag,
     favoritesOnly: favoritesOnly ?? this.favoritesOnly,
   );
 }
@@ -124,6 +128,18 @@ class MetadataRepository {
           _db.selectOnly(_db.mediaMetadata)
             ..addColumns([_db.mediaMetadata.itemId])
             ..where(_db.mediaMetadata.playlistId.equals(q.playlistId!)),
+        ),
+      );
+    }
+    if (q.tag != null) {
+      query.where(
+        (t) => t.id.isInQuery(
+          _db.selectOnly(_db.mediaTags)
+            ..addColumns([_db.mediaTags.itemId])
+            ..join([
+              innerJoin(_db.tags, _db.tags.id.equalsExp(_db.mediaTags.tagId)),
+            ])
+            ..where(_db.tags.name.equals(q.tag!)),
         ),
       );
     }
@@ -529,4 +545,23 @@ final smartAlbumItemsProvider =
         'channel' => repo.watchFiltered(LibraryQuery(uploader: key.value)),
         _ => repo.watchRecentlyPlayed(),
       };
+    });
+
+/// Items for an entity hub, keyed by ([type], [value]). `type` is
+/// `uploader` | `site` | `playlist` | `tag`; `value` is the matching key
+/// (uploader name / site / playlistId / tag name). Pure Drift faceting over
+/// `watchFiltered` — works on every device, no graph needed.
+final hubItemsProvider =
+    StreamProvider.family<List<MediaItem>, ({String type, String value})>((
+      ref,
+      key,
+    ) {
+      final repo = ref.watch(metadataRepositoryProvider);
+      return repo.watchFiltered(switch (key.type) {
+        'uploader' => LibraryQuery(uploader: key.value),
+        'site' => LibraryQuery(site: key.value),
+        'playlist' => LibraryQuery(playlistId: key.value),
+        'tag' => LibraryQuery(tag: key.value),
+        _ => const LibraryQuery(),
+      });
     });

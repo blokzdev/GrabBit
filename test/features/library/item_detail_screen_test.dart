@@ -130,6 +130,40 @@ void main() {
   );
 
   testWidgets(
+    'tags render as tappable hub chips (P10c-c-1)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            mediaItemByIdProvider('x').overrideWith((ref) => _item()),
+            metadataForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(null)),
+            tagsForItemProvider('x').overrideWith(
+              (ref) => Stream.value([const Tag(id: 1, name: 'funny')]),
+            ),
+            collectionsForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<Collection>[])),
+          ],
+          child: const MaterialApp(home: ItemDetailScreen(itemId: 'x')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.widgetWithText(ActionChip, 'funny'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
     'body shows last-played and collection chips (P9i)',
     (tester) async {
       await tester.pumpWidget(

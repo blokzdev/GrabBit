@@ -56,7 +56,13 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     similarity (the item's own stored embedding) with deterministic graph neighbours (shared
     uploader/playlist/tag/co-download) via a pure Dart ranker; surfaced as a horizontal "More like
     this" carousel on item detail. Works graph-only without embeddings; excludes exact duplicates.
-  - **P10c-c — Entity hubs + tag suggestions** (pure-graph, every device).
+  - **P10c-c — Entity hubs + tag suggestions** *(split into c-1 / c-2):*
+    - **P10c-c-1 — Navigable entity hubs** *(done)*: uploader/playlist/tag/site on item-detail are
+      tappable → an `EntityHubScreen` listing that entity's items, reusing `watchFiltered` +
+      `MediaGrid` + `GridSortButton` (added a `tag` facet to `LibraryQuery`). Pure Drift, every device,
+      no graph dependency.
+    - **P10c-c-2 — Graph enrichment**: a "related entities" strip on hubs + tag suggestions in the
+      editor, both from a Cozo co-occurrence query (pure Datalog, every device).
   - **P10c-d — Near-duplicate clusters** (vector `similarTo` folded into the existing exact-hash
     `DuplicatesScreen`).
   - **P10c-e / P10c-f — Interactive graph viz** (`graphview`): render, then expand/collapse +
