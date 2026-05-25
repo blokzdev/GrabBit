@@ -25,6 +25,15 @@ _(nothing active — pick the next batch from below)_
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 - [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
       v2/P15: it's native, on-device-only verification, and pure polish.)*
+- [ ] **Cross-type related entities on hubs** — P10c-c-2 shipped a tag-only **"Related tags"** strip
+      (co-occurrence over `taggedWith`). Extend it to related **creators / playlists**, ranked by
+      degree/PageRank (per `docs/GRAPH-SPEC.md §7`), as typed chips that open the matching hub. The
+      uploader-name↔`uploaderId` bridge used for the tag strip already shows the pattern. *(From P10c-c-2.)*
+- [ ] **(testing debt) Tag-suggestion apply-on-tap assertion** — the metadata editor's suggestion-chip
+      tap isn't asserted to persist: a real Drift write under the fake-async widget harness needs
+      `tester.runAsync` **and** a seeded `media_items` row (to satisfy the `media_tags` FK). The widget
+      test currently asserts the chip is wired (`onPressed != null`); the `addTagToItem` write itself is
+      unit-tested in the repository test. *(From P10c-c-2.)*
 - [ ] **TikTok photo/slideshow (`/photo/`) posts** aren't downloadable — an **upstream yt-dlp
       limitation** (the TikTok extractor doesn't match `/photo/`; falls back to generic →
       "Unsupported URL"). Tracked at yt-dlp #10870/#9990. Not fixable in-app; GrabBit now shows a

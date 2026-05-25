@@ -151,6 +151,11 @@ Two pure-Dart seams mirror the `DownloadEngine` pattern; deep design in `docs/AI
   P14). Platform-branched provider, like `downloadEngineProvider`.
 - **`InferenceEngine`** (`core/ai/`, P11) — local AI runtime via **`flutter_gemma`** (embeddings +
   generation + RAG; MediaPipe/LiteRT-LM), **whisper.cpp**, **ML Kit**.
+- **`GraphQueryService`** (`core/graph/`, P10c) — read-side orchestration over `GraphStore.runScript`
+  (vector nearest-neighbour, deterministic neighbour traversals, tag co-occurrence), mirroring how
+  `GraphSyncService` owns write/sync — so the store stays a thin `runScript` bridge. Pure CozoScript
+  builders live in `cozo_query.dart`; ranking in `related_ranking.dart` / `cooccurrence_ranking.dart`.
+  UI reads it via providers, never CozoScript.
 - `embed()` *produces* vectors; `GraphStore` *stores/searches* them; only `GraphSyncService` bridges
   both. This lets the deterministic + similarity graph (P10) ship independent of the LLM stack (P11).
 

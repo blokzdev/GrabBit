@@ -103,9 +103,12 @@ abstract interface class InferenceEngine {
 ### P10 — baseline (device-universal; no LLM)
 - **Embeddings** (Gecko 64, 768-d) → indexed in Cozo HNSW, **cached + incremental** via
   `GraphSyncService.backfillEmbeddings()` (P10b-2b done; see `GRAPH-SPEC.md` §5–§6).
-- **Semantic search** (vector) complementing the existing `LIKE` search *(query side: P10c)*.
-- **Related / "More like this"**, **entity hubs**, **near-duplicate clusters**, **tag suggestions**,
-  **interactive graph viz** — graph features detailed in `GRAPH-SPEC.md` §7.
+- **Semantic search** (vector) complementing the existing `LIKE` search *(P10c-a, shipped)*.
+- **Related / "More like this"** *(P10c-b, shipped)*; **entity hubs** *(P10c-c — navigable hubs in
+  c-1, the tag co-occurrence "Related tags" strip in c-2; cross-type creator/playlist ranking
+  deferred, see `BACKLOG.md`)*; **tag suggestions** *(P10c-c-2, shipped)*; **near-duplicate clusters**
+  *(P10c-d)* and **interactive graph viz** *(P10c-e/f)* remaining — read via `GraphQueryService`;
+  graph features detailed in `GRAPH-SPEC.md` §7.
 - **Extractive summaries (TextRank)** — zero-dependency, pure-Dart floor over
   descriptions/subtitles/transcripts; the always-available TL;DR.
 
