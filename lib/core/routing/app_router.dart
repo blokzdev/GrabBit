@@ -8,6 +8,7 @@ import 'package:grabbit/features/downloader/presentation/add_download_screen.dar
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
+import 'package:grabbit/features/library/presentation/entity_hub_screen.dart';
 import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
@@ -157,6 +158,16 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => SmartAlbumScreen(
           kind: state.pathParameters['kind']!,
           value: state.uri.queryParameters['v'],
+        ),
+      ),
+      GoRoute(
+        path: '/hub/:type',
+        name: 'hub',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => EntityHubScreen(
+          type: state.pathParameters['type']!,
+          value: state.uri.queryParameters['v'] ?? '',
+          displayName: state.extra as String?,
         ),
       ),
       GoRoute(

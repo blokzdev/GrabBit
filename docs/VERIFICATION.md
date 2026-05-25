@@ -498,6 +498,17 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Graceful empty**: an item with no relations (and no embeddings) shows **no** Related section
       rather than an empty box; never crashes on a cold graph.
 
+### P10c-c-1 — Navigable entity hubs  *(no AI/graph needed — works on any build)*
+- [ ] **Tap an uploader**: on item detail, tapping the uploader row opens a hub listing every item
+      from that channel.
+- [ ] **Tap a tag**: tapping a tag chip opens a hub of all items with that tag.
+- [ ] **Tap the platform**: tapping the site (under the title) opens a hub of all items from that
+      platform; **tap a playlist** opens that playlist's items.
+- [ ] **Sort works**: the hub's sort button reorders (newest/oldest/title/size); back returns to the
+      item.
+- [ ] **Empty/edge**: an entity with no other items shows the "Nothing here" empty state; tags/uploaders
+      with `/` or unusual characters still open the right hub (value is URL-encoded).
+
 ### P10c–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.

@@ -254,7 +254,7 @@ gracefully when `GraphStore.isAvailable` is false.
 | Feature (phase) | Cozo mechanism |
 |---|---|
 | **Related / "More like this"** (P10c-b, **live**) | `GraphQueryService.relatedTo`: HNSW vector search over the item's *own* stored vector + a pure-Datalog neighbour query (shared uploader/playlist/tag/co-download), blended & ranked in Dart (`related_ranking.dart`). Graph-only when the item isn't embedded; excludes `duplicateOf` partners. Also the retrieval half of P12 GraphRAG. |
-| **Entity hubs** (P10) | degree / `PageRank` over `postedBy` / `taggedWith` to rank top creators/tags. |
+| **Entity hubs** (P10c-c) | **c-1 (live, every device):** navigable hubs — uploader/playlist/tag/site on item-detail are tappable → an `EntityHubScreen` listing that entity's items via Drift `watchFiltered` (no graph). **c-2:** a "related entities" strip ranked by co-occurrence/degree over `postedBy` / `taggedWith`. |
 | **Near-duplicate clusters** (P10) | `duplicateOf` connected components + high-score `similarTo`; optionally Cozo **MinHash-LSH**. |
 | **Tag suggestions** (P10) | co-occurrence over a node's neighborhood. |
 | **Interactive graph viz** (P10) | neighborhood query → render with `graphview` (force-directed, expand/collapse). |

@@ -184,12 +184,29 @@ class _ItemBody extends StatelessWidget {
             children: [
               Text(item.title, style: theme.textTheme.headlineSmall),
               SizedBox(height: tokens.spaceXs),
-              Text(
-                '${item.site}  ·  Saved ${_ymd(item.createdAt.toLocal())}'
-                '${item.lastAccessedAt != null ? '  ·  Last played ${_ymd(item.lastAccessedAt!.toLocal())}' : ''}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  InkWell(
+                    onTap: () =>
+                        _openHub(context, 'site', item.site, item.site),
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    child: Text(
+                      item.site,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: tokens.accent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '  ·  Saved ${_ymd(item.createdAt.toLocal())}'
+                    '${item.lastAccessedAt != null ? '  ·  Last played ${_ymd(item.lastAccessedAt!.toLocal())}' : ''}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
               _DetailChips(item: item),
               _MetadataSection(itemId: item.id),
@@ -209,6 +226,14 @@ class _ItemBody extends StatelessWidget {
     );
   }
 }
+
+/// Opens the entity hub listing every item for [type]/[value] (uploader, site,
+/// playlist, or tag). [value] is the filter key; [name] the display label.
+void _openHub(BuildContext context, String type, String value, String name) =>
+    context.push(
+      Uri(path: '/hub/$type', queryParameters: {'v': value}).toString(),
+      extra: name,
+    );
 
 /// "More like this" — a horizontal carousel of related items (graph + vector).
 /// Renders nothing until results arrive (or when the graph is unavailable), so
@@ -383,11 +408,27 @@ class _MetadataSection extends ConsumerWidget {
     final date = meta.uploadDate;
     final rows = <Widget>[
       if (clean(meta.uploader) != null)
-        _InfoRow(icon: Icons.person_outline, value: meta.uploader!),
+        _InfoRow(
+          icon: Icons.person_outline,
+          value: meta.uploader!,
+          onTap: () =>
+              _openHub(context, 'uploader', meta.uploader!, meta.uploader!),
+        ),
       if (clean(meta.uploaderId) != null)
         _InfoRow(icon: Icons.alternate_email, value: meta.uploaderId!),
       if (clean(meta.playlistTitle) != null)
-        _InfoRow(icon: Icons.playlist_play, value: meta.playlistTitle!),
+        _InfoRow(
+          icon: Icons.playlist_play,
+          value: meta.playlistTitle!,
+          onTap: clean(meta.playlistId) == null
+              ? null
+              : () => _openHub(
+                  context,
+                  'playlist',
+                  meta.playlistId!,
+                  meta.playlistTitle!,
+                ),
+        ),
       if (date != null)
         _InfoRow(icon: Icons.event_outlined, value: 'Uploaded ${_ymd(date)}'),
     ];
@@ -413,25 +454,48 @@ class _MetadataSection extends ConsumerWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.value});
+  const _InfoRow({required this.icon, required this.value, this.onTap});
   final IconData icon;
   final String value;
+
+  /// When set, the row becomes a tappable link (used to open an entity hub).
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final tokens = GrabBitTokens.of(context);
+    final tappable = onTap != null;
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: tappable ? tokens.accent : scheme.onSurfaceVariant,
+        ),
+        SizedBox(width: tokens.spaceSm),
+        Expanded(
+          child: Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: tappable ? tokens.accent : null,
+            ),
+          ),
+        ),
+        if (tappable) Icon(Icons.chevron_right, size: 18, color: tokens.accent),
+      ],
+    );
     return Padding(
       padding: EdgeInsets.symmetric(vertical: tokens.spaceXs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: scheme.onSurfaceVariant),
-          SizedBox(width: tokens.spaceSm),
-          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
-        ],
-      ),
+      child: tappable
+          ? InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              child: row,
+            )
+          : row,
     );
   }
 }
@@ -498,7 +562,13 @@ class _TagsRow extends ConsumerWidget {
               child: Wrap(
                 spacing: tokens.spaceSm,
                 runSpacing: tokens.spaceXs,
-                children: [for (final t in list) Chip(label: Text(t.name))],
+                children: [
+                  for (final t in list)
+                    ActionChip(
+                      label: Text(t.name),
+                      onPressed: () => _openHub(context, 'tag', t.name, t.name),
+                    ),
+                ],
               ),
             ),
       orElse: () => const SizedBox.shrink(),

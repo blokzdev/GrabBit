@@ -358,6 +358,17 @@ void main() {
       expect(rows.map((r) => r.id), ['a']);
     });
 
+    test('filters by tag name', () async {
+      await seed('a', 'A', 'video');
+      await seed('b', 'B', 'video');
+      await repo.addTagToItem('a', 'funny');
+      await repo.addTagToItem('b', 'serious');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(tag: 'funny'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
     test('distinct facet values', () async {
       await seed('a', 'A', 'video', site: 'youtube');
       await seed('b', 'B', 'video', site: 'tiktok');
