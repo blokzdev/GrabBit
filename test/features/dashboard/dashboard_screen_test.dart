@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,7 +22,8 @@ MediaItem _item(String id, int size) => MediaItem(
   filePath: '/tmp/$id.mp4',
   type: 'video',
   sizeBytes: size,
-  createdAt: DateTime.utc(2026),
+  // Recent so the activity chart's 30-day window includes it.
+  createdAt: DateTime.now().subtract(const Duration(days: 1)),
   storageState: 'private',
   isFavorite: false,
 );
@@ -57,6 +59,13 @@ void main() {
           deviceDiskSpaceProvider.overrideWith(
             (ref) async => (freeBytes: 0, totalBytes: 0),
           ),
+          // Charts read these directly; stub so they don't hit the real DB.
+          sizeByTypeProvider.overrideWith(
+            (ref) => Stream.value(<String, int>{'video': 80, 'audio': 40}),
+          ),
+          sizeBySiteProvider.overrideWith(
+            (ref) => Stream.value(<String, int>{'youtube': 120}),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -65,10 +74,13 @@ void main() {
 
     expect(find.text('In library'), findsOneWidget);
     expect(find.text('Storage used'), findsOneWidget);
-    expect(find.text('150 B'), findsOneWidget); // 100 + 50
+    expect(find.text('150 B'), findsOneWidget); // 100 + 50 (stat card)
     expect(find.text('In queue'), findsOneWidget);
     expect(find.text('1 downloading'), findsOneWidget); // running subtitle
     expect(find.text('Collections'), findsOneWidget);
+    // Charts: two storage donuts + the activity bar chart.
+    expect(find.byType(PieChart), findsNWidgets(2));
+    expect(find.byType(BarChart), findsOneWidget);
   });
 
   testWidgets('shows an empty state on a fresh install', (tester) async {

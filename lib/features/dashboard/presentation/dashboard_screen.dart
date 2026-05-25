@@ -12,7 +12,9 @@ import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/dashboard/domain/dashboard_summary.dart';
 import 'package:grabbit/features/dashboard/presentation/dashboard_providers.dart';
+import 'package:grabbit/features/dashboard/presentation/widgets/activity_chart_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/stat_card.dart';
+import 'package:grabbit/features/dashboard/presentation/widgets/storage_donut_tile.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
@@ -127,9 +129,68 @@ class _DashboardBody extends ConsumerWidget {
                 children: cards,
               ),
             ),
+            _ChartSection(
+              title: 'Storage by type',
+              icon: Icons.donut_small_outlined,
+              child: StorageDonutTile(
+                provider: sizeByTypeProvider,
+                maxSlices: 3,
+                capitalizeLabels: true,
+              ),
+            ),
+            _ChartSection(
+              title: 'Storage by platform',
+              icon: Icons.public,
+              child: StorageDonutTile(
+                provider: sizeBySiteProvider,
+                maxSlices: 5,
+                capitalizeLabels: false,
+              ),
+            ),
+            const _ChartSection(
+              title: 'Library activity',
+              icon: Icons.show_chart,
+              child: ActivityChartTile(),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A titled, fixed-height card wrapper for a dashboard chart tile.
+class _ChartSection extends StatelessWidget {
+  const _ChartSection({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(title, icon: icon),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            tokens.spaceLg,
+            0,
+            tokens.spaceLg,
+            tokens.spaceSm,
+          ),
+          child: SizedBox(
+            height: 220,
+            child: Card(clipBehavior: Clip.antiAlias, child: child),
+          ),
+        ),
+      ],
     );
   }
 }
