@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/async_fade.dart';
@@ -8,6 +9,7 @@ import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/graph_entity_providers.dart';
 import 'package:grabbit/features/library/presentation/grid_sort.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 
@@ -90,24 +92,90 @@ class _EntityHubScreenState extends ConsumerState<EntityHubScreen> {
       ),
       body: ContentBounds(
         maxWidth: 1280,
-        child: AsyncFade(
-          value: items,
-          loading: () => const MediaGridSkeleton(),
-          error: (e, _) => ErrorView(
-            message: 'Failed to load: $e',
-            onRetry: () => ref.invalidate(hubItemsProvider(key)),
-          ),
-          data: (rows) => rows.isEmpty
-              ? Padding(
-                  padding: EdgeInsets.all(tokens.spaceLg),
-                  child: const EmptyState(
-                    icon: Icons.inbox_outlined,
-                    title: 'Nothing here',
-                    message: 'No items belong to this yet.',
-                  ),
-                )
-              : MediaGrid(items: sortMediaItems(rows, _sort)),
+        child: Column(
+          children: [
+            _RelatedTagsStrip(type: widget.type, value: widget.value),
+            Expanded(
+              child: AsyncFade(
+                value: items,
+                loading: () => const MediaGridSkeleton(),
+                error: (e, _) => ErrorView(
+                  message: 'Failed to load: $e',
+                  onRetry: () => ref.invalidate(hubItemsProvider(key)),
+                ),
+                data: (rows) => rows.isEmpty
+                    ? Padding(
+                        padding: EdgeInsets.all(tokens.spaceLg),
+                        child: const EmptyState(
+                          icon: Icons.inbox_outlined,
+                          title: 'Nothing here',
+                          message: 'No items belong to this yet.',
+                        ),
+                      )
+                    : MediaGrid(items: sortMediaItems(rows, _sort)),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+/// Tags that co-occur with this hub's entity, as chips that open the
+/// corresponding tag hub. Renders nothing when the graph is unavailable or has
+/// no related tags, so the hub is unchanged on devices without the graph.
+class _RelatedTagsStrip extends ConsumerWidget {
+  const _RelatedTagsStrip({required this.type, required this.value});
+  final String type;
+  final String value;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final tags =
+        ref
+            .watch(relatedTagsProvider((type: type, value: value)))
+            .asData
+            ?.value ??
+        const [];
+    if (tags.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        tokens.spaceMd,
+        tokens.spaceLg,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Related tags',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: tokens.spaceXs),
+          Wrap(
+            spacing: tokens.spaceSm,
+            runSpacing: tokens.spaceXs,
+            children: [
+              for (final tag in tags)
+                ActionChip(
+                  label: Text(tag),
+                  onPressed: () => context.push(
+                    Uri(
+                      path: '/hub/tag',
+                      queryParameters: {'v': tag},
+                    ).toString(),
+                    extra: tag,
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

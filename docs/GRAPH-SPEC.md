@@ -254,9 +254,9 @@ gracefully when `GraphStore.isAvailable` is false.
 | Feature (phase) | Cozo mechanism |
 |---|---|
 | **Related / "More like this"** (P10c-b, **live**) | `GraphQueryService.relatedTo`: HNSW vector search over the item's *own* stored vector + a pure-Datalog neighbour query (shared uploader/playlist/tag/co-download), blended & ranked in Dart (`related_ranking.dart`). Graph-only when the item isn't embedded; excludes `duplicateOf` partners. Also the retrieval half of P12 GraphRAG. |
-| **Entity hubs** (P10c-c) | **c-1 (live, every device):** navigable hubs — uploader/playlist/tag/site on item-detail are tappable → an `EntityHubScreen` listing that entity's items via Drift `watchFiltered` (no graph). **c-2:** a "related entities" strip ranked by co-occurrence/degree over `postedBy` / `taggedWith`. |
+| **Entity hubs** (P10c-c, **live**) | **c-1 (every device):** navigable hubs — uploader/playlist/tag/site on item-detail are tappable → an `EntityHubScreen` listing that entity's items via Drift `watchFiltered` (no graph). **c-2 (graph):** a **"Related tags"** strip on each hub — `GraphQueryService.relatedTags` collects the tags carried by the entity's items (uploader-name bridged to `uploaderId` via the `uploader` node) and ranks by support; chips open the tag hub. Degenerates to nothing when the graph is unavailable. |
 | **Near-duplicate clusters** (P10) | `duplicateOf` connected components + high-score `similarTo`; optionally Cozo **MinHash-LSH**. |
-| **Tag suggestions** (P10) | co-occurrence over a node's neighborhood. |
+| **Tag suggestions** (P10c-c-2, **live**) | `GraphQueryService.coOccurringTags`: tags on items sharing a deterministic signal with this one (`postedBy`/`inPlaylist`/`taggedWith`/`coDownloadedWith`), minus the item's own tags, ranked in Dart (`cooccurrence_ranking.dart`) by distinct supporting items. Surfaced as tappable chips in the metadata editor. Pure Datalog — every device. |
 | **Interactive graph viz** (P10) | neighborhood query → render with `graphview` (force-directed, expand/collapse). |
 | **Graph-clustered auto-albums** (P12) | **community detection / label propagation** over the similarity + entity graph. |
 | **Centrality "Rediscover"** (P12) | `PageRank` / betweenness × `lastAccessedAt` to resurface central-but-stale items. |

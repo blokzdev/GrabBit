@@ -8,6 +8,7 @@ import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/graph_entity_providers.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 
 class MetadataEditScreen extends ConsumerStatefulWidget {
@@ -163,6 +164,7 @@ class _TagsEditor extends ConsumerWidget {
                 ),
                 onSubmitted: (_) => _add(repo),
               ),
+              _Suggestions(itemId: itemId, repo: repo),
             ],
           ),
         ),
@@ -173,6 +175,51 @@ class _TagsEditor extends ConsumerWidget {
   void _add(MetadataRepository repo) {
     repo.addTagToItem(itemId, controller.text);
     controller.clear();
+  }
+}
+
+/// Graph-suggested tags (co-occurring across the library), tappable to apply.
+/// Renders nothing when the graph is unavailable or has no suggestion — so the
+/// editor is unchanged on devices without the graph (P10c-c-2).
+class _Suggestions extends ConsumerWidget {
+  const _Suggestions({required this.itemId, required this.repo});
+  final String itemId;
+  final MetadataRepository repo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final suggestions =
+        ref.watch(tagSuggestionsProvider(itemId)).asData?.value ?? const [];
+    if (suggestions.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Suggested',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: tokens.spaceXs),
+          Wrap(
+            spacing: tokens.spaceSm,
+            runSpacing: tokens.spaceXs,
+            children: [
+              for (final tag in suggestions)
+                ActionChip(
+                  avatar: const Icon(Icons.add, size: 18),
+                  label: Text(tag),
+                  onPressed: () => repo.addTagToItem(itemId, tag),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

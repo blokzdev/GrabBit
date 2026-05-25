@@ -132,4 +132,72 @@ void main() {
       expect(store.calls, isEmpty);
     });
   });
+
+  group('GraphQueryService.coOccurringTags', () {
+    test('ranks co-occurring tags by distinct supporting items', () async {
+      final store = FakeGraphStore(
+        responder: (_) => {
+          'headers': ['other', 'tag'],
+          'rows': [
+            ['b', 'music'],
+            ['c', 'music'],
+            ['b', 'live'],
+          ],
+        },
+      );
+      final tags = await GraphQueryService(store).coOccurringTags('a');
+      expect(tags.map((t) => t.tag), ['music', 'live']);
+      expect(tags.first.count, 2);
+      expect(store.calls.single.params['id'], 'a');
+    });
+
+    test('returns empty when the store is unavailable', () async {
+      final store = FakeGraphStore(available: false);
+      expect(await GraphQueryService(store).coOccurringTags('a'), isEmpty);
+      expect(store.calls, isEmpty);
+    });
+  });
+
+  group('GraphQueryService.relatedTags', () {
+    test('passes the entity value and ranks the result', () async {
+      final store = FakeGraphStore(
+        responder: (_) => {
+          'headers': ['other', 'tag'],
+          'rows': [
+            ['x', 'remix'],
+            ['y', 'remix'],
+            ['x', 'demo'],
+          ],
+        },
+      );
+      final tags = await GraphQueryService(
+        store,
+      ).relatedTags('uploader', 'Rick');
+      expect(tags.map((t) => t.tag), ['remix', 'demo']);
+      expect(store.calls.single.params['v'], 'Rick');
+    });
+
+    test('a tag hub excludes its own tag', () async {
+      final store = FakeGraphStore(
+        responder: (_) => {
+          'headers': ['other', 'tag'],
+          'rows': [
+            ['x', 'funny'], // the hub's own tag
+            ['x', 'cats'],
+          ],
+        },
+      );
+      final tags = await GraphQueryService(store).relatedTags('tag', 'funny');
+      expect(tags.map((t) => t.tag), ['cats']);
+    });
+
+    test('returns empty for an unknown entity type (no query run)', () async {
+      final store = FakeGraphStore();
+      expect(
+        await GraphQueryService(store).relatedTags('folder', '1'),
+        isEmpty,
+      );
+      expect(store.calls, isEmpty);
+    });
+  });
 }

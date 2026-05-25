@@ -7,6 +7,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/entity_hub_screen.dart';
+import 'package:grabbit/features/library/presentation/graph_entity_providers.dart';
 
 MediaItem _item({required String id, required String title}) => MediaItem(
   id: id,
@@ -117,6 +118,39 @@ void main() {
       expect(find.text('funny'), findsOneWidget); // app bar title
       expect(find.text('Tag'), findsOneWidget); // type label
       expect(find.text('Tagged Clip'), findsOneWidget);
+    });
+
+    testWidgets('renders a related-tags strip from the graph', (tester) async {
+      tester.view.physicalSize = const Size(1000, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            hubItemsProvider((type: 'tag', value: 'funny')).overrideWith(
+              (ref) => Stream.value([_item(id: 'a', title: 'Tagged Clip')]),
+            ),
+            relatedTagsProvider((
+              type: 'tag',
+              value: 'funny',
+            )).overrideWith((ref) async => ['cats', 'dogs']),
+          ],
+          child: const MaterialApp(
+            home: EntityHubScreen(
+              type: 'tag',
+              value: 'funny',
+              displayName: 'funny',
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Related tags'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'cats'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'dogs'), findsOneWidget);
     });
 
     testWidgets('shows the empty state when the entity has no items', (
