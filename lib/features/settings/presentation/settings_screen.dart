@@ -568,9 +568,17 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
       );
     try {
       await ref.read(inferenceEngineProvider).downloadModel();
+      // Build the vector index now that the model is ready.
+      final stats = await ref
+          .read(graphSyncServiceProvider)
+          .backfillEmbeddings();
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Semantic search ready')));
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Semantic search ready — ${stats.total} embedded'),
+          ),
+        );
     } on InferenceException catch (e) {
       await controller.setSemanticSearchEnabled(false);
       messenger
@@ -636,7 +644,9 @@ class _EmbedderSelfTestTile extends ConsumerWidget {
         message = 'Embedder not ready — enable Semantic search first';
       } else {
         final vector = await engine.embed('GrabBit semantic search test');
-        message = 'Embedder OK — ${vector.length}-d vector';
+        final stats = await ref.read(graphSyncServiceProvider).stats();
+        message =
+            'Embedder OK — ${vector.length}-d · ${stats.embeddings} embedded';
       }
     } on InferenceException catch (e) {
       message = 'Embedder test failed: ${e.message}';

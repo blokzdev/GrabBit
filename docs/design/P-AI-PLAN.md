@@ -28,15 +28,18 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   *(GRAPH-SPEC §3, §6)*
 - **P10b-2 — Embedder + vectors** *(split: the embedder is the heaviest, riskiest piece — a new
   native runtime + a model download)*:
-  - **P10b-2a — Embedder foundation + opt-in setup:** minimal `InferenceEngine.embed()` slice via
-    `flutter_gemma` (Gecko 64, embedder-only, 768-d, ungated ~110 MB) behind a swappable interface;
-    Android impl + graceful `UnavailableInferenceEngine`; **opt-in** model fetch (a
+  - **P10b-2a — Embedder foundation + opt-in setup** *(done, #74)*: minimal `InferenceEngine.embed()`
+    slice via `flutter_gemma` (Gecko 64, embedder-only, 768-d, ungated ~110 MB) behind a swappable
+    interface; Android impl + graceful `UnavailableInferenceEngine`; **opt-in** model fetch (a
     `semanticSearchEnabled` setting) with progress; a first-run **"Set up AI features (or skip)"**
     screen sequenced after the disclaimer; a "Test embedder" self-test. **No** Cozo vectors yet.
     *(AI-SPEC §3)*
-  - **P10b-2b — Vectors + backfill:** the HNSW `embedding` relation; `GraphSyncService.backfillEmbeddings()`
-    that **caches vectors** (only embeds new/changed items, keyed by text hash; excluded from the
-    `:replace` rebuild); `similarTo` stays query-time HNSW in P10c. *(GRAPH-SPEC §5)*
+  - **P10b-2b — Vectors + backfill** *(done)*: the HNSW `embedding {id => v:<F32;768>, textHash}`
+    relation + `::hnsw` index (created on demand by the sync service, excluded from `graphSchema`);
+    `GraphSyncService.backfillEmbeddings()` **caches vectors** (only embeds new/changed items keyed by
+    `sha256(modelId+text)`, prunes deleted ids), gated on `ensureReady()`; triggered from the live
+    listener, startup, and opt-in; self-test reports the embedding count. `similarTo` + query-time
+    vector search stay P10c. *(GRAPH-SPEC §5, §6)*
 - **P10c — Universal graph features:** semantic search; **Related / "More like this"** (hybrid
   vector + graph re-rank); **entity hubs** (uploader/playlist/tag/site); **near-duplicate clusters**;
   **tag suggestions**; **interactive graph viz** (candidate `graphview`). *(GRAPH-SPEC §7)*

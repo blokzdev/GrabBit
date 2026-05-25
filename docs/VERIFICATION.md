@@ -434,14 +434,29 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Settings opt-in**: Settings → Graph database → **Semantic search** toggle off by default;
       turning it on downloads the model (snackbar "Semantic search ready"); turning it off stops use.
 - [ ] **Test embedder**: Settings → Graph database → **Test embedder** → after the model is
-      downloaded, snackbar reads **"Embedder OK — 768-d vector"**; before download it reads
+      downloaded, snackbar reads **"Embedder OK — 768-d · N embedded"**; before download it reads
       "enable Semantic search first".
 - [ ] **Existing-install upgrade**: updating over a prior install does **not** show the AI-setup
       screen, and semantic search stays off until opted in.
 - [ ] **Graceful without AI**: with semantic search off (or on a device where the embedder can't
       load), the downloader/library/queue/graph all work exactly as before.
 
-### P10b-2b–d (later sub-PRs)
+### P10b-2b — vector index (cached embedding backfill)  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Initial index**: with a non-empty library, enable **Semantic search** (or AI-setup → Set up) →
+      after the download, **Test embedder** reports "768-d · **N embedded**" where N = library size.
+- [ ] **Incremental add**: download a new item → within ~2 s the embedded count goes **N+1** (only the
+      new item embedded, not the whole library).
+- [ ] **Edit re-embeds**: rename an item (or edit its metadata) → it's re-embedded (cache invalidates);
+      counts stay consistent.
+- [ ] **Delete prunes**: delete an item → embedded count drops by 1 (no orphan vector left).
+- [ ] **Cached across restart**: force-quit + reopen → embeddings persist; **no re-download, no
+      re-embed** (count unchanged, instant).
+- [ ] **Off = no work**: with Semantic search disabled, adding/deleting items does no embedding work;
+      Test embedder reads "enable Semantic search first".
+- [ ] **Non-arm64 / never-opted-in**: zero AI work; the graph's deterministic features + the whole app
+      are unaffected.
+
+### P10c–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
 - [ ] **Semantic search**: a query that isn't a literal title match still surfaces relevant items

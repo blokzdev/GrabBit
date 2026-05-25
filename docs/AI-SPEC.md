@@ -101,8 +101,9 @@ abstract interface class InferenceEngine {
 ## 5. Feature set by phase
 
 ### P10 — baseline (device-universal; no LLM)
-- **Embeddings** (Gecko) → indexed in Cozo HNSW (`GRAPH-SPEC.md`).
-- **Semantic search** (vector) complementing the existing `LIKE` search.
+- **Embeddings** (Gecko 64, 768-d) → indexed in Cozo HNSW, **cached + incremental** via
+  `GraphSyncService.backfillEmbeddings()` (P10b-2b done; see `GRAPH-SPEC.md` §5–§6).
+- **Semantic search** (vector) complementing the existing `LIKE` search *(query side: P10c)*.
 - **Related / "More like this"**, **entity hubs**, **near-duplicate clusters**, **tag suggestions**,
   **interactive graph viz** — graph features detailed in `GRAPH-SPEC.md` §7.
 - **Extractive summaries (TextRank)** — zero-dependency, pure-Dart floor over
