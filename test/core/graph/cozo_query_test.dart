@@ -131,6 +131,33 @@ void main() {
     });
   });
 
+  group('mediaForEntityScript', () {
+    test('selects the right edge per entity type and limits', () {
+      expect(
+        mediaForEntityScript('uploader'),
+        contains(r'*postedBy{mediaId: id, uploaderId: $v}'),
+      );
+      expect(
+        mediaForEntityScript('site'),
+        contains(r'*onPlatform{mediaId: id, site: $v}'),
+      );
+      expect(
+        mediaForEntityScript('tag'),
+        contains(r'*taggedWith{mediaId: id, tag: $v}'),
+      );
+      expect(
+        mediaForEntityScript('playlist'),
+        contains(r'*inPlaylist{mediaId: id, playlistId: $v}'),
+      );
+      expect(mediaForEntityScript('uploader'), contains(':limit 30'));
+      expect(mediaForEntityScript('tag', limit: 5), contains(':limit 5'));
+    });
+
+    test('returns null for a non-entity relation', () {
+      expect(mediaForEntityScript('duplicate'), isNull);
+    });
+  });
+
   group('decodeRows', () {
     test('maps header/row tuples into column-keyed maps', () {
       final rows = decodeRows({

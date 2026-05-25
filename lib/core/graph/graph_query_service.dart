@@ -183,6 +183,31 @@ class GraphQueryService {
     ];
   }
 
+  /// Media belonging to an entity (`relation` ∈ `uploader|playlist|site|tag`,
+  /// keyed by [value]) — for expanding an entity node in the graph view
+  /// (P10c-f), returned as `item` [GraphNeighbor]s (which navigate to the item).
+  /// `[]` when the store is unavailable or the relation isn't an entity.
+  Future<List<GraphNeighbor>> entityMedia(
+    String relation,
+    String value, {
+    int limit = 30,
+  }) async {
+    if (!_store.isAvailable) return const [];
+    final script = mediaForEntityScript(relation, limit: limit);
+    if (script == null) return const [];
+    final rows = decodeRows(await _store.runScript(script, {'v': value}));
+    return [
+      for (final r in rows)
+        if (r['id'] case final Object id)
+          if (r['title'] case final Object title)
+            GraphNeighbor(
+              relation: 'item',
+              id: id.toString(),
+              label: title.toString(),
+            ),
+    ];
+  }
+
   Iterable<({String source, String tag})> _tagPairs(
     List<Map<String, Object?>> rows,
   ) => [

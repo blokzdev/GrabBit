@@ -271,4 +271,40 @@ void main() {
       expect(store.calls, isEmpty);
     });
   });
+
+  group('GraphQueryService.entityMedia', () {
+    test('decodes [id, title] into item neighbors', () async {
+      final store = FakeGraphStore(
+        responder: (_) => {
+          'headers': ['id', 'title'],
+          'rows': [
+            ['m1', 'Clip A'],
+            ['m2', 'Clip B'],
+          ],
+        },
+      );
+      final media = await GraphQueryService(
+        store,
+      ).entityMedia('uploader', 'u1');
+      expect(media.map((e) => e.id), ['m1', 'm2']);
+      expect(media.every((e) => e.relation == 'item'), isTrue);
+      expect(media.first.label, 'Clip A');
+      expect(store.calls.single.params['v'], 'u1');
+    });
+
+    test('returns empty for a non-entity relation (no query run)', () async {
+      final store = FakeGraphStore();
+      expect(
+        await GraphQueryService(store).entityMedia('duplicate', 'x'),
+        isEmpty,
+      );
+      expect(store.calls, isEmpty);
+    });
+
+    test('returns empty when the store is unavailable', () async {
+      final store = FakeGraphStore(available: false);
+      expect(await GraphQueryService(store).entityMedia('tag', 't'), isEmpty);
+      expect(store.calls, isEmpty);
+    });
+  });
 }

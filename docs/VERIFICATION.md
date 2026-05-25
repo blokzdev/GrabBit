@@ -557,8 +557,15 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Graceful absence**: on a build/device without the graph the "View in graph" menu item is absent
       and the screen (if reached) shows "Graph unavailable"; no crash on a cold graph.
 
-### P10c-f / P10d (later sub-PRs)
-- [ ] **Graph interaction**: tapping a node navigates / expands its neighborhood; edge-type filters work.
+### P10c-f — Interactive graph viz: interaction  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Tap a media node** (centre / duplicate / co-downloaded / expanded item) → opens that item.
+- [ ] **Tap an entity node** (channel/playlist/platform/tag) → expands to show its media as child
+      nodes (spinner while loading); tap again collapses.
+- [ ] **Long-press** any node → sheet: media → "Open item"; entity → "Open hub" + "Expand/Collapse".
+- [ ] **Edge filters**: the legend chips toggle each relation's nodes/edges on and off.
+- [ ] **Bounded**: an entity with many items expands to a capped set (no runaway); pan/zoom stay smooth.
+
+### P10d (later sub-PRs)
 - [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on
       *any* device, no model download.
 - [ ] Runs on a **low-end device** (embedder-only) without a crash.
