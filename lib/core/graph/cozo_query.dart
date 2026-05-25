@@ -125,6 +125,22 @@ String neighborhoodScript() =>
     '?[rel, id, label] := *coDownloadedWith{mediaId: \$id, otherId: o}, '
     '*media{id: o, title: label}, rel = "codownload", id = o';
 
+/// Media belonging to an entity, for expanding an entity node in the graph view
+/// (P10c-f). `relation` ∈ `uploader|playlist|site|tag` selects the edge; `$v` is
+/// the entity key. Returns up to [limit] `[id, title]` rows; `null` for a
+/// relation that isn't an expandable entity (media nodes navigate instead).
+String? mediaForEntityScript(String relation, {int limit = 30}) {
+  final match = switch (relation) {
+    'uploader' => '*postedBy{mediaId: id, uploaderId: \$v}',
+    'site' => '*onPlatform{mediaId: id, site: \$v}',
+    'tag' => '*taggedWith{mediaId: id, tag: \$v}',
+    'playlist' => '*inPlaylist{mediaId: id, playlistId: \$v}',
+    _ => null,
+  };
+  if (match == null) return null;
+  return '?[id, title] := $match, *media{id, title}\n:limit $limit';
+}
+
 /// Decodes a CozoScript result (`{headers: [...], rows: [[...], ...]}`) into a
 /// list of column-keyed maps. Tolerant of a missing/empty `headers` or `rows`
 /// (returns `const []`). Generalises the `graphRelationNames` header-scan in

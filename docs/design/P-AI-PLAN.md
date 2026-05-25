@@ -79,8 +79,10 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   - **P10c-e — Interactive graph viz: render** *(done)*: `graphview` force-directed render of an item's
     neighborhood (`GraphQueryService.neighborhood`, deterministic edges, no embedder) with pan/zoom +
     a type legend, via item-detail "View in graph".
-  - **P10c-f — Interactive graph viz: interaction**: expand/collapse, tap-to-navigate (`/item/:id`,
-    `/hub/…`), edge-type legend **filters**, perf bounds for large neighborhoods. *(GRAPH-SPEC §7)*
+  - **P10c-f — Interactive graph viz: interaction** *(done)*: tap a media node → its item; tap an
+    entity node → expand its media (`entityMedia`, capped via `:limit`); long-press → open hub /
+    expand-collapse; edge-type **legend filters**. Pure graph build (expand + filter + dedupe) is
+    unit-tested. *(GRAPH-SPEC §7 — graph pillar complete.)*
 - **P10d — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
   descriptions/subtitles/transcripts.
 

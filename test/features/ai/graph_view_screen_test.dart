@@ -68,9 +68,14 @@ void main() {
         GraphNeighbor(relation: 'tag', id: 't1', label: 'funny'),
       ],
     );
-    // The legend (a sibling overlay, independent of graph layout) reads.
-    expect(find.text('Channel'), findsOneWidget);
-    expect(find.text('Tag'), findsOneWidget);
+    // The legend filters (sibling overlay, independent of graph layout) read,
+    // showing only the relations present, selected (visible) and wired to toggle.
+    final channel = find.widgetWithText(FilterChip, 'Channel');
+    expect(channel, findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Tag'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Platform'), findsNothing);
+    expect(tester.widget<FilterChip>(channel).selected, isTrue);
+    expect(tester.widget<FilterChip>(channel).onSelected, isNotNull);
     expect(find.text('Graph unavailable'), findsNothing);
     expect(find.text('No connections yet'), findsNothing);
   });

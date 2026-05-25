@@ -31,6 +31,7 @@ String relationLabel(String relation) => switch (relation) {
   'tag' => 'Tag',
   'duplicate' => 'Duplicate',
   'codownload' => 'Co-downloaded',
+  'item' => 'Item',
   _ => relation,
 };
 
@@ -42,6 +43,7 @@ IconData relationIcon(String relation) => switch (relation) {
   'tag' => Icons.label_outline,
   'duplicate' => Icons.content_copy_outlined,
   'codownload' => Icons.schedule_outlined,
+  'item' => Icons.movie_outlined,
   _ => Icons.circle_outlined,
 };
 
@@ -53,28 +55,68 @@ const Map<String, Color> _relationColors = {
   'tag': Color(0xFFFFA726), // orange
   'duplicate': Color(0xFFEF5350), // red
   'codownload': Color(0xFF66BB6A), // green
+  'item': Color(0xFF90A4AE), // blue-grey (media pulled by expanding an entity)
 };
 
 /// Colour for a relation's node/edge/legend chip.
 Color relationColor(String relation) =>
     _relationColors[relation] ?? Colors.grey;
 
-/// Builds a star graph: the centre item linked to one node per neighbor. Edge
-/// colour comes from [edgePaint] (relation → Paint), supplied by the renderer so
-/// this stays theme-agnostic. Node widgets are produced by the GraphView builder
-/// keyed on [kCenterKey] / [neighborKey].
+/// Entity relations expand to show their media; media relations navigate to the
+/// item. `item` is a media node pulled by expanding an entity (P10c-f).
+const Set<String> kEntityRelations = {'uploader', 'playlist', 'site', 'tag'};
+bool isEntityRelation(String relation) => kEntityRelations.contains(relation);
+bool isMediaRelation(String relation) => !isEntityRelation(relation);
+
+/// Where tapping/opening a node leads: a media node → its item; an entity node →
+/// its hub (uploader hubs key by *name* = [GraphNeighbor.label], the rest by id).
+/// Pure → unit-testable. [extra] carries the hub's display name.
+({String location, String? extra}) navTargetFor(GraphNeighbor n) {
+  if (isMediaRelation(n.relation)) {
+    return (location: '/item/${n.id}', extra: null);
+  }
+  final value = n.relation == 'uploader' ? n.label : n.id;
+  return (
+    location: Uri(
+      path: '/hub/${n.relation}',
+      queryParameters: {'v': value},
+    ).toString(),
+    extra: n.label,
+  );
+}
+
+/// Builds the graph for the explorable neighborhood. The centre links to each
+/// visible level-1 [neighbors]; an entity key present in [expanded] also links to
+/// its pulled media children. Relations in [hiddenRelations] (and their children)
+/// are skipped. Nodes are de-duplicated by key. Edge colour comes from [edgePaint]
+/// (relation → Paint), supplied by the renderer so this stays theme-agnostic.
 Graph buildNeighborhoodGraph({
   required String centerId,
   required List<GraphNeighbor> neighbors,
+  Map<String, List<GraphNeighbor>> expanded = const {},
+  Set<String> hiddenRelations = const {},
   Paint Function(String relation)? edgePaint,
 }) {
   final graph = Graph();
-  final center = Node.Id(kCenterKey);
-  graph.addNode(center);
-  for (final n in neighbors) {
-    final node = Node.Id(neighborKey(n));
+  final nodes = <String, Node>{};
+  Node nodeFor(String key) => nodes.putIfAbsent(key, () {
+    final node = Node.Id(key);
     graph.addNode(node);
-    graph.addEdge(center, node, paint: edgePaint?.call(n.relation));
+    return node;
+  });
+
+  final center = nodeFor(kCenterKey);
+  for (final n in neighbors) {
+    if (hiddenRelations.contains(n.relation)) continue;
+    final key = neighborKey(n);
+    graph.addEdge(center, nodeFor(key), paint: edgePaint?.call(n.relation));
+    for (final child in expanded[key] ?? const <GraphNeighbor>[]) {
+      graph.addEdge(
+        nodeFor(key),
+        nodeFor(neighborKey(child)),
+        paint: edgePaint?.call(child.relation),
+      );
+    }
   }
   return graph;
 }
