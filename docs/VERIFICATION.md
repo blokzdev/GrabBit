@@ -607,10 +607,14 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Auto-hide**: a fresh/empty library shows only the stat cards + chart empty states (no content
       tiles); each tile appears the moment it has something to show.
 
-### P10e (later sub-PRs)
-- [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on
-      *any* device, no model download.
-- [ ] Runs on a **low-end device** (embedder-only) without a crash.
+### P10e — Extractive TextRank summary
+- [ ] An item with a **long description** shows a **Summary** TL;DR (bullet sentences) above the full
+      metadata/description — on *any* device, **no** model download and **no** network.
+- [ ] Items with **no / short** descriptions show **no** Summary section (auto-hidden).
+- [ ] Summary bullets are **verbatim excerpts** of the description (extractive), readable, and stable
+      across reopening the item.
+- [ ] Runs on a **low-end device** without jank or crash (pure Dart, synchronous, tiny input).
+- [ ] *(Transcript/subtitle text as a richer summary source is deferred to P10f.)*
 
 ## P11 — Device-tiered edge LLM engine  *(v1)*
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.

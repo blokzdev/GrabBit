@@ -186,7 +186,8 @@ optional per-source error card; bottom bar (quality dropdown + Add/Download). St
 populated · partial selection · source errors.
 
 ### `[x]` Item Detail — `/item/:id` (P7g)
-Hero media (Chewie player for video / zoomable image); large title; metadata section
+Hero media (Chewie player for video / zoomable image); large title; an auto-hiding extractive
+**Summary** TL;DR (P10e — pure-Dart TextRank over the description, bullet sentences); metadata section
 (uploader, platform, playlist, date, expandable description); tag chips; primary "Save to
 device" (shows destination + "Saved" state); secondary actions Move / Edit / Studio.
 Video + image variants.

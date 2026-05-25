@@ -32,7 +32,11 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  Future<void> pump(WidgetTester tester, MediaItem item) async {
+  Future<void> pump(
+    WidgetTester tester,
+    MediaItem item, {
+    MediaMetadataData? metadata,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -41,7 +45,7 @@ void main() {
           // Finite stubs so the live Drift watch streams don't stall the test.
           metadataForItemProvider(
             'x',
-          ).overrideWith((ref) => Stream.value(null)),
+          ).overrideWith((ref) => Stream.value(metadata)),
           tagsForItemProvider('x').overrideWith((ref) => Stream.value(<Tag>[])),
           collectionsForItemProvider(
             'x',
@@ -193,6 +197,51 @@ void main() {
 
       expect(find.textContaining('Last played'), findsOneWidget);
       expect(find.widgetWithText(ActionChip, 'Faves'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'shows an extractive Summary for a long description (P10e)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const desc =
+          'The rover landed in the crater right on schedule. '
+          'Engineers celebrated as the rover sent back its first images. '
+          'The crater is believed to hold ancient water ice. '
+          'Over the coming weeks the rover will drill into the crater floor. '
+          'Scientists hope the crater samples reveal signs of past life.';
+      await pump(
+        tester,
+        _item(),
+        metadata: const MediaMetadataData(itemId: 'x', description: desc),
+      );
+
+      expect(find.text('Summary'), findsOneWidget);
+      expect(find.textContaining('rover'), findsWidgets);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'no Summary section for a short or absent description (P10e)',
+    (tester) async {
+      await pump(
+        tester,
+        _item(),
+        metadata: const MediaMetadataData(
+          itemId: 'x',
+          description: 'A short clip. Nothing more.',
+        ),
+      );
+      expect(find.text('Summary'), findsNothing);
+
+      await pump(tester, _item()); // no metadata at all
+      expect(find.text('Summary'), findsNothing);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );

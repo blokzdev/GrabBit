@@ -238,7 +238,7 @@ actions and share a file out — all offline.
 
 ## P10 — Baseline edge AI + Cozo graph/vector foundation  *(device-universal)*
 **Goals:** stand up the bundled **on-device graph + vector engine** and the always-available,
-no-LLM-required feature floor. Everything here runs on *any* device. Ships as sub-PRs (P10a–e).
+no-LLM-required feature floor. Everything here runs on *any* device. Ships as sub-PRs (P10a–f).
 **Deliverables:**
 - **Cozo foundation**: a `CozoHostApi` Pigeon→Kotlin bridge to the official Maven AAR
   `io.github.cozodb:cozo_android:0.7.2` (mirrors the youtubedl-android wiring); a pure-Dart
@@ -257,12 +257,15 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   `/library`). Visualizes the on-device footprint — storage % by media/file type & platform, library
   stats, recent activity, suggestions, and a graph tile — mostly composing existing providers with
   **`fl_chart`** viz. All on-device, no telemetry. See `docs/design/P-AI-PLAN.md`.
-- **P10e — Extractive summaries**: a zero-dependency, pure-Dart **TextRank** floor over
-  descriptions/subtitles/transcripts.
+- **P10e — Extractive summaries**: a zero-dependency, pure-Dart **TextRank** floor over an item's
+  **description**, surfaced as an auto-hiding "Summary" TL;DR on item-detail.
+- **P10f — Transcript-text capture**: an on-demand "Get transcript" action + a "fetch auto-captions"
+  setting; parse/dedupe the downloaded `.vtt/.srt` sidecars into a stored `MediaMetadata.transcript`,
+  which then becomes the preferred TextRank source (and feeds later search/RAG).
 **Exit criteria:** on any device, the Cozo index builds & rebuilds; semantic search + "related"
 return sensible results offline; entity hubs and the graph view render; near-dup clusters and tag
-suggestions work; the Dashboard summarizes the on-device footprint — all with the small embedder, no
-LLM.
+suggestions work; the Dashboard summarizes the on-device footprint; an extractive TL;DR appears on
+items with enough text — all with the small embedder, no LLM.
 **Refs:** `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`, `docs/design/P-AI-PLAN.md`.
 
 ## P11 — Device-tiered edge LLM engine  *(minimal feature surface)*
