@@ -110,8 +110,9 @@ abstract interface class InferenceEngine {
   a Duplicates auto-album *(P10c-d-1, shipped)* + Suggested similarity albums *(P10c-d-2, shipped)*; and
   **interactive graph viz** — render *(P10c-e, shipped)* + interaction *(P10c-f, shipped)* — read via
   `GraphQueryService`; graph features detailed in `GRAPH-SPEC.md` §7. **(P10c graph pillar complete.)**
-- **Extractive summaries (TextRank)** — zero-dependency, pure-Dart floor over
-  descriptions/subtitles/transcripts; the always-available TL;DR.
+- **Extractive summaries (TextRank)** — zero-dependency, pure-Dart floor; the always-available TL;DR.
+  *(P10e shipped)* v1 input is the item **description**; subtitle/transcript text becomes the preferred
+  source once **P10f** captures it (`MediaMetadata.transcript`).
 
 ### P11 — tiered edge-LLM engine (minimal feature surface)
 - `DeviceCapabilityService` + tiers + `ModelCapabilityMatrix`; model catalog + download + integrity +

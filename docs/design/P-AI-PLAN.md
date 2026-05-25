@@ -98,8 +98,13 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   - **P10d-3 — Recent / suggestions / graph tiles** *(done)*: "Recently added" + "Recently opened"
     media rows, a suggested-albums list, a duplicates callout, and an "Explore graph" entry card —
     all auto-hiding when empty; the graph card is hidden when the on-device graph is unavailable.
-- **P10e — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
-  descriptions/subtitles/transcripts.
+- **P10e — Extractive summaries** *(done)*: zero-dependency pure-Dart **TextRank** floor (`lib/core/text/textrank.dart`)
+  over an item's **description**, surfaced as an auto-hiding "Summary" TL;DR on the item-detail screen.
+  Runs on any device, no model/network.
+- **P10f — Transcript-text capture** *(next)*: on-demand "Get transcript" action + a "fetch
+  auto-captions" setting; parse/dedupe the downloaded `.vtt/.srt` sidecars into a stored
+  `MediaMetadata.transcript`, which then becomes the preferred TextRank source (and feeds future
+  search/RAG).
 
 **Exit:** on any device, the Cozo index builds & rebuilds; semantic search + "related" return
 sensible results offline; entity hubs and the graph view render; near-dup clusters and tag

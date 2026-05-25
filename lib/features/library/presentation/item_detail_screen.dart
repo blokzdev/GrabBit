@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
+import 'package:grabbit/core/text/textrank.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
@@ -232,6 +233,7 @@ class _ItemBody extends StatelessWidget {
                 ],
               ),
               _DetailChips(item: item),
+              _SummarySection(itemId: item.id),
               _MetadataSection(itemId: item.id),
               if (item.notes != null && item.notes!.isNotEmpty) ...[
                 SizedBox(height: tokens.spaceMd),
@@ -416,6 +418,57 @@ class _DetailChips extends StatelessWidget {
 
 /// Uploader / username / playlist / upload date + an expandable description,
 /// from the metadata captured at download time.
+/// Extractive TextRank summary (P10e) for an item's text. Memoized per item;
+/// recomputes whenever the item's metadata changes. Today the source is the
+/// description; once transcripts land (P10f) this becomes `transcript ??
+/// description` and the watching UI updates automatically.
+final itemSummaryProvider = Provider.family<List<String>, String>((
+  ref,
+  itemId,
+) {
+  final meta = ref.watch(metadataForItemProvider(itemId)).asData?.value;
+  final text = meta?.description;
+  if (text == null || text.trim().isEmpty) return const [];
+  return summarize(text);
+});
+
+/// A short extractive TL;DR shown above the full metadata/description. Hidden
+/// when there's nothing worth condensing (short or absent text).
+class _SummarySection extends ConsumerWidget {
+  const _SummarySection({required this.itemId});
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final sentences = ref.watch(itemSummaryProvider(itemId));
+    if (sentences.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Summary', style: theme.textTheme.titleSmall),
+          SizedBox(height: tokens.spaceXs),
+          for (final s in sentences)
+            Padding(
+              padding: EdgeInsets.only(bottom: tokens.spaceXs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('•  ', style: theme.textTheme.bodyMedium),
+                  Expanded(child: Text(s, style: theme.textTheme.bodyMedium)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MetadataSection extends ConsumerWidget {
   const _MetadataSection({required this.itemId});
   final String itemId;
