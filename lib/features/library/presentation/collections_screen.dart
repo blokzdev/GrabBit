@@ -15,6 +15,7 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/dedupe_actions.dart';
 import 'package:grabbit/features/library/presentation/grid_sort.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
 
 enum _CollectionsTab { collections, albums }
 
@@ -237,6 +238,8 @@ class _AlbumsView extends ConsumerWidget {
     final dupGroups =
         ref.watch(duplicatesProvider).asData?.value ??
         const <List<MediaItem>>[];
+    final suggested =
+        ref.watch(suggestedAlbumsProvider).asData?.value ?? const [];
 
     return AsyncFade(
       value: sites,
@@ -264,6 +267,16 @@ class _AlbumsView extends ConsumerWidget {
                 count: recent.length,
                 onTap: () => context.push('/album/recentPlayed'),
               ),
+            ],
+            if (suggested.isNotEmpty) ...[
+              const SectionHeader('Suggested', icon: Icons.auto_awesome),
+              for (final album in suggested)
+                _AlbumTile(
+                  icon: Icons.auto_awesome_outlined,
+                  title: album.label,
+                  count: album.items.length,
+                  onTap: () => context.push('/suggested-album', extra: album),
+                ),
             ],
             if (siteList.isNotEmpty) ...[
               const SectionHeader('Platforms', icon: Icons.public),

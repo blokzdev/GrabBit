@@ -99,6 +99,18 @@ void main() {
     });
   });
 
+  group('similarity-clustering reads', () {
+    test('allEmbeddingsScript pulls every stored vector', () {
+      expect(allEmbeddingsScript(), '?[id, v] := *embedding{id, v}');
+    });
+    test('allDuplicatePairsScript reads exact-duplicate pairs', () {
+      expect(
+        allDuplicatePairsScript(),
+        contains('*duplicateOf{mediaId: a, otherId: b}'),
+      );
+    });
+  });
+
   group('decodeRows', () {
     test('maps header/row tuples into column-keyed maps', () {
       final rows = decodeRows({

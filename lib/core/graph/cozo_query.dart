@@ -51,6 +51,17 @@ String duplicateIdsScript() =>
     '?[other] := *duplicateOf{mediaId: \$id, otherId: other}\n'
     '?[other] := *duplicateOf{mediaId: other, otherId: \$id}';
 
+/// Every stored embedding as `[id, v]` (the vector is a list of doubles). Drives
+/// the global similarity-clustering pass (P10c-d-2) — pairwise cosine is computed
+/// in Dart, so this is the only vector read needed for clustering.
+String allEmbeddingsScript() => '?[id, v] := *embedding{id, v}';
+
+/// Every exact-duplicate pair as `[a, b]` (one direction per stored row). Used to
+/// exclude byte-identical pairs from similarity clusters so "Suggested" albums
+/// read as *similar*, not the same file (those live in the Duplicates album).
+String allDuplicatePairsScript() =>
+    '?[a, b] := *duplicateOf{mediaId: a, otherId: b}';
+
 /// Tags co-occurring with item `$id`: tags on the items that share a
 /// deterministic signal with it (same uploader/playlist/tag/co-download),
 /// excluding the tags `$id` already carries. Emits one `[other, tag]` row per

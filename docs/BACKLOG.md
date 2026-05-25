@@ -28,6 +28,10 @@ _(nothing active — pick the next batch from below)_
 - [ ] **Duplicate bulk-cleanup keep-policy** — P10c-d-1's **Clean up** keeps the *oldest* copy in each
       group. Offer alternatives (keep *largest* / *newest* / let the user pick which to keep) if the
       fixed policy proves too blunt on-device. *(From P10c-d-1.)*
+- [ ] **Similarity-clustering scale path** — P10c-d-2 computes Suggested-album clusters by pulling all
+      embeddings and doing **pairwise cosine in Dart** (exact, simple, fine for modest libraries). If
+      it gets slow on large libraries, move to **HNSW-per-item** queries or **materialize `similarTo`
+      edges** during sync (the schema already reserves the relation). *(From P10c-d-2.)*
 - [ ] **Cross-type related entities on hubs** — P10c-c-2 shipped a tag-only **"Related tags"** strip
       (co-occurrence over `taggedWith`). Extend it to related **creators / playlists**, ranked by
       degree/PageRank (per `docs/GRAPH-SPEC.md §7`), as typed chips that open the matching hub. The

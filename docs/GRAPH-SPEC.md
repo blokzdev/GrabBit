@@ -149,7 +149,7 @@ abstract interface class GraphStore {
 > **not** live on the store; orchestration sits in services that depend on the interface (never a
 > concrete engine): `GraphSyncService` owns writes/projection/embedding-backfill, and **`GraphQueryService`**
 > (P10c, `lib/core/graph/graph_query_service.dart`) owns reads (`vectorSearch`, and later `relatedTo`,
-> entity hubs, near-dup, …) over `runScript`, with pure CozoScript builders in `cozo_query.dart`. This
+> tag co-occurrence, and `similarityClusters` for near-dup/Suggested albums) over `runScript`, with pure CozoScript builders in `cozo_query.dart`. This
 > keeps query shapes unit-testable without the native engine.
 
 - `lib/core/graph/android_cozo_graph_store.dart` — Android impl over the `CozoHostApi` Pigeon bridge
@@ -255,7 +255,7 @@ gracefully when `GraphStore.isAvailable` is false.
 |---|---|
 | **Related / "More like this"** (P10c-b, **live**) | `GraphQueryService.relatedTo`: HNSW vector search over the item's *own* stored vector + a pure-Datalog neighbour query (shared uploader/playlist/tag/co-download), blended & ranked in Dart (`related_ranking.dart`). Graph-only when the item isn't embedded; excludes `duplicateOf` partners. Also the retrieval half of P12 GraphRAG. |
 | **Entity hubs** (P10c-c, **live**) | **c-1 (every device):** navigable hubs — uploader/playlist/tag/site on item-detail are tappable → an `EntityHubScreen` listing that entity's items via Drift `watchFiltered` (no graph). **c-2 (graph):** a **"Related tags"** strip on each hub — `GraphQueryService.relatedTags` collects the tags carried by the entity's items (uploader-name bridged to `uploaderId` via the `uploader` node) and ranks by support; chips open the tag hub. Degenerates to nothing when the graph is unavailable. |
-| **Proactive grouping** (P10c-d) | **d-1 (live, every device):** a distinct **Duplicates** auto-album in Collections→Albums (exact-hash `duplicateOf`), with bulk **Clean up** (keep oldest) + **Review** → the cleanup screen. **d-2 (graph):** **Suggested** similarity albums — query-time vector clusters (cosine NN + connected components, exact pairs excluded) with one-tap **Save as collection**. The richer community-detection / label-propagation auto-albums + "Rediscover" stay **P12** (below). |
+| **Proactive grouping** (P10c-d) | **d-1 (live, every device):** a distinct **Duplicates** auto-album in Collections→Albums (exact-hash `duplicateOf`), with bulk **Clean up** (keep oldest) + **Review** → the cleanup screen. **d-2 (graph, live):** **Suggested** similarity albums — query-time vector clusters (pairwise cosine + connected components in `near_duplicate_clustering.dart`, exact pairs excluded) with one-tap **Save as collection**. The richer community-detection / label-propagation auto-albums + "Rediscover" stay **P12** (below). |
 | **Tag suggestions** (P10c-c-2, **live**) | `GraphQueryService.coOccurringTags`: tags on items sharing a deterministic signal with this one (`postedBy`/`inPlaylist`/`taggedWith`/`coDownloadedWith`), minus the item's own tags, ranked in Dart (`cooccurrence_ranking.dart`) by distinct supporting items. Surfaced as tappable chips in the metadata editor. Pure Datalog — every device. |
 | **Interactive graph viz** (P10) | neighborhood query → render with `graphview` (force-directed, expand/collapse). |
 | **Graph-clustered auto-albums** (P12) | **community detection / label propagation** over the similarity + entity graph. |
