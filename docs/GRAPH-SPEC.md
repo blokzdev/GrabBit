@@ -253,7 +253,7 @@ gracefully when `GraphStore.isAvailable` is false.
 
 | Feature (phase) | Cozo mechanism |
 |---|---|
-| **Related / "More like this"** (P10) | HNSW `~embedding{…}` vector search + graph re-rank (shared uploader/tag/playlist boosts). Also the retrieval half of P12 GraphRAG. |
+| **Related / "More like this"** (P10c-b, **live**) | `GraphQueryService.relatedTo`: HNSW vector search over the item's *own* stored vector + a pure-Datalog neighbour query (shared uploader/playlist/tag/co-download), blended & ranked in Dart (`related_ranking.dart`). Graph-only when the item isn't embedded; excludes `duplicateOf` partners. Also the retrieval half of P12 GraphRAG. |
 | **Entity hubs** (P10) | degree / `PageRank` over `postedBy` / `taggedWith` to rank top creators/tags. |
 | **Near-duplicate clusters** (P10) | `duplicateOf` connected components + high-score `similarTo`; optionally Cozo **MinHash-LSH**. |
 | **Tag suggestions** (P10) | co-occurrence over a node's neighborhood. |

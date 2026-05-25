@@ -485,13 +485,22 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **No crash on empty/cold index**: Smart search before any embeddings exist returns a friendly
       "No matches", never a crash.
 
+### P10c-b — Related / "More like this"  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Related appears on detail**: open an item that shares an uploader/playlist/tag (or was
+      downloaded alongside others) → a **"More like this"** carousel shows sensible related items;
+      tapping one opens that item's detail.
+- [ ] **Works without AI**: with Semantic search **off** (no embeddings), Related still appears for
+      items with graph links (same uploader/playlist/tag/co-download) — purely on-device, offline.
+- [ ] **Better with AI**: with embeddings present, semantically similar items (not just same-uploader)
+      surface and rank near the top.
+- [ ] **No duplicates / no self**: the source item never lists itself, and exact duplicates of it
+      don't appear in Related (they belong to near-dup clusters, P10c-d).
+- [ ] **Graceful empty**: an item with no relations (and no embeddings) shows **no** Related section
+      rather than an empty box; never crashes on a cold graph.
+
 ### P10c–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
-- [ ] **Semantic search**: a query that isn't a literal title match still surfaces relevant items
-      (beyond the existing `LIKE` search), fully offline.
-- [ ] **Related / "More like this"**: an item's detail shows sensible related items (same
-      uploader/playlist/tag and/or similar content).
 - [ ] **Entity hubs**: tapping an uploader / playlist / tag / site opens a hub with that entity's
       items + related entities.
 - [ ] **Near-duplicate clusters** and **tag suggestions** appear where expected.

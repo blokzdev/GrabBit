@@ -7,6 +7,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/library/presentation/related_provider.dart';
 
 MediaItem _item({String storageState = 'private', DateTime? lastAccessedAt}) =>
     MediaItem(
@@ -87,6 +88,43 @@ void main() {
 
       expect(find.byType(PopupMenuButton<String>), findsOneWidget);
       expect(find.byTooltip('Favorite'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'shows a "More like this" carousel when related items exist',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final related = _item().copyWith(id: 'y', title: 'Related Clip');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            mediaItemByIdProvider('x').overrideWith((ref) => _item()),
+            metadataForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(null)),
+            tagsForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<Tag>[])),
+            collectionsForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<Collection>[])),
+            relatedItemsProvider('x').overrideWith((ref) async => [related]),
+          ],
+          child: const MaterialApp(home: ItemDetailScreen(itemId: 'x')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('More like this'), findsOneWidget);
+      expect(find.text('Related Clip'), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
