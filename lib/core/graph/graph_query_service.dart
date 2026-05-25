@@ -13,6 +13,21 @@ class VectorHit {
   final double distance;
 }
 
+/// One node connected to a media item in the graph neighborhood (P10c-e):
+/// [relation] ∈ `uploader|playlist|site|tag|duplicate|codownload`, [id] the
+/// target's key, [label] its display name.
+class GraphNeighbor {
+  const GraphNeighbor({
+    required this.relation,
+    required this.id,
+    required this.label,
+  });
+
+  final String relation;
+  final String id;
+  final String label;
+}
+
 /// Read-side orchestration over the [GraphStore], mirroring how
 /// `GraphSyncService` owns write/sync orchestration — the store stays a thin
 /// `runScript` bridge. Every query degrades gracefully: when the store isn't
@@ -145,6 +160,27 @@ class GraphQueryService {
       minSize: minSize,
       excludePairs: exclude,
     );
+  }
+
+  /// The immediate graph neighborhood of media item [id] — its connected
+  /// entities + directly-linked media — for the graph-view render (P10c-e).
+  /// `[]` when the store is unavailable. Pure deterministic edges; no embedder.
+  Future<List<GraphNeighbor>> neighborhood(String id) async {
+    if (!_store.isAvailable) return const [];
+    final rows = decodeRows(
+      await _store.runScript(neighborhoodScript(), {'id': id}),
+    );
+    return [
+      for (final r in rows)
+        if (r['rel'] case final Object rel)
+          if (r['id'] case final Object nid)
+            if (r['label'] case final Object label)
+              GraphNeighbor(
+                relation: rel.toString(),
+                id: nid.toString(),
+                label: label.toString(),
+              ),
+    ];
   }
 
   Iterable<({String source, String tag})> _tagPairs(

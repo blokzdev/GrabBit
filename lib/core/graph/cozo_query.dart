@@ -104,6 +104,27 @@ String? coOccurringTagsForEntityScript(String type) {
       '?[other, tag] := member[other], *taggedWith{mediaId: other, tag}';
 }
 
+/// The immediate graph neighborhood of media item `$id` as `[rel, id, label]`
+/// rows — its connected entities (uploader/playlist/site/tag) and directly
+/// linked media (duplicate/co-download). `rel` ∈ `uploader|playlist|site|tag|
+/// duplicate|codownload`; `id` is the target's key (uploaderId/playlistId/site/
+/// tag-name/other-media-id); `label` is its display name. Pure Datalog over the
+/// deterministic edges — renders on any graph device without the embedder
+/// (P10c-e). Entity hubs/media nodes are labelled by joining their node relation.
+String neighborhoodScript() =>
+    '?[rel, id, label] := *postedBy{mediaId: \$id, uploaderId: u}, '
+    '*uploader{uploaderId: u, name: label}, rel = "uploader", id = u\n'
+    '?[rel, id, label] := *inPlaylist{mediaId: \$id, playlistId: p}, '
+    '*playlist{playlistId: p, title: label}, rel = "playlist", id = p\n'
+    '?[rel, id, label] := *onPlatform{mediaId: \$id, site: s}, '
+    'rel = "site", id = s, label = s\n'
+    '?[rel, id, label] := *taggedWith{mediaId: \$id, tag: t}, '
+    'rel = "tag", id = t, label = t\n'
+    '?[rel, id, label] := *duplicateOf{mediaId: \$id, otherId: o}, '
+    '*media{id: o, title: label}, rel = "duplicate", id = o\n'
+    '?[rel, id, label] := *coDownloadedWith{mediaId: \$id, otherId: o}, '
+    '*media{id: o, title: label}, rel = "codownload", id = o';
+
 /// Decodes a CozoScript result (`{headers: [...], rows: [[...], ...]}`) into a
 /// list of column-keyed maps. Tolerant of a missing/empty `headers` or `rows`
 /// (returns `const []`). Generalises the `graphRelationNames` header-scan in

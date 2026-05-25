@@ -76,8 +76,11 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
       clusters (`GraphQueryService.similarityClusters` → pure `near_duplicate_clustering.dart`)
       surfaced as a **Suggested** album section with one-tap **Save as collection**. Lightweight
       precursor to P12's community-detection auto-albums.
-  - **P10c-e / P10c-f — Interactive graph viz** (`graphview`): render, then expand/collapse +
-    navigation. *(GRAPH-SPEC §7)*
+  - **P10c-e — Interactive graph viz: render** *(done)*: `graphview` force-directed render of an item's
+    neighborhood (`GraphQueryService.neighborhood`, deterministic edges, no embedder) with pan/zoom +
+    a type legend, via item-detail "View in graph".
+  - **P10c-f — Interactive graph viz: interaction**: expand/collapse, tap-to-navigate (`/item/:id`,
+    `/hub/…`), edge-type legend **filters**, perf bounds for large neighborhoods. *(GRAPH-SPEC §7)*
 - **P10d — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
   descriptions/subtitles/transcripts.
 

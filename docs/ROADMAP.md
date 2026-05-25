@@ -259,6 +259,11 @@ return sensible results offline; entity hubs and the graph view render; near-dup
 suggestions work — all with the small embedder, no LLM.
 **Refs:** `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`, `docs/design/P-AI-PLAN.md`.
 
+> **Capstone candidate (post-P10c, unscheduled):** a **Dashboard** home that visualizes the on-device
+> footprint + stats + recent activity + suggestions (incl. a graph tile), unifying P10c. It's a
+> dedicated phase (needs an IA decision — 5th nav destination + new default landing). Tracked in
+> `docs/BACKLOG.md`.
+
 ## P11 — Device-tiered edge LLM engine  *(minimal feature surface)*
 **Goals:** enable on-device generation + transcription with **graceful capability-gating**. No
 cloud, no account, no credits.
