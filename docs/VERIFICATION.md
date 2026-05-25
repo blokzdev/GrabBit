@@ -522,11 +522,22 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Graceful without the graph**: on a device/build with no graph (or empty index), neither the
       suggestions row nor the related-tags strip appears — the editor and hubs are unchanged, no crash.
 
-### P10c-d / P10c-e–f / P10d (later sub-PRs)
-- [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
-      reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
-- [ ] **Near-duplicate clusters** appear where expected (P10c-d). *(Entity hubs and tag suggestions
-      shipped in P10c-c-1/-2 — see those sections above.)*
+### P10c-d-1 — Duplicates album + bulk cleanup  *(no AI/graph needed — works on any build)*
+- [ ] **Card appears/hides**: with duplicate copies present (Scan in the Duplicates screen if needed)
+      → Collections → Albums shows a distinct **Duplicates** card summarizing "M groups · N extra
+      copies"; with no duplicates the card is absent.
+- [ ] **Clean up (bulk)**: tap **Clean up** → a confirm names the count → confirming removes the
+      extras (keeps the oldest of each group); the card updates/hides. The same action exists on the
+      Duplicates screen's app bar.
+- [ ] **Review + compare**: **Review** opens the Duplicates screen; each row shows **date · size** and
+      the kept (oldest) copy carries a **"Keep"** badge; per-item delete still works.
+- [ ] **Secure delete honored**: with secure-delete on, bulk Clean up routes through the same secure
+      deletion as single deletes.
+
+### P10c-d-2 / P10c-e–f / P10d (later sub-PRs)
+- [ ] **Suggested albums**: with the embedder on and very-similar items present → Collections →
+      Albums shows a **Suggested** section; opening one lists its items; **Save as collection** creates
+      a real collection. Absent when AI is off.
 - [ ] **Graph view**: the interactive graph renders; tapping a node expands its neighborhood;
       pan/zoom work.
 - [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on

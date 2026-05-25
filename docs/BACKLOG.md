@@ -25,6 +25,9 @@ _(nothing active — pick the next batch from below)_
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 - [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
       v2/P15: it's native, on-device-only verification, and pure polish.)*
+- [ ] **Duplicate bulk-cleanup keep-policy** — P10c-d-1's **Clean up** keeps the *oldest* copy in each
+      group. Offer alternatives (keep *largest* / *newest* / let the user pick which to keep) if the
+      fixed policy proves too blunt on-device. *(From P10c-d-1.)*
 - [ ] **Cross-type related entities on hubs** — P10c-c-2 shipped a tag-only **"Related tags"** strip
       (co-occurrence over `taggedWith`). Extend it to related **creators / playlists**, ranked by
       degree/PageRank (per `docs/GRAPH-SPEC.md §7`), as typed chips that open the matching hub. The

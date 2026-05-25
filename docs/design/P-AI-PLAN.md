@@ -66,8 +66,15 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
       powers tappable **tag suggestions** in the metadata editor and a **"Related tags"** strip on each
       entity hub. Pure Datalog, every device; renders nothing when the graph is unavailable.
       (Cross-type related entities — creators/playlists — left as a future enhancement.)
-  - **P10c-d — Near-duplicate clusters** (vector `similarTo` folded into the existing exact-hash
-    `DuplicatesScreen`).
+  - **P10c-d — Collections→Albums as the proactive grouping hub** *(reframed: similarity is a
+    discovery signal, not cleanup; the Duplicates *screen* stays the exact-hash detail view):*
+    - **P10c-d-1 — Duplicates album + bulk cleanup** *(done)*: a distinct, actionable **Duplicates**
+      card in Collections→Albums (auto-hidden when clean) with bulk **Clean up** (keep oldest per
+      group) + **Review** → the screen; compare detail (date·size + "Keep" badge) on the rows. Pure
+      Drift, every device (`dedupe_actions.dart`).
+    - **P10c-d-2 — Suggested similarity albums + Save**: embedder-gated, query-time vector clusters
+      surfaced as a **Suggested** album section with one-tap **Save as collection**. Lightweight
+      precursor to P12's community-detection auto-albums.
   - **P10c-e / P10c-f — Interactive graph viz** (`graphview`): render, then expand/collapse +
     navigation. *(GRAPH-SPEC §7)*
 - **P10d — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
