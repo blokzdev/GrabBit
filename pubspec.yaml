@@ -49,6 +49,10 @@ dependencies:
   # Brand (P7)
   flutter_svg: ^2.3.0        # render the brand SVG mark in-app (resolution-independent)
 
+  # On-device AI (P10b-2): MediaPipe/LiteRT runtime, loaded embedder-only for the
+  # opt-in semantic-search embedder (Gecko); also the planned P11 LLM runtime.
+  flutter_gemma: ^0.16.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

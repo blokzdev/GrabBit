@@ -424,7 +424,24 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Persists across restart**: force-quit + reopen → self-test still reports the same counts
       (no rebuild needed); the downloader/library are unaffected throughout.
 
-### P10b-2–d (later sub-PRs)
+### P10b-2a — Embedder foundation + first-run AI setup  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **First run shows AI setup**: a fresh install → disclaimer → after accepting, the
+      **"Set up AI features"** screen appears (before Home).
+- [ ] **Skip works**: tap **Skip for now** → lands on Home, no download; force-quit + reopen → the
+      AI-setup screen is **not** shown again.
+- [ ] **Set up downloads the model**: re-install (or enable from Settings) → **Set up** →
+      a progress bar runs to 100% (~110 MB, one time) → lands on Home.
+- [ ] **Settings opt-in**: Settings → Graph database → **Semantic search** toggle off by default;
+      turning it on downloads the model (snackbar "Semantic search ready"); turning it off stops use.
+- [ ] **Test embedder**: Settings → Graph database → **Test embedder** → after the model is
+      downloaded, snackbar reads **"Embedder OK — 768-d vector"**; before download it reads
+      "enable Semantic search first".
+- [ ] **Existing-install upgrade**: updating over a prior install does **not** show the AI-setup
+      screen, and semantic search stays off until opted in.
+- [ ] **Graceful without AI**: with semantic search off (or on a device where the embedder can't
+      load), the downloader/library/queue/graph all work exactly as before.
+
+### P10b-2b–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
 - [ ] **Semantic search**: a query that isn't a literal title match still surfaces relevant items

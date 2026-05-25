@@ -33,7 +33,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `logger` | Structured logging |
 | **Android native:** `io.github.junkfood02.youtubedl-android:{library,ffmpeg}:0.17.3` (Maven Central; yt-dlp + ffmpeg + Python; Kotlin pkg `com.yausername.youtubedl_android`) | Download engine |
 | **Graph+vector (P10):** `io.github.cozodb:cozo_android:0.7.2` (Maven Central AAR) via a `CozoHostApi` Pigeon bridge; `ffi`+`ffigen` (dev) for the Windows `dart:ffi` impl (P14). MPL-2.0. | On-device graph + HNSW vector DB. See `docs/GRAPH-SPEC.md`. |
-| **On-device AI (P11–P12):** `flutter_gemma` (MediaPipe/LiteRT-LM — embeddings + LLM + RAG), a whisper.cpp pkg (`whisper_ggml_plus`/`whisper_kit`), ML Kit (OCR/translate) | On-device/edge AI. See `docs/AI-SPEC.md`. |
+| **On-device AI (P10b-2+):** `flutter_gemma` (MediaPipe/LiteRT-LM — embeddings + LLM + RAG; added P10b-2 embedder-only), a whisper.cpp pkg (`whisper_ggml_plus`/`whisper_kit`), ML Kit (OCR/translate) | On-device/edge AI. See `docs/AI-SPEC.md`. |
 | **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
 | ~~**v3:** `supabase_flutter`, Stripe/PayPal SDKs~~ | **Dropped** (no cloud/credits). |
 

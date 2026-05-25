@@ -46,6 +46,10 @@ void main() {
       expect(s.minFreeSpaceMb, 500);
       expect(s.pauseOnLowBattery, isFalse);
       expect(s.lowBatteryThreshold, 15);
+      // P10b-2 AI defaults: opt-in off; first-run gate armed only by accepting
+      // the disclaimer (so existing installs aren't ambushed).
+      expect(s.semanticSearchEnabled, isFalse);
+      expect(s.aiSetupSeen, isTrue);
     });
 
     test('a legacy blob without the P9f fields decodes to defaults', () {
@@ -219,7 +223,7 @@ void main() {
       expect(saved.splitChapters, isTrue);
     });
 
-    test('acceptDisclaimer persists the flag', () async {
+    test('acceptDisclaimer persists the flag and arms ai-setup', () async {
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
       final container = ProviderContainer(
@@ -229,12 +233,34 @@ void main() {
 
       final loaded = await container.read(settingsControllerProvider.future);
       expect(loaded.disclaimerAccepted, isFalse);
+      expect(loaded.aiSetupSeen, isTrue);
 
       await container
           .read(settingsControllerProvider.notifier)
           .acceptDisclaimer();
 
-      expect((await SettingsRepository(db).read()).disclaimerAccepted, isTrue);
+      final saved = await SettingsRepository(db).read();
+      expect(saved.disclaimerAccepted, isTrue);
+      // Accepting the disclaimer arms the one-time AI-setup screen.
+      expect(saved.aiSetupSeen, isFalse);
+    });
+
+    test('AI flag setters persist (P10b-2)', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(settingsControllerProvider.notifier);
+      await container.read(settingsControllerProvider.future);
+      await notifier.setSemanticSearchEnabled(true);
+      await notifier.markAiSetupSeen();
+
+      final saved = await SettingsRepository(db).read();
+      expect(saved.semanticSearchEnabled, isTrue);
+      expect(saved.aiSetupSeen, isTrue);
     });
 
     test(

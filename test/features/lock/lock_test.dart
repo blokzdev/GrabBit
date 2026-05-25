@@ -75,6 +75,7 @@ void main() {
       expect(
         startupRedirect(
           disclaimerAccepted: false,
+          aiSetupSeen: true,
           lockEnabled: false,
           locked: false,
           location: '/',
@@ -85,6 +86,7 @@ void main() {
       expect(
         startupRedirect(
           disclaimerAccepted: false,
+          aiSetupSeen: true,
           lockEnabled: false,
           locked: false,
           location: '/disclaimer',
@@ -97,6 +99,7 @@ void main() {
       expect(
         startupRedirect(
           disclaimerAccepted: true,
+          aiSetupSeen: true,
           lockEnabled: false,
           locked: false,
           location: '/disclaimer',
@@ -110,6 +113,7 @@ void main() {
       expect(
         startupRedirect(
           disclaimerAccepted: false,
+          aiSetupSeen: true,
           lockEnabled: true,
           locked: true,
           location: '/',
@@ -122,6 +126,7 @@ void main() {
       expect(
         startupRedirect(
           disclaimerAccepted: true,
+          aiSetupSeen: true,
           lockEnabled: true,
           locked: true,
           location: '/',
@@ -131,6 +136,58 @@ void main() {
       expect(
         startupRedirect(
           disclaimerAccepted: true,
+          aiSetupSeen: true,
+          lockEnabled: false,
+          locked: false,
+          location: '/',
+        ),
+        isNull,
+      );
+    });
+
+    test('routes a new user to ai-setup after the disclaimer', () {
+      // acceptDisclaimer() leaves disclaimerAccepted=true, aiSetupSeen=false.
+      expect(
+        startupRedirect(
+          disclaimerAccepted: true,
+          aiSetupSeen: false,
+          lockEnabled: false,
+          locked: false,
+          location: '/',
+        ),
+        '/ai-setup',
+      );
+      // Already on ai-setup: no further redirect.
+      expect(
+        startupRedirect(
+          disclaimerAccepted: true,
+          aiSetupSeen: false,
+          lockEnabled: false,
+          locked: false,
+          location: '/ai-setup',
+        ),
+        isNull,
+      );
+    });
+
+    test('leaves ai-setup once seen', () {
+      expect(
+        startupRedirect(
+          disclaimerAccepted: true,
+          aiSetupSeen: true,
+          lockEnabled: false,
+          locked: false,
+          location: '/ai-setup',
+        ),
+        '/',
+      );
+    });
+
+    test('existing install (aiSetupSeen) is never shown ai-setup', () {
+      expect(
+        startupRedirect(
+          disclaimerAccepted: true,
+          aiSetupSeen: true,
           lockEnabled: false,
           locked: false,
           location: '/',

@@ -112,8 +112,18 @@ class SettingsController extends _$SettingsController {
   Future<void> setSecureDelete(bool value) async =>
       _update((await future).copyWith(secureDelete: value));
 
-  Future<void> acceptDisclaimer() async =>
-      _update((await future).copyWith(disclaimerAccepted: true));
+  /// Accepts the disclaimer and arms the first-run AI-setup screen: clearing
+  /// [SettingsModel.aiSetupSeen] means only a genuinely new user (who just
+  /// passed the disclaimer) is routed through `/ai-setup` next.
+  Future<void> acceptDisclaimer() async => _update(
+    (await future).copyWith(disclaimerAccepted: true, aiSetupSeen: false),
+  );
+
+  Future<void> setSemanticSearchEnabled(bool value) async =>
+      _update((await future).copyWith(semanticSearchEnabled: value));
+
+  Future<void> markAiSetupSeen() async =>
+      _update((await future).copyWith(aiSetupSeen: true));
 
   Future<void> setAutoCheckEngineUpdate(bool value) async =>
       _update((await future).copyWith(autoCheckEngineUpdate: value));
