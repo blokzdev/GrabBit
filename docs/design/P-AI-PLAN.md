@@ -93,10 +93,11 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     destination), the `dashboard` feature module, the hand-written `dashboardSummaryProvider`, and
     number/text **stat tiles** (library · storage · queue · collections) with honest empty/loading/
     error states. No charts yet.
-  - **P10d-2 — Storage & activity visualizations**: add `fl_chart`; donut charts for storage by type &
-    platform + an activity chart, with pure unit-tested chart-data mappers.
-  - **P10d-3 — Recent / suggestions / graph tiles**: recent-media grid, suggested-album section, and a
-    graph preview tile (honest "unavailable" state when the graph/AI is off).
+  - **P10d-2 — Storage & activity visualizations** *(done)*: added `fl_chart`; donut charts for storage
+    by type & platform + a library-activity bar chart, with pure unit-tested chart-data mappers.
+  - **P10d-3 — Recent / suggestions / graph tiles** *(done)*: "Recently added" + "Recently opened"
+    media rows, a suggested-albums list, a duplicates callout, and an "Explore graph" entry card —
+    all auto-hiding when empty; the graph card is hidden when the on-device graph is unavailable.
 - **P10e — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
   descriptions/subtitles/transcripts.
 

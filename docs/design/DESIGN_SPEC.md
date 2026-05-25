@@ -153,8 +153,13 @@ card with a `SectionHeader`): **Storage by type** donut, **Storage by platform**
 platforms fold into a muted "Other" slice), and **Library activity** bars (additions over the
 last 30 days). Donuts show a centre total + a colour-swatch legend; the palette derives from
 the active `ColorScheme` so it follows dynamic colour and dark/AMOLED. Each chart tile has its
-own compact states: chart · "no data yet" · shimmer · error+retry. *(P10d-3 adds recent/
-suggestion/graph tiles.)*
+own compact states: chart · "no data yet" · shimmer · error+retry. Below the charts, P10d-3 adds
+discovery/content sections that **auto-hide when empty** (so a fresh library stays minimal):
+**Recently added** + **Recently opened** horizontal media rows (the latter labelled "opened", not
+"played", since the library spans video/audio/images and future docs), a **Suggested for you**
+list (on-device similarity clusters; hidden when AI is off), a **Duplicates** callout (links to the
+Duplicates screen), and an **Explore graph** entry card that opens the newest item's relationship
+graph (hidden when the on-device graph is unavailable).
 
 ### `[x]` Home — Library view — `/library` (P7c, moved off `/` in P10d)
 Tonal app bar (wordmark + Sort, Collections w/ badge, Queue w/ badge + active dot);
