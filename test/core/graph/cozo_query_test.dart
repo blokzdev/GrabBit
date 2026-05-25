@@ -111,6 +111,26 @@ void main() {
     });
   });
 
+  group('neighborhoodScript', () {
+    test('unions entity + linked-media relations as [rel, id, label]', () {
+      final s = neighborhoodScript();
+      expect(s, contains('?[rel, id, label]'));
+      for (final r in [
+        'postedBy',
+        'inPlaylist',
+        'onPlatform',
+        'taggedWith',
+        'duplicateOf',
+        'coDownloadedWith',
+      ]) {
+        expect(s, contains('*$r'));
+      }
+      expect(s, contains('rel = "uploader"'));
+      expect(s, contains('rel = "codownload"'));
+      expect(s, contains('*media{id: o, title: label}'));
+    });
+  });
+
   group('decodeRows', () {
     test('maps header/row tuples into column-keyed maps', () {
       final rows = decodeRows({

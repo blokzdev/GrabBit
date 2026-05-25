@@ -1,0 +1,77 @@
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/graph/graph_query_service.dart';
+import 'package:grabbit/core/graph/graph_store_provider.dart';
+import 'package:grabbit/features/ai/presentation/graph_view_providers.dart';
+import 'package:grabbit/features/ai/presentation/graph_view_screen.dart';
+import 'package:grabbit/features/library/presentation/library_controller.dart';
+
+import '../../support/graph_fakes.dart';
+
+void main() {
+  late AppDatabase db;
+  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  tearDown(() => db.close());
+
+  Future<void> pump(
+    WidgetTester tester, {
+    required bool available,
+    required List<GraphNeighbor> neighbors,
+  }) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          graphStoreProvider.overrideWithValue(
+            FakeGraphStore(available: available),
+          ),
+          mediaItemByIdProvider('x').overrideWith((ref) => null),
+          graphNeighborhoodProvider('x').overrideWith((ref) async => neighbors),
+        ],
+        child: const MaterialApp(home: GraphViewScreen(itemId: 'x')),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+  }
+
+  testWidgets('shows the unavailable state when the graph is off', (
+    tester,
+  ) async {
+    await pump(tester, available: false, neighbors: const []);
+    expect(find.text('Graph unavailable'), findsOneWidget);
+  });
+
+  testWidgets('shows the empty state when the item has no connections', (
+    tester,
+  ) async {
+    await pump(tester, available: true, neighbors: const []);
+    expect(find.text('No connections yet'), findsOneWidget);
+  });
+
+  testWidgets('renders the legend when there is a neighborhood', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      available: true,
+      neighbors: const [
+        GraphNeighbor(relation: 'uploader', id: 'u1', label: 'Rick'),
+        GraphNeighbor(relation: 'tag', id: 't1', label: 'funny'),
+      ],
+    );
+    // The legend (a sibling overlay, independent of graph layout) reads.
+    expect(find.text('Channel'), findsOneWidget);
+    expect(find.text('Tag'), findsOneWidget);
+    expect(find.text('Graph unavailable'), findsNothing);
+    expect(find.text('No connections yet'), findsNothing);
+  });
+}

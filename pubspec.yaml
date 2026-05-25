@@ -53,6 +53,10 @@ dependencies:
   # opt-in semantic-search embedder (Gecko); also the planned P11 LLM runtime.
   flutter_gemma: ^0.16.1
 
+  # Graph visualization (P10c-e): force-directed explorer for a media item's
+  # on-device graph neighborhood. Pure-Dart, no native deps.
+  graphview: ^1.5.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

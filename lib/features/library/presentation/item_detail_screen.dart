@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
@@ -67,6 +68,8 @@ class ItemDetailScreen extends ConsumerWidget {
                     await moveItemsTo(context, ref, [row]);
                   case 'studio':
                     await context.push('/item/$itemId/studio');
+                  case 'graph':
+                    await context.push('/item/$itemId/graph');
                   case 'edit':
                     await context.push('/item/$itemId/edit');
                   case 'share':
@@ -81,15 +84,35 @@ class ItemDetailScreen extends ConsumerWidget {
                     await _deleteAndPop(context, ref, row);
                 }
               },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'save', child: Text('Save to device')),
-                PopupMenuItem(value: 'move', child: Text('Move to folder')),
-                PopupMenuItem(value: 'studio', child: Text('Edit in Studio')),
-                PopupMenuItem(value: 'edit', child: Text('Edit info')),
-                PopupMenuItem(value: 'share', child: Text('Share file')),
-                PopupMenuItem(value: 'copy', child: Text('Copy source URL')),
-                PopupMenuItem(value: 'open', child: Text('Open source link')),
-                PopupMenuItem(value: 'delete', child: Text('Delete')),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'save',
+                  child: Text('Save to device'),
+                ),
+                const PopupMenuItem(
+                  value: 'move',
+                  child: Text('Move to folder'),
+                ),
+                const PopupMenuItem(
+                  value: 'studio',
+                  child: Text('Edit in Studio'),
+                ),
+                if (ref.watch(graphStoreProvider).isAvailable)
+                  const PopupMenuItem(
+                    value: 'graph',
+                    child: Text('View in graph'),
+                  ),
+                const PopupMenuItem(value: 'edit', child: Text('Edit info')),
+                const PopupMenuItem(value: 'share', child: Text('Share file')),
+                const PopupMenuItem(
+                  value: 'copy',
+                  child: Text('Copy source URL'),
+                ),
+                const PopupMenuItem(
+                  value: 'open',
+                  child: Text('Open source link'),
+                ),
+                const PopupMenuItem(value: 'delete', child: Text('Delete')),
               ],
             ),
           ],

@@ -246,4 +246,29 @@ void main() {
       expect(store.calls, isEmpty);
     });
   });
+
+  group('GraphQueryService.neighborhood', () {
+    test('decodes [rel, id, label] rows into GraphNeighbors', () async {
+      final store = FakeGraphStore(
+        responder: (_) => {
+          'headers': ['rel', 'id', 'label'],
+          'rows': [
+            ['uploader', 'u1', 'Rick'],
+            ['tag', 't1', 'funny'],
+          ],
+        },
+      );
+      final n = await GraphQueryService(store).neighborhood('a');
+      expect(n.map((e) => e.relation), ['uploader', 'tag']);
+      expect(n.first.id, 'u1');
+      expect(n.first.label, 'Rick');
+      expect(store.calls.single.params['id'], 'a');
+    });
+
+    test('returns empty when the store is unavailable', () async {
+      final store = FakeGraphStore(available: false);
+      expect(await GraphQueryService(store).neighborhood('a'), isEmpty);
+      expect(store.calls, isEmpty);
+    });
+  });
 }

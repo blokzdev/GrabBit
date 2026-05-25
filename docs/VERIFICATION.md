@@ -546,9 +546,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Graceful without AI**: with Semantic search off / unsupported, no Suggested section appears
       (the Duplicates album still works); no crash on a cold/empty index.
 
-### P10c-e–f / P10d (later sub-PRs)
-- [ ] **Graph view**: the interactive graph renders; tapping a node expands its neighborhood;
-      pan/zoom work.
+### P10c-e — Interactive graph viz: render  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Neighborhood renders**: open a well-connected item → overflow menu → **View in graph** → a
+      force-directed graph shows the item at the centre with its channel/playlist/platform/tags and any
+      duplicate/co-downloaded media around it.
+- [ ] **Pan/zoom + legend**: the graph pans and zooms; the legend maps each colour/icon to its relation
+      (Channel/Playlist/Platform/Tag/Duplicate/Co-downloaded).
+- [ ] **No embedder needed**: works with **Semantic search off** (deterministic edges); an item with no
+      edges shows "No connections yet".
+- [ ] **Graceful absence**: on a build/device without the graph the "View in graph" menu item is absent
+      and the screen (if reached) shows "Graph unavailable"; no crash on a cold graph.
+
+### P10c-f / P10d (later sub-PRs)
+- [ ] **Graph interaction**: tapping a node navigates / expands its neighborhood; edge-type filters work.
 - [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on
       *any* device, no model download.
 - [ ] Runs on a **low-end device** (embedder-only) without a crash.
