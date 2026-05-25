@@ -8,6 +8,7 @@ import 'package:grabbit/features/library/presentation/explorer_view.dart';
 import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_view.dart';
+import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 
 void main() {
@@ -18,6 +19,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          semanticSearchReadyProvider.overrideWith((ref) async => false),
           queueTasksProvider.overrideWith((ref) => Stream.value(tasks)),
           collectionsProvider.overrideWith(
             (ref) => Stream.value(<Collection>[]),

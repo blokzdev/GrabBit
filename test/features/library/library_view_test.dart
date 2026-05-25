@@ -9,6 +9,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_view.dart';
+import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/library/presentation/media_selection_bar.dart';
 
 MediaItem _sampleItem({String id = 'item1', String title = 'Saved Clip'}) =>
@@ -36,6 +37,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          semanticSearchReadyProvider.overrideWith((ref) async => false),
           filteredLibraryProvider.overrideWith(
             (ref) => Stream.value([_sampleItem()]),
           ),
@@ -53,6 +55,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          semanticSearchReadyProvider.overrideWith((ref) async => false),
           filteredLibraryProvider.overrideWith(
             (ref) => Stream.value(<MediaItem>[]),
           ),
@@ -69,6 +72,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          semanticSearchReadyProvider.overrideWith((ref) async => false),
           filteredLibraryProvider.overrideWith(
             // A stream that never emits keeps the provider in the loading state.
             (ref) => Stream<List<MediaItem>>.fromFuture(

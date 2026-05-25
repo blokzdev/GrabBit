@@ -144,6 +144,14 @@ abstract interface class GraphStore {
 }
 ```
 
+> **Realized design (P10a–P10c):** the shipped `GraphStore` stays **thin** — only
+> `open / isAvailable / runScript / ensureSchema / close`. The typed reads/writes sketched above do
+> **not** live on the store; orchestration sits in services that depend on the interface (never a
+> concrete engine): `GraphSyncService` owns writes/projection/embedding-backfill, and **`GraphQueryService`**
+> (P10c, `lib/core/graph/graph_query_service.dart`) owns reads (`vectorSearch`, and later `relatedTo`,
+> entity hubs, near-dup, …) over `runScript`, with pure CozoScript builders in `cozo_query.dart`. This
+> keeps query shapes unit-testable without the native engine.
+
 - `lib/core/graph/android_cozo_graph_store.dart` — Android impl over the `CozoHostApi` Pigeon bridge
   (v1). A future `windows_cozo_graph_store.dart` (FFI/ffigen) slots behind the same interface (P14).
 - `lib/core/graph/graph_store_provider.dart` — `@Riverpod(keepAlive: true)`, platform-branched like
@@ -180,7 +188,8 @@ unchanged hash skips re-embedding, and a model change re-keys every hash (so vec
 spaces). The relation is **created on demand by `GraphSyncService.backfillEmbeddings()`** (which knows
 DIM via the embedder), **not** by the dim-agnostic `GraphStore.ensureSchema`, and is deliberately
 **excluded from `graphSchema`** so the deterministic `:replace` rebuild never wipes it. Query-time
-vector search (`~embedding:idx`) + `similarTo` materialization are **P10c**.
+vector search (`~embedding:idx`) is **live in P10c-a** via `GraphQueryService.vectorSearch` (powers
+semantic library search); `similarTo` materialization follows in later P10c subphases.
 
 **Signal reliability (from the codebase data map)** — build edges only on real signals:
 

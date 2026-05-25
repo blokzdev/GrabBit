@@ -11,6 +11,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_filter_sheet.dart';
+import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/library/presentation/media_selection_bar.dart';
@@ -27,6 +28,13 @@ class LibraryView extends ConsumerStatefulWidget {
 class _LibraryViewState extends ConsumerState<LibraryView> {
   final _searchController = TextEditingController();
   final Set<String> _selected = {};
+
+  /// Smart (semantic) vs text search. Only reachable when the embedder is ready.
+  bool _semantic = false;
+
+  /// The last submitted semantic query (semantic search runs on submit, not per
+  /// keystroke, since each query embeds + vector-searches).
+  String _semanticQuery = '';
 
   @override
   void dispose() {
@@ -56,11 +64,24 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
 
   @override
   Widget build(BuildContext context) {
-    final items = ref.watch(filteredLibraryProvider);
     final filter = ref.watch(libraryFilterProvider);
     final controller = ref.read(libraryFilterProvider.notifier);
-    final filtering =
-        filter.search.isNotEmpty || filter.type != null || filter.favoritesOnly;
+    final semanticAvailable =
+        ref.watch(semanticSearchReadyProvider).asData?.value ?? false;
+    final semantic = _semantic && semanticAvailable;
+    final items = semantic
+        ? ref.watch(semanticResultsProvider(_semanticQuery))
+        : ref.watch(filteredLibraryProvider);
+    void refresh() => ref.invalidate(
+      semantic
+          ? semanticResultsProvider(_semanticQuery)
+          : filteredLibraryProvider,
+    );
+    final filtering = semantic
+        ? _semanticQuery.isNotEmpty
+        : filter.search.isNotEmpty ||
+              filter.type != null ||
+              filter.favoritesOnly;
     final rows = items.asData?.value ?? const <MediaItem>[];
     final selectedItems = [
       for (final r in rows)
@@ -74,6 +95,19 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
           _FilterBar(
             controller: _searchController,
             filter: filter,
+            semantic: semantic,
+            semanticAvailable: semanticAvailable,
+            onMode: (v) => setState(() {
+              _clear();
+              _semantic = v;
+              _searchController.clear();
+              _semanticQuery = '';
+              controller.setSearch('');
+            }),
+            onSubmit: (v) => setState(() {
+              _clear();
+              _semanticQuery = v.trim();
+            }),
             onSearch: (v) {
               _clear();
               controller.setSearch(v);
@@ -90,13 +124,13 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () async => ref.invalidate(filteredLibraryProvider),
+              onRefresh: () async => refresh(),
               child: AsyncFade(
                 value: items,
                 loading: () => const MediaGridSkeleton(),
                 error: (e, _) => ErrorView(
                   message: 'Failed to load library: $e',
-                  onRetry: () => ref.invalidate(filteredLibraryProvider),
+                  onRetry: refresh,
                 ),
                 data: (rows) => rows.isEmpty
                     ? ListView(
@@ -104,24 +138,33 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
                         children: [
                           SizedBox(
                             height: MediaQuery.sizeOf(context).height * 0.6,
-                            child: EmptyState(
-                              icon: filtering
-                                  ? Icons.search_off
-                                  : Icons.video_library_outlined,
-                              title: filtering
-                                  ? 'No matches'
-                                  : 'Your library is empty',
-                              message: filtering
-                                  ? 'Try a different search or filter.'
-                                  : 'Downloads will appear here.',
-                              action: filtering
-                                  ? null
-                                  : FilledButton.icon(
-                                      onPressed: () => context.push('/add'),
-                                      icon: const Icon(Icons.add),
-                                      label: const Text('Add'),
-                                    ),
-                            ),
+                            child: semantic && !filtering
+                                ? const EmptyState(
+                                    icon: Icons.auto_awesome,
+                                    title: 'Smart search',
+                                    message:
+                                        'Search your library by meaning, not '
+                                        'just keywords.',
+                                  )
+                                : EmptyState(
+                                    icon: filtering
+                                        ? Icons.search_off
+                                        : Icons.video_library_outlined,
+                                    title: filtering
+                                        ? 'No matches'
+                                        : 'Your library is empty',
+                                    message: filtering
+                                        ? 'Try a different search or filter.'
+                                        : 'Downloads will appear here.',
+                                    action: filtering
+                                        ? null
+                                        : FilledButton.icon(
+                                            onPressed: () =>
+                                                context.push('/add'),
+                                            icon: const Icon(Icons.add),
+                                            label: const Text('Add'),
+                                          ),
+                                  ),
                           ),
                         ],
                       )
@@ -176,6 +219,10 @@ class _FilterBar extends StatelessWidget {
   const _FilterBar({
     required this.controller,
     required this.filter,
+    required this.semantic,
+    required this.semanticAvailable,
+    required this.onMode,
+    required this.onSubmit,
     required this.onSearch,
     required this.onType,
     required this.onFavorites,
@@ -184,6 +231,16 @@ class _FilterBar extends StatelessWidget {
 
   final TextEditingController controller;
   final LibraryQuery filter;
+
+  /// Whether Smart (semantic) mode is active.
+  final bool semantic;
+
+  /// Whether the Smart/Text toggle is offered (embedder ready).
+  final bool semanticAvailable;
+  final ValueChanged<bool> onMode;
+
+  /// Semantic search runs on submit, not per keystroke.
+  final ValueChanged<String> onSubmit;
   final ValueChanged<String> onSearch;
   final ValueChanged<String?> onType;
   final ValueChanged<bool> onFavorites;
@@ -201,76 +258,104 @@ class _FilterBar extends StatelessWidget {
       ),
       child: Column(
         children: [
+          if (semanticAvailable) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: false,
+                    label: Text('Text'),
+                    icon: Icon(Icons.search),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    label: Text('Smart'),
+                    icon: Icon(Icons.auto_awesome),
+                  ),
+                ],
+                selected: {semantic},
+                onSelectionChanged: (s) => onMode(s.first),
+              ),
+            ),
+            SizedBox(height: tokens.spaceSm),
+          ],
           TextField(
             controller: controller,
+            textInputAction: semantic ? TextInputAction.search : null,
             decoration: InputDecoration(
-              hintText: 'Search title or description',
-              prefixIcon: const Icon(Icons.search),
+              hintText: semantic
+                  ? 'Search by meaning…'
+                  : 'Search title or description',
+              prefixIcon: Icon(semantic ? Icons.auto_awesome : Icons.search),
               isDense: true,
               border: const OutlineInputBorder(),
-              suffixIcon: filter.search.isEmpty
+              suffixIcon: controller.text.isEmpty
                   ? null
                   : IconButton(
                       icon: const Icon(Icons.clear),
                       tooltip: 'Clear search',
                       onPressed: () {
                         controller.clear();
-                        onSearch('');
+                        semantic ? onSubmit('') : onSearch('');
                       },
                     ),
             ),
-            onChanged: onSearch,
+            onChanged: semantic ? null : onSearch,
+            onSubmitted: semantic ? onSubmit : null,
           ),
-          SizedBox(height: tokens.spaceSm),
-          Row(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final type in const [
-                        null,
-                        'video',
-                        'audio',
-                        'image',
-                      ])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(
-                              type == null ? 'All' : _typeLabel(type),
+          if (!semantic) ...[
+            SizedBox(height: tokens.spaceSm),
+            Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final type in const [
+                          null,
+                          'video',
+                          'audio',
+                          'image',
+                        ])
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(
+                                type == null ? 'All' : _typeLabel(type),
+                              ),
+                              selected: filter.type == type,
+                              onSelected: (_) => onType(type),
                             ),
-                            selected: filter.type == type,
-                            onSelected: (_) => onType(type),
                           ),
+                        FilterChip(
+                          avatar: Icon(
+                            filter.favoritesOnly
+                                ? Icons.star
+                                : Icons.star_outline,
+                            size: 18,
+                          ),
+                          label: const Text('Favorites'),
+                          selected: filter.favoritesOnly,
+                          onSelected: onFavorites,
                         ),
-                      FilterChip(
-                        avatar: Icon(
-                          filter.favoritesOnly
-                              ? Icons.star
-                              : Icons.star_outline,
-                          size: 18,
-                        ),
-                        label: const Text('Favorites'),
-                        selected: filter.favoritesOnly,
-                        onSelected: onFavorites,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Badge(
-                isLabelVisible: filter.activeFacetCount > 0,
-                label: Text('${filter.activeFacetCount}'),
-                child: IconButton(
-                  icon: const Icon(Icons.tune),
-                  tooltip: 'Filters',
-                  onPressed: onFilters,
+                Badge(
+                  isLabelVisible: filter.activeFacetCount > 0,
+                  label: Text('${filter.activeFacetCount}'),
+                  child: IconButton(
+                    icon: const Icon(Icons.tune),
+                    tooltip: 'Filters',
+                    onPressed: onFilters,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
