@@ -9,6 +9,7 @@ import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
 
 Collection _collection() =>
     Collection(id: 1, name: 'Faves', createdAt: DateTime.utc(2026));
@@ -121,6 +122,9 @@ void main() {
             duplicatesProvider.overrideWith(
               (ref) => Stream.value(<List<MediaItem>>[]),
             ),
+            suggestedAlbumsProvider.overrideWith(
+              (ref) async => const <SuggestedAlbum>[],
+            ),
           ],
           child: const MaterialApp(home: CollectionsScreen()),
         ),
@@ -169,6 +173,9 @@ void main() {
               (ref) => Stream.value([
                 [_item(), _item()],
               ]),
+            ),
+            suggestedAlbumsProvider.overrideWith(
+              (ref) async => const <SuggestedAlbum>[],
             ),
           ],
           child: const MaterialApp(home: CollectionsScreen()),

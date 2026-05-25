@@ -72,7 +72,8 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
       card in Collections→Albums (auto-hidden when clean) with bulk **Clean up** (keep oldest per
       group) + **Review** → the screen; compare detail (date·size + "Keep" badge) on the rows. Pure
       Drift, every device (`dedupe_actions.dart`).
-    - **P10c-d-2 — Suggested similarity albums + Save**: embedder-gated, query-time vector clusters
+    - **P10c-d-2 — Suggested similarity albums + Save** *(done)*: embedder-gated, query-time vector
+      clusters (`GraphQueryService.similarityClusters` → pure `near_duplicate_clustering.dart`)
       surfaced as a **Suggested** album section with one-tap **Save as collection**. Lightweight
       precursor to P12's community-detection auto-albums.
   - **P10c-e / P10c-f — Interactive graph viz** (`graphview`): render, then expand/collapse +

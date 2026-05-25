@@ -200,4 +200,50 @@ void main() {
       expect(store.calls, isEmpty);
     });
   });
+
+  group('GraphQueryService.similarityClusters', () {
+    Map<String, Object?> route(String script) {
+      if (script.contains('*embedding{id, v}')) {
+        return {
+          'headers': ['id', 'v'],
+          'rows': [
+            [
+              'a',
+              <double>[1, 0],
+            ],
+            [
+              'b',
+              <double>[1, 0.02],
+            ],
+            [
+              'c',
+              <double>[1, 0.04],
+            ],
+            [
+              'z',
+              <double>[0, 1],
+            ], // far away → not clustered
+          ],
+        };
+      }
+      if (script.contains('duplicateOf')) {
+        return const {'headers': <String>[], 'rows': <List<Object?>>[]};
+      }
+      return const {'rows': <List<Object?>>[]};
+    }
+
+    test('clusters near vectors, ignoring distant ones', () async {
+      final clusters = await GraphQueryService(
+        FakeGraphStore(responder: route),
+      ).similarityClusters();
+      expect(clusters, hasLength(1));
+      expect(clusters.single.toSet(), {'a', 'b', 'c'});
+    });
+
+    test('returns empty when the store is unavailable', () async {
+      final store = FakeGraphStore(available: false);
+      expect(await GraphQueryService(store).similarityClusters(), isEmpty);
+      expect(store.calls, isEmpty);
+    });
+  });
 }

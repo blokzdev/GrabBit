@@ -534,10 +534,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Secure delete honored**: with secure-delete on, bulk Clean up routes through the same secure
       deletion as single deletes.
 
-### P10c-d-2 / P10c-e–f / P10d (later sub-PRs)
-- [ ] **Suggested albums**: with the embedder on and very-similar items present → Collections →
-      Albums shows a **Suggested** section; opening one lists its items; **Save as collection** creates
-      a real collection. Absent when AI is off.
+### P10c-d-2 — Suggested similarity albums + Save  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Suggested section appears**: with Semantic search on and very-similar items present (e.g. the
+      same video re-encoded, or near-identical clips) → Collections → Albums shows a **Suggested**
+      section of clusters labelled `Like '<title>'`.
+- [ ] **Open + Save**: opening a suggestion lists its items (sortable); **Save** prompts a name and
+      creates a real collection containing them (verify under the Collections tab).
+- [ ] **High precision / no blobs**: suggestions are cohesive (genuinely similar), exclude exact
+      byte-identical copies (those live in the Duplicates album), and there's no single giant catch-all
+      cluster.
+- [ ] **Graceful without AI**: with Semantic search off / unsupported, no Suggested section appears
+      (the Duplicates album still works); no crash on a cold/empty index.
+
+### P10c-e–f / P10d (later sub-PRs)
 - [ ] **Graph view**: the interactive graph renders; tapping a node expands its neighborhood;
       pan/zoom work.
 - [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on

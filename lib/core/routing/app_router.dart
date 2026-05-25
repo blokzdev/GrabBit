@@ -16,6 +16,8 @@ import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart'
 import 'package:grabbit/features/library/presentation/duplicates_screen.dart';
 import 'package:grabbit/features/library/presentation/smart_album_screen.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
+import 'package:grabbit/features/library/presentation/suggested_album_screen.dart';
+import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/ai_setup_screen.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
@@ -168,6 +170,16 @@ GoRouter appRouter(Ref ref) {
           type: state.pathParameters['type']!,
           value: state.uri.queryParameters['v'] ?? '',
           displayName: state.extra as String?,
+        ),
+      ),
+      GoRoute(
+        path: '/suggested-album',
+        name: 'suggestedAlbum',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => SuggestedAlbumScreen(
+          album: state.extra is SuggestedAlbum
+              ? state.extra! as SuggestedAlbum
+              : null,
         ),
       ),
       GoRoute(

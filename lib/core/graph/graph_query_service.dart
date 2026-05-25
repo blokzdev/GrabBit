@@ -1,6 +1,7 @@
 import 'package:grabbit/core/graph/cooccurrence_ranking.dart';
 import 'package:grabbit/core/graph/cozo_query.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
+import 'package:grabbit/core/graph/near_duplicate_clustering.dart';
 import 'package:grabbit/core/graph/related_ranking.dart';
 
 /// One nearest-neighbour hit from a vector search: a media item id and its
@@ -111,6 +112,38 @@ class GraphQueryService {
       _tagPairs(rows),
       exclude: type == 'tag' ? {value} : const {},
       limit: limit,
+    );
+  }
+
+  /// Similarity clusters across the whole library for **Suggested albums**
+  /// (P10c-d-2): pull every stored vector + the exact-duplicate pairs, then group
+  /// by pairwise cosine in Dart (connected components, exact pairs excluded).
+  /// `[]` when the store is unavailable. Heavy lifting is pure + testable; only
+  /// two simple reads hit the engine.
+  Future<List<List<String>>> similarityClusters({
+    double maxDistance = kSimilarityMaxDistance,
+    int minSize = 3,
+  }) async {
+    if (!_store.isAvailable) return const [];
+    final embeddings = [
+      for (final r in decodeRows(await _store.runScript(allEmbeddingsScript())))
+        if (r['id'] case final Object id)
+          if (r['v'] case final List<Object?> v)
+            (id: id.toString(), v: [for (final e in v) (e as num).toDouble()]),
+    ];
+    if (embeddings.length < minSize) return const [];
+    final exclude = <String>{
+      for (final r in decodeRows(
+        await _store.runScript(allDuplicatePairsScript()),
+      ))
+        if (r['a'] case final Object a)
+          if (r['b'] case final Object b) pairKey(a.toString(), b.toString()),
+    };
+    return clusterBySimilarity(
+      embeddings,
+      maxDistance: maxDistance,
+      minSize: minSize,
+      excludePairs: exclude,
     );
   }
 
