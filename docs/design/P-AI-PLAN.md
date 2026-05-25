@@ -46,9 +46,18 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     index; Drift↔Cozo count-divergence self-heal; batch embedding (`embedBatch`); and project the
     deterministic **`duplicateOf`** (`contentHash`) + **`coDownloadedWith`** (`createdAt`) edges so
     P10c's near-duplicate feature is a pure query. *(GRAPH-SPEC §3, §6, §8)*
-- **P10c — Universal graph features:** semantic search; **Related / "More like this"** (hybrid
-  vector + graph re-rank); **entity hubs** (uploader/playlist/tag/site); **near-duplicate clusters**;
-  **tag suggestions**; **interactive graph viz** (candidate `graphview`). *(GRAPH-SPEC §7)*
+- **P10c — Universal graph features** *(split into per-feature subphases, one PR each):*
+  - **P10c-a — Query foundation + semantic search** *(done)*: the read-side spine —
+    `GraphQueryService` over `runScript` with pure CozoScript builders in `cozo_query.dart` (the
+    `~embedding:idx` vector search), reused by every later subphase — plus **semantic library search**
+    (a Text/Smart toggle in the Library search bar, gated on `semanticSearchEnabled && embedder ready`,
+    run on submit, ranking the whole library; graceful text-only fallback when AI is off).
+  - **P10c-b — Related / "More like this"** (hybrid vector + graph re-rank; item-detail section).
+  - **P10c-c — Entity hubs + tag suggestions** (pure-graph, every device).
+  - **P10c-d — Near-duplicate clusters** (vector `similarTo` folded into the existing exact-hash
+    `DuplicatesScreen`).
+  - **P10c-e / P10c-f — Interactive graph viz** (`graphview`): render, then expand/collapse +
+    navigation. *(GRAPH-SPEC §7)*
 - **P10d — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
   descriptions/subtitles/transcripts.
 

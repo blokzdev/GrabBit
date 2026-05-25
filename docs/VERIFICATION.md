@@ -472,6 +472,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Malformed query**: the graph self-test / app never hard-crashes on a bad CozoScript — errors
       surface as a friendly message.
 
+### P10c-a — Query foundation + semantic search  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Smart toggle gated on AI**: with Semantic search **off** (or on a device the embedder can't
+      run), the Library search bar shows **no Text/Smart toggle** and behaves exactly as before.
+- [ ] **Opt in → toggle appears**: enable Semantic search (download the model) → a **Text / Smart**
+      toggle appears above the Library search box.
+- [ ] **Semantic relevance, offline**: in **Smart** mode, type a meaning-based query (not a literal
+      title word) and submit → relevant items rank to the top; confirm in **airplane mode** (fully
+      on-device). Empty query shows the "Smart search" prompt, not the empty-library state.
+- [ ] **Submit, not live**: results update on **submit** (keyboard search action), not on every
+      keystroke; Text mode stays live-as-you-type.
+- [ ] **No crash on empty/cold index**: Smart search before any embeddings exist returns a friendly
+      "No matches", never a crash.
+
 ### P10c–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
