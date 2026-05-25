@@ -1,3 +1,4 @@
+import 'package:grabbit/core/graph/cooccurrence_ranking.dart';
 import 'package:grabbit/core/graph/cozo_query.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
 import 'package:grabbit/core/graph/related_ranking.dart';
@@ -80,6 +81,47 @@ class GraphQueryService {
       limit: limit,
     );
   }
+
+  /// Tags to **suggest** for item [id]: tags co-occurring with it across the
+  /// library (shared uploader/playlist/tag/co-download), ranked by how many
+  /// related items carry them, excluding tags it already has. `[]` when the
+  /// store is unavailable.
+  Future<List<TagCount>> coOccurringTags(String id, {int limit = 8}) async {
+    if (!_store.isAvailable) return const [];
+    final rows = decodeRows(
+      await _store.runScript(coOccurringTagsScript(), {'id': id}),
+    );
+    return rankCoOccurringTags(_tagPairs(rows), limit: limit);
+  }
+
+  /// Tags that co-occur with an entity hub of [type] (`uploader` | `site` |
+  /// `playlist` | `tag`) keyed by [value] — the topics common to that entity's
+  /// items, ranked by support. A `tag` hub excludes its own tag. `[]` when the
+  /// store is unavailable or the type is unknown.
+  Future<List<TagCount>> relatedTags(
+    String type,
+    String value, {
+    int limit = 12,
+  }) async {
+    if (!_store.isAvailable) return const [];
+    final script = coOccurringTagsForEntityScript(type);
+    if (script == null) return const [];
+    final rows = decodeRows(await _store.runScript(script, {'v': value}));
+    return rankCoOccurringTags(
+      _tagPairs(rows),
+      exclude: type == 'tag' ? {value} : const {},
+      limit: limit,
+    );
+  }
+
+  Iterable<({String source, String tag})> _tagPairs(
+    List<Map<String, Object?>> rows,
+  ) => [
+    for (final r in rows)
+      if (r['other'] case final Object source)
+        if (r['tag'] case final Object tag)
+          (source: source.toString(), tag: tag.toString()),
+  ];
 
   Future<List<double>?> _itemVector(String id) async {
     final rows = decodeRows(

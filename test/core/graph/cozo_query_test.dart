@@ -44,6 +44,61 @@ void main() {
     });
   });
 
+  group('coOccurringTagsScript', () {
+    test('collects related-item tags and excludes the item\'s own', () {
+      final script = coOccurringTagsScript();
+      expect(script, contains('related[other] :='));
+      expect(script, contains('*postedBy'));
+      expect(script, contains('*inPlaylist'));
+      expect(script, contains('*coDownloadedWith'));
+      expect(script, contains(r'own[t] := *taggedWith{mediaId: $id, tag: t}'));
+      expect(
+        script,
+        contains(
+          '?[other, tag] := related[other], '
+          '*taggedWith{mediaId: other, tag}, not own[tag]',
+        ),
+      );
+    });
+  });
+
+  group('coOccurringTagsForEntityScript', () {
+    test('binds the right member relation per entity type', () {
+      expect(
+        coOccurringTagsForEntityScript('tag'),
+        contains(r'member[other] := *taggedWith{mediaId: other, tag: $v}'),
+      );
+      expect(
+        coOccurringTagsForEntityScript('site'),
+        contains(r'member[other] := *onPlatform{mediaId: other, site: $v}'),
+      );
+      expect(
+        coOccurringTagsForEntityScript('playlist'),
+        contains(r'*inPlaylist{mediaId: other, playlistId: $v}'),
+      );
+      // Uploader hubs key by name, bridged via the uploader node to uploaderId.
+      final uploader = coOccurringTagsForEntityScript('uploader')!;
+      expect(uploader, contains(r'*uploader{uploaderId: uid, name: $v}'));
+      expect(uploader, contains('*postedBy{mediaId: other, uploaderId: uid}'));
+    });
+
+    test('every type emits [other, tag] rows', () {
+      for (final t in ['tag', 'site', 'playlist', 'uploader']) {
+        expect(
+          coOccurringTagsForEntityScript(t),
+          contains(
+            '?[other, tag] := member[other], '
+            '*taggedWith{mediaId: other, tag}',
+          ),
+        );
+      }
+    });
+
+    test('returns null for an unknown type', () {
+      expect(coOccurringTagsForEntityScript('folder'), isNull);
+    });
+  });
+
   group('decodeRows', () {
     test('maps header/row tuples into column-keyed maps', () {
       final rows = decodeRows({

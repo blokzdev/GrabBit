@@ -51,6 +51,48 @@ String duplicateIdsScript() =>
     '?[other] := *duplicateOf{mediaId: \$id, otherId: other}\n'
     '?[other] := *duplicateOf{mediaId: other, otherId: \$id}';
 
+/// Tags co-occurring with item `$id`: tags on the items that share a
+/// deterministic signal with it (same uploader/playlist/tag/co-download),
+/// excluding the tags `$id` already carries. Emits one `[other, tag]` row per
+/// related-item/tag pair so the Dart ranker (`rankCoOccurringTags`) can count
+/// distinct supporting items per tag. Powers tag **suggestions** (P10c-c-2).
+/// Pure Datalog (named rules + stratified negation) — no vector syntax.
+String coOccurringTagsScript() =>
+    'related[other] := *postedBy{mediaId: \$id, uploaderId: u}, '
+    '*postedBy{mediaId: other, uploaderId: u}, other != \$id\n'
+    'related[other] := *inPlaylist{mediaId: \$id, playlistId: p}, '
+    '*inPlaylist{mediaId: other, playlistId: p}, other != \$id\n'
+    'related[other] := *taggedWith{mediaId: \$id, tag: t}, '
+    '*taggedWith{mediaId: other, tag: t}, other != \$id\n'
+    'related[other] := *coDownloadedWith{mediaId: \$id, otherId: other}\n'
+    'related[other] := *coDownloadedWith{mediaId: other, otherId: \$id}\n'
+    'own[t] := *taggedWith{mediaId: \$id, tag: t}\n'
+    '?[other, tag] := related[other], *taggedWith{mediaId: other, tag}, '
+    'not own[tag]';
+
+/// Tags co-occurring with an entity **hub** of [type] (`uploader` | `site` |
+/// `playlist` | `tag`), bound by `$v`: the tags carried by the items that belong
+/// to that entity. Emits `[other, tag]` rows (one per member-item/tag) for the
+/// Dart ranker; `null` for an unknown type (the service then returns nothing).
+/// Uploader hubs key by *name* (matching the library facet), bridged to the
+/// graph's `uploaderId` via the `uploader` node. Powers the hub's related-tags
+/// strip (P10c-c-2).
+String? coOccurringTagsForEntityScript(String type) {
+  final member = switch (type) {
+    'tag' => 'member[other] := *taggedWith{mediaId: other, tag: \$v}',
+    'site' => 'member[other] := *onPlatform{mediaId: other, site: \$v}',
+    'playlist' =>
+      'member[other] := *inPlaylist{mediaId: other, playlistId: \$v}',
+    'uploader' =>
+      'member[other] := *uploader{uploaderId: uid, name: \$v}, '
+          '*postedBy{mediaId: other, uploaderId: uid}',
+    _ => null,
+  };
+  if (member == null) return null;
+  return '$member\n'
+      '?[other, tag] := member[other], *taggedWith{mediaId: other, tag}';
+}
+
 /// Decodes a CozoScript result (`{headers: [...], rows: [[...], ...]}`) into a
 /// list of column-keyed maps. Tolerant of a missing/empty `headers` or `rows`
 /// (returns `const []`). Generalises the `graphRelationNames` header-scan in

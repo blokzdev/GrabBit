@@ -61,8 +61,11 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
       tappable → an `EntityHubScreen` listing that entity's items, reusing `watchFiltered` +
       `MediaGrid` + `GridSortButton` (added a `tag` facet to `LibraryQuery`). Pure Drift, every device,
       no graph dependency.
-    - **P10c-c-2 — Graph enrichment**: a "related entities" strip on hubs + tag suggestions in the
-      editor, both from a Cozo co-occurrence query (pure Datalog, every device).
+    - **P10c-c-2 — Graph enrichment** *(done)*: a Cozo tag co-occurrence query
+      (`GraphQueryService.coOccurringTags` / `relatedTags`, ranked in `cooccurrence_ranking.dart`)
+      powers tappable **tag suggestions** in the metadata editor and a **"Related tags"** strip on each
+      entity hub. Pure Datalog, every device; renders nothing when the graph is unavailable.
+      (Cross-type related entities — creators/playlists — left as a future enhancement.)
   - **P10c-d — Near-duplicate clusters** (vector `similarTo` folded into the existing exact-hash
     `DuplicatesScreen`).
   - **P10c-e / P10c-f — Interactive graph viz** (`graphview`): render, then expand/collapse +

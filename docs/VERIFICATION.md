@@ -509,6 +509,17 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Empty/edge**: an entity with no other items shows the "Nothing here" empty state; tags/uploaders
       with `/` or unusual characters still open the right hub (value is URL-encoded).
 
+### P10c-c-2 — Graph tag suggestions + related-tags strip  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Tag suggestions appear**: open an item's editor (Edit info) where the library has other items
+      sharing its uploader/playlist/tags → a **"Suggested"** row of tag chips appears under the tag
+      field; tapping one applies it (and it drops out of the suggestions).
+- [ ] **Suggestions exclude existing tags**: a tag already on the item is never suggested.
+- [ ] **Related-tags strip on hubs**: open an entity hub (uploader/playlist/tag/site) whose items carry
+      tags → a **"Related tags"** strip shows the common tags; tapping a chip opens that tag's hub. A
+      tag hub never lists its own tag.
+- [ ] **Graceful without the graph**: on a device/build with no graph (or empty index), neither the
+      suggestions row nor the related-tags strip appears — the editor and hubs are unchanged, no crash.
+
 ### P10c–d (later sub-PRs)
 - [ ] **Cozo index builds & persists**: the app builds the on-device index on first run; force-quit and
       reopen → the index is still there (no rebuild needed); "Rebuild index" (Settings) rebuilds it.
