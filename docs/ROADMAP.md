@@ -249,8 +249,9 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   `GraphSyncService` (bulk build + incremental hooks + a "Rebuild index" action) with a
   schema-fingerprint self-heal. Drift stays canonical; **Cozo is a derived, rebuildable index**.
 - **Universal graph features**: semantic search; **Related / "More like this"** (hybrid vector +
-  graph re-rank); **entity hubs** (uploader/playlist/tag/site); **near-duplicate clusters**; **tag
-  suggestions**; **interactive graph visualization** (candidate `graphview`).
+  graph re-rank); **entity hubs** (uploader/playlist/tag/site); **tag suggestions**; **proactive
+  grouping** (a Duplicates auto-album + Suggested similarity albums in Collections→Albums); **interactive
+  graph visualization** (candidate `graphview`). *(Richer community-detection auto-albums = P12.)*
 - **Extractive summaries**: a zero-dependency, pure-Dart **TextRank** floor over
   descriptions/subtitles/transcripts.
 **Exit criteria:** on any device, the Cozo index builds & rebuilds; semantic search + "related"

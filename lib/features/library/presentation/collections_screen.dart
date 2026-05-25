@@ -12,6 +12,7 @@ import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/dedupe_actions.dart';
 import 'package:grabbit/features/library/presentation/grid_sort.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 
@@ -233,6 +234,9 @@ class _AlbumsView extends ConsumerWidget {
     final uploaderCounts =
         ref.watch(uploaderCountsProvider).asData?.value ?? const {};
     final recent = ref.watch(recentlyPlayedProvider).asData?.value ?? const [];
+    final dupGroups =
+        ref.watch(duplicatesProvider).asData?.value ??
+        const <List<MediaItem>>[];
 
     return AsyncFade(
       value: sites,
@@ -251,6 +255,7 @@ class _AlbumsView extends ConsumerWidget {
         }
         return ListView(
           children: [
+            if (dupGroups.isNotEmpty) _DuplicatesCard(groups: dupGroups),
             if (recent.isNotEmpty) ...[
               const SectionHeader('Quick'),
               _AlbumTile(
@@ -315,6 +320,104 @@ class _AlbumTile extends StatelessWidget {
       subtitle: count > 0 ? Text('$count item${count == 1 ? '' : 's'}') : null,
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
+    );
+  }
+}
+
+/// A distinct, actionable maintenance card for exact duplicates — shown only
+/// when duplicates exist. **Review** opens the detail/cleanup screen; **Clean
+/// up** bulk-removes the extra copies (keeping the oldest of each group). Pure
+/// Drift — present on every device, no embedder needed.
+class _DuplicatesCard extends ConsumerWidget {
+  const _DuplicatesCard({required this.groups});
+  final List<List<MediaItem>> groups;
+
+  Future<void> _cleanUp(BuildContext context, WidgetRef ref) async {
+    final n = duplicatesToRemove(groups).length;
+    if (n == 0) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await confirm(
+      context,
+      title: 'Remove duplicate copies?',
+      message:
+          'Keeps the oldest in each group and permanently deletes the other '
+          '$n cop${n == 1 ? 'y' : 'ies'}. This cannot be undone.',
+      confirmLabel: 'Remove $n',
+      destructive: true,
+    );
+    if (!ok) return;
+    final removed = await resolveDuplicates(ref);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Removed $removed cop${removed == 1 ? 'y' : 'ies'}'),
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final tokens = GrabBitTokens.of(context);
+    final extra = duplicatesToRemove(groups).length;
+    return Card(
+      margin: EdgeInsets.only(bottom: tokens.spaceMd),
+      color: scheme.tertiaryContainer,
+      child: Padding(
+        padding: EdgeInsets.all(tokens.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.content_copy_outlined,
+                  color: scheme.onTertiaryContainer,
+                ),
+                SizedBox(width: tokens.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Duplicates',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: scheme.onTertiaryContainer,
+                        ),
+                      ),
+                      Text(
+                        '${groups.length} group${groups.length == 1 ? '' : 's'} · '
+                        '$extra extra cop${extra == 1 ? 'y' : 'ies'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onTertiaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: tokens.spaceSm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => context.push('/duplicates'),
+                  child: const Text('Review'),
+                ),
+                SizedBox(width: tokens.spaceSm),
+                FilledButton.tonalIcon(
+                  onPressed: () => _cleanUp(context, ref),
+                  icon: const Icon(Icons.cleaning_services_outlined),
+                  label: const Text('Clean up'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

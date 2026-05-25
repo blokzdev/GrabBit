@@ -106,9 +106,10 @@ abstract interface class InferenceEngine {
 - **Semantic search** (vector) complementing the existing `LIKE` search *(P10c-a, shipped)*.
 - **Related / "More like this"** *(P10c-b, shipped)*; **entity hubs** *(P10c-c — navigable hubs in
   c-1, the tag co-occurrence "Related tags" strip in c-2; cross-type creator/playlist ranking
-  deferred, see `BACKLOG.md`)*; **tag suggestions** *(P10c-c-2, shipped)*; **near-duplicate clusters**
-  *(P10c-d)* and **interactive graph viz** *(P10c-e/f)* remaining — read via `GraphQueryService`;
-  graph features detailed in `GRAPH-SPEC.md` §7.
+  deferred, see `BACKLOG.md`)*; **tag suggestions** *(P10c-c-2, shipped)*; **proactive grouping** —
+  a Duplicates auto-album *(P10c-d-1, shipped)* + Suggested similarity albums *(P10c-d-2)*; and
+  **interactive graph viz** *(P10c-e/f)* remaining — read via `GraphQueryService`; graph features
+  detailed in `GRAPH-SPEC.md` §7.
 - **Extractive summaries (TextRank)** — zero-dependency, pure-Dart floor over
   descriptions/subtitles/transcripts; the always-available TL;DR.
 

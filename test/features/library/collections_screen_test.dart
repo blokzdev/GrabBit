@@ -118,6 +118,9 @@ void main() {
             recentlyPlayedProvider.overrideWith(
               (ref) => Stream.value(<MediaItem>[]),
             ),
+            duplicatesProvider.overrideWith(
+              (ref) => Stream.value(<List<MediaItem>>[]),
+            ),
           ],
           child: const MaterialApp(home: CollectionsScreen()),
         ),
@@ -130,6 +133,54 @@ void main() {
       expect(find.text('Platforms'), findsOneWidget);
       expect(find.text('youtube'), findsOneWidget);
       expect(find.text('2 items'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Albums tab shows the Duplicates card when duplicates exist',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            collectionsProvider.overrideWith(
+              (ref) => Stream.value(<Collection>[]),
+            ),
+            collectionItemCountsProvider.overrideWith(
+              (ref) => Stream.value(<int, int>{}),
+            ),
+            distinctSitesProvider.overrideWith(
+              (ref) => Stream.value(['youtube']),
+            ),
+            siteCountsProvider.overrideWith(
+              (ref) => Stream.value(<String, int>{'youtube': 2}),
+            ),
+            distinctUploadersProvider.overrideWith(
+              (ref) => Stream.value(<String>[]),
+            ),
+            uploaderCountsProvider.overrideWith(
+              (ref) => Stream.value(<String, int>{}),
+            ),
+            recentlyPlayedProvider.overrideWith(
+              (ref) => Stream.value(<MediaItem>[]),
+            ),
+            duplicatesProvider.overrideWith(
+              (ref) => Stream.value([
+                [_item(), _item()],
+              ]),
+            ),
+          ],
+          child: const MaterialApp(home: CollectionsScreen()),
+        ),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Albums'));
+      await settle(tester);
+
+      expect(find.text('Duplicates'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Review'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Clean up'), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
