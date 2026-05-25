@@ -12,6 +12,7 @@ import 'package:grabbit/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
+import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 
 MediaItem _item(String id, int size) => MediaItem(
@@ -66,6 +67,17 @@ void main() {
           sizeBySiteProvider.overrideWith(
             (ref) => Stream.value(<String, int>{'youtube': 120}),
           ),
+          // Content tiles read these directly; stub empty so they auto-hide
+          // (the graph tile is hidden by the default UnavailableGraphStore).
+          recentlyPlayedProvider.overrideWith(
+            (ref) => Stream.value(<MediaItem>[]),
+          ),
+          duplicatesProvider.overrideWith(
+            (ref) => Stream.value(<List<MediaItem>>[]),
+          ),
+          suggestedAlbumsProvider.overrideWith(
+            (ref) => Future.value(<SuggestedAlbum>[]),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -81,6 +93,8 @@ void main() {
     // Charts: two storage donuts + the activity bar chart.
     expect(find.byType(PieChart), findsNWidgets(2));
     expect(find.byType(BarChart), findsOneWidget);
+    // The "Recently added" row renders from the seeded library items.
+    expect(find.text('Recently added'), findsOneWidget);
   });
 
   testWidgets('shows an empty state on a fresh install', (tester) async {

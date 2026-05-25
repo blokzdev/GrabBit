@@ -594,6 +594,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Dynamic colour** (Material You wallpaper): the palette retints; no clashing hard-coded hues.
 - [ ] **RTL** (e.g. Arabic): legend/axis alignment mirrors; date labels still render.
 
+### P10d-3 — Dashboard: content tiles  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Recently added** row shows newest downloads; tapping a tile opens the item; **See all** →
+      Library.
+- [ ] **Recently opened** row appears only after opening some items and reflects access order;
+      stays hidden on a never-opened library.
+- [ ] **Suggested for you** appears only with semantic search ON and ≥1 cluster; tapping a row opens
+      the suggestion → **Save as collection** works; hidden when AI is off.
+- [ ] **Duplicates** callout appears only when exact duplicates exist; **Review** → Duplicates screen.
+- [ ] **Explore graph** card appears on a graph-capable device with ≥1 item and opens the seed item's
+      graph; **absent** on a build/device where the graph is unavailable.
+- [ ] **Auto-hide**: a fresh/empty library shows only the stat cards + chart empty states (no content
+      tiles); each tile appears the moment it has something to show.
+
 ### P10e (later sub-PRs)
 - [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on
       *any* device, no model download.
