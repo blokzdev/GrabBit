@@ -83,7 +83,21 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     entity node → expand its media (`entityMedia`, capped via `:limit`); long-press → open hub /
     expand-collapse; edge-type **legend filters**. Pure graph build (expand + filter + dedupe) is
     unit-tested. *(GRAPH-SPEC §7 — graph pillar complete.)*
-- **P10d — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
+- **P10d — GrabBit Dashboard** *(capstone that unifies P10c; split into sub-PRs):* a **Dashboard**
+  home that becomes the **new default landing (`/`)** and a **5th** nav destination (Library moves to
+  `/library`). Visualizes the on-device footprint — storage % by media/file type & platform, library
+  stats, recent activity, suggestions, and a graph tile — mostly composing existing providers
+  (`sizeByType`/`sizeBySite`/`largestItems`/`recentlyPlayed`/`duplicates`/`suggestedAlbums` + counts)
+  with `fl_chart` viz. All on-device, no telemetry.
+  - **P10d-1 — Foundation** *(done)*: route/IA change (`/`=Dashboard, `/library`=Library, 5th
+    destination), the `dashboard` feature module, the hand-written `dashboardSummaryProvider`, and
+    number/text **stat tiles** (library · storage · queue · collections) with honest empty/loading/
+    error states. No charts yet.
+  - **P10d-2 — Storage & activity visualizations**: add `fl_chart`; donut charts for storage by type &
+    platform + an activity chart, with pure unit-tested chart-data mappers.
+  - **P10d-3 — Recent / suggestions / graph tiles**: recent-media grid, suggested-album section, and a
+    graph preview tile (honest "unavailable" state when the graph/AI is off).
+- **P10e — Extractive summaries:** zero-dependency pure-Dart **TextRank** floor over
   descriptions/subtitles/transcripts.
 
 **Exit:** on any device, the Cozo index builds & rebuilds; semantic search + "related" return

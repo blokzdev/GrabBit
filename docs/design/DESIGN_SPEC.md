@@ -141,13 +141,23 @@ scrollable disclaimer paragraphs, full-width pill primary "I understand and agre
 Centered branded lock icon, obscured PIN field (numeric), full-width "Unlock", secondary
 "Use biometrics" when enabled. Error variant ("Wrong PIN") with subtle shake. No nav.
 
-### `[x]` Home — Library view — `/` (P7c)
+### `[x]` Dashboard — `/` (P10d)
+The default landing and 1st of **5** nav destinations. Tonal app bar (wordmark). An
+"Overview" section of tappable, tonal **stat tiles** (icon + large value + label) in a
+responsive grid (2-col phone → 3 tablet → 4 desktop): library count, storage used (with a
+device "free of total" subtitle), queue pending (accent-tinted "N downloading" while
+active), collections. Tiles drill into `/library` · `/storage` · `/queue` · `/collections`.
+States: populated · empty ("Your dashboard is empty" + Add a download) · shimmer skeleton ·
+error+retry. *(P10d-2 adds `fl_chart` storage/activity charts; P10d-3 adds recent/
+suggestion/graph tiles.)*
+
+### `[x]` Home — Library view — `/library` (P7c, moved off `/` in P10d)
 Tonal app bar (wordmark + Sort, Collections w/ badge, Queue w/ badge + active dot);
 "Library | Explorer" segmented toggle; filter bar (search + type chips All/Video/Audio/
 Image); responsive media grid (2-col phone, more on large screens); pull-to-refresh;
 extended FAB "Add". States: populated · empty ("library is empty" + Add) · skeleton grid.
 
-### `[x]` Home — Explorer view — `/` (P7c)
+### `[x]` Home — Explorer view — `/library` (P7c)
 Same screen, toggled. Breadcrumb row; mixed folder tiles + media cards; multi-select
 (long-press) with "Move to folder"; folder rename/delete; FAB → "New folder". Empty
 folder state.
@@ -209,10 +219,11 @@ Medium 600–839 / Expanded 840–1199 / Large 1200–1599 / Extra-large ≥1600
 covers phones, tablets, foldables (folded = Compact, unfolded = Medium/Expanded) and desktops.
 - **`ContentBounds`** (`core/widgets/content_bounds.dart`) caps + centers content: single-column
   screens at ~640, galleries at ~1280 — no edge-to-edge stretching on wide windows.
-- **Unified navigation** (`AdaptiveNavigationScaffold` over a `StatefulShellRoute`): the four
-  top-level destinations (Library · Queue · Collections · Settings) render as a bottom
+- **Unified navigation** (`AdaptiveNavigationScaffold` over a `StatefulShellRoute`): the five
+  top-level destinations (Dashboard · Library · Queue · Collections · Settings) render as a bottom
   `NavigationBar` on Compact → `NavigationRail` on Medium/Expanded → **extended rail** on
-  Large/desktop. Queue/Collections badges live on the destinations.
+  Large/desktop. The Dashboard is the default landing (`/`); Queue/Collections badges live on the
+  destinations.
 - **a11y:** ≥48dp targets (theme), search-clear tooltip, `Semantics` (selected/button) on
   selection + grid tiles, scrim-contrast bump, dynamic-type verified at 200%.
 

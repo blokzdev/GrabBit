@@ -565,7 +565,22 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Edge filters**: the legend chips toggle each relation's nodes/edges on and off.
 - [ ] **Bounded**: an entity with many items expands to a capped set (no runaway); pan/zoom stay smooth.
 
-### P10d (later sub-PRs)
+### P10d-1 — Dashboard: foundation  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] **Default landing**: a cold launch opens on the **Dashboard** (`/`), now the first of **5** nav
+      destinations (Dashboard · Library · Queue · Collections · Settings).
+- [ ] **Library moved**: the Library opens from its own (2nd) destination; the FAB **Add** flow,
+      batch **selection**, and the queue **Home** button all still land somewhere sensible (now the
+      Dashboard).
+- [ ] **Onboarding**: a brand-new install (disclaimer → AI setup) ends on the Dashboard; enabling the
+      app lock and unlocking also returns to the Dashboard.
+- [ ] **Stat tiles**: library count, storage used (with device "free of total" when available), queue
+      pending (+ "N downloading" while active), and collections count show real values and **tap
+      through** to the matching screen.
+- [ ] **Honest states**: a fresh install shows the empty state with an **Add a download** action; the
+      tiles shimmer while loading.
+- [ ] **5 tabs on a narrow phone** stay usable; on a tablet/foldable the rail shows all five.
+
+### P10e (later sub-PRs)
 - [ ] **Extractive summary** (TextRank) shows a TL;DR on items with a description/subtitles — on
       *any* device, no model download.
 - [ ] Runs on a **low-end device** (embedder-only) without a crash.

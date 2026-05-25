@@ -292,3 +292,10 @@ theoretical-only cloud seam (`docs/AI-SPEC.md` §1), but it is unplanned.
   generated row class (e.g. `MediaItem`, `DownloadTask`). Any provider that returns
   such a type **must be a hand-written** `StreamProvider`/`FutureProvider`/`Notifier`,
   not codegen. Codegen is still used everywhere else (engine provider, router, etc.).
+- **Navigation IA (P10d).** Five top-level destinations live in the `StatefulShellRoute`
+  (`core/routing/app_router.dart`), ordered **Dashboard · Library · Queue · Collections ·
+  Settings**. The **Dashboard is the default landing (`/`)**; the Library lives at
+  `/library`. `startupRedirect`/`lockRedirect` (`core/routing/router_refresh.dart`) treat
+  `/` as "home", so onboarding and unlock land on the Dashboard. The Dashboard
+  (`features/dashboard/`) composes existing aggregation providers into a hand-written
+  `dashboardSummaryProvider` (Drift-row inputs → pure `DashboardSummary`).

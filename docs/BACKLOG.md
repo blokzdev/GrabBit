@@ -8,13 +8,6 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
-- [ ] **Dashboard home (its own phase, post-P10c).** A 5th **Dashboard** that visualizes the on-device
-      footprint (storage % by media/file type & platform), library stats, recent activity, and
-      suggestions — the capstone that unifies P10c (incl. a graph tile). Mostly composition of existing
-      providers (`sizeByType`/`sizeBySite`/`largestItems` in `storage_screen`, `recentlyPlayed`,
-      `suggestedAlbums`, `duplicates`, collection/library counts) + viz widgets and a charting dep (e.g.
-      `fl_chart`). Needs its own design for the **IA change** — a 5th nav destination + a new *default
-      landing* (today `/` is the Library). All on-device, no telemetry. *(Raised during P10c-e planning.)*
 - [ ] **P7n — Two-pane list-detail + foldable hinge/posture polish.** Show list-detail
       side-by-side on Expanded+ widths (Library↔Item Detail, Collections↔detail); avoid the
       hinge via `MediaQuery.displayFeatures`/`hinge`; preserve selection/scroll across
@@ -56,6 +49,9 @@ _(nothing active — pick the next batch from below)_
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
+- [ ] **Dashboard home** → scheduled as **P10d** (`docs/design/P-AI-PLAN.md`): a 5th nav destination
+  and the new default landing (`/`), visualizing the on-device footprint with `fl_chart`. Split into
+  P10d-1 (foundation), P10d-2 (charts), P10d-3 (recent/suggestions/graph). *(Raised during P10c-e.)*
 - [x] **Advanced format/codec picker** on Add Download → shipped in **P8d**
   (`docs/design/P8-PLAN.md`). *(Was deferred from P7d.)*
 - [x] Queue **drag-to-reorder** + aggregate **dashboard** (live speed / ETA / total size) →

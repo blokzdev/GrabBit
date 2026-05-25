@@ -7,18 +7,28 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
+import 'package:grabbit/features/settings/data/settings_model.dart';
+import 'package:grabbit/features/settings/data/settings_repository.dart';
 
 void main() {
-  testWidgets('launches to the empty Library screen', (tester) async {
+  testWidgets('launches to the empty Dashboard (P10d)', (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    // Seed onboarded settings so the router doesn't redirect to /disclaimer.
+    await SettingsRepository(
+      db,
+    ).write(const SettingsModel(disclaimerAccepted: true, aiSetupSeen: true));
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           appDatabaseProvider.overrideWithValue(db),
           filteredLibraryProvider.overrideWith((ref) => Stream.value(const [])),
-          // Stub the app-bar badge streams (drift .watch() never completes,
-          // which would hang the test's event loop).
+          // Stub the streams the dashboard + nav badges aggregate (drift
+          // .watch() never completes, which would hang the test's event loop).
+          libraryItemsProvider.overrideWith(
+            (ref) => Stream.value(<MediaItem>[]),
+          ),
           queueTasksProvider.overrideWith(
             (ref) => Stream.value(<DownloadTask>[]),
           ),
@@ -29,11 +39,10 @@ void main() {
         child: const GrabBitApp(),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    // 'Library' now appears in both the nav destination and the
-    // Library/Explorer toggle.
-    expect(find.text('Library'), findsWidgets);
-    expect(find.text('Your library is empty'), findsOneWidget);
+    // The Dashboard is the default landing; 'Dashboard' shows on the nav chrome.
+    expect(find.text('Dashboard'), findsWidgets);
+    expect(find.text('Your dashboard is empty'), findsOneWidget);
   });
 }
