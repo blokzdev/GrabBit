@@ -18,6 +18,39 @@ String vectorSearchScript() =>
     ':order dist\n'
     ':limit \$k';
 
+/// Reads the stored embedding vector for `$id` (`[v]`, empty if the item hasn't
+/// been embedded yet). Lets "more like this" search by an item's *own* vector
+/// without re-embedding — so the read side never touches the AI layer.
+String itemVectorScript() => '?[v] := *embedding{id: \$id, v}';
+
+/// Graph neighbours that share a deterministic signal with `$id`, as
+/// `[other, kind, val]` rows (one row per shared connection). `kind` ∈
+/// `uploader | playlist | tag | codownload`; `val` is the shared key (uploader
+/// id / playlist id / tag), or `''` for co-download. Emitting one row per shared
+/// **tag** (rather than collapsing) lets the ranker weight by overlap count.
+/// Pure Datalog — no vector syntax — so it runs and is reasoned about without
+/// the native HNSW index.
+String relatedNeighborsScript() =>
+    '?[other, kind, val] := *postedBy{mediaId: \$id, uploaderId: u}, '
+    '*postedBy{mediaId: other, uploaderId: u}, other != \$id, '
+    'kind = "uploader", val = u\n'
+    '?[other, kind, val] := *inPlaylist{mediaId: \$id, playlistId: p}, '
+    '*inPlaylist{mediaId: other, playlistId: p}, other != \$id, '
+    'kind = "playlist", val = p\n'
+    '?[other, kind, val] := *taggedWith{mediaId: \$id, tag: t}, '
+    '*taggedWith{mediaId: other, tag: t}, other != \$id, kind = "tag", val = t\n'
+    '?[other, kind, val] := *coDownloadedWith{mediaId: \$id, otherId: other}, '
+    'kind = "codownload", val = ""\n'
+    '?[other, kind, val] := *coDownloadedWith{mediaId: other, otherId: \$id}, '
+    'kind = "codownload", val = ""';
+
+/// Ids that are exact duplicates of `$id` (`duplicateOf` either direction).
+/// "More like this" excludes these — a duplicate is the *same* item, not a
+/// similar one; near-duplicate clustering is its own feature (P10c-d).
+String duplicateIdsScript() =>
+    '?[other] := *duplicateOf{mediaId: \$id, otherId: other}\n'
+    '?[other] := *duplicateOf{mediaId: other, otherId: \$id}';
+
 /// Decodes a CozoScript result (`{headers: [...], rows: [[...], ...]}`) into a
 /// list of column-keyed maps. Tolerant of a missing/empty `headers` or `rows`
 /// (returns `const []`). Generalises the `graphRelationNames` header-scan in

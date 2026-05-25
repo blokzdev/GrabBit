@@ -15,6 +15,35 @@ void main() {
     });
   });
 
+  group('itemVectorScript', () {
+    test('reads the stored vector for the bound id', () {
+      expect(itemVectorScript(), contains(r'*embedding{id: $id, v}'));
+    });
+  });
+
+  group('relatedNeighborsScript', () {
+    test('unions the four shared signals as [other, kind, val] rows', () {
+      final script = relatedNeighborsScript();
+      expect(script, contains('?[other, kind, val]'));
+      expect(script, contains('*postedBy'));
+      expect(script, contains('*inPlaylist'));
+      expect(script, contains('*taggedWith'));
+      expect(script, contains('*coDownloadedWith'));
+      expect(script, contains('kind = "uploader"'));
+      expect(script, contains('kind = "tag"'));
+      expect(script, contains('kind = "codownload"'));
+      expect(script, contains(r'other != $id'));
+    });
+  });
+
+  group('duplicateIdsScript', () {
+    test('matches duplicateOf in both directions', () {
+      final script = duplicateIdsScript();
+      expect(script, contains(r'*duplicateOf{mediaId: $id, otherId: other}'));
+      expect(script, contains(r'*duplicateOf{mediaId: other, otherId: $id}'));
+    });
+  });
+
   group('decodeRows', () {
     test('maps header/row tuples into column-keyed maps', () {
       final rows = decodeRows({

@@ -52,7 +52,10 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     `~embedding:idx` vector search), reused by every later subphase — plus **semantic library search**
     (a Text/Smart toggle in the Library search bar, gated on `semanticSearchEnabled && embedder ready`,
     run on submit, ranking the whole library; graceful text-only fallback when AI is off).
-  - **P10c-b — Related / "More like this"** (hybrid vector + graph re-rank; item-detail section).
+  - **P10c-b — Related / "More like this"** *(done)*: `GraphQueryService.relatedTo` blends vector
+    similarity (the item's own stored embedding) with deterministic graph neighbours (shared
+    uploader/playlist/tag/co-download) via a pure Dart ranker; surfaced as a horizontal "More like
+    this" carousel on item detail. Works graph-only without embeddings; excludes exact duplicates.
   - **P10c-c — Entity hubs + tag suggestions** (pure-graph, every device).
   - **P10c-d — Near-duplicate clusters** (vector `similarTo` folded into the existing exact-hash
     `DuplicatesScreen`).

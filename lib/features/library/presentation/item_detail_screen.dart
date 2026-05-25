@@ -21,6 +21,7 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/library/presentation/related_provider.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
 
@@ -200,10 +201,112 @@ class _ItemBody extends StatelessWidget {
               _CollectionsRow(itemId: item.id),
               SizedBox(height: tokens.spaceLg),
               _ExportButton(item: item),
+              _RelatedSection(itemId: item.id),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "More like this" — a horizontal carousel of related items (graph + vector).
+/// Renders nothing until results arrive (or when the graph is unavailable), so
+/// it never adds empty chrome to the detail screen.
+class _RelatedSection extends ConsumerWidget {
+  const _RelatedSection({required this.itemId});
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final related =
+        ref.watch(relatedItemsProvider(itemId)).asData?.value ?? const [];
+    if (related.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceLg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('More like this', style: theme.textTheme.titleMedium),
+          SizedBox(height: tokens.spaceSm),
+          SizedBox(
+            height: 150,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: related.length,
+              separatorBuilder: (_, _) => SizedBox(width: tokens.spaceMd),
+              itemBuilder: (_, i) => _RelatedCard(item: related[i]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelatedCard extends StatelessWidget {
+  const _RelatedCard({required this.item});
+  final MediaItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final radius = BorderRadius.circular(tokens.radiusMd);
+    return SizedBox(
+      width: 150,
+      child: InkWell(
+        onTap: () => context.push('/item/${item.id}'),
+        borderRadius: radius,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: radius,
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MediaThumb(item: item),
+                    if (item.type == 'video')
+                      Center(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.scrim.withValues(
+                              alpha: 0.4,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(
+                              Icons.play_arrow_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: tokens.spaceXs),
+            Text(
+              item.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
