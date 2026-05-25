@@ -79,7 +79,16 @@ class AndroidCozoGraphStore implements GraphStore {
         cause: e,
       );
     }
-    final decoded = jsonDecode(raw) as Map<String, Object?>;
+    final Map<String, Object?> decoded;
+    try {
+      decoded = jsonDecode(raw) as Map<String, Object?>;
+    } catch (e) {
+      throw GraphException(
+        GraphErrorCode.queryFailed,
+        'Could not decode the CozoScript result',
+        cause: e,
+      );
+    }
     if (decoded['ok'] == false) {
       throw GraphException(
         GraphErrorCode.queryFailed,

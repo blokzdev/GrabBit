@@ -51,6 +51,11 @@ class _FakeInferenceEngine implements InferenceEngine {
       List<double>.filled(dimension, 0);
 
   @override
+  Future<List<List<double>>> embedBatch(List<String> texts) async => [
+    for (final _ in texts) List<double>.filled(dimension, 0),
+  ];
+
+  @override
   Future<void> close() async {}
 }
 

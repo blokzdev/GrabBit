@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' show TableUpdateQuery;
+import 'package:drift/drift.dart' show TableUpdateQuery, countAll;
 import 'package:grabbit/core/ai/inference_engine.dart';
 import 'package:grabbit/core/ai/unavailable_inference_engine.dart';
 import 'package:grabbit/core/db/database.dart';
@@ -74,10 +74,14 @@ class GraphSyncService {
 
   /// Bump when the projection logic changes so a startup self-heal rebuilds even
   /// though the data hasn't changed. Combined with the Drift schema version.
-  static const _edgeBuilderVersion = 1;
+  /// v2: `duplicateOf` + `coDownloadedWith` are now projected (P10b-3).
+  static const _edgeBuilderVersion = 2;
 
   /// Identifies the shape of the projected graph; persisted to detect staleness.
-  String get fingerprint => '${_db.schemaVersion}.$_edgeBuilderVersion';
+  /// Includes the embedder model id so a model change trips the self-heal pass
+  /// (the dimension-level guard lives in [_ensureEmbeddingSchema]).
+  String get fingerprint =>
+      '${_db.schemaVersion}.$_edgeBuilderVersion.${_engine.model.id}';
 
   /// Full, idempotent rebuild: project every relation from Drift and `:replace`
   /// it (clearing stale rows). Returns post-rebuild counts.
@@ -105,9 +109,27 @@ class GraphSyncService {
     required String storedVersion,
     required Future<void> Function(String version) stamp,
   }) async {
-    if (storedVersion == fingerprint) return;
-    final stats = await rebuild();
-    if (stats.available) await stamp(fingerprint);
+    if (storedVersion != fingerprint) {
+      final stats = await rebuild();
+      if (stats.available) await stamp(fingerprint);
+      return;
+    }
+    // Fingerprint matches, but a prior partial/failed sync could still leave the
+    // graph diverged from Drift. Cheaply confirm the media counts agree, and
+    // rebuild if they don't (GRAPH-SPEC §3).
+    if (!await _ensureOpen()) return;
+    if (await _driftMediaCount() != await _count('media')) await rebuild();
+  }
+
+  /// Closes the Cozo store (e.g. when the app backgrounds) to release the SQLite
+  /// handle/lock and flush. The next rebuild/backfill/stats call reopens lazily
+  /// via [_ensureOpen]. Best-effort; skips while a rebuild is in flight.
+  Future<void> releaseStore() async {
+    _debounceTimer?.cancel();
+    if (_rebuilding) return;
+    try {
+      await _store.close();
+    } catch (_) {}
   }
 
   /// Subscribes to library-table changes and rebuilds (debounced). Zero repo
@@ -165,7 +187,7 @@ class GraphSyncService {
     if (!await _engine.ensureReady()) {
       return const EmbeddingStats(available: false);
     }
-    await _ensureEmbeddingSchema(_engine.dimension);
+    await _ensureEmbeddingSchema(_engine.model.id, _engine.dimension);
 
     final desired = buildEmbeddingDocs(
       await _snapshot(),
@@ -174,20 +196,22 @@ class GraphSyncService {
     final current = await _embeddingPairs();
     final diff = diffEmbeddings(current: current, desired: desired);
 
+    final toEmbed = diff.toEmbed;
     var done = 0;
-    final rows = <List<Object?>>[];
-    for (final doc in diff.toEmbed) {
-      final vector = await _engine.embed(doc.text);
-      rows.add([doc.id, vector, doc.textHash]);
-      done++;
-      onProgress?.call(diff.toEmbed.isEmpty ? 1 : done / diff.toEmbed.length);
-      if (rows.length >= _embedChunk) {
-        await _store.runScript(embeddingPutScript(), {'rows': List.of(rows)});
-        rows.clear();
-      }
-    }
-    if (rows.isNotEmpty) {
-      await _store.runScript(embeddingPutScript(), {'rows': rows});
+    for (var i = 0; i < toEmbed.length; i += _embedChunk) {
+      final end = (i + _embedChunk < toEmbed.length)
+          ? i + _embedChunk
+          : toEmbed.length;
+      final chunk = toEmbed.sublist(i, end);
+      final vectors = await _engine.embedBatch([for (final d in chunk) d.text]);
+      await _store.runScript(embeddingPutScript(), {
+        'rows': [
+          for (var k = 0; k < chunk.length; k++)
+            [chunk[k].id, vectors[k], chunk[k].textHash],
+        ],
+      });
+      done += chunk.length;
+      onProgress?.call(done / toEmbed.length);
     }
     if (diff.toRemove.isNotEmpty) {
       await _store.runScript(embeddingRemoveScript(), {
@@ -204,23 +228,69 @@ class GraphSyncService {
     );
   }
 
-  /// Creates the embedding relation + HNSW index if absent (idempotent — mirrors
-  /// `missingSchemaScripts`). Owned here, not by `GraphStore.ensureSchema`, since
-  /// the dimension is an embedder concern and the relation shouldn't exist on
-  /// devices that never enable semantic search.
-  Future<void> _ensureEmbeddingSchema(int dim) async {
-    final res = await _store.runScript('::relations');
-    final headers = (res['headers'] as List?) ?? const [];
-    final nameIdx = headers.indexOf('name');
-    final rows = (res['rows'] as List?) ?? const [];
-    final exists =
-        nameIdx >= 0 &&
-        rows.any(
-          (r) => r is List && nameIdx < r.length && r[nameIdx] == 'embedding',
-        );
-    if (exists) return;
+  /// Ensures the embedding relation + HNSW index exist **for the current model**.
+  /// Owned here, not by `GraphStore.ensureSchema`, since the dimension is an
+  /// embedder concern and the relation shouldn't exist on devices that never
+  /// enable semantic search. A sidecar (`embedding_meta`) records the model+dim
+  /// the index was built with; if either changed (or there's no record), the
+  /// relation is dropped and recreated so vectors never mix spaces — the cache
+  /// reset makes the next backfill re-embed everything.
+  Future<void> _ensureEmbeddingSchema(String modelId, int dim) async {
+    final relations = await _relationNames();
+    if (!relations.contains('embedding_meta')) {
+      await _store.runScript(embeddingMetaCreateScript());
+    }
+    final meta = await _readMeta();
+    final matches = meta['model'] == modelId && meta['dim'] == '$dim';
+    final hasEmbedding = relations.contains('embedding');
+    if (hasEmbedding && matches) return;
+    if (hasEmbedding) await _store.runScript(embeddingDropScript());
     await _store.runScript(embeddingCreateScript(dim));
     await _store.runScript(embeddingHnswScript(dim));
+    await _store.runScript(embeddingMetaPutScript(), {
+      'rows': [
+        ['model', modelId],
+        ['dim', '$dim'],
+      ],
+    });
+  }
+
+  /// Names of the stored relations (`::relations`), empty on error.
+  Future<Set<String>> _relationNames() async {
+    try {
+      final res = await _store.runScript('::relations');
+      final headers = (res['headers'] as List?) ?? const [];
+      final nameIdx = headers.indexOf('name');
+      if (nameIdx < 0) return {};
+      final rows = (res['rows'] as List?) ?? const [];
+      return {
+        for (final r in rows)
+          if (r is List && nameIdx < r.length) '${r[nameIdx]}',
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Reads the `embedding_meta` sidecar as a `key → value` map, empty on error.
+  Future<Map<String, String>> _readMeta() async {
+    try {
+      final res = await _store.runScript(embeddingMetaReadScript());
+      final rows = (res['rows'] as List?) ?? const [];
+      return {
+        for (final r in rows)
+          if (r is List && r.length >= 2) '${r[0]}': '${r[1]}',
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Canonical media count straight from Drift (no full row load).
+  Future<int> _driftMediaCount() async {
+    final c = countAll();
+    final q = _db.selectOnly(_db.mediaItems)..addColumns([c]);
+    return (await q.getSingle()).read(c) ?? 0;
   }
 
   Future<Map<String, String>> _embeddingPairs() async {

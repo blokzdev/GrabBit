@@ -40,6 +40,19 @@ void main() {
       );
     });
 
+    test('embedBatch throws unavailable', () async {
+      await expectLater(
+        engine.embedBatch(const ['a', 'b']),
+        throwsA(
+          isA<InferenceException>().having(
+            (e) => e.code,
+            'code',
+            InferenceErrorCode.unavailable,
+          ),
+        ),
+      );
+    });
+
     test('downloadModel throws unavailable', () async {
       await expectLater(
         engine.downloadModel(),

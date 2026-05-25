@@ -23,12 +23,17 @@ class LibrarySnapshot {
   final List<({String itemId, int collectionId})> collectionLinks;
 }
 
+/// Downloads within this window of each other are treated as one session and
+/// chained by `coDownloadedWith` (a deterministic temporal-proximity signal).
+const Duration _coDownloadWindow = Duration(minutes: 5);
+
 /// Projects [snapshot] into `relationName → rows` (each row a value list in the
 /// column order of `graphRelationColumns`). Pure: no I/O, deterministic — the
 /// heart of the Drift→Cozo sync. Entity nodes are de-duplicated by key; edges
-/// are emitted only when their foreign key is present. `duplicateOf` and
-/// `coDownloadedWith` are intentionally left empty here (populated in P10c with
-/// the near-duplicate feature).
+/// are emitted only when their foreign key is present. `duplicateOf` (identical
+/// `contentHash`) and `coDownloadedWith` (close `createdAt`) are deterministic
+/// signals already in the library, projected here; `similarTo` (vector-derived)
+/// stays for P10c.
 Map<String, List<List<Object?>>> buildGraphRelations(LibrarySnapshot snapshot) {
   final metaByItem = {for (final m in snapshot.metadata) m.itemId: m};
 
@@ -88,6 +93,42 @@ Map<String, List<List<Object?>>> buildGraphRelations(LibrarySnapshot snapshot) {
       if (f.parentId != null) [f.id, f.parentId],
   ];
 
+  // --- deterministic similarity edges ---
+  // duplicateOf: symmetric pairs within each non-empty contentHash group.
+  final byHash = <String, List<String>>{};
+  for (final it in snapshot.media) {
+    final h = it.contentHash;
+    if (h != null && h.isNotEmpty) (byHash[h] ??= []).add(it.id);
+  }
+  final duplicateOf = <List<Object?>>[];
+  for (final ids in byHash.values) {
+    if (ids.length < 2) continue;
+    for (var i = 0; i < ids.length; i++) {
+      for (var j = i + 1; j < ids.length; j++) {
+        duplicateOf
+          ..add([ids[i], ids[j]])
+          ..add([ids[j], ids[i]]);
+      }
+    }
+  }
+
+  // coDownloadedWith: chain consecutive downloads within _coDownloadWindow,
+  // weighted by the gap in seconds (symmetric). O(n) over time-sorted media.
+  final timeSorted = [...snapshot.media]
+    ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  final coDownloadedWith = <List<Object?>>[];
+  for (var i = 1; i < timeSorted.length; i++) {
+    final prev = timeSorted[i - 1];
+    final cur = timeSorted[i];
+    final gap = cur.createdAt.difference(prev.createdAt);
+    if (gap <= _coDownloadWindow) {
+      final gapSec = gap.inSeconds;
+      coDownloadedWith
+        ..add([prev.id, cur.id, gapSec])
+        ..add([cur.id, prev.id, gapSec]);
+    }
+  }
+
   return {
     'media': media,
     'uploader': uploaders.values.toList(),
@@ -115,7 +156,7 @@ Map<String, List<List<Object?>>> buildGraphRelations(LibrarySnapshot snapshot) {
     ],
     'inFolder': inFolder,
     'folderParent': folderParent,
-    'duplicateOf': const [],
-    'coDownloadedWith': const [],
+    'duplicateOf': duplicateOf,
+    'coDownloadedWith': coDownloadedWith,
   };
 }

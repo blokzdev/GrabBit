@@ -40,6 +40,12 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     `sha256(modelId+text)`, prunes deleted ids), gated on `ensureReady()`; triggered from the live
     listener, startup, and opt-in; self-test reports the embedding count. `similarTo` + query-time
     vector search stay P10c. *(GRAPH-SPEC §5, §6)*
+  - **P10b-3 — Cozo hardening + deterministic quick-wins** *(done)*: close the store on app background
+    (lazy reopen); guard the `runScript` JSON decode; track the embedder model/dim in an
+    `embedding_meta` sidecar + include the model id in the fingerprint so a model change rebuilds the
+    index; Drift↔Cozo count-divergence self-heal; batch embedding (`embedBatch`); and project the
+    deterministic **`duplicateOf`** (`contentHash`) + **`coDownloadedWith`** (`createdAt`) edges so
+    P10c's near-duplicate feature is a pure query. *(GRAPH-SPEC §3, §6, §8)*
 - **P10c — Universal graph features:** semantic search; **Related / "More like this"** (hybrid
   vector + graph re-rank); **entity hubs** (uploader/playlist/tag/site); **near-duplicate clusters**;
   **tag suggestions**; **interactive graph viz** (candidate `graphview`). *(GRAPH-SPEC §7)*

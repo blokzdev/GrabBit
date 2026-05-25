@@ -37,6 +37,11 @@ abstract interface class InferenceEngine {
   /// [InferenceErrorCode.unavailable] when the engine isn't ready.
   Future<List<double>> embed(String text);
 
+  /// Embeds [texts] in one native round-trip, returning a vector per input (in
+  /// order). Used by the embedding backfill to cut per-item overhead. Throws
+  /// [InferenceErrorCode.unavailable] when the engine isn't ready.
+  Future<List<List<double>>> embedBatch(List<String> texts);
+
   /// Releases native resources held by the loaded model.
   Future<void> close();
 }

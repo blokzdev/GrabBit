@@ -90,5 +90,18 @@ void main() {
       expect(embeddingPairsScript(), contains('*embedding{id, textHash}'));
       expect(embeddingCountScript(), contains('count(id)'));
     });
+
+    test('meta + drop scripts track the model/dim and reset the index', () {
+      expect(
+        embeddingMetaCreateScript(),
+        startsWith(':create embedding_meta '),
+      );
+      expect(
+        embeddingMetaReadScript(),
+        contains('*embedding_meta{key, value}'),
+      );
+      expect(embeddingMetaPutScript(), contains(':put embedding_meta'));
+      expect(embeddingDropScript(), '::remove embedding');
+    });
   });
 }
