@@ -116,10 +116,11 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   the in-app language on every download (when no explicit subtitle langs set), feeding auto-transcribe;
   groups the transcript toggles into a dedicated "Transcripts" settings section. Reuses the P8c subtitle
   path (no native change); the in-app default language is `SettingsModel.captionLanguage`.
-- **P10f-4 — Timestamped, tap-to-seek transcript** *(later)*: retain caption-cue timings (today
-  `captionsToTranscript` keeps only `.text`) in a timed representation stored beside the flat transcript;
-  item-detail renders a scrollable transcript whose lines **seek the player**; groundwork for timestamped
-  GraphRAG citations. Pure-Dart/UI + a schema addition.
+- **P10f-4 — Timestamped, tap-to-seek transcript** *(done)*: `captionsToTimedTranscript` keeps each
+  line's start time; stored as JSON in `MediaMetadata.transcriptCues` (schema v6) via
+  `transcript_service.extractTimed`. Item-detail renders a synced scrollable transcript (`_SyncedTranscript`)
+  whose lines **seek the player** and highlight/auto-scroll with playback; the player controller is shared
+  via a screen-scoped `ValueNotifier`. Groundwork for timestamped GraphRAG citations. Pure-Dart/UI.
 - **P10g — Transcript-powered semantic index** *(later)*: include transcript text in the embedding doc
   (`lib/core/graph/embedding_doc.dart` today uses title/uploader/playlist/tags/description only) so
   semantic search · "related" · GraphRAG run on spoken content. Needs **chunking / a representative

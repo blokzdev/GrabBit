@@ -9,6 +9,7 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/text/textrank.dart';
+import 'package:grabbit/core/text/transcript_dedup.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
@@ -180,12 +181,28 @@ Future<void> _deleteAndPop(
     ..showSnackBar(const SnackBar(content: Text('Deleted')));
 }
 
-class _ItemBody extends StatelessWidget {
+class _ItemBody extends StatefulWidget {
   const _ItemBody({required this.item});
   final MediaItem item;
 
   @override
+  State<_ItemBody> createState() => _ItemBodyState();
+}
+
+class _ItemBodyState extends State<_ItemBody> {
+  /// The active player controller (P10f-4), shared with the synced transcript
+  /// so it can seek and follow playback. Null for image items / before init.
+  final _player = ValueNotifier<VideoPlayerController?>(null);
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final tokens = GrabBitTokens.of(context);
@@ -208,7 +225,11 @@ class _ItemBody extends StatelessWidget {
                         errorBuilder: (_, _, _) => const _BrokenMedia(),
                       ),
                     )
-                  : _PlayerView(itemId: item.id, filePath: item.filePath),
+                  : _PlayerView(
+                      itemId: item.id,
+                      filePath: item.filePath,
+                      player: _player,
+                    ),
             ),
           ),
         ),
@@ -246,7 +267,11 @@ class _ItemBody extends StatelessWidget {
               _DetailChips(item: item),
               _SummarySection(itemId: item.id),
               _MetadataSection(itemId: item.id),
-              _TranscriptSection(itemId: item.id, mediaPath: item.filePath),
+              _TranscriptSection(
+                itemId: item.id,
+                mediaPath: item.filePath,
+                player: _player,
+              ),
               if (item.notes != null && item.notes!.isNotEmpty) ...[
                 SizedBox(height: tokens.spaceMd),
                 Text(item.notes!, style: theme.textTheme.bodyMedium),
@@ -518,9 +543,13 @@ Future<void> _getTranscript(
   final metadata = ref.read(metadataRepositoryProvider);
 
   // Local-first: build from any caption files already beside the media.
-  final local = await transcripts.extractTranscript(row.filePath);
+  final local = await transcripts.extractTimed(row.filePath);
   if (local != null) {
-    await metadata.updateTranscript(row.id, local);
+    await metadata.updateTranscript(
+      row.id,
+      local.flat,
+      cuesJson: local.cuesJson,
+    );
     messenger.showSnackBar(
       const SnackBar(content: Text('Transcript built from captions')),
     );
@@ -567,7 +596,7 @@ Future<void> _getTranscript(
     return;
   }
 
-  final fetched = await transcripts.extractTranscript(
+  final fetched = await transcripts.extractTimed(
     row.filePath,
     preferLang: lang,
   );
@@ -581,7 +610,11 @@ Future<void> _getTranscript(
     );
     return;
   }
-  await metadata.updateTranscript(row.id, fetched);
+  await metadata.updateTranscript(
+    row.id,
+    fetched.flat,
+    cuesJson: fetched.cuesJson,
+  );
   messenger.showSnackBar(const SnackBar(content: Text('Transcript ready')));
 }
 
@@ -650,20 +683,27 @@ Future<String?> _promptLanguageCode(BuildContext context) async {
   return (code == null || code.isEmpty) ? null : code;
 }
 
-/// The stored transcript (P10f) in an expandable block. Hidden when there's no
-/// transcript; when "backfill on open" is enabled it builds one once from any
-/// caption sidecars the first time the item is opened.
+/// The stored transcript (P10f). Shows a synced, tappable, timestamped view
+/// (P10f-4) when timed cues + a live player are available, else a flat
+/// expandable block. Builds a transcript once from caption sidecars when
+/// "backfill on open" is enabled (no transcript yet) and lazily fills in timed
+/// cues for transcripts captured before P10f-4.
 class _TranscriptSection extends ConsumerStatefulWidget {
-  const _TranscriptSection({required this.itemId, required this.mediaPath});
+  const _TranscriptSection({
+    required this.itemId,
+    required this.mediaPath,
+    required this.player,
+  });
   final String itemId;
   final String mediaPath;
+  final ValueNotifier<VideoPlayerController?> player;
 
   @override
   ConsumerState<_TranscriptSection> createState() => _TranscriptSectionState();
 }
 
 class _TranscriptSectionState extends ConsumerState<_TranscriptSection> {
-  bool _backfillAttempted = false;
+  bool _buildAttempted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -683,12 +723,25 @@ class _TranscriptSectionState extends ConsumerState<_TranscriptSection> {
     final transcript = meta?.transcript;
 
     if (transcript == null || transcript.trim().isEmpty) {
-      if (backfillOn && !_backfillAttempted) {
-        _backfillAttempted = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _runBackfill());
+      if (backfillOn && !_buildAttempted) {
+        _buildAttempted = true;
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _buildFromSidecar(),
+        );
       }
       return const SizedBox.shrink();
     }
+
+    // Have flat text but no timed cues (e.g. captured before P10f-4): derive
+    // them once from the sidecar so the synced view can light up.
+    if (meta?.transcriptCues == null && !_buildAttempted) {
+      _buildAttempted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _buildFromSidecar());
+    }
+
+    final cues = meta?.transcriptCues == null
+        ? const <TranscriptCue>[]
+        : decodeCues(meta!.transcriptCues!);
 
     return Padding(
       padding: EdgeInsets.only(top: tokens.spaceMd),
@@ -697,20 +750,162 @@ class _TranscriptSectionState extends ConsumerState<_TranscriptSection> {
         children: [
           Text('Transcript', style: theme.textTheme.titleSmall),
           SizedBox(height: tokens.spaceXs),
-          _ExpandableText(text: transcript),
+          ValueListenableBuilder<VideoPlayerController?>(
+            valueListenable: widget.player,
+            builder: (context, controller, _) =>
+                (controller != null && cues.isNotEmpty)
+                ? _SyncedTranscript(cues: cues, controller: controller)
+                : _ExpandableText(text: transcript),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _runBackfill() async {
-    final transcript = await ref
+  /// Builds the transcript (flat + timed cues) from caption sidecars on disk.
+  Future<void> _buildFromSidecar() async {
+    final timed = await ref
         .read(transcriptServiceProvider)
-        .extractTranscript(widget.mediaPath);
-    if (transcript == null || !mounted) return;
+        .extractTimed(widget.mediaPath);
+    if (timed == null || !mounted) return;
     await ref
         .read(metadataRepositoryProvider)
-        .updateTranscript(widget.itemId, transcript);
+        .updateTranscript(widget.itemId, timed.flat, cuesJson: timed.cuesJson);
+  }
+}
+
+/// A YouTube-style synced transcript (P10f-4): timestamped lines; tap a line to
+/// seek the player; the currently-playing line highlights and auto-scrolls.
+class _SyncedTranscript extends StatefulWidget {
+  const _SyncedTranscript({required this.cues, required this.controller});
+  final List<TranscriptCue> cues;
+  final VideoPlayerController controller;
+
+  @override
+  State<_SyncedTranscript> createState() => _SyncedTranscriptState();
+}
+
+class _SyncedTranscriptState extends State<_SyncedTranscript> {
+  static const double _collapsedHeight = 280;
+  bool _expanded = false;
+  int _activeIndex = -1;
+  final _itemKeys = <int, GlobalKey>{};
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTick);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTick);
+    super.dispose();
+  }
+
+  void _onTick() {
+    final idx = _indexFor(widget.controller.value.position);
+    if (idx == _activeIndex || !mounted) return;
+    setState(() => _activeIndex = idx);
+    final ctx = _itemKeys[idx]?.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  /// The last cue that has started at or before [pos] (binary search).
+  int _indexFor(Duration pos) {
+    final cues = widget.cues;
+    var lo = 0, hi = cues.length - 1, ans = -1;
+    while (lo <= hi) {
+      final mid = (lo + hi) >> 1;
+      if (cues[mid].start <= pos) {
+        ans = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return ans;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final scheme = theme.colorScheme;
+
+    final list = ListView.builder(
+      shrinkWrap: true,
+      physics: _expanded ? const NeverScrollableScrollPhysics() : null,
+      padding: EdgeInsets.zero,
+      itemCount: widget.cues.length,
+      itemBuilder: (context, i) {
+        final cue = widget.cues[i];
+        final active = i == _activeIndex;
+        final key = _itemKeys.putIfAbsent(i, GlobalKey.new);
+        return InkWell(
+          key: key,
+          onTap: () => widget.controller.seekTo(cue.start),
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: tokens.spaceXs),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 52,
+                  child: Text(
+                    formatDuration(cue.start.inSeconds),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.accent,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+                SizedBox(width: tokens.spaceSm),
+                Expanded(
+                  child: Text(
+                    cue.text,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: active
+                          ? scheme.onSurface
+                          : scheme.onSurfaceVariant,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_expanded)
+          list
+        else
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: _collapsedHeight),
+            child: list,
+          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () => setState(() => _expanded = !_expanded),
+            child: Text(_expanded ? 'Show less' : 'Show full transcript'),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1078,9 +1273,14 @@ class _DetailSkeleton extends StatelessWidget {
 }
 
 class _PlayerView extends ConsumerStatefulWidget {
-  const _PlayerView({required this.itemId, required this.filePath});
+  const _PlayerView({
+    required this.itemId,
+    required this.filePath,
+    required this.player,
+  });
   final String itemId;
   final String filePath;
+  final ValueNotifier<VideoPlayerController?> player;
 
   @override
   ConsumerState<_PlayerView> createState() => _PlayerViewState();
@@ -1110,6 +1310,9 @@ class _PlayerViewState extends ConsumerState<_PlayerView> {
         return;
       }
       video.addListener(_onTick);
+      // Publish the controller so the synced transcript (P10f-4) can seek it
+      // and follow its position.
+      widget.player.value = video;
       setState(() {
         _video = video;
         _chewie = _build(video, null);
@@ -1224,6 +1427,8 @@ class _PlayerViewState extends ConsumerState<_PlayerView> {
 
   @override
   void dispose() {
+    // Stop the transcript from holding a controller we're about to dispose.
+    widget.player.value = null;
     _video?.removeListener(_onTick);
     _chewie?.dispose();
     _video?.dispose();

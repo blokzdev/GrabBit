@@ -279,6 +279,34 @@ void main() {
   );
 
   testWidgets(
+    'falls back to flat transcript when no player (image item, P10f-4)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // Image items have no player; even with timed cues present, the section
+      // shows the flat transcript (the synced tap-to-seek view needs a player).
+      await pump(
+        tester,
+        _item(), // type 'image' ⇒ no _PlayerView ⇒ no controller
+        metadata: const MediaMetadataData(
+          itemId: 'x',
+          transcript: 'hello world from the clip',
+          transcriptCues: '[{"t":0,"x":"hello world from the clip"}]',
+        ),
+      );
+
+      expect(find.text('Transcript'), findsOneWidget);
+      expect(find.textContaining('hello world'), findsWidgets);
+      // The synced view's expand control is absent without a player.
+      expect(find.text('Show full transcript'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
     'no Transcript section when transcript is null (P10f)',
     (tester) async {
       await pump(

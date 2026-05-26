@@ -66,6 +66,9 @@ class MediaMetadata extends Table {
   // P10f: plain-text transcript extracted from caption sidecars; feeds the
   // summary and (later) FTS/GraphRAG. Null until built.
   TextColumn get transcript => text().nullable()();
+  // P10f-4: timestamped transcript lines (JSON) for the synced tap-to-seek
+  // transcript view. Derived from the same captions as `transcript`.
+  TextColumn get transcriptCues => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {itemId};
@@ -147,7 +150,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -174,6 +177,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 5) {
         await m.addColumn(mediaMetadata, mediaMetadata.transcript);
+      }
+      if (from < 6) {
+        await m.addColumn(mediaMetadata, mediaMetadata.transcriptCues);
       }
       await _createIndices();
     },

@@ -646,6 +646,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] A video with **no** captions → downloads fine, no error, no transcript.
 - [ ] With explicit **Download subtitles** languages set, those still win (the setting doesn't override).
 
+### P10f-4 — Timestamped, tap-to-seek transcript (needs an APK build)
+- [ ] On a **video/audio** item with a transcript, the Transcript section shows **timestamped lines**
+      (`m:ss` + text) in a scrollable block with **Show full transcript** / **Show less**.
+- [ ] **Tapping a line seeks** the player to that time.
+- [ ] During playback, the **current line highlights** and the list **auto-scrolls** to keep it visible.
+- [ ] An **image** item (no player) — or a transcript whose caption sidecar was removed — shows the
+      **flat** transcript (no timestamps), with no crash.
+- [ ] A transcript captured **before P10f-4** (no stored cues) gains the synced view on first open
+      (cues are derived from the sidecar and saved).
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
