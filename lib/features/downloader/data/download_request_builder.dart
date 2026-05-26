@@ -19,9 +19,10 @@ DownloadRequest buildDownloadRequest({
 }) {
   final extra = parseExtraArgs(settings.extraDownloadArgs);
   final subLangs = parseCsvList(settings.subtitleLangs);
-  // P10f-3: when "Auto-download captions" is on and no explicit subtitle langs
-  // are set, fetch captions in the app's language (auto-generated as fallback)
-  // so transcripts can auto-build. Explicit "Download subtitles" langs win.
+  // P10f-3: when "Auto-fetch captions for transcripts" is on and no explicit
+  // caption langs are set, fetch captions in the app's language (auto-generated
+  // as fallback) so transcripts can auto-build. Explicit "Download captions"
+  // langs win.
   final autoCaps = settings.autoDownloadCaptions && subLangs.isEmpty;
   final effLangs = autoCaps ? [settings.captionLanguage] : subLangs;
   final sponsorOn = settings.sponsorBlockMode != 'off';

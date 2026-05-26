@@ -736,6 +736,20 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       a bottom sheet with the setting's title + plain-language explanation appears; dismiss by swipe/scrim.
 - [ ] Dropdowns (quality, theme, audio format, etc.) still open and apply the chosen value.
 
+### P10j-b — Captions & transcripts unified section  *(no AI/graph needed — works on any build)*
+- [ ] Settings shows **one "Captions & transcripts" section** (the old separate *Transcripts* group and
+      the *Downloads* subtitle rows are gone); it reads as a pipeline: download captions → build a
+      searchable transcript.
+- [ ] **Behavior unchanged — download with explicit caption languages:** turn on **Download captions**,
+      set a language, download a video that has subtitles → the caption file is written exactly as before.
+- [ ] **Behavior unchanged — auto-fetch only:** leave **Download captions** off, turn on **Auto-fetch
+      captions for transcripts**, download → captions are fetched in the app's language so a transcript
+      can build (same as the pre-P10j "Auto-download captions"). The `(i)` on that row explains the
+      precedence (picked caption languages win).
+- [ ] **Backfill is independent:** with **Build a searchable transcript** OFF, **Backfill on open** is
+      still visible and still builds a transcript when you open an older captioned item.
+- [ ] Toggling **Download captions** reveals/hides the Caption languages / Caption format detail rows.
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built

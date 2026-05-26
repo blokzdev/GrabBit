@@ -162,8 +162,16 @@ tappable hint. **No IA change, no new settings surfaced, no copy rewrites** beyo
 `SettingsChoiceTile` (selecting an item calls `onChanged`). `VERIFICATION.md`: "tap the (i)
 on a transcript row → explanation sheet appears" (touch check CI can't do).
 
-### `[ ]` P10j-b — Captions & transcripts: one coherent model
+### `[~]` P10j-b — Captions & transcripts: one coherent model
 **Branch:** `claude/p10j-b-captions-transcripts` · **UI-only; no `download_request_builder` change.**
+
+> **Status:** implemented — one "Captions & transcripts" `SettingsSection` replaces the *Downloads*
+> subtitle rows + the *Transcripts* section; vocabulary unified (Captions vs Transcript); the hidden
+> precedence is surfaced on the **Auto-fetch captions for transcripts** `InfoHint`. **Backfill on open
+> is an always-visible peer** (not nested) because `transcriptBackfill` is consumed independently of
+> `autoTranscribe` (`item_detail_screen.dart:716`). Builder logic untouched (one comment-only label
+> refresh). Also fixed `SectionHeader` to wrap a long title at large text scale (`Expanded`). CI-green
+> (format · analyze · 591 tests). **Pending on-device spot-check** of the caption/transcript combos.
 
 Merge the subtitle controls (from *Downloads*) and the transcript controls (the *Transcripts*
 section) into a single **"Captions & transcripts"** section that narrates the pipeline, and
@@ -177,8 +185,9 @@ P10j-c moves it onto the `/settings/captions` sub-screen.
 - **Layout = the pipeline, top to bottom:**
   1. **Download captions** (master; backed by `subtitleLangs` non-empty) → **Languages**,
      **Include auto-generated** (`subtitleAuto`), **Format** (`subtitleFormat`) nested beneath.
-  2. **Build a searchable transcript** (`autoTranscribe`) → **Backfill on open**
-     (`transcriptBackfill`) nested beneath.
+  2. **Build a searchable transcript** (`autoTranscribe`); **Backfill on open**
+     (`transcriptBackfill`) as an **always-visible peer** beneath it — *not* gated, since backfill
+     works independently of auto-build (consumed in `item_detail_screen.dart`).
   3. **Auto-fetch captions for transcripts** (`autoDownloadCaptions`) — surfaced with copy
      that makes the hidden rule explicit: *"When you haven't picked caption languages above,
      GrabBit grabs captions in the app's language so a transcript can be built."* An `InfoHint`

@@ -31,7 +31,7 @@ class SectionHeader extends StatelessWidget {
               children: [
                 Icon(icon, size: 18, color: theme.colorScheme.primary),
                 SizedBox(width: tokens.spaceSm),
-                label,
+                Expanded(child: label),
               ],
             ),
     );
