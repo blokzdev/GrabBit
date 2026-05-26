@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
@@ -54,6 +56,39 @@ DownloadRequest buildDownloadRequest({
     embedChapters: settings.embedChapters,
     splitChapters: settings.splitChapters,
   );
+}
+
+/// Builds a subtitles-only [DownloadRequest] (P10f-2) that fetches captions in
+/// [lang] for an already-downloaded item — `--skip-download`, so no media is
+/// re-fetched. The caption file lands in the item's **existing** media folder
+/// (so it sits beside the media and the player's track picker can use it):
+/// [outputDir]/[taskId] is reconstructed from [mediaPath]'s folder. Auto-
+/// generated captions are accepted as a fallback ([DownloadRequest.autoSubs]).
+DownloadRequest buildCaptionFetchRequest({
+  required String sourceUrl,
+  required String mediaPath,
+  required SettingsModel settings,
+  required String lang,
+}) {
+  final dir = File(mediaPath).parent;
+  final folderName = dir.path.split('/').last;
+  return DownloadRequest(
+    taskId: folderName,
+    url: sourceUrl,
+    outputDir: dir.parent.path,
+    filenameTemplate: '${_fileStem(mediaPath)}.%(ext)s',
+    skipDownload: true,
+    subtitleLangs: [lang],
+    autoSubs: true,
+    subtitleFormat: settings.subtitleFormat,
+  );
+}
+
+/// Filename without directory or extension.
+String _fileStem(String path) {
+  final name = path.split('/').last;
+  final dot = name.lastIndexOf('.');
+  return dot > 0 ? name.substring(0, dot) : name;
 }
 
 /// Splits a comma/whitespace-separated list (subtitle langs, SponsorBlock

@@ -46,6 +46,19 @@ _(nothing active — pick the next batch from below)_
       "Unsupported URL"). Tracked at yt-dlp #10870/#9990. Not fixable in-app; GrabBit now shows a
       clear "not supported yet" notice for it (and any unsupported link) instead of a misleading
       "update" prompt. Revisit if/when yt-dlp adds photo-post support.
+- [ ] **Enumerate a video's available caption languages** in the P10f-2 "Get transcript" picker
+      (instead of the curated list). **Deferred indefinitely:** YouTube's `automatic_captions` lists
+      ~100 machine-translated languages, so a useful "available" list needs fragile filtering (real
+      `subtitles` + the *original* auto-caption language); it also needs native probe/JSON-parsing
+      changes + a `MediaInfo`/Pigeon DTO field and a pre-picker network round-trip (latency + a failure
+      surface). The curated picker is robust (yt-dlp simply no-ops on an unavailable language), so this
+      isn't worth the complexity now. *(From P10f-2.)*
+- [ ] **(testing debt) Widget test for the P10f-2 "Get transcript" UI flow** — the menu →
+      language-picker → fetch → store path isn't widget-tested: it does real `dart:io` caption-file
+      reads (don't complete in `flutter_test`'s fake-async zone) and the screen has a perpetual
+      related-items shimmer (so `pumpAndSettle` hangs). The request-building (`buildCaptionFetchRequest`)
+      + `skipDownload` serialization/mapping are unit-tested; the end-to-end flow is APK-verified.
+      Revisit with `tester.runAsync` + faked transcript/engine providers. *(From P10f-2.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_

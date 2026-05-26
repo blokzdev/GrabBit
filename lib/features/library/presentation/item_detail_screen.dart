@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/engine/download_engine.dart';
+import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/text/textrank.dart';
 import 'package:grabbit/core/theme/tokens.dart';
@@ -18,6 +20,7 @@ import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/core/share/external_share_service.dart';
+import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
@@ -75,7 +78,7 @@ class ItemDetailScreen extends ConsumerWidget {
                   case 'edit':
                     await context.push('/item/$itemId/edit');
                   case 'transcript':
-                    await _buildTranscript(context, ref, row);
+                    await _getTranscript(context, ref, row);
                   case 'share':
                     await shareItems(ref, [row]);
                   case 'copy':
@@ -109,7 +112,7 @@ class ItemDetailScreen extends ConsumerWidget {
                 const PopupMenuItem(value: 'edit', child: Text('Edit info')),
                 const PopupMenuItem(
                   value: 'transcript',
-                  child: Text('Build transcript'),
+                  child: Text('Get transcript'),
                 ),
                 const PopupMenuItem(value: 'share', child: Text('Share file')),
                 const PopupMenuItem(
@@ -477,27 +480,173 @@ class _SummarySection extends ConsumerWidget {
   }
 }
 
-/// Manual "Build transcript" action (P10f): extracts text from the item's
-/// caption sidecars and stores it, so the summary and transcript view update.
-Future<void> _buildTranscript(
+/// Curated caption languages offered by the on-demand fetch (P10f-2). The
+/// in-app language is always shown (prepended if missing) and pre-selected.
+const List<({String code, String name})> _captionLanguages = [
+  (code: 'en', name: 'English'),
+  (code: 'es', name: 'Spanish'),
+  (code: 'fr', name: 'French'),
+  (code: 'de', name: 'German'),
+  (code: 'pt', name: 'Portuguese'),
+  (code: 'it', name: 'Italian'),
+  (code: 'ru', name: 'Russian'),
+  (code: 'hi', name: 'Hindi'),
+  (code: 'ar', name: 'Arabic'),
+  (code: 'ja', name: 'Japanese'),
+  (code: 'ko', name: 'Korean'),
+  (code: 'zh', name: 'Chinese'),
+];
+
+String _captionLanguageLabel(String code) {
+  for (final l in _captionLanguages) {
+    if (l.code == code) return l.name;
+  }
+  return code;
+}
+
+/// "Get transcript" action (P10f). Uses captions already on disk when present
+/// (instant, offline); otherwise fetches them online in a chosen language
+/// (P10f-2) and stores the result, so the summary + transcript view update.
+Future<void> _getTranscript(
   BuildContext context,
   WidgetRef ref,
   MediaItem row,
 ) async {
   final messenger = ScaffoldMessenger.of(context);
-  final transcript = await ref
-      .read(transcriptServiceProvider)
-      .extractTranscript(row.filePath);
-  if (transcript == null) {
+  final transcripts = ref.read(transcriptServiceProvider);
+  final metadata = ref.read(metadataRepositoryProvider);
+
+  // Local-first: build from any caption files already beside the media.
+  final local = await transcripts.extractTranscript(row.filePath);
+  if (local != null) {
+    await metadata.updateTranscript(row.id, local);
     messenger.showSnackBar(
-      const SnackBar(content: Text('No caption files found for this item')),
+      const SnackBar(content: Text('Transcript built from captions')),
     );
     return;
   }
-  await ref
-      .read(metadataRepositoryProvider)
-      .updateTranscript(row.id, transcript);
-  messenger.showSnackBar(const SnackBar(content: Text('Transcript built')));
+
+  // None on disk → fetch online in a language the user picks.
+  if (!context.mounted) return;
+  final settings = await ref.read(settingsControllerProvider.future);
+  final defaultLang = (settings.locale ?? 'en').split(RegExp('[-_]')).first;
+  if (!context.mounted) return;
+  final lang = await _pickCaptionLanguage(context, defaultLang);
+  if (lang == null) return; // dismissed
+
+  messenger.showSnackBar(const SnackBar(content: Text('Fetching captions…')));
+  final req = buildCaptionFetchRequest(
+    sourceUrl: row.sourceUrl,
+    mediaPath: row.filePath,
+    settings: settings,
+    lang: lang,
+  );
+  try {
+    final terminal = await ref
+        .read(downloadEngineProvider)
+        .download(req)
+        .firstWhere(
+          (p) =>
+              p.stage == DownloadStage.done ||
+              p.stage == DownloadStage.error ||
+              p.stage == DownloadStage.canceled,
+        );
+    if (terminal.stage != DownloadStage.done) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Couldn't fetch captions")),
+      );
+      return;
+    }
+  } catch (_) {
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text("Couldn't fetch captions — check your connection"),
+      ),
+    );
+    return;
+  }
+
+  final fetched = await transcripts.extractTranscript(
+    row.filePath,
+    preferLang: lang,
+  );
+  if (fetched == null) {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'No captions available in ${_captionLanguageLabel(lang)}',
+        ),
+      ),
+    );
+    return;
+  }
+  await metadata.updateTranscript(row.id, fetched);
+  messenger.showSnackBar(const SnackBar(content: Text('Transcript ready')));
+}
+
+/// Bottom-sheet language picker for the on-demand caption fetch. Returns the
+/// chosen language code, or null if dismissed.
+Future<String?> _pickCaptionLanguage(BuildContext context, String defaultLang) {
+  final langs = [..._captionLanguages];
+  if (!langs.any((l) => l.code == defaultLang)) {
+    langs.insert(0, (code: defaultLang, name: defaultLang.toUpperCase()));
+  }
+  return showModalBottomSheet<String?>(
+    context: context,
+    builder: (ctx) => SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          const ListTile(
+            dense: true,
+            enabled: false,
+            title: Text('Fetch captions in…'),
+          ),
+          for (final l in langs)
+            ListTile(
+              title: Text(l.name),
+              selected: l.code == defaultLang,
+              onTap: () => Navigator.pop(ctx, l.code),
+            ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: const Text('Other…'),
+            onTap: () async {
+              final code = await _promptLanguageCode(ctx);
+              if (ctx.mounted) Navigator.pop(ctx, code);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Prompts for an arbitrary language code (power users). Null = cancelled.
+Future<String?> _promptLanguageCode(BuildContext context) async {
+  final controller = TextEditingController();
+  final code = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Language code'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: const InputDecoration(hintText: 'e.g. nl, pt-BR'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+          child: const Text('Fetch'),
+        ),
+      ],
+    ),
+  );
+  return (code == null || code.isEmpty) ? null : code;
 }
 
 /// The stored transcript (P10f) in an expandable block. Hidden when there's no

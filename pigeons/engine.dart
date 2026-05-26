@@ -75,6 +75,7 @@ class DownloadRequestDto {
     required this.filenameTemplate,
     required this.embedChapters,
     required this.splitChapters,
+    required this.skipDownload,
     this.formatId,
     this.container,
     this.subtitleLangs,
@@ -109,6 +110,7 @@ class DownloadRequestDto {
   List<String>? sponsorBlockCategories;
   bool embedChapters;
   bool splitChapters;
+  bool skipDownload;
 }
 
 class ProgressDto {

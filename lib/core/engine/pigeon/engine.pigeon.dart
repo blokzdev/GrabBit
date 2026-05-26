@@ -312,6 +312,7 @@ class DownloadRequestDto {
     this.sponsorBlockCategories,
     required this.embedChapters,
     required this.splitChapters,
+    required this.skipDownload,
   });
 
   String taskId;
@@ -356,6 +357,8 @@ class DownloadRequestDto {
 
   bool splitChapters;
 
+  bool skipDownload;
+
   List<Object?> _toList() {
     return <Object?>[
       taskId,
@@ -379,6 +382,7 @@ class DownloadRequestDto {
       sponsorBlockCategories,
       embedChapters,
       splitChapters,
+      skipDownload,
     ];
   }
 
@@ -410,6 +414,7 @@ class DownloadRequestDto {
       sponsorBlockCategories: (result[18] as List<Object?>?)?.cast<String>(),
       embedChapters: result[19]! as bool,
       splitChapters: result[20]! as bool,
+      skipDownload: result[21]! as bool,
     );
   }
 
@@ -442,7 +447,8 @@ class DownloadRequestDto {
         _deepEquals(sponsorBlock, other.sponsorBlock) &&
         _deepEquals(sponsorBlockCategories, other.sponsorBlockCategories) &&
         _deepEquals(embedChapters, other.embedChapters) &&
-        _deepEquals(splitChapters, other.splitChapters);
+        _deepEquals(splitChapters, other.splitChapters) &&
+        _deepEquals(skipDownload, other.skipDownload);
   }
 
   @override

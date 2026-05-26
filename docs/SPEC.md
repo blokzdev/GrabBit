@@ -56,7 +56,8 @@ class DownloadRequestDto { String taskId; String url; String? formatId;
   String outputDir; String filenameTemplate; String? rateLimit;
   int? concurrentFragments; String? audioQuality; String? downloadArchivePath;
   List<String>? extraArgs; String? sponsorBlock;
-  List<String>? sponsorBlockCategories; bool embedChapters; bool splitChapters; }
+  List<String>? sponsorBlockCategories; bool embedChapters; bool splitChapters;
+  bool skipDownload; /* P10f-2: subtitles-only fetch (`--skip-download`) */ }
 class ProgressDto { String taskId; double percent; double speedBps; int? etaSec;
   String stage; /* probing|downloading|merging|done|error|canceled */ String? error; }
 
@@ -74,7 +75,10 @@ abstract class YtDlpHostApi {
 **Download options (P3):** `startDownload` passes `--write-thumbnail
 --convert-thumbnails jpg` (library thumb) and, per request flags,
 `--embed-thumbnail`, `--embed-metadata`, and subtitles
-(`--write-subs --write-auto-subs --embed-subs`). Playlist/channel/carousel
+(`--write-subs --write-auto-subs --embed-subs`). **P10f-2:** when
+`skipDownload` is set, `startDownload` writes only the caption file
+(`--skip-download` + the sub flags, no media/thumbnail/embed) — the on-demand
+"Get transcript" fetch. Playlist/channel/carousel
 expansion is `expandRaw` → `yt-dlp --flat-playlist -J` → parsed by
 `lib/core/engine/playlist_parser.dart` into `PlaylistInfo{entries:[MediaEntry]}`
 (single items collapse to one entry). `media_metadata` is populated with

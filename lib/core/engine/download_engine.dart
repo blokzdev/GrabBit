@@ -117,6 +117,7 @@ class DownloadRequest {
     this.sponsorBlockCategories,
     this.embedChapters = false,
     this.splitChapters = false,
+    this.skipDownload = false,
   });
 
   factory DownloadRequest.fromJson(Map<String, dynamic> json) =>
@@ -144,6 +145,7 @@ class DownloadRequest {
             (json['sponsorBlockCategories'] as List<dynamic>?)?.cast<String>(),
         embedChapters: json['embedChapters'] as bool? ?? false,
         splitChapters: json['splitChapters'] as bool? ?? false,
+        skipDownload: json['skipDownload'] as bool? ?? false,
       );
 
   final String taskId;
@@ -193,6 +195,10 @@ class DownloadRequest {
   /// Split the download into one file per chapter (`--split-chapters`).
   final bool splitChapters;
 
+  /// Fetch only subtitles/captions, not the media (`--skip-download`). Used by
+  /// the on-demand "Get transcript" fetch (P10f-2).
+  final bool skipDownload;
+
   Map<String, dynamic> toJson() => {
     'taskId': taskId,
     'url': url,
@@ -215,6 +221,7 @@ class DownloadRequest {
     'sponsorBlockCategories': sponsorBlockCategories,
     'embedChapters': embedChapters,
     'splitChapters': splitChapters,
+    'skipDownload': skipDownload,
   };
 }
 

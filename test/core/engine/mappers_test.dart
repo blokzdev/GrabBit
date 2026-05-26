@@ -79,9 +79,11 @@ void main() {
         sponsorBlockCategories: ['sponsor', 'selfpromo'],
         embedChapters: true,
         splitChapters: true,
+        skipDownload: true,
       );
       final dto = req.toDto();
       expect(dto.taskId, 't1');
+      expect(dto.skipDownload, isTrue);
       expect(dto.url, 'https://y/v');
       expect(dto.outputDir, '/data/media');
       expect(dto.formatId, '137');

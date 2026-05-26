@@ -171,6 +171,47 @@ void main() {
     });
   });
 
+  group('buildCaptionFetchRequest (P10f-2)', () {
+    test('builds a subtitles-only request targeting the item folder', () {
+      final req = buildCaptionFetchRequest(
+        sourceUrl: 'https://y/v',
+        mediaPath: '/media/task42/My Clip.mp4',
+        settings: const SettingsModel(subtitleFormat: 'vtt'),
+        lang: 'es',
+      );
+      expect(req.skipDownload, isTrue);
+      expect(req.subtitleLangs, ['es']);
+      expect(req.autoSubs, isTrue);
+      expect(req.subtitleFormat, 'vtt');
+      expect(req.url, 'https://y/v');
+      // outputDir/taskId reconstruct the existing media folder so the caption
+      // sidecar lands beside the media.
+      expect('${req.outputDir}/${req.taskId}', '/media/task42');
+      expect(req.filenameTemplate, 'My Clip.%(ext)s');
+    });
+
+    test(
+      'skipDownload round-trips through toJson/fromJson (default false)',
+      () {
+        final req = buildCaptionFetchRequest(
+          sourceUrl: 'u',
+          mediaPath: '/m/t/f.mp4',
+          settings: const SettingsModel(),
+          lang: 'en',
+        );
+        expect(DownloadRequest.fromJson(req.toJson()).skipDownload, isTrue);
+        // Absent in JSON ⇒ defaults to false (backward-compatible).
+        final legacy = DownloadRequest.fromJson(const {
+          'taskId': 't',
+          'url': 'u',
+          'outputDir': '/m',
+          'filenameTemplate': '%(title)s.%(ext)s',
+        });
+        expect(legacy.skipDownload, isFalse);
+      },
+    );
+  });
+
   group('parseCsvList', () {
     test('splits on commas and whitespace, drops empties', () {
       expect(parseCsvList('en, es ,  en-US'), ['en', 'es', 'en-US']);

@@ -265,9 +265,13 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
     `MediaMetadata.transcript` (schema v5), shown as an auto-hiding "Transcript" section and used as the
     preferred TextRank source. Built via a manual "Build transcript" action, with opt-in Settings
     toggles for automatic transcription (at download) and lazy backfill (on open).
-  - **P10f-2** *(native)*: an on-demand "Get transcript" fetch (`--skip-download` via Pigeon/Kotlin)
-    with a language selector for items that lack captions, plus a "fetch auto-captions on download"
-    setting. Verified with a debug-APK build.
+  - **P10f-2** *(native, done)*: a unified **"Get transcript"** action — local captions first, else an
+    on-demand fetch (`--skip-download` via Pigeon/Kotlin) in a chosen language (curated picker, default
+    = in-app language) for items that lack captions; reuses P10f-1's extractor/store. Verified with a
+    debug-APK build. (Available-language enumeration deferred — see `docs/BACKLOG.md`.)
+  - **P10f-3** *(native, next)*: opt-in **"Auto-download captions"** setting — grabs captions in the
+    in-app language on every download (when no explicit subtitle langs set) so transcripts build
+    automatically; introduces a "Transcripts" settings group beside "Subtitles".
 - **P10g — Settings IA & consistency pass**: regroup/nest the settings screen into clear sections, roll
   the `(i)`-info-tooltip pattern (seeded in P10f-1) across non-obvious settings, and reconcile gaps/
   inconsistencies introduced during P8–P10. Pure-Dart/UI.
