@@ -19,6 +19,11 @@ DownloadRequest buildDownloadRequest({
 }) {
   final extra = parseExtraArgs(settings.extraDownloadArgs);
   final subLangs = parseCsvList(settings.subtitleLangs);
+  // P10f-3: when "Auto-download captions" is on and no explicit subtitle langs
+  // are set, fetch captions in the app's language (auto-generated as fallback)
+  // so transcripts can auto-build. Explicit "Download subtitles" langs win.
+  final autoCaps = settings.autoDownloadCaptions && subLangs.isEmpty;
+  final effLangs = autoCaps ? [settings.captionLanguage] : subLangs;
   final sponsorOn = settings.sponsorBlockMode != 'off';
   final sponsorCats = sponsorOn
       ? parseCsvList(settings.sponsorBlockCategories)
@@ -35,8 +40,8 @@ DownloadRequest buildDownloadRequest({
     audioOnly: audioOnly,
     // For audio, the container doubles as the codec (yt-dlp --audio-format).
     container: audioOnly ? settings.audioFormat : settings.defaultContainer,
-    subtitleLangs: subLangs.isEmpty ? null : subLangs,
-    autoSubs: settings.subtitleAuto,
+    subtitleLangs: effLangs.isEmpty ? null : effLangs,
+    autoSubs: autoCaps ? true : settings.subtitleAuto,
     subtitleFormat: settings.subtitleFormat,
     embedThumbnail: settings.embedThumbnail,
     embedMetadata: settings.embedMetadata,

@@ -269,9 +269,10 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
     on-demand fetch (`--skip-download` via Pigeon/Kotlin) in a chosen language (curated picker, default
     = in-app language) for items that lack captions; reuses P10f-1's extractor/store. Verified with a
     debug-APK build. (Available-language enumeration deferred — see `docs/BACKLOG.md`.)
-  - **P10f-3** *(native, next)*: opt-in **"Auto-download captions"** setting — grabs captions in the
+  - **P10f-3** *(pure-Dart, done)*: opt-in **"Auto-download captions"** setting — grabs captions in the
     in-app language on every download (when no explicit subtitle langs set) so transcripts build
-    automatically; introduces a "Transcripts" settings group beside "Subtitles".
+    automatically; gathers the transcript toggles into a dedicated "Transcripts" settings section.
+    Reuses the existing P8c subtitle path (no native change); APK-verified end-to-end.
   - **P10f-4** *(later)*: **timestamped, tap-to-seek transcript** — retain caption-cue timings (the flat
     transcript today discards them) in a timed representation stored alongside it; item-detail shows a
     scrollable transcript whose lines **seek the player** (YouTube-style); also lays the groundwork for

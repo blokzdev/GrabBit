@@ -54,6 +54,9 @@ abstract class SettingsModel with _$SettingsModel {
     // and backfill older items the first time they're opened. Both opt-in.
     @Default(false) bool autoTranscribe,
     @Default(false) bool transcriptBackfill,
+    // P10f-3: also fetch captions (in the app's language) on every download
+    // when no explicit subtitle languages are set, so transcripts auto-build.
+    @Default(false) bool autoDownloadCaptions,
     @Default('off') String sponsorBlockMode,
     @Default('sponsor') String sponsorBlockCategories,
     @Default(false) bool embedChapters,
@@ -81,4 +84,10 @@ abstract class SettingsModel with _$SettingsModel {
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) =>
       _$SettingsModelFromJson(json);
+}
+
+extension SettingsCaptionLang on SettingsModel {
+  /// The app's language as a bare subtitle code (e.g. `en-US` → `en`), used as
+  /// the default for caption fetch/auto-download. Falls back to English.
+  String get captionLanguage => (locale ?? 'en').split(RegExp('[-_]')).first;
 }

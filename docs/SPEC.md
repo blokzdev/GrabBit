@@ -155,6 +155,7 @@ index over `transcript`+`description`+`title` (search by spoken content).
   "subtitleFormat": "srt",          // P8c; --convert-subs (srt|vtt|ass|best)
   "autoTranscribe": false,          // P10f-1; build transcript from captions after download
   "transcriptBackfill": false,      // P10f-1; build transcript on first open of older items
+  "autoDownloadCaptions": false,    // P10f-3; fetch captions (in-app lang) on download when no explicit langs
   "sponsorBlockMode": "off",        // P8c; off|mark|remove
   "sponsorBlockCategories": "sponsor", // P8c; CSV SponsorBlock categories
   "embedChapters": false,           // P8c; --embed-chapters

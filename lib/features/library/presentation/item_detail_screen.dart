@@ -28,6 +28,7 @@ import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/library/presentation/related_provider.dart';
+import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
 
@@ -529,7 +530,7 @@ Future<void> _getTranscript(
   // None on disk → fetch online in a language the user picks.
   if (!context.mounted) return;
   final settings = await ref.read(settingsControllerProvider.future);
-  final defaultLang = (settings.locale ?? 'en').split(RegExp('[-_]')).first;
+  final defaultLang = settings.captionLanguage;
   if (!context.mounted) return;
   final lang = await _pickCaptionLanguage(context, defaultLang);
   if (lang == null) return; // dismissed

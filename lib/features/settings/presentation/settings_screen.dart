@@ -244,6 +244,37 @@ class _SettingsList extends ConsumerWidget {
                 ),
               ],
               SwitchListTile(
+                title: const Text('Embed thumbnail'),
+                value: settings.embedThumbnail,
+                onChanged: controller.setEmbedThumbnail,
+              ),
+              SwitchListTile(
+                title: const Text('Embed metadata'),
+                value: settings.embedMetadata,
+                onChanged: controller.setEmbedMetadata,
+              ),
+            ],
+          ),
+          _Section(
+            icon: Icons.notes_outlined,
+            title: 'Transcripts',
+            children: [
+              SwitchListTile(
+                secondary: const Tooltip(
+                  message:
+                      "Automatically save a video's captions (in the app's "
+                      'language) so transcripts and summaries can be built — '
+                      "even if you haven't turned on subtitles.",
+                  child: Icon(Icons.info_outline),
+                ),
+                title: const Text('Auto-download captions'),
+                subtitle: const Text(
+                  "In the app's language, when a video has them",
+                ),
+                value: settings.autoDownloadCaptions,
+                onChanged: controller.setAutoDownloadCaptions,
+              ),
+              SwitchListTile(
                 secondary: const Tooltip(
                   message:
                       'Build a text transcript from downloaded captions '
@@ -266,16 +297,6 @@ class _SettingsList extends ConsumerWidget {
                 subtitle: const Text('For items downloaded earlier'),
                 value: settings.transcriptBackfill,
                 onChanged: controller.setTranscriptBackfill,
-              ),
-              SwitchListTile(
-                title: const Text('Embed thumbnail'),
-                value: settings.embedThumbnail,
-                onChanged: controller.setEmbedThumbnail,
-              ),
-              SwitchListTile(
-                title: const Text('Embed metadata'),
-                value: settings.embedMetadata,
-                onChanged: controller.setEmbedMetadata,
               ),
             ],
           ),

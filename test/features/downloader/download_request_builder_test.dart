@@ -212,6 +212,59 @@ void main() {
     );
   });
 
+  group('auto-download captions (P10f-3)', () {
+    DownloadRequest build(SettingsModel s) => buildDownloadRequest(
+      taskId: 't',
+      url: 'u',
+      outputDir: '/m',
+      settings: s,
+      audioOnly: false,
+    );
+
+    test(
+      'on + no explicit langs ⇒ fetches the in-app language + auto-subs',
+      () {
+        final req = build(const SettingsModel(autoDownloadCaptions: true));
+        expect(req.subtitleLangs, ['en']); // default locale ⇒ en
+        expect(req.autoSubs, isTrue);
+
+        final es = build(
+          const SettingsModel(autoDownloadCaptions: true, locale: 'es-ES'),
+        );
+        expect(es.subtitleLangs, ['es']);
+      },
+    );
+
+    test('explicit subtitle langs win over the setting', () {
+      final req = build(
+        const SettingsModel(
+          autoDownloadCaptions: true,
+          subtitleLangs: 'fr,de',
+          subtitleAuto: false,
+        ),
+      );
+      expect(req.subtitleLangs, ['fr', 'de']);
+      expect(req.autoSubs, isFalse); // not overridden
+    });
+
+    test('off ⇒ unchanged (no captions injected)', () {
+      final req = build(const SettingsModel());
+      expect(req.subtitleLangs, isNull);
+      expect(req.autoSubs, isFalse);
+    });
+  });
+
+  group('SettingsModel.captionLanguage', () {
+    String lang(String? locale) =>
+        SettingsModel(locale: locale).captionLanguage;
+    test('falls back to en; strips region', () {
+      expect(lang(null), 'en');
+      expect(lang('es'), 'es');
+      expect(lang('en-US'), 'en');
+      expect(lang('pt_BR'), 'pt');
+    });
+  });
+
   group('parseCsvList', () {
     test('splits on commas and whitespace, drops empties', () {
       expect(parseCsvList('en, es ,  en-US'), ['en', 'es', 'en-US']);
