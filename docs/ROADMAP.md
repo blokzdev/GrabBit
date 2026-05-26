@@ -277,11 +277,22 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
     transcript discarded them) as JSON in `MediaMetadata.transcriptCues` (schema v6); item-detail shows a
     scrollable transcript whose lines **seek the player** and the playing line highlights/auto-scrolls;
     lays groundwork for timestamped GraphRAG citations. Device-universal, pure-Dart/UI; APK-verified.
-- **P10g — Transcript-powered semantic index**: feed transcript text into the embedding input (today
-  the embedder uses title/uploader/playlist/tags/**description** only), so semantic search · "related" ·
-  future GraphRAG run on the **spoken content**. Requires **chunking / a representative slice**
-  (transcripts far exceed the embedder's input window) + an embed-version bump (one-time re-embed). Uses
-  the existing P10 embedder — no LLM.
+- **P10g — Transcript-powered semantic index (multi-engine embedder)**: feed the **transcript** into the
+  embedding input (today: title/uploader/playlist/tags/**description** only) so semantic search · "related" ·
+  future GraphRAG run on the **spoken content**, and grow the embedder into a pluggable, capability-selected
+  layer. Delivered in sub-PRs:
+  - **P10g-1** *(done)*: re-pin the Gecko export `seq64 → seq256` (Apache-2.0, ungated, 768-d, ~114 MB —
+    4× the window) + add a window-capped transcript slice to the embed doc + one-time re-embed. No LLM.
+  - **P10g-2**: pluggable engine **registry + selection policy + graceful fallback**; the window becomes a
+    **selectable preference** (256 default, **512 as a higher-quality / capable-device option** — switching
+    re-embeds). Gecko-only; pure architecture.
+  - **P10g-3**: a second runtime (**onnxruntime**) + **multilingual** embedder
+    (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, ungated, 50-lang) + on-device tokenizer, plugged
+    into the registry with Gecko as the universal fallback.
+  - *Cross-phase*: device-tier **auto-selection** (256 / 512 / multilingual, with graceful disable on
+    low-end) lands with **P11**; **multivector chunking** (full long-transcript passage retrieval +
+    timestamped citations) with **P13/GraphRAG**. *(EmbeddingGemma was evaluated and dropped — HF-gated /
+    off the Apache-MIT preference, and unnecessary once Gecko's longer-context exports were found.)*
 - **P10h — Full-text search over transcripts & metadata**: a SQLite **FTS5** index over
   transcript + description + title so the library is searchable by **spoken content** (today search is
   `LIKE` on title/description). Promotes the long-standing FTS backlog item.

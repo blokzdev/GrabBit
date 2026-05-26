@@ -59,13 +59,18 @@ abstract interface class InferenceEngine {
   Phi-4-Mini, SmolLM-135M, Gemma 3n E2B, etc., and **provides text embeddings and on-device RAG** —
   so one runtime family covers embeddings → generation → RAG.
 - **Embedder (P10): `flutter_gemma`'s text-embedding support, loaded embedder-only** — the same
-  plugin that backs the P12 LLM, so this tier stays device-universal. **Pinned model (P10b-2a):
-  Gecko 64** (`litert-community/Gecko-110m-en` → `Gecko_64_quant.tflite` + `sentencepiece.model`),
-  110M params, **768-d** vectors, ~110 MB, **ungated** (no HuggingFace token). Chosen as the smallest
-  ungated variant; EmbeddingGemma-300M is more accurate but gated/larger — revisit if quality
-  demands. The pinned id + dim live in `lib/core/ai/model_catalog.dart`; P10b-2b keys the Cozo HNSW
-  schema + graph fingerprint off them so a model change → re-embed.
-  **Avoid** the unmaintained `mediapipe_text` pub plugin (v0.0.1, stale/experimental).
+  plugin that backs the P12 LLM, so this tier stays device-universal. **Pinned model (P10g-1):
+  Gecko 256** (`litert-community/Gecko-110m-en` → `Gecko_256_quant.tflite` + `sentencepiece.model`),
+  110M params, **768-d** vectors, **256-token** window, ~114 MB, **Apache-2.0 + ungated** (no
+  HuggingFace token). P10g-1 moved up from the seq64 export so the embed doc can carry a real
+  **transcript** slice; the seq512/1024 variants share the tokenizer + dimension and become a
+  capability-selected upgrade (P10g-2 / P11). The pinned id + dim live in
+  `lib/core/ai/model_catalog.dart`; P10b-2b keys the Cozo HNSW schema + graph fingerprint off them so a
+  model change → re-embed. **Pluggable multi-engine** (P10g-2) + a **multilingual** second engine
+  (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, onnxruntime — P10g-3) are layered on next, with
+  Gecko as the universal fallback. *(EmbeddingGemma-300M was evaluated and **dropped**: HF-license-gated —
+  off the Apache-2.0/MIT preference — and unnecessary once Gecko's ungated longer-context exports were
+  found.)* **Avoid** the unmaintained `mediapipe_text` pub plugin (v0.0.1, stale/experimental).
 - **Opt-in, never auto (P10b-2a).** A `semanticSearchEnabled` setting gates the embedder; toggling it
   on (in Settings or the first-run screen) downloads the model with progress, off = no model use —
   consistent with the gated yt-dlp auto-update and the no-surprise-data principle. A first-run
@@ -93,7 +98,7 @@ abstract interface class InferenceEngine {
 | **Light (<0.5–~0.6B)** | **SmolLM-135M**, **Qwen3-0.6B** | **Apache-2.0** | Clean; low-end-device floor. |
 | **Mid (~1–3B)** | **Phi-4-Mini** | **MIT** | Clean. |
 | **Mid (capable)** | **Gemma 3 1B / 3n E2B** | **Gemma** (custom use-policy) | Usable + strong, **but vet Gemma's use policy before bundling** — it carries prohibited-use terms. |
-| **Embedder** | **Gecko 64** (110M, 768-d, ~110 MB, ungated) | (Gemma — verify) | Universal tier; embeddings only. Pinned P10b-2a. |
+| **Embedder** | **Gecko 256** (110M, 768-d, 256-tok, ~114 MB) · multilingual: **MiniLM-L12-v2** (P10g-3) | **Apache-2.0**, ungated | Universal tier; embeddings only. Pinned P10g-1; pluggable in P10g-2. |
 | **Transcription** | whisper.cpp (tiny→large-v3-turbo) | MIT | Size-gated by tier. |
 
 ---
@@ -101,10 +106,11 @@ abstract interface class InferenceEngine {
 ## 5. Feature set by phase
 
 ### P10 — baseline (device-universal; no LLM)
-- **Embeddings** (Gecko 64, 768-d) → indexed in Cozo HNSW, **cached + incremental** via
-  `GraphSyncService.backfillEmbeddings()` (P10b-2b done; see `GRAPH-SPEC.md` §5–§6). The embedding doc
-  uses title/uploader/playlist/tags/description today; **P10g** adds the **transcript** (chunked/sliced,
-  since it exceeds the embedder's input window) so semantic search/related/GraphRAG run on spoken content.
+- **Embeddings** (Gecko 256, 768-d) → indexed in Cozo HNSW, **cached + incremental** via
+  `GraphSyncService.backfillEmbeddings()` (P10b-2b done; see `GRAPH-SPEC.md` §5–§6). **P10g-1** moved the
+  embedder up to the 256-token Gecko export and added a window-capped **transcript** slice to the embed doc
+  (title/uploader/playlist/tags/description/transcript) so semantic search/related run on spoken content.
+  Full long-transcript **multivector chunking** for passage retrieval is deferred to **P13/GraphRAG**.
 - **Semantic search** (vector) complementing the existing `LIKE` search *(P10c-a, shipped)*.
 - **Related / "More like this"** *(P10c-b, shipped)*; **entity hubs** *(P10c-c — navigable hubs in
   c-1, the tag co-occurrence "Related tags" strip in c-2; cross-type creator/playlist ranking
