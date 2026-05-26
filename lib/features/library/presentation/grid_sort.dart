@@ -8,14 +8,27 @@ List<MediaItem> sortMediaItems(List<MediaItem> items, LibrarySort sort) {
   int size(MediaItem i) => i.sizeBytes ?? 0;
   final sorted = [...items];
   switch (sort) {
-    // These screens sort an already-loaded list with no FTS query, so
-    // relevance has no ranking to apply → behave like newest.
+    // These screens sort an already-loaded list with no FTS query and without
+    // joined metadata, so relevance (no ranking) and the upload-date sorts (no
+    // upload_date on the row) have nothing to apply → behave like newest.
     case LibrarySort.newest:
     case LibrarySort.recentlyPlayed:
     case LibrarySort.relevance:
+    case LibrarySort.uploadNewest:
+    case LibrarySort.uploadOldest:
       sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     case LibrarySort.oldest:
       sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    // Null durations sort last in either direction.
+    case LibrarySort.longest:
+      sorted.sort(
+        (a, b) => (b.durationSec ?? -1).compareTo(a.durationSec ?? -1),
+      );
+    case LibrarySort.shortest:
+      sorted.sort(
+        (a, b) =>
+            (a.durationSec ?? (1 << 62)).compareTo(b.durationSec ?? (1 << 62)),
+      );
     case LibrarySort.titleAsc:
       sorted.sort(
         (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),

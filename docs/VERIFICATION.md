@@ -694,6 +694,18 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Reconciliation:** turning **Has transcript** on, then narrowing to **Image-only**, silently clears it
       (no stuck/hidden filter); the grid isn't left empty by an inapplicable filter.
 
+### P10i-b — Duration & upload-date sorts  *(no AI/graph needed — works on any build)*
+- [ ] **Type-aware sorts:** the **Longest / Shortest** sort options appear only when the type selection
+      includes Video/Audio; they vanish for an **Image-only** selection and return when Video/Audio is
+      reselected. **Newest/Oldest uploaded** appear for every selection.
+- [ ] **Duration order:** sorting by **Longest / Shortest** orders by media length; items with **no known
+      duration** (split-chapter files, images) sort **last** in both directions — they never float to the top.
+- [ ] **Upload-date order:** sorting by **Newest/Oldest uploaded** orders by the source's original upload
+      date (not the download date); items lacking an upload date sort **last**.
+- [ ] **Reconciliation:** pick **Longest**, then narrow to **Image-only** → the sort silently resets
+      (Newest) and the grid isn't left empty. Run a **search** (→ Relevance), narrow to **Image-only**, then
+      clear the search → the restored sort is valid (not a stuck/hidden duration sort).
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built

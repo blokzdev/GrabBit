@@ -45,7 +45,11 @@ class LibraryFilter extends Notifier<LibraryQuery> {
       _sortBeforeSearch = state.sort;
       next = next.copyWith(sort: LibrarySort.relevance);
     } else if (!isSearching && wasSearching) {
-      next = next.copyWith(sort: _sortBeforeSearch ?? LibrarySort.newest);
+      // Reconcile in case the type scope narrowed during the search and the
+      // sort being restored no longer applies (e.g. a duration sort).
+      next = reconcile(
+        next.copyWith(sort: _sortBeforeSearch ?? LibrarySort.newest),
+      );
       _sortBeforeSearch = null;
     }
     state = next;
