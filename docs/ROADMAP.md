@@ -143,7 +143,7 @@ already-bundled ffmpeg.
   `MediaToolsHostApi.runFfmpeg(...)` (mirroring the `YtDlpHostApi` wiring). Fallback:
   a maintained `ffmpeg_kit` fork (note APK-size cost; original retired in 2025).
 - **`MediaToolsEngine`** pure-Dart interface (like `DownloadEngine`) so Windows
-  (`ffmpeg.exe`, P12) slots behind the same contract.
+  (`ffmpeg.exe`, P15) slots behind the same contract.
 - **Editor UI** from the item viewer: video — trim, reverse, flip/mirror/rotate,
   convert (container/codec/audio-extract), extract frame(s) (first/last/scrubber →
   image); images — flip/mirror/rotate/crop/convert.

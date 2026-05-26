@@ -631,6 +631,18 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] *(On-demand fetch of captions for items that have none — with a language selector — is P10f-2,
       native.)*
 
+## P11 — Activity Inbox  *(v1)*
+*(Forward-looking — detailed checks added when the phase is built.)*
+- [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
+      **transcript/backfill**, a **graph** index rebuild — each shows up with the right category/severity.
+- [ ] The app-bar **bell** shows an **unread badge**; opening the **Inbox** marks items read and the
+      badge clears.
+- [ ] Tapping an entry **deep-links** to the relevant item/screen; **swipe-to-dismiss** and
+      **clear / mark-all-read** work; **category filters** narrow the list.
+- [ ] Items **auto-clear** per **Settings → notification retention** (and "keep forever" when set to 0);
+      the sweep happens on open, no background scheduler.
+- [ ] Everything stays **on-device** (no network/telemetry) and the Inbox is **behind the app lock**.
+
 ## P12 — Device-tiered edge LLM engine  *(v1)*
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
