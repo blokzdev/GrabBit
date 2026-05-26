@@ -8,8 +8,11 @@ List<MediaItem> sortMediaItems(List<MediaItem> items, LibrarySort sort) {
   int size(MediaItem i) => i.sizeBytes ?? 0;
   final sorted = [...items];
   switch (sort) {
+    // These screens sort an already-loaded list with no FTS query, so
+    // relevance has no ranking to apply → behave like newest.
     case LibrarySort.newest:
     case LibrarySort.recentlyPlayed:
+    case LibrarySort.relevance:
       sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     case LibrarySort.oldest:
       sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));

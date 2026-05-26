@@ -43,6 +43,7 @@ void main() {
     String? description,
     String? playlistId,
     String? playlistTitle,
+    String? transcript,
   }) => db
       .into(db.mediaMetadata)
       .insert(
@@ -52,6 +53,7 @@ void main() {
           description: Value(description),
           playlistId: Value(playlistId),
           playlistTitle: Value(playlistTitle),
+          transcript: Value(transcript),
         ),
       );
 
@@ -365,6 +367,57 @@ void main() {
       await repo.addTagToItem('b', 'serious');
       final rows = await repo
           .watchFiltered(const LibraryQuery(tag: 'funny'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
+    test('search matches a word only in the transcript (P10h)', () async {
+      await seed('a', 'Episode 1', 'video');
+      await seed('b', 'Episode 2', 'video');
+      await seedMeta('a', transcript: 'today we discuss photosynthesis');
+      await seedMeta('b', transcript: 'a cooking lesson');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(search: 'photosynthesis'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
+    test('relevance ranks stronger matches above newer ones (P10h)', () async {
+      // 'a' is newer but matches 'forest' only once (in its description);
+      // 'b' is older but matches it repeatedly in the title.
+      await seed('a', 'Nature', 'video', day: 9);
+      await seed('b', 'Forest forest forest forest', 'video', day: 1);
+      await seedMeta('a', description: 'forest');
+      final byRelevance = await repo
+          .watchFiltered(
+            const LibraryQuery(search: 'forest', sort: LibrarySort.relevance),
+          )
+          .first;
+      expect(byRelevance.first.id, 'b');
+      // The same query sorted by newest puts the newer item first instead.
+      final byNewest = await repo
+          .watchFiltered(
+            const LibraryQuery(search: 'forest', sort: LibrarySort.newest),
+          )
+          .first;
+      expect(byNewest.first.id, 'a');
+    });
+
+    test('hasTranscript filter excludes items without one (P10h)', () async {
+      await seed('a', 'A', 'video');
+      await seed('b', 'B', 'video');
+      await seedMeta('a', transcript: 'some spoken words');
+      await seedMeta('b'); // metadata row but no transcript
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(hasTranscript: true))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
+    test('malformed FTS query is sanitized, not thrown (P10h)', () async {
+      await seed('a', 'a-b test "quote', 'video');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(search: 'a-b "quote'))
           .first;
       expect(rows.map((r) => r.id), ['a']);
     });

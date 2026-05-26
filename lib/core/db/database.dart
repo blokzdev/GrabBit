@@ -150,13 +150,14 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await _createIndices();
+      await _createFtsObjects();
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
@@ -182,6 +183,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(mediaMetadata, mediaMetadata.transcriptCues);
       }
       await _createIndices();
+      await _createFtsObjects();
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -219,6 +221,82 @@ class AppDatabase extends _$AppDatabase {
     // P9b-4: fast source-id lookups for preventive (pre-download) dedupe.
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_media_metadata_source_id ON media_metadata (source_id)',
+    );
+  }
+
+  /// P10h: the full-text search index over title + description + transcript.
+  ///
+  /// `media_fts` is a standard (not external-content) FTS5 table keyed by
+  /// `item_id`, because the searchable text spans two tables — `title` lives on
+  /// `media_items`, `description`/`transcript` on `media_metadata`. Triggers on
+  /// both tables keep it in sync (delete-then-reinsert the joined row), so edits
+  /// to a title or a transcript immediately update search results. Idempotent
+  /// (`IF NOT EXISTS` + a backfill `NOT IN` guard) so it runs safely on both
+  /// fresh creates and v6→v7 upgrades. Not declared as a Drift table.
+  Future<void> _createFtsObjects() async {
+    await customStatement(
+      'CREATE VIRTUAL TABLE IF NOT EXISTS media_fts USING fts5('
+      'item_id UNINDEXED, title, description, transcript, '
+      "tokenize = 'unicode61 remove_diacritics 2')",
+    );
+    // media_items → fts (title is here; description/transcript joined in).
+    await customStatement(
+      'CREATE TRIGGER IF NOT EXISTS media_fts_ai_items '
+      'AFTER INSERT ON media_items BEGIN '
+      'DELETE FROM media_fts WHERE item_id = new.id; '
+      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'SELECT new.id, new.title, '
+      '(SELECT description FROM media_metadata WHERE item_id = new.id), '
+      '(SELECT transcript FROM media_metadata WHERE item_id = new.id); END',
+    );
+    await customStatement(
+      'CREATE TRIGGER IF NOT EXISTS media_fts_au_items '
+      'AFTER UPDATE OF title ON media_items BEGIN '
+      'DELETE FROM media_fts WHERE item_id = new.id; '
+      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'SELECT new.id, new.title, '
+      '(SELECT description FROM media_metadata WHERE item_id = new.id), '
+      '(SELECT transcript FROM media_metadata WHERE item_id = new.id); END',
+    );
+    await customStatement(
+      'CREATE TRIGGER IF NOT EXISTS media_fts_ad_items '
+      'AFTER DELETE ON media_items BEGIN '
+      'DELETE FROM media_fts WHERE item_id = old.id; END',
+    );
+    // media_metadata → fts (description/transcript here; title joined in).
+    await customStatement(
+      'CREATE TRIGGER IF NOT EXISTS media_fts_ai_meta '
+      'AFTER INSERT ON media_metadata BEGIN '
+      'DELETE FROM media_fts WHERE item_id = new.item_id; '
+      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'SELECT new.item_id, '
+      '(SELECT title FROM media_items WHERE id = new.item_id), '
+      'new.description, new.transcript; END',
+    );
+    await customStatement(
+      'CREATE TRIGGER IF NOT EXISTS media_fts_au_meta '
+      'AFTER UPDATE OF description, transcript ON media_metadata BEGIN '
+      'DELETE FROM media_fts WHERE item_id = new.item_id; '
+      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'SELECT new.item_id, '
+      '(SELECT title FROM media_items WHERE id = new.item_id), '
+      'new.description, new.transcript; END',
+    );
+    await customStatement(
+      'CREATE TRIGGER IF NOT EXISTS media_fts_ad_meta '
+      'AFTER DELETE ON media_metadata BEGIN '
+      'DELETE FROM media_fts WHERE item_id = old.item_id; '
+      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'SELECT old.item_id, title, NULL, NULL FROM media_items '
+      'WHERE id = old.item_id; END',
+    );
+    // One-time backfill of pre-existing rows (no-op on a fresh, empty DB).
+    await customStatement(
+      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'SELECT mi.id, mi.title, mm.description, mm.transcript '
+      'FROM media_items mi '
+      'LEFT JOIN media_metadata mm ON mm.item_id = mi.id '
+      'WHERE mi.id NOT IN (SELECT item_id FROM media_fts)',
     );
   }
 }

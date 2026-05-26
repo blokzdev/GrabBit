@@ -12,6 +12,9 @@ enum LibrarySort {
   largest,
   smallest,
   recentlyPlayed,
+  // P10h: FTS relevance (bm25). Only meaningful with an active search query;
+  // falls back to newest ordering when the query is empty.
+  relevance,
 }
 
 /// Search / filter / sort parameters for the library grid.
@@ -26,9 +29,10 @@ class LibraryQuery {
     this.playlistId,
     this.tag,
     this.favoritesOnly = false,
+    this.hasTranscript = false,
   });
 
-  final String search; // matches title OR description
+  final String search; // FTS over title + description + transcript (P10h)
   final String? type; // video | audio | image | null (all)
   final int? collectionId;
   final LibrarySort sort;
@@ -37,12 +41,14 @@ class LibraryQuery {
   final String? playlistId; // playlist facet
   final String? tag; // tag facet (by tag name)
   final bool favoritesOnly;
+  final bool hasTranscript; // P10h: only items with an extracted transcript
 
   /// Active metadata facets (excludes search/type/sort/collection).
   int get activeFacetCount =>
       (site != null ? 1 : 0) +
       (uploader != null ? 1 : 0) +
-      (playlistId != null ? 1 : 0);
+      (playlistId != null ? 1 : 0) +
+      (hasTranscript ? 1 : 0);
 
   LibraryQuery copyWith({
     String? search,
@@ -54,6 +60,7 @@ class LibraryQuery {
     String? Function()? playlistId,
     String? Function()? tag,
     bool? favoritesOnly,
+    bool? hasTranscript,
   }) => LibraryQuery(
     search: search ?? this.search,
     type: type != null ? type() : this.type,
@@ -64,6 +71,7 @@ class LibraryQuery {
     playlistId: playlistId != null ? playlistId() : this.playlistId,
     tag: tag != null ? tag() : this.tag,
     favoritesOnly: favoritesOnly ?? this.favoritesOnly,
+    hasTranscript: hasTranscript ?? this.hasTranscript,
   );
 }
 
@@ -81,20 +89,14 @@ class MetadataRepository {
   final AppDatabase _db;
 
   Stream<List<MediaItem>> watchFiltered(LibraryQuery q) {
-    final query = _db.select(_db.mediaItems);
     final search = q.search.trim();
-    if (search.isNotEmpty) {
-      // Match the title OR the description (via the metadata table).
-      query.where(
-        (t) =>
-            t.title.like('%$search%') |
-            t.id.isInQuery(
-              _db.selectOnly(_db.mediaMetadata)
-                ..addColumns([_db.mediaMetadata.itemId])
-                ..where(_db.mediaMetadata.description.like('%$search%')),
-            ),
-      );
-    }
+    // The keyword search runs through the FTS5 index (title + description +
+    // transcript). Drift's query builder has no safe `MATCH`, so the search
+    // path is a parameterized raw query; the empty-search path keeps the typed
+    // builder. Filters are mirrored across both.
+    if (search.isNotEmpty) return _watchSearch(q, search);
+
+    final query = _db.select(_db.mediaItems);
     if (q.type != null) {
       query.where((t) => t.type.equals(q.type!));
     }
@@ -103,6 +105,15 @@ class MetadataRepository {
     }
     if (q.favoritesOnly) {
       query.where((t) => t.isFavorite.equals(true));
+    }
+    if (q.hasTranscript) {
+      query.where(
+        (t) => t.id.isInQuery(
+          _db.selectOnly(_db.mediaMetadata)
+            ..addColumns([_db.mediaMetadata.itemId])
+            ..where(_db.mediaMetadata.transcript.isNotNull()),
+        ),
+      );
     }
     if (q.collectionId != null) {
       query.where(
@@ -145,7 +156,9 @@ class MetadataRepository {
     }
     query.orderBy([
       switch (q.sort) {
-        LibrarySort.newest => (t) => OrderingTerm.desc(t.createdAt),
+        // Relevance is meaningless without a query → fall back to newest.
+        LibrarySort.newest ||
+        LibrarySort.relevance => (t) => OrderingTerm.desc(t.createdAt),
         LibrarySort.oldest => (t) => OrderingTerm.asc(t.createdAt),
         LibrarySort.titleAsc => (t) => OrderingTerm.asc(t.title),
         LibrarySort.titleDesc => (t) => OrderingTerm.desc(t.title),
@@ -159,6 +172,96 @@ class MetadataRepository {
     ]);
     return query.watch();
   }
+
+  /// FTS5-backed keyword search path (P10h). Joins `media_items` to the
+  /// `media_fts` index via `MATCH`, mirrors the [LibraryQuery] filters as bound
+  /// clauses, and orders by bm25 relevance (or the chosen column). Reactive via
+  /// `readsFrom` on the content tables — the sync triggers refresh `media_fts`
+  /// in the same transaction, so edits re-run the stream.
+  Stream<List<MediaItem>> _watchSearch(LibraryQuery q, String search) {
+    final where = <String>['media_fts MATCH ?'];
+    final vars = <Variable<Object>>[
+      Variable.withString(_ftsMatchQuery(search)),
+    ];
+    if (q.type != null) {
+      where.add('mi.type = ?');
+      vars.add(Variable.withString(q.type!));
+    }
+    if (q.site != null) {
+      where.add('mi.site = ?');
+      vars.add(Variable.withString(q.site!));
+    }
+    if (q.favoritesOnly) {
+      where.add('mi.is_favorite = 1');
+    }
+    if (q.hasTranscript) {
+      where.add(
+        'mi.id IN (SELECT item_id FROM media_metadata WHERE transcript IS NOT NULL)',
+      );
+    }
+    if (q.collectionId != null) {
+      where.add(
+        'mi.id IN (SELECT item_id FROM media_collections WHERE collection_id = ?)',
+      );
+      vars.add(Variable.withInt(q.collectionId!));
+    }
+    if (q.uploader != null) {
+      where.add(
+        'mi.id IN (SELECT item_id FROM media_metadata WHERE uploader = ?)',
+      );
+      vars.add(Variable.withString(q.uploader!));
+    }
+    if (q.playlistId != null) {
+      where.add(
+        'mi.id IN (SELECT item_id FROM media_metadata WHERE playlist_id = ?)',
+      );
+      vars.add(Variable.withString(q.playlistId!));
+    }
+    if (q.tag != null) {
+      where.add(
+        'mi.id IN (SELECT mt.item_id FROM media_tags mt '
+        'JOIN tags t ON t.id = mt.tag_id WHERE t.name = ?)',
+      );
+      vars.add(Variable.withString(q.tag!));
+    }
+    final order = switch (q.sort) {
+      LibrarySort.relevance => 'bm25(media_fts)',
+      LibrarySort.newest => 'mi.created_at DESC',
+      LibrarySort.oldest => 'mi.created_at ASC',
+      LibrarySort.titleAsc => 'mi.title ASC',
+      LibrarySort.titleDesc => 'mi.title DESC',
+      LibrarySort.largest => 'mi.size_bytes DESC',
+      LibrarySort.smallest => 'mi.size_bytes ASC',
+      LibrarySort.recentlyPlayed => 'mi.last_accessed_at DESC',
+    };
+    final sql =
+        'SELECT mi.* FROM media_items mi '
+        'JOIN media_fts ON media_fts.item_id = mi.id '
+        'WHERE ${where.join(' AND ')} ORDER BY $order';
+    return _db
+        .customSelect(
+          sql,
+          variables: vars,
+          readsFrom: {
+            _db.mediaItems,
+            _db.mediaMetadata,
+            _db.mediaTags,
+            _db.mediaCollections,
+            _db.tags,
+          },
+        )
+        .watch()
+        .map((rows) => rows.map((r) => _db.mediaItems.map(r.data)).toList());
+  }
+
+  /// Builds a safe FTS5 MATCH expression from raw user input: each
+  /// whitespace-separated token is double-quoted (so `-`, `:`, etc. are literal,
+  /// not operators) and prefix-matched (`*`). Tokens are AND-ed (FTS5 default).
+  String _ftsMatchQuery(String raw) => raw
+      .split(RegExp(r'\s+'))
+      .where((t) => t.isNotEmpty)
+      .map((t) => '"${t.replaceAll('"', '""')}"*')
+      .join(' ');
 
   /// Stars or unstars a library item (P9b).
   Future<void> toggleFavorite(String itemId, bool value) async {

@@ -297,10 +297,20 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
     low-end devices — since these depend on the capability probe P12 builds. **Multivector chunking** (full
     long-transcript passage retrieval + timestamped citations) lands with **P13/GraphRAG**. *(EmbeddingGemma was evaluated and dropped — HF-gated /
     off the Apache-MIT preference, and unnecessary once Gecko's longer-context exports were found.)*
-- **P10h — Full-text search over transcripts & metadata**: a SQLite **FTS5** index over
-  transcript + description + title so the library is searchable by **spoken content** (today search is
-  `LIKE` on title/description). Promotes the long-standing FTS backlog item.
-- **P10i — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: (a) **information
+- **P10h — Full-text search over transcripts & metadata**: a SQLite **FTS5** index (`media_fts`, kept in
+  sync by triggers + backfilled on upgrade) over title + description + **transcript** so the library is
+  searchable by **spoken content** (replacing the `LIKE` on title/description). Adds a **Relevance** sort
+  (bm25) that auto-selects while a query is active (overridable, reverts on clear) and a **Has-transcript**
+  filter. Promotes the long-standing FTS backlog item.
+- **P10i — Dynamic, type-aware library sort & filter system**: a richer, contextual library discovery
+  surface. (a) **Multi-select type filter** (image / video / audio, extensible to future formats);
+  (b) new **sorts** — duration (longest/shortest) and original upload-date (distinct from download-date);
+  (c) new **filters** — quality/resolution (HD/4K from width/height), duration-range, and date-range
+  (downloaded vs uploaded); (d) **type-aware option narrowing** — the available sort/filter options adapt
+  to the active type selection (e.g. duration/quality hidden for images, resolution hidden for audio),
+  with a defined fallback when an active sort/filter becomes inapplicable (reset to Relevance/Newest). Gets
+  its own filter-sheet/sort-menu design pass. Pure-Dart/UI over the existing `LibraryQuery`/`watchFiltered`.
+- **P10j — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: (a) **information
   architecture** — regroup/nest settings into clear sections; (b) **UI/UX refinement** — visual polish,
   control-type consistency, section headers, discoverability (e.g. settings search/quick-jump);
   (c) roll the `(i)`-info-tooltip pattern (seeded in P10f-1) across non-obvious settings with
@@ -336,7 +346,7 @@ no push, no cloud, no accounts**; lives behind the app lock.
   Dashboard recent-activity tile. (Not a 6th nav destination.)
 - **Retention:** a configurable `notificationRetentionDays` setting (default ~30; `0` = keep forever)
   that auto-clears old items **lazily** on app/inbox open (no background scheduler); optional
-  per-category notify toggles, each with an `(i)` tooltip (the pattern rolled out in P10i).
+  per-category notify toggles, each with an `(i)` tooltip (the pattern rolled out in P10j).
 - Complementary to the existing **OS/foreground notifications** (which stay the while-backgrounded
   channel) — the inbox is the durable in-app record; an item may optionally also raise an OS
   notification.

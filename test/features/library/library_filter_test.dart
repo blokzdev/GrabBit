@@ -11,6 +11,11 @@ void main() {
       const LibraryQuery(site: 'youtube', uploader: 'Rick').activeFacetCount,
       2,
     );
+    // The has-transcript filter counts as an active facet (P10h).
+    expect(
+      const LibraryQuery(site: 'youtube', hasTranscript: true).activeFacetCount,
+      2,
+    );
   });
 
   test('facet setters update and clearFacets resets them', () {
@@ -21,9 +26,11 @@ void main() {
     c.setSite('tiktok');
     c.setUploader('Rick');
     c.setPlaylist('PL1');
+    c.setHasTranscript(true);
     var q = container.read(libraryFilterProvider);
     expect([q.site, q.uploader, q.playlistId], ['tiktok', 'Rick', 'PL1']);
-    expect(q.activeFacetCount, 3);
+    expect(q.hasTranscript, isTrue);
+    expect(q.activeFacetCount, 4);
 
     // Setting a facet back to null clears just that one.
     c.setSite(null);
@@ -32,5 +39,33 @@ void main() {
     c.clearFacets();
     q = container.read(libraryFilterProvider);
     expect([q.site, q.uploader, q.playlistId], [null, null, null]);
+    expect(q.hasTranscript, isFalse);
   });
+
+  test(
+    'entering a search auto-selects relevance, clearing restores it (P10h)',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final c = container.read(libraryFilterProvider.notifier);
+
+      // Start from a non-default sort.
+      c.setSort(LibrarySort.titleAsc);
+      c.setSearch('cats');
+      var q = container.read(libraryFilterProvider);
+      expect(q.search, 'cats');
+      expect(q.sort, LibrarySort.relevance);
+
+      // The user can override the sort while searching; refining the query keeps it.
+      c.setSort(LibrarySort.largest);
+      c.setSearch('cats and dogs');
+      expect(container.read(libraryFilterProvider).sort, LibrarySort.largest);
+
+      // Clearing the query restores the pre-search sort.
+      c.setSearch('');
+      q = container.read(libraryFilterProvider);
+      expect(q.search, '');
+      expect(q.sort, LibrarySort.titleAsc);
+    },
+  );
 }

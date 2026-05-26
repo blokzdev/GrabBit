@@ -673,6 +673,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       fallback + `activeEmbedderModel` default). On-device sanity: semantic search + "related" behave
       exactly as P10g-1 and **Test embedder** still reports "768-d · N embedded" (the refactor is transparent).
 
+### P10h — Full-text search over transcripts & metadata (FTS5)  *(no AI/graph needed — works on any build)*
+- [ ] **Search by spoken content:** an item whose **transcript** (not its title/description) mentions a
+      word is returned in the **keyword** (non-semantic) search when you type that word.
+- [ ] **Relevance auto-select:** typing a query switches the sort to **Relevance** automatically; the
+      strongest matches appear first; clearing the query restores the previous sort. Picking another sort
+      while a query is active overrides it (and is kept as you refine the query).
+- [ ] **Has-transcript filter:** toggling it in the filter sheet narrows the grid to items with captions;
+      "Clear all" resets it.
+- [ ] **Migration/backfill:** an app **upgraded from a pre-P10h build** can immediately search its
+      **existing** library (the v6→v7 backfill ran) — including by transcript text captured earlier.
+- [ ] **Live updates:** editing a title or (re)building a transcript updates search results without a
+      restart; odd characters in the query (`-`, `"`, `:`) never error.
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built

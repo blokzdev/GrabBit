@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 6 with all tables created', () async {
-    expect(db.schemaVersion, 6);
+  test('opens at schema version 7 with all tables created', () async {
+    expect(db.schemaVersion, 7);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -399,5 +399,85 @@ void main() {
         .write(const MediaMetadataCompanion(transcriptCues: Value('[]')));
     final updated = await upgraded.select(upgraded.mediaMetadata).getSingle();
     expect(updated.transcriptCues, '[]');
+  });
+
+  test('upgrades a v6 database to v7, building & backfilling media_fts', () async {
+    // Seed a v6-schema DB (no media_fts) at user_version=6 so opening
+    // AppDatabase (v7) runs the from<7 branch and _createFtsObjects.
+    final upgraded = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute('''
+            CREATE TABLE media_items (
+              id TEXT NOT NULL PRIMARY KEY,
+              title TEXT NOT NULL,
+              source_url TEXT NOT NULL,
+              site TEXT NOT NULL,
+              file_path TEXT NOT NULL,
+              type TEXT NOT NULL,
+              duration_sec INTEGER,
+              size_bytes INTEGER,
+              width INTEGER,
+              height INTEGER,
+              thumb_path TEXT,
+              created_at INTEGER NOT NULL,
+              storage_state TEXT NOT NULL,
+              notes TEXT,
+              folder_id INTEGER,
+              is_favorite INTEGER NOT NULL DEFAULT 0,
+              content_hash TEXT,
+              last_accessed_at INTEGER
+            )''');
+          raw.execute('''
+            CREATE TABLE media_metadata (
+              item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+              uploader TEXT,
+              upload_date INTEGER,
+              description TEXT,
+              original_url TEXT,
+              uploader_id TEXT,
+              channel_id TEXT,
+              source_id TEXT,
+              playlist_id TEXT,
+              playlist_title TEXT,
+              tags TEXT,
+              transcript TEXT,
+              transcript_cues TEXT
+            )''');
+          raw.execute(
+            'INSERT INTO media_items (id, title, source_url, site, file_path, '
+            'type, created_at, storage_state) VALUES '
+            "('old1', 'Cooking show', 'https://x/v', 'youtube', '/m/old1.mp4', "
+            "'video', 0, 'private')",
+          );
+          raw.execute(
+            'INSERT INTO media_metadata (item_id, description, transcript) '
+            "VALUES ('old1', 'a tasty episode', 'we sauté the onions slowly')",
+          );
+          raw.execute('PRAGMA user_version = 6');
+        },
+      ),
+    );
+    addTearDown(upgraded.close);
+
+    // The pre-existing row was backfilled into media_fts and is searchable by
+    // a word that appears only in the transcript.
+    final hits = await upgraded
+        .customSelect(
+          "SELECT item_id FROM media_fts WHERE media_fts MATCH 'onions'",
+        )
+        .get();
+    expect(hits.map((r) => r.read<String>('item_id')), ['old1']);
+
+    // The triggers keep the index live: editing the transcript updates results.
+    await (upgraded.update(upgraded.mediaMetadata)
+          ..where((t) => t.itemId.equals('old1')))
+        .write(const MediaMetadataCompanion(transcript: Value('plain rice')));
+    final after = await upgraded
+        .customSelect(
+          "SELECT item_id FROM media_fts WHERE media_fts MATCH 'onions'",
+        )
+        .get();
+    expect(after, isEmpty);
   });
 }
