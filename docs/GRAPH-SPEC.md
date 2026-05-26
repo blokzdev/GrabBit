@@ -183,7 +183,7 @@ deterministic + similarity graph ship independent of the LLM stack, and keeps bo
 
 **Vector index (P10b-2b):** HNSW relation `embedding {id => v: <F32; DIM>, textHash}` with
 `::hnsw create embedding:idx {dim, dtype:F32, fields:[v], distance:Cosine, …}`. **DIM = 768**
-(Gecko 64 / EmbeddingGemma family). `textHash = sha256(modelId + docText)` is the **cache key** — an
+(Gecko, 768-d). `textHash = sha256(modelId + docText)` is the **cache key** — an
 unchanged hash skips re-embedding, and a model change re-keys every hash (so vectors never mix
 spaces). The relation is **created on demand by `GraphSyncService.backfillEmbeddings()`** (which knows
 DIM via the embedder), **not** by the dim-agnostic `GraphStore.ensureSchema`, and is deliberately
@@ -203,7 +203,8 @@ semantic library search); `similarTo` materialization follows in later P10c subp
 | uploader / `uploaderId` / `channelId` | `media_metadata` | often present, can be null |
 | `playlistId` | `media_metadata` | only if downloaded from a playlist |
 | `tags` (extracted) | `media_metadata` | sparse |
-| `description` | `media_metadata` | usually present — **best embedding text** |
+| `description` | `media_metadata` | usually present — strong embedding text |
+| `transcript` | `media_metadata` | captioned A/V only (P10f); **best spoken-content signal**, embedded as a window-capped slice (P10g-1) |
 | similarity (`similarTo`) | embeddings | once the embedder runs |
 
 ---

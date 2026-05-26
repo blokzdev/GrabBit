@@ -44,6 +44,33 @@ void main() {
       expect(docs.single.text, contains('How to cook pasta well'));
     });
 
+    test('includes the transcript, capped to the window (P10g-1)', () {
+      final long = List.filled(2000, 'word').join(' '); // ~10k chars
+      final docs = buildEmbeddingDocs(
+        LibrarySnapshot(
+          media: [item('a', title: 'Talk')],
+          metadata: [MediaMetadataData(itemId: 'a', transcript: long)],
+        ),
+        modelId: 'm1',
+      );
+      expect(docs.single.text, contains('word')); // transcript contributes
+      expect(docs.single.text.length, lessThan(1000)); // …but capped
+    });
+
+    test('adding a transcript changes the textHash (forces re-embed)', () {
+      final base = LibrarySnapshot(media: [item('a', title: 'Same')]);
+      final withTranscript = LibrarySnapshot(
+        media: [item('a', title: 'Same')],
+        metadata: [const MediaMetadataData(itemId: 'a', transcript: 'hello')],
+      );
+      final h1 = buildEmbeddingDocs(base, modelId: 'm1').single.textHash;
+      final h2 = buildEmbeddingDocs(
+        withTranscript,
+        modelId: 'm1',
+      ).single.textHash;
+      expect(h1, isNot(h2));
+    });
+
     test('skips an item whose composed text is empty', () {
       final docs = buildEmbeddingDocs(
         LibrarySnapshot(media: [item('a', title: '   ')]),

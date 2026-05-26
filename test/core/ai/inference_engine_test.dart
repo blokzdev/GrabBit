@@ -5,10 +5,11 @@ import 'package:grabbit/core/ai/unavailable_inference_engine.dart';
 
 void main() {
   group('geckoEmbedder catalog', () {
-    test('pins a 768-d, ungated, https model + tokenizer', () {
+    test('pins the 256-token, 768-d, ungated https model + tokenizer', () {
       expect(geckoEmbedder.dimension, 768);
-      expect(geckoEmbedder.id, 'Gecko_64_quant');
+      expect(geckoEmbedder.id, 'Gecko_256_quant');
       expect(geckoEmbedder.modelUrl, startsWith('https://'));
+      expect(geckoEmbedder.modelUrl, contains('Gecko_256_quant.tflite'));
       expect(geckoEmbedder.tokenizerUrl, startsWith('https://'));
       expect(geckoEmbedder.approxDownloadMb, greaterThan(0));
     });

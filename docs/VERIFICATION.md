@@ -430,7 +430,7 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Skip works**: tap **Skip for now** → lands on Home, no download; force-quit + reopen → the
       AI-setup screen is **not** shown again.
 - [ ] **Set up downloads the model**: re-install (or enable from Settings) → **Set up** →
-      a progress bar runs to 100% (~110 MB, one time) → lands on Home.
+      a progress bar runs to 100% (~114 MB Gecko_256, one time) → lands on Home.
 - [ ] **Settings opt-in**: Settings → Graph database → **Semantic search** toggle off by default;
       turning it on downloads the model (snackbar "Semantic search ready"); turning it off stops use.
 - [ ] **Test embedder**: Settings → Graph database → **Test embedder** → after the model is
@@ -655,6 +655,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       **flat** transcript (no timestamps), with no crash.
 - [ ] A transcript captured **before P10f-4** (no stored cues) gains the synced view on first open
       (cues are derived from the sidecar and saved).
+
+### P10g-1 — Transcript-powered semantic index (Gecko_256) (needs an APK build)
+- [ ] Enabling **Semantic search** downloads **Gecko_256 (~114 MB)**; **Test embedder** reports
+      "768-d · N embedded".
+- [ ] **Transcript-powered:** an item whose **transcript** (not its title/description) mentions a term
+      is returned when you search that term.
+- [ ] **Model upgrade:** a user who already had the old `Gecko_64` model + semantic search on sees an
+      **"Update AI model"** row in Settings (no silent download); tapping it fetches Gecko_256 and
+      re-embeds. Declining leaves the app working.
+- [ ] On a device that can't run the model, semantic search degrades gracefully (no crash).
 
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*

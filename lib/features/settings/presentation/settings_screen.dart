@@ -14,6 +14,7 @@ import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
+import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/lock/pin_dialog.dart';
 import 'package:grabbit/features/lock/pin_repository.dart';
@@ -585,7 +586,9 @@ Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
 
 /// Opt-in toggle for on-device semantic search (P10b-2). Enabling downloads the
 /// embedder model (one time, ~N MB) with a progress snackbar; disabling leaves
-/// the model untouched but stops using it. Everything works without it.
+/// the model untouched but stops using it. When the pinned model changes
+/// (P10g-1) an opted-in user sees an **Update AI model** row to fetch the new
+/// one (never auto-downloaded). Everything works without it.
 class _SemanticSearchTile extends ConsumerStatefulWidget {
   const _SemanticSearchTile();
 
@@ -599,13 +602,21 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
 
   Future<void> _toggle(bool value) async {
     final controller = ref.read(settingsControllerProvider.notifier);
-    final messenger = ScaffoldMessenger.of(context);
     if (!value) {
       await controller.setSemanticSearchEnabled(false);
       return;
     }
-    setState(() => _busy = true);
     await controller.setSemanticSearchEnabled(true);
+    await _download();
+  }
+
+  /// Downloads (or re-downloads) the pinned embedder, then builds the index.
+  /// Reused by the on-toggle path and by the "update model" path (P10g-1), where
+  /// an opted-in user is on a now-superseded model and `ensureReady()` is false.
+  Future<void> _download() async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -617,6 +628,7 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
       final stats = await ref
           .read(graphSyncServiceProvider)
           .backfillEmbeddings();
+      ref.invalidate(semanticSearchReadyProvider);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -649,15 +661,31 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
         (s) => s.asData?.value.semanticSearchEnabled ?? false,
       ),
     );
+    final ready = ref.watch(semanticSearchReadyProvider).asData?.value ?? false;
     final model = ref.read(inferenceEngineProvider).model;
-    return SwitchListTile(
-      title: const Text('Semantic search'),
-      subtitle: Text(
-        'Search your library by meaning, on-device. '
-        'Downloads a ~${model.approxDownloadMb} MB model.',
-      ),
-      value: enabled,
-      onChanged: _busy ? null : _toggle,
+    return Column(
+      children: [
+        SwitchListTile(
+          title: const Text('Semantic search'),
+          subtitle: Text(
+            'Search your library by meaning, on-device. '
+            'Downloads a ~${model.approxDownloadMb} MB model.',
+          ),
+          value: enabled,
+          onChanged: _busy ? null : _toggle,
+        ),
+        // Opted in but the (new) model isn't installed — offer the download
+        // instead of silently fetching it on launch (P10g-1 model upgrade).
+        if (enabled && !ready && !_busy)
+          ListTile(
+            leading: const Icon(Icons.system_update_alt),
+            title: const Text('Update AI model'),
+            subtitle: Text(
+              'An improved model is available (~${model.approxDownloadMb} MB).',
+            ),
+            onTap: _download,
+          ),
+      ],
     );
   }
 }
