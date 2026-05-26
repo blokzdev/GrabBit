@@ -77,6 +77,41 @@ void main() {
       final m2 = buildEmbeddingDocs(snap, modelId: 'm2').single.textHash;
       expect(m1, isNot(m2));
     });
+
+    test('wraps the document in the EmbeddingGemma prompt (P10g)', () {
+      final docs = buildEmbeddingDocs(
+        LibrarySnapshot(
+          media: [item('a', title: 'Pasta')],
+          metadata: [
+            const MediaMetadataData(itemId: 'a', description: 'tasty'),
+          ],
+        ),
+        modelId: 'm1',
+      );
+      expect(docs.single.text, startsWith('title: Pasta | text:'));
+      expect(docs.single.text, contains('tasty'));
+    });
+
+    test('includes the transcript, capped to the window (P10g)', () {
+      final long = List.filled(2000, 'word').join(' '); // ~10k chars
+      final docs = buildEmbeddingDocs(
+        LibrarySnapshot(
+          media: [item('a')],
+          metadata: [MediaMetadataData(itemId: 'a', transcript: long)],
+        ),
+        modelId: 'm1',
+      );
+      expect(docs.single.text, contains('word')); // transcript contributes
+      expect(docs.single.text.length, lessThan(1500)); // …but capped
+    });
+  });
+
+  group('embedding prompts (P10g)', () {
+    test('document and query prompts share EmbeddingGemma format', () {
+      expect(embeddingDocumentPrompt('T', 'B'), 'title: T | text: B');
+      expect(embeddingDocumentPrompt('', 'B'), 'title: none | text: B');
+      expect(embeddingQueryPrompt('cats'), 'task: search result | query: cats');
+    });
   });
 
   group('diffEmbeddings', () {

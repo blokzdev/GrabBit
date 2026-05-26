@@ -42,13 +42,13 @@ class FakeInferenceEngine implements InferenceEngine {
   int embedded = 0;
 
   @override
-  EmbedderModel get model => geckoEmbedder;
+  EmbedderModel get model => embeddingGemmaEmbedder;
 
   @override
   bool get isAvailable => ready;
 
   @override
-  int get dimension => geckoEmbedder.dimension;
+  int get dimension => embeddingGemmaEmbedder.dimension;
 
   @override
   Future<bool> ensureReady() async => ready;

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:grabbit/core/ai/inference_engine.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
@@ -9,7 +11,7 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 /// free, so the keepAlive provider can build it eagerly while staying inert
 /// until the user enables semantic search.
 class FlutterGemmaInferenceEngine implements InferenceEngine {
-  FlutterGemmaInferenceEngine([this._model = geckoEmbedder]);
+  FlutterGemmaInferenceEngine([this._model = embeddingGemmaEmbedder]);
 
   final EmbedderModel _model;
 
@@ -110,7 +112,7 @@ class FlutterGemmaInferenceEngine implements InferenceEngine {
       );
     }
     try {
-      return await loaded.generateEmbedding(text);
+      return _matryoshka(await loaded.generateEmbedding(text));
     } catch (e) {
       throw InferenceException(
         InferenceErrorCode.embedFailed,
@@ -118,6 +120,21 @@ class FlutterGemmaInferenceEngine implements InferenceEngine {
         cause: e,
       );
     }
+  }
+
+  /// Truncates a full embedding to [EmbedderModel.dimension] (Matryoshka) and
+  /// L2-renormalizes — EmbeddingGemma's MRL training makes the leading dims a
+  /// valid lower-dimensional embedding, keeping the Cozo index small/fast.
+  List<double> _matryoshka(List<double> full) {
+    final dim = _model.dimension;
+    final v = full.length <= dim ? full : full.sublist(0, dim);
+    var sum = 0.0;
+    for (final x in v) {
+      sum += x * x;
+    }
+    final norm = math.sqrt(sum);
+    if (norm == 0) return v;
+    return [for (final x in v) x / norm];
   }
 
   @override
@@ -131,7 +148,8 @@ class FlutterGemmaInferenceEngine implements InferenceEngine {
     }
     if (texts.isEmpty) return const [];
     try {
-      return await loaded.generateEmbeddings(texts);
+      final raw = await loaded.generateEmbeddings(texts);
+      return [for (final v in raw) _matryoshka(v)];
     } catch (e) {
       throw InferenceException(
         InferenceErrorCode.embedFailed,

@@ -1,11 +1,11 @@
-/// The pinned on-device embedder model. A minimal precursor to P12's full model
-/// catalog — for P10b-2 we ship exactly one embedder, chosen for the smallest
-/// download and **no gated-model auth** (no HuggingFace token).
+/// The pinned on-device embedder model.
 ///
-/// **Gecko 64** (`litert-community/Gecko-110m-en`): 110M params, 768-d vectors,
-/// 64-token max sequence, ~110 MB, ungated. The fastest of the family and ideal
-/// for the short title/uploader/tag text we embed. EmbeddingGemma-300M is more
-/// accurate but gated and larger — revisit if quality demands it.
+/// **P10g: EmbeddingGemma-300m** (`litert-community/embeddinggemma-300m`, seq256
+/// export) — 768-d native, used at **256-d via Matryoshka** for a lean index;
+/// **multilingual** (100+ languages, matching the captions P10f fetches) and a
+/// 256-token window (vs Gecko's 64). The HF weights are **license-gated**, so we
+/// **self-host** the `.tflite` + tokenizer (see `docs/AI-SPEC.md`) and download
+/// them tokenlessly; the Gemma license + use-policy ship in-app.
 ///
 /// `id`/`dimension` are persisted by P10b-2b so a model change re-keys the Cozo
 /// HNSW relation + graph fingerprint (a new model → re-embed).
@@ -28,20 +28,26 @@ class EmbedderModel {
   /// HTTPS URL of the SentencePiece tokenizer (same `.model` on every platform).
   final String tokenizerUrl;
 
-  /// Output vector dimension (768 for the whole Gecko/EmbeddingGemma family).
+  /// Output vector dimension actually stored/indexed. EmbeddingGemma emits 768;
+  /// we keep the first [dimension] dims (Matryoshka) — see `flutter_gemma_inference_engine.dart`.
   final int dimension;
 
   /// Approximate total download size in MB, surfaced in the opt-in copy.
   final int approxDownloadMb;
 }
 
-/// The single embedder GrabBit ships in v1.
-const EmbedderModel geckoEmbedder = EmbedderModel(
-  id: 'Gecko_64_quant',
+/// The single embedder GrabBit ships in v1 (P10g).
+///
+/// TODO(P10g): point [modelUrl]/[tokenizerUrl] at the public GrabBit-hosted
+/// release assets once uploaded (EmbeddingGemma is HF-gated; we self-host).
+/// Source files: `embeddinggemma-300M_seq256_mixed-precision.tflite` (179 MB) +
+/// `sentencepiece.model` (4.68 MB) from `litert-community/embeddinggemma-300m`.
+const EmbedderModel embeddingGemmaEmbedder = EmbedderModel(
+  id: 'embeddinggemma_300m_seq256',
   modelUrl:
-      'https://huggingface.co/litert-community/Gecko-110m-en/resolve/main/Gecko_64_quant.tflite',
+      'https://github.com/blokzdev/grabbit-models/releases/download/v1/embeddinggemma-300M_seq256_mixed-precision.tflite',
   tokenizerUrl:
-      'https://huggingface.co/litert-community/Gecko-110m-en/resolve/main/sentencepiece.model',
-  dimension: 768,
-  approxDownloadMb: 110,
+      'https://github.com/blokzdev/grabbit-models/releases/download/v1/sentencepiece.model',
+  dimension: 256,
+  approxDownloadMb: 184,
 );

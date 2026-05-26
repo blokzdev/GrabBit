@@ -443,7 +443,7 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 
 ### P10b-2b — vector index (cached embedding backfill)  *(install `app-arm64-v8a-debug.apk`)*
 - [ ] **Initial index**: with a non-empty library, enable **Semantic search** (or AI-setup → Set up) →
-      after the download, **Test embedder** reports "768-d · **N embedded**" where N = library size.
+      after the download, **Test embedder** reports "256-d · **N embedded**" where N = library size.
 - [ ] **Incremental add**: download a new item → within ~2 s the embedded count goes **N+1** (only the
       new item embedded, not the whole library).
 - [ ] **Edit re-embeds**: rename an item (or edit its metadata) → it's re-embedded (cache invalidates);
@@ -655,6 +655,17 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       **flat** transcript (no timestamps), with no crash.
 - [ ] A transcript captured **before P10f-4** (no stored cues) gains the synced view on first open
       (cues are derived from the sidecar and saved).
+
+### P10g — Transcript-powered semantic index (EmbeddingGemma) (needs an APK build)
+- [ ] Enabling **Semantic search** downloads EmbeddingGemma (~184 MB) from the self-hosted URL with
+      progress; **Test embedder** then reports **256-d · N embedded**.
+- [ ] **Multilingual:** a non-English item is found by a query in its own language.
+- [ ] **Transcript-powered:** an item whose **transcript** (not its title/description) mentions a term
+      is returned when you search that term.
+- [ ] **Model upgrade path:** a user who had the old (Gecko) model + semantic search on sees an
+      **"Update AI model"** action in Settings (no silent download); tapping it fetches EmbeddingGemma and
+      re-embeds. Declining leaves the app working.
+- [ ] On a device that can't load the model, semantic search degrades gracefully (no crash).
 
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*

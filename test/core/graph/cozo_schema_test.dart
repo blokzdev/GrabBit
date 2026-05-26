@@ -61,16 +61,16 @@ void main() {
 
   group('embedding scripts (P10b-2b)', () {
     test('create script fixes the dimension + carries the cache key', () {
-      final script = embeddingCreateScript(768);
+      final script = embeddingCreateScript(256);
       expect(script, startsWith(':create embedding '));
-      expect(script, contains('v: <F32; 768>'));
+      expect(script, contains('v: <F32; 256>'));
       expect(script, contains('textHash: String'));
     });
 
     test('hnsw script names the index with the dim + cosine distance', () {
-      final script = embeddingHnswScript(768);
+      final script = embeddingHnswScript(256);
       expect(script, startsWith('::hnsw create embedding:idx '));
-      expect(script, contains('dim: 768'));
+      expect(script, contains('dim: 256'));
       expect(script, contains('dtype: F32'));
       expect(script, contains('fields: [v]'));
       expect(script, contains('distance: Cosine'));

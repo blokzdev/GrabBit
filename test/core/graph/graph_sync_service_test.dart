@@ -40,11 +40,11 @@ class _FakeInferenceEngine implements InferenceEngine {
   int batchCalls = 0;
 
   @override
-  EmbedderModel get model => geckoEmbedder;
+  EmbedderModel get model => embeddingGemmaEmbedder;
   @override
   bool get isAvailable => true;
   @override
-  int get dimension => geckoEmbedder.dimension;
+  int get dimension => embeddingGemmaEmbedder.dimension;
   @override
   Future<bool> ensureReady() async => true;
   @override
@@ -84,8 +84,8 @@ Map<String, Object?> _matchingMeta(String script) {
   if (script.contains('*embedding_meta{key, value}')) {
     return {
       'rows': [
-        ['model', geckoEmbedder.id],
-        ['dim', '${geckoEmbedder.dimension}'],
+        ['model', embeddingGemmaEmbedder.id],
+        ['dim', '${embeddingGemmaEmbedder.dimension}'],
       ],
     };
   }

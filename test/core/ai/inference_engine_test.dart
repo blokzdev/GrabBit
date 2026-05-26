@@ -4,13 +4,13 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/unavailable_inference_engine.dart';
 
 void main() {
-  group('geckoEmbedder catalog', () {
-    test('pins a 768-d, ungated, https model + tokenizer', () {
-      expect(geckoEmbedder.dimension, 768);
-      expect(geckoEmbedder.id, 'Gecko_64_quant');
-      expect(geckoEmbedder.modelUrl, startsWith('https://'));
-      expect(geckoEmbedder.tokenizerUrl, startsWith('https://'));
-      expect(geckoEmbedder.approxDownloadMb, greaterThan(0));
+  group('embeddingGemmaEmbedder catalog', () {
+    test('pins a 256-d (Matryoshka) https model + tokenizer', () {
+      expect(embeddingGemmaEmbedder.dimension, 256);
+      expect(embeddingGemmaEmbedder.id, 'embeddinggemma_300m_seq256');
+      expect(embeddingGemmaEmbedder.modelUrl, startsWith('https://'));
+      expect(embeddingGemmaEmbedder.tokenizerUrl, startsWith('https://'));
+      expect(embeddingGemmaEmbedder.approxDownloadMb, greaterThan(0));
     });
   });
 
@@ -19,8 +19,8 @@ void main() {
 
     test('is never available and reports the pinned dimension', () {
       expect(engine.isAvailable, isFalse);
-      expect(engine.dimension, geckoEmbedder.dimension);
-      expect(engine.model, geckoEmbedder);
+      expect(engine.dimension, embeddingGemmaEmbedder.dimension);
+      expect(engine.model, embeddingGemmaEmbedder);
     });
 
     test('ensureReady stays false without throwing', () async {

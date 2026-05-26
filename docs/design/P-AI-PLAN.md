@@ -121,11 +121,13 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   `transcript_service.extractTimed`. Item-detail renders a synced scrollable transcript (`_SyncedTranscript`)
   whose lines **seek the player** and highlight/auto-scroll with playback; the player controller is shared
   via a screen-scoped `ValueNotifier`. Groundwork for timestamped GraphRAG citations. Pure-Dart/UI.
-- **P10g — Transcript-powered semantic index** *(later)*: include transcript text in the embedding doc
-  (`lib/core/graph/embedding_doc.dart` today uses title/uploader/playlist/tags/description only) so
-  semantic search · "related" · GraphRAG run on spoken content. Needs **chunking / a representative
-  slice** (transcripts exceed the embedder's input window) + an `_edgeBuilderVersion` bump in
-  `graph_sync_service.dart` (one-time re-embed). Existing embedder, no LLM. See `AI-SPEC.md` §5.
+- **P10g — Transcript-powered semantic index** *(done)*: swapped the embedder to **EmbeddingGemma-300m**
+  (multilingual, 256-token, 256-d Matryoshka via truncate+renorm in `flutter_gemma_inference_engine.dart`;
+  HF-gated → self-hosted, Gemma notice in-app) with **doc/query prompts** (`embedding_doc.dart`,
+  `semantic_search_provider.dart`), and added the **transcript** (capped) to the embed doc. Bumped
+  `_edgeBuilderVersion`→3; model-id change → one-time re-embed via the existing schema-recreate. Settings
+  offers opted-in users a one-tap **model update** (no silent download). Device-tier gating → P11;
+  full-transcript chunking → P13/GraphRAG. See `AI-SPEC.md` §3–5.
 - **P10h — Full-text search over transcripts & metadata** *(later)*: SQLite **FTS5** over
   transcript + description + title (today `metadata_repository` searches `LIKE` on title/description),
   making the library searchable by spoken content. Promotes the FTS backlog item.

@@ -75,7 +75,8 @@ class GraphSyncService {
   /// Bump when the projection logic changes so a startup self-heal rebuilds even
   /// though the data hasn't changed. Combined with the Drift schema version.
   /// v2: `duplicateOf` + `coDownloadedWith` are now projected (P10b-3).
-  static const _edgeBuilderVersion = 2;
+  /// v3: embed doc adds transcript + EmbeddingGemma prompt wrapping (P10g).
+  static const _edgeBuilderVersion = 3;
 
   /// Identifies the shape of the projected graph; persisted to detect staleness.
   /// Includes the embedder model id so a model change trips the self-heal pass

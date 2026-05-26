@@ -15,13 +15,13 @@ class UnavailableInferenceEngine implements InferenceEngine {
   );
 
   @override
-  EmbedderModel get model => geckoEmbedder;
+  EmbedderModel get model => embeddingGemmaEmbedder;
 
   @override
   bool get isAvailable => false;
 
   @override
-  int get dimension => geckoEmbedder.dimension;
+  int get dimension => embeddingGemmaEmbedder.dimension;
 
   @override
   Future<void> downloadModel({

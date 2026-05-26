@@ -182,8 +182,9 @@ deterministic + similarity graph ship independent of the LLM stack, and keeps bo
 - `similarTo(media ↔ media => score)` — materialized from vector search (lags until embeddings exist)
 
 **Vector index (P10b-2b):** HNSW relation `embedding {id => v: <F32; DIM>, textHash}` with
-`::hnsw create embedding:idx {dim, dtype:F32, fields:[v], distance:Cosine, …}`. **DIM = 768**
-(Gecko 64 / EmbeddingGemma family). `textHash = sha256(modelId + docText)` is the **cache key** — an
+`::hnsw create embedding:idx {dim, dtype:F32, fields:[v], distance:Cosine, …}`. **DIM = 256** (P10g:
+EmbeddingGemma-300m, 768-d native truncated to 256 via Matryoshka; was 768 under Gecko). `dim` is read
+from `model.dimension`, so a model/dim change recreates the relation. `textHash = sha256(modelId + docText)` is the **cache key** — an
 unchanged hash skips re-embedding, and a model change re-keys every hash (so vectors never mix
 spaces). The relation is **created on demand by `GraphSyncService.backfillEmbeddings()`** (which knows
 DIM via the embedder), **not** by the dim-agnostic `GraphStore.ensureSchema`, and is deliberately

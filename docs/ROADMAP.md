@@ -277,11 +277,12 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
     transcript discarded them) as JSON in `MediaMetadata.transcriptCues` (schema v6); item-detail shows a
     scrollable transcript whose lines **seek the player** and the playing line highlights/auto-scrolls;
     lays groundwork for timestamped GraphRAG citations. Device-universal, pure-Dart/UI; APK-verified.
-- **P10g — Transcript-powered semantic index**: feed transcript text into the embedding input (today
-  the embedder uses title/uploader/playlist/tags/**description** only), so semantic search · "related" ·
-  future GraphRAG run on the **spoken content**. Requires **chunking / a representative slice**
-  (transcripts far exceed the embedder's input window) + an embed-version bump (one-time re-embed). Uses
-  the existing P10 embedder — no LLM.
+- **P10g — Transcript-powered semantic index** *(done)*: swapped the pinned embedder Gecko-64 (64-token,
+  English) → **EmbeddingGemma-300m** (multilingual, 256-token, 256-d via Matryoshka; HF-gated so
+  **self-hosted** + Gemma notice in-app) and added the **transcript** (capped to the window, with
+  EmbeddingGemma doc/query prompts) to the embed doc — so semantic search · "related" run on **spoken
+  content across languages**. One-time re-embed (model-id change). Full long-transcript multi-vector
+  chunking deferred to **P13/GraphRAG**; device-tier gating for the heavier model is **P11**.
 - **P10h — Full-text search over transcripts & metadata**: a SQLite **FTS5** index over
   transcript + description + title so the library is searchable by **spoken content** (today search is
   `LIKE` on title/description). Promotes the long-standing FTS backlog item.

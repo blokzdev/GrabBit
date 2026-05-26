@@ -23,13 +23,13 @@ class _FakeInferenceEngine implements InferenceEngine {
   bool downloadCalled = false;
 
   @override
-  EmbedderModel get model => geckoEmbedder;
+  EmbedderModel get model => embeddingGemmaEmbedder;
 
   @override
   bool get isAvailable => downloadCalled && !failDownload;
 
   @override
-  int get dimension => geckoEmbedder.dimension;
+  int get dimension => embeddingGemmaEmbedder.dimension;
 
   @override
   Future<void> downloadModel({

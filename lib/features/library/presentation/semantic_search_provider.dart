@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/inference_engine_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/graph/embedding_doc.dart';
 import 'package:grabbit/core/graph/graph_query_provider.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
@@ -30,7 +31,10 @@ final semanticResultsProvider = FutureProvider.family<List<MediaItem>, String>((
   if (trimmed.isEmpty) return const [];
   if (!await ref.watch(semanticSearchReadyProvider.future)) return const [];
 
-  final vector = await ref.watch(inferenceEngineProvider).embed(trimmed);
+  // EmbeddingGemma needs the search-query prompt to match the document space.
+  final vector = await ref
+      .watch(inferenceEngineProvider)
+      .embed(embeddingQueryPrompt(trimmed));
   final hits = await ref.watch(graphQueryServiceProvider).vectorSearch(vector);
   if (hits.isEmpty) return const [];
 
