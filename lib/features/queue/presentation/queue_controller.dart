@@ -490,12 +490,16 @@ class QueueController extends _$QueueController {
           : null;
       for (final (i, mediaFile) in outputs.media.indexed) {
         final itemId = single ? id : '${id}__$i';
-        final transcript = await transcripts.extractTranscript(
+        final timed = await transcripts.extractTimed(
           mediaFile.path,
           preferLang: preferLang,
         );
-        if (transcript != null) {
-          await metadata.updateTranscript(itemId, transcript);
+        if (timed != null) {
+          await metadata.updateTranscript(
+            itemId,
+            timed.flat,
+            cuesJson: timed.cuesJson,
+          );
         }
       }
     }

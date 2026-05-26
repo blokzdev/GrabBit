@@ -273,10 +273,10 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
     in-app language on every download (when no explicit subtitle langs set) so transcripts build
     automatically; gathers the transcript toggles into a dedicated "Transcripts" settings section.
     Reuses the existing P8c subtitle path (no native change); APK-verified end-to-end.
-  - **P10f-4** *(later)*: **timestamped, tap-to-seek transcript** — retain caption-cue timings (the flat
-    transcript today discards them) in a timed representation stored alongside it; item-detail shows a
-    scrollable transcript whose lines **seek the player** (YouTube-style); also lays the groundwork for
-    timestamped citations in future GraphRAG. Device-universal, pure-Dart/UI + a schema addition.
+  - **P10f-4** *(done)*: **timestamped, tap-to-seek transcript** — retains caption-cue timings (the flat
+    transcript discarded them) as JSON in `MediaMetadata.transcriptCues` (schema v6); item-detail shows a
+    scrollable transcript whose lines **seek the player** and the playing line highlights/auto-scrolls;
+    lays groundwork for timestamped GraphRAG citations. Device-universal, pure-Dart/UI; APK-verified.
 - **P10g — Transcript-powered semantic index**: feed transcript text into the embedding input (today
   the embedder uses title/uploader/playlist/tags/**description** only), so semantic search · "related" ·
   future GraphRAG run on the **spoken content**. Requires **chunking / a representative slice**

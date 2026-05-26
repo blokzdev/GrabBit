@@ -14,10 +14,11 @@ class TranscriptService {
   // `.ass`/`.ssa` aren't parseable by the video_player caption readers.
   static const _parseableExts = {'vtt', 'srt'};
 
-  /// Extracts a de-duplicated transcript from the caption sidecar beside
-  /// [mediaPath], preferring [preferLang] when several languages are present.
+  /// Extracts the de-duplicated transcript from the caption sidecar beside
+  /// [mediaPath] in both forms: [flat] plain text (for the summary/search) and
+  /// [cuesJson] timestamped lines (P10f-4, for the synced tap-to-seek view).
   /// Returns `null` when no parseable caption file exists or it yields no text.
-  Future<String?> extractTranscript(
+  Future<({String flat, String cuesJson})?> extractTimed(
     String mediaPath, {
     String? preferLang,
   }) async {
@@ -32,14 +33,23 @@ class TranscriptService {
       final ClosedCaptionFile parsed = _ext(chosen.path) == 'vtt'
           ? WebVTTCaptionFile(content)
           : SubRipCaptionFile(content);
-      final text = captionsToTranscript([
-        for (final c in parsed.captions) c.text,
+      final lines = captionsToTimedTranscript([
+        for (final c in parsed.captions)
+          TranscriptCue(start: c.start, text: c.text),
       ]);
-      return text.isEmpty ? null : text;
+      final flat = lines.map((c) => c.text).join(' ');
+      if (flat.isEmpty) return null;
+      return (flat: flat, cuesJson: encodeCues(lines));
     } on Exception {
       return null;
     }
   }
+
+  /// The flat transcript text only (convenience over [extractTimed]).
+  Future<String?> extractTranscript(
+    String mediaPath, {
+    String? preferLang,
+  }) async => (await extractTimed(mediaPath, preferLang: preferLang))?.flat;
 
   File _pick(List<File> files, String? preferLang) {
     if (preferLang != null && preferLang.isNotEmpty) {

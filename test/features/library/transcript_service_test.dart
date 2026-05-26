@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/text/transcript_dedup.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 
 void main() {
@@ -25,6 +26,24 @@ void main() {
     final out = await service.extractTranscript(mediaPath());
     expect(out, 'the quick brown fox');
   });
+
+  test(
+    'extractTimed returns flat text + cues with start times (P10f-4)',
+    () async {
+      await File('${dir.path}/clip.en.vtt').writeAsString(
+        'WEBVTT\n\n'
+        '00:00:00.000 --> 00:00:01.000\nthe quick brown\n\n'
+        '00:00:02.500 --> 00:00:03.500\nquick brown fox\n',
+      );
+      final timed = await service.extractTimed(mediaPath());
+      expect(timed, isNotNull);
+      expect(timed!.flat, 'the quick brown fox');
+      final cues = decodeCues(timed.cuesJson);
+      expect(cues.map((c) => c.text).toList(), ['the quick brown', 'fox']);
+      expect(cues[0].start, Duration.zero);
+      expect(cues[1].start, const Duration(milliseconds: 2500));
+    },
+  );
 
   test('parses .srt sidecars too', () async {
     await File('${dir.path}/clip.srt').writeAsString(

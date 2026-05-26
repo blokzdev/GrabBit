@@ -107,6 +107,7 @@ BoolColumn isFavorite; TextColumn? contentHash; DateTimeColumn? lastAccessedAt; 
 TextColumn itemId; TextColumn? uploader; DateTimeColumn? uploadDate;
 TextColumn? description; TextColumn? originalUrl;
 TextColumn? transcript;                                  // v5 (P10f-1): caption-derived text
+TextColumn? transcriptCues;                              // v6 (P10f-4): timestamped lines (JSON)
 // tags(id,name) + media_tags(itemId,tagId)
 // collections(id,name,createdAt) + media_collections(itemId,collectionId)
 // download_tasks
@@ -114,22 +115,22 @@ TextColumn id; TextColumn url; TextColumn requestJson; TextColumn status;
 RealColumn progress; TextColumn? errorCode; IntColumn retries; DateTimeColumn createdAt;
 IntColumn orderIndex;                                    // v3 (P9d): queue reorder
 // settings (key/value JSON, single row)
-// notifications (v6, P11): id, createdAt, category, severity, title, body,
+// notifications (v7, P11): id, createdAt, category, severity, title, body,
 //   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
 ```
 
-Migration strategy: Drift `schemaVersion` (currently **5**); write `MigrationStrategy`
+Migration strategy: Drift `schemaVersion` (currently **6**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
 indices on `is_favorite`/`content_hash`/`created_at`. **v4 (P9b-4)** adds a
 `media_metadata.source_id` index for preventive (pre-download) source-id dedupe. **v5 (P10f-1)**
-adds `media_metadata.transcript` (caption-sidecar text feeding the summary). `contentHash`
+adds `media_metadata.transcript` (caption-sidecar text feeding the summary). **v6 (P10f-4)** adds
+`media_metadata.transcriptCues` (timestamped lines, JSON, for the synced tap-to-seek view). `contentHash`
 is populated lazily by the P9b-3 duplicate scan (`DedupeService`, off-isolate); `lastAccessedAt`
 is set on playback (P9c). The probe (`MediaInfo`/`MediaInfoDto`) now carries the source `id`.
-**Planned: v6 (P11)** adds the `notifications` table backing the Activity Inbox; **P10f-4** adds a
-timestamped-cue representation beside the flat transcript (tap-to-seek); **P10h** adds a SQLite **FTS5**
-index over `transcript`+`description`+`title` (search by spoken content).
+**Planned: v7 (P11)** adds the `notifications` table backing the Activity Inbox; **P10h** adds a SQLite
+**FTS5** index over `transcript`+`description`+`title` (search by spoken content).
 
 ---
 

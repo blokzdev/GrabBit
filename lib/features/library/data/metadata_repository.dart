@@ -349,15 +349,21 @@ class MetadataRepository {
     );
   }
 
-  /// Stores the extracted plain-text [transcript] (P10f). Upserts so it works
-  /// for items whose metadata row predates this column.
-  Future<void> updateTranscript(String itemId, String transcript) async {
+  /// Stores the extracted plain-text [transcript] (P10f) and, when provided, the
+  /// timestamped [cuesJson] for the synced view (P10f-4). Upserts so it works
+  /// for items whose metadata row predates these columns.
+  Future<void> updateTranscript(
+    String itemId,
+    String transcript, {
+    String? cuesJson,
+  }) async {
     await _db
         .into(_db.mediaMetadata)
         .insertOnConflictUpdate(
           MediaMetadataCompanion.insert(
             itemId: itemId,
             transcript: Value(transcript),
+            transcriptCues: Value(cuesJson),
           ),
         );
   }

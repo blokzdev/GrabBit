@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 5 with all tables created', () async {
-    expect(db.schemaVersion, 5);
+  test('opens at schema version 6 with all tables created', () async {
+    expect(db.schemaVersion, 6);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -329,5 +329,75 @@ void main() {
         .write(const MediaMetadataCompanion(transcript: Value('hello world')));
     final updated = await upgraded.select(upgraded.mediaMetadata).getSingle();
     expect(updated.transcript, 'hello world');
+  });
+
+  test('upgrades a v5 database to v6, adding the transcriptCues column', () async {
+    // Seed a v5-schema DB (media_metadata has transcript but no transcriptCues)
+    // at user_version=5 so opening AppDatabase (v6) runs the from<6 branch.
+    final upgraded = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute('''
+            CREATE TABLE media_items (
+              id TEXT NOT NULL PRIMARY KEY,
+              title TEXT NOT NULL,
+              source_url TEXT NOT NULL,
+              site TEXT NOT NULL,
+              file_path TEXT NOT NULL,
+              type TEXT NOT NULL,
+              duration_sec INTEGER,
+              size_bytes INTEGER,
+              width INTEGER,
+              height INTEGER,
+              thumb_path TEXT,
+              created_at INTEGER NOT NULL,
+              storage_state TEXT NOT NULL,
+              notes TEXT,
+              folder_id INTEGER,
+              is_favorite INTEGER NOT NULL DEFAULT 0,
+              content_hash TEXT,
+              last_accessed_at INTEGER
+            )''');
+          raw.execute('''
+            CREATE TABLE media_metadata (
+              item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+              uploader TEXT,
+              upload_date INTEGER,
+              description TEXT,
+              original_url TEXT,
+              uploader_id TEXT,
+              channel_id TEXT,
+              source_id TEXT,
+              playlist_id TEXT,
+              playlist_title TEXT,
+              tags TEXT,
+              transcript TEXT
+            )''');
+          raw.execute(
+            'INSERT INTO media_items (id, title, source_url, site, file_path, '
+            'type, created_at, storage_state) VALUES '
+            "('old1', 'Old clip', 'https://x/v', 'youtube', '/m/old1.mp4', "
+            "'video', 0, 'private')",
+          );
+          raw.execute(
+            'INSERT INTO media_metadata (item_id, transcript) VALUES '
+            "('old1', 'flat transcript')",
+          );
+          raw.execute('PRAGMA user_version = 5');
+        },
+      ),
+    );
+    addTearDown(upgraded.close);
+
+    // Old transcript survives; transcriptCues defaults to null and is writable.
+    final meta = await upgraded.select(upgraded.mediaMetadata).getSingle();
+    expect(meta.transcript, 'flat transcript');
+    expect(meta.transcriptCues, isNull);
+
+    await (upgraded.update(upgraded.mediaMetadata)
+          ..where((t) => t.itemId.equals('old1')))
+        .write(const MediaMetadataCompanion(transcriptCues: Value('[]')));
+    final updated = await upgraded.select(upgraded.mediaMetadata).getSingle();
+    expect(updated.transcriptCues, '[]');
   });
 }
