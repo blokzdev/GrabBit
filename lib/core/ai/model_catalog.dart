@@ -6,8 +6,9 @@
 /// 110M params, 768-d vectors, **256-token** max sequence, ~114 MB, Apache-2.0,
 /// ungated. P10g-1 moved up from the seq64 export so the embed doc can include a
 /// real slice of the **transcript** (see `embedding_doc.dart`). The seq512/1024
-/// variants share this tokenizer + dimension and become a capability-selected
-/// upgrade in P10g-2 / P11. Multilingual is added via a second engine in P10g-3.
+/// variants share this tokenizer + dimension; the pluggable engine seam lands in
+/// P10g-2, and the capability-selected window upgrade is owned by the P12
+/// device-tier system. Multilingual is added via a second engine in P10g-3.
 ///
 /// `id`/`dimension` are persisted by P10b-2b so a model change re-keys the Cozo
 /// HNSW relation + graph fingerprint (a new model → re-embed).
