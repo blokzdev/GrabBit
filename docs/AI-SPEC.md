@@ -7,7 +7,7 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 > and the local-GraphRAG design + feasibility evidence — so the research/decision record survives a
 > context or session loss. Pairs with `docs/GRAPH-SPEC.md` (the graph+vector store that indexes the
 > embeddings produced here and serves GraphRAG retrieval) and is referenced by
-> `docs/design/P-AI-PLAN.md` (the delivery sub-roadmap). Lands across **P10–P12**.
+> `docs/design/P-AI-PLAN.md` (the delivery sub-roadmap). Lands across **P10, P12–P13**.
 
 ---
 
@@ -15,8 +15,8 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 
 - **On-device = free, forever.** All AI here runs locally; it costs us nothing and is free to the
   user. **No cloud, no account, no credits, no telemetry.** (v3/cloud is dropped — see ROADMAP.)
-- **AI is core to v1's vision**, not a v2 add-on: v1 ships *after* the AI work (P10–P12), then
-  launches at P13.
+- **AI is core to v1's vision**, not a v2 add-on: v1 ships *after* the AI work (P10, P12–P13), then
+  launches at P14.
 - **Graceful capability-gating, never a crash or silent no-op.** Every AI feature is gated on a
   measured device tier; unsupported features are clearly disabled with a friendly reason.
 - **Always-available floor.** Where possible a zero-dependency, pure-Dart baseline (e.g. extractive
@@ -36,8 +36,8 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 abstract interface class InferenceEngine {
   Future<bool> canRun(ModelSpec m, DeviceProfile d);
   Future<List<double>> embed(String text);            // P10 (embeddings)
-  Stream<InferenceChunk> generate(InferenceRequest r); // P11+ (LLM)
-  Stream<TranscriptChunk> transcribe(AudioRef a);      // P11+ (whisper)
+  Stream<InferenceChunk> generate(InferenceRequest r); // P12+ (LLM)
+  Stream<TranscriptChunk> transcribe(AudioRef a);      // P12+ (whisper)
 }
 ```
 
@@ -59,7 +59,7 @@ abstract interface class InferenceEngine {
   Phi-4-Mini, SmolLM-135M, Gemma 3n E2B, etc., and **provides text embeddings and on-device RAG** —
   so one runtime family covers embeddings → generation → RAG.
 - **Embedder (P10): `flutter_gemma`'s text-embedding support, loaded embedder-only** — the same
-  plugin that backs the P11 LLM, so this tier stays device-universal. **Pinned model (P10b-2a):
+  plugin that backs the P12 LLM, so this tier stays device-universal. **Pinned model (P10b-2a):
   Gecko 64** (`litert-community/Gecko-110m-en` → `Gecko_64_quant.tflite` + `sentencepiece.model`),
   110M params, **768-d** vectors, ~110 MB, **ungated** (no HuggingFace token). Chosen as the smallest
   ungated variant; EmbeddingGemma-300M is more accurate but gated/larger — revisit if quality
@@ -73,7 +73,7 @@ abstract interface class InferenceEngine {
   opt-in to genuinely new users only (`aiSetupSeen` defaults true on existing installs;
   `acceptDisclaimer()` clears it). On unsupported devices the `UnavailableInferenceEngine` no-ops and
   everything else keeps working — embeddings are an enhancement, not a dependency.
-- **Transcription (P12): whisper.cpp** via a maintained Flutter package —
+- **Transcription (P13): whisper.cpp** via a maintained Flutter package —
   [`whisper_ggml_plus`](https://pub.dev/packages/whisper_ggml_plus) (cross-platform incl. Windows) or
   [`whisper_kit`](https://pub.dev/packages/whisper_kit) (99 languages, SRT/VTT export).
 - **OCR / translation:** ML Kit where it fits.
@@ -85,7 +85,7 @@ abstract interface class InferenceEngine {
 ## 4. Model catalog & licensing rule
 
 **Licensing rule (firm now):** because GrabBit is distributed **off-store**, prefer
-**Apache-2.0 / MIT** models for clean redistribution. **Confirm the current best models at P11 start**
+**Apache-2.0 / MIT** models for clean redistribution. **Confirm the current best models at P12 start**
 (the field moves fast) — the table below is the candidate set as of 2026-05.
 
 | Tier | Candidates | License | Notes |
@@ -115,11 +115,11 @@ abstract interface class InferenceEngine {
   **transcript** parsed from caption sidecars (`MediaMetadata.transcript`) is now the preferred source
   (`transcript ?? description`) and also feeds future FTS/GraphRAG retrieval.
 
-### P11 — tiered edge-LLM engine (minimal feature surface)
+### P12 — tiered edge-LLM engine (minimal feature surface)
 - `DeviceCapabilityService` + tiers + `ModelCapabilityMatrix`; model catalog + download + integrity +
   caching; `flutter_gemma` generation impl; whisper.cpp transcription impl; capability-gating.
 
-### P12 — LLM feature surface & polish
+### P13 — LLM feature surface & polish
 - **Transcription**, **abstractive summarization** (layered on the P10 TextRank floor),
   **translation**, **OCR** — all capability-gated.
 - **Natural-language "Ask your library" chat as local GraphRAG** (§6).

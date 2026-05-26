@@ -73,7 +73,7 @@ Kotlin host). Implications:
 - **CI is unaffected** — the lean Ubuntu `ci.yml` just resolves a Maven dependency; no Rust/NDK
   toolchain runs. (APK builds remain the manual `build-apk.yml`.)
 
-### 2.2 Windows (P14) — C-API via `dart:ffi`
+### 2.2 Windows (P15) — C-API via `dart:ffi`
 
 Native-build/obtain `cozo_c.dll`; bind via `dart:ffi` with **`ffigen`** over the tiny `cozo_c.h`
 (`cozo_open_db`, `cozo_run_query(script, params_json) → JSON`, `cozo_close_db`,
@@ -153,7 +153,7 @@ abstract interface class GraphStore {
 > keeps query shapes unit-testable without the native engine.
 
 - `lib/core/graph/android_cozo_graph_store.dart` — Android impl over the `CozoHostApi` Pigeon bridge
-  (v1). A future `windows_cozo_graph_store.dart` (FFI/ffigen) slots behind the same interface (P14).
+  (v1). A future `windows_cozo_graph_store.dart` (FFI/ffigen) slots behind the same interface (P15).
 - `lib/core/graph/graph_store_provider.dart` — `@Riverpod(keepAlive: true)`, platform-branched like
   the existing `engine_provider.dart`; a no-op impl keeps callers safe where unsupported.
 - `pigeons/cozo.dart` → `CozoHostApi` + Kotlin host glue, mirroring `pigeons/engine.dart` /
@@ -253,15 +253,15 @@ gracefully when `GraphStore.isAvailable` is false.
 
 | Feature (phase) | Cozo mechanism |
 |---|---|
-| **Related / "More like this"** (P10c-b, **live**) | `GraphQueryService.relatedTo`: HNSW vector search over the item's *own* stored vector + a pure-Datalog neighbour query (shared uploader/playlist/tag/co-download), blended & ranked in Dart (`related_ranking.dart`). Graph-only when the item isn't embedded; excludes `duplicateOf` partners. Also the retrieval half of P12 GraphRAG. |
+| **Related / "More like this"** (P10c-b, **live**) | `GraphQueryService.relatedTo`: HNSW vector search over the item's *own* stored vector + a pure-Datalog neighbour query (shared uploader/playlist/tag/co-download), blended & ranked in Dart (`related_ranking.dart`). Graph-only when the item isn't embedded; excludes `duplicateOf` partners. Also the retrieval half of P13 GraphRAG. |
 | **Entity hubs** (P10c-c, **live**) | **c-1 (every device):** navigable hubs — uploader/playlist/tag/site on item-detail are tappable → an `EntityHubScreen` listing that entity's items via Drift `watchFiltered` (no graph). **c-2 (graph):** a **"Related tags"** strip on each hub — `GraphQueryService.relatedTags` collects the tags carried by the entity's items (uploader-name bridged to `uploaderId` via the `uploader` node) and ranks by support; chips open the tag hub. Degenerates to nothing when the graph is unavailable. |
-| **Proactive grouping** (P10c-d) | **d-1 (live, every device):** a distinct **Duplicates** auto-album in Collections→Albums (exact-hash `duplicateOf`), with bulk **Clean up** (keep oldest) + **Review** → the cleanup screen. **d-2 (graph, live):** **Suggested** similarity albums — query-time vector clusters (pairwise cosine + connected components in `near_duplicate_clustering.dart`, exact pairs excluded) with one-tap **Save as collection**. The richer community-detection / label-propagation auto-albums + "Rediscover" stay **P12** (below). |
+| **Proactive grouping** (P10c-d) | **d-1 (live, every device):** a distinct **Duplicates** auto-album in Collections→Albums (exact-hash `duplicateOf`), with bulk **Clean up** (keep oldest) + **Review** → the cleanup screen. **d-2 (graph, live):** **Suggested** similarity albums — query-time vector clusters (pairwise cosine + connected components in `near_duplicate_clustering.dart`, exact pairs excluded) with one-tap **Save as collection**. The richer community-detection / label-propagation auto-albums + "Rediscover" stay **P13** (below). |
 | **Tag suggestions** (P10c-c-2, **live**) | `GraphQueryService.coOccurringTags`: tags on items sharing a deterministic signal with this one (`postedBy`/`inPlaylist`/`taggedWith`/`coDownloadedWith`), minus the item's own tags, ranked in Dart (`cooccurrence_ranking.dart`) by distinct supporting items. Surfaced as tappable chips in the metadata editor. Pure Datalog — every device. |
 | **Interactive graph viz** (P10c-e/f) | **e (render, live):** `GraphQueryService.neighborhood(id)` (an item's direct entity + duplicate/co-download edges) → a force-directed `graphview` render with pan/zoom + a type legend, reached via item-detail "View in graph". Deterministic edges — no embedder. **f (live):** tap a media node → its item, tap an entity node → expand its media (and long-press → open hub), edge-type **legend filters**, expansion capped (`:limit`). |
-| **Graph-clustered auto-albums** (P12) | **community detection / label propagation** over the similarity + entity graph. |
-| **Centrality "Rediscover"** (P12) | `PageRank` / betweenness × `lastAccessedAt` to resurface central-but-stale items. |
-| **Path / bridge discovery** (P12) | shortest-path / connectivity between two items or entities. |
-| **Local GraphRAG "Ask your library"** (P12) | hybrid retrieval (vector + graph re-rank) feeds the on-device LLM (see `AI-SPEC.md`). |
+| **Graph-clustered auto-albums** (P13) | **community detection / label propagation** over the similarity + entity graph. |
+| **Centrality "Rediscover"** (P13) | `PageRank` / betweenness × `lastAccessedAt` to resurface central-but-stale items. |
+| **Path / bridge discovery** (P13) | shortest-path / connectivity between two items or entities. |
+| **Local GraphRAG "Ask your library"** (P13) | hybrid retrieval (vector + graph re-rank) feeds the on-device LLM (see `AI-SPEC.md`). |
 
 ---
 

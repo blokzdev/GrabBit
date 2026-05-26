@@ -1,4 +1,4 @@
-# P10–P12 — Edge AI + On-Device Graph: delivery sub-roadmap
+# P10, P12–P13 — Edge AI + On-Device Graph: delivery sub-roadmap
 
 Status: Draft v0.1 · Last updated: 2026-05-24
 
@@ -7,7 +7,7 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 > - `docs/GRAPH-SPEC.md` — CozoDB engine, integration, schema, sync, algorithm→feature map.
 > - `docs/AI-SPEC.md` — `InferenceEngine`, device tiers, runtime/models + licensing, GraphRAG.
 >
-> Banding context (see `docs/ROADMAP.md`): AI is **core to v1**. v1 ships *after* this work (P13).
+> Banding context (see `docs/ROADMAP.md`): AI is **core to v1**. v1 ships *after* this work (P14).
 > v3/cloud is **dropped** — everything here is on-device and **free forever**.
 
 ---
@@ -75,7 +75,7 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     - **P10c-d-2 — Suggested similarity albums + Save** *(done)*: embedder-gated, query-time vector
       clusters (`GraphQueryService.similarityClusters` → pure `near_duplicate_clustering.dart`)
       surfaced as a **Suggested** album section with one-tap **Save as collection**. Lightweight
-      precursor to P12's community-detection auto-albums.
+      precursor to P13's community-detection auto-albums.
   - **P10c-e — Interactive graph viz: render** *(done)*: `graphview` force-directed render of an item's
     neighborhood (`GraphQueryService.neighborhood`, deterministic edges, no embedder) with pan/zoom +
     a type legend, via item-detail "View in graph".
@@ -119,9 +119,14 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
 sensible results offline; entity hubs and the graph view render; near-dup clusters and tag
 suggestions work — all with the small embedder, no LLM.
 
+> **Cross-cutting (P11 Activity Inbox):** AI/graph background activity — model downloads,
+> capability-gating "disabled because…" notices, embedding/graph backfills, transcription results —
+> surfaces via the on-device **Activity Inbox** (the P11 phase that lands between P10 and the edge-LLM
+> work). Producers post through its `NotificationCenter` seam. See `docs/ROADMAP.md` P11.
+
 ---
 
-## P11 — Device-tiered edge LLM engine  *(minimal feature surface)*
+## P12 — Device-tiered edge LLM engine  *(minimal feature surface)*
 
 **Goal:** enable on-device generation + transcription with graceful capability-gating.
 
@@ -138,9 +143,9 @@ those are cleanly gated with explanation.
 
 ---
 
-## P12 — LLM feature surface & polish (incl. local GraphRAG)
+## P13 — LLM feature surface & polish (incl. local GraphRAG)
 
-**Goal:** the differentiating payoff, layered on P10 (graph+vector) + P11 (LLM).
+**Goal:** the differentiating payoff, layered on P10 (graph+vector) + P12 (LLM).
 
 - **Transcription, abstractive summarization** (on the P10 TextRank floor), **translation, OCR** —
   all gated.
@@ -161,4 +166,4 @@ low-end devices.
 - **CI unaffected** — Android consumes Cozo as a Maven dep (no NDK/Rust in CI); models download at
   runtime (not bundled). APK/native checks remain the manual `build-apk.yml` + `docs/VERIFICATION.md`.
 - **Workflow** (CLAUDE.md §7): one branch per subphase (`claude/p10a-…`), one PR each, CI green +
-  VERIFICATION updated. Windows Cozo (C-API/FFI) is deferred to **P14** (GRAPH-SPEC §2.2).
+  VERIFICATION updated. Windows Cozo (C-API/FFI) is deferred to **P15** (GRAPH-SPEC §2.2).

@@ -7,11 +7,11 @@ Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 by default; later phases assume earlier exit criteria are met.
 
 Legend (two version bands — the former **v3 cloud/credits band is dropped**):
-- **v1 — Android, free, on-device, AI-powered:** P0–P13. Core downloader + private media manager
+- **v1 — Android, free, on-device, AI-powered:** P0–P14. Core downloader + private media manager
   (P0–P9), then the **on-device AI + graph pillar** — P10 (baseline edge AI + Cozo graph/vector
-  foundation) · P11 (device-tiered edge LLM engine) · P12 (LLM features + local GraphRAG) — then
-  **P13 (beta, production readiness & launch)**. AI is core to the vision, so **v1 ships *after* it**.
-- **v2 — local-only expansion (still free/offline):** P14 (Windows parity) · P15 (production polish
+  foundation) · P12 (device-tiered edge LLM engine) · P13 (LLM features + local GraphRAG) — then
+  **P14 (beta, production readiness & launch)**. AI is core to the vision, so **v1 ships *after* it**.
+- **v2 — local-only expansion (still free/offline):** P15 (Windows parity) · P16 (production polish
   + authenticated/cookie import).
 
 The app is **free forever and fully offline** — sustained by an **optional donations link**, with
@@ -75,7 +75,7 @@ app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale. **Public content only** — authenticated/private content
-(cookie/login import) is deferred to **v2** (see P15).
+(cookie/login import) is deferred to **v2** (see P16).
 **Deliverables:**
 - Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
   playlists, and carousels; clear errors for unsupported/broken extractors.
@@ -142,7 +142,7 @@ already-bundled ffmpeg.
   `MediaToolsHostApi.runFfmpeg(...)` (mirroring the `YtDlpHostApi` wiring). Fallback:
   a maintained `ffmpeg_kit` fork (note APK-size cost; original retired in 2025).
 - **`MediaToolsEngine`** pure-Dart interface (like `DownloadEngine`) so Windows
-  (`ffmpeg.exe`, P11) slots behind the same contract.
+  (`ffmpeg.exe`, P12) slots behind the same contract.
 - **Editor UI** from the item viewer: video — trim, reverse, flip/mirror/rotate,
   convert (container/codec/audio-extract), extract frame(s) (first/last/scrubber →
   image); images — flip/mirror/rotate/crop/convert.
@@ -222,7 +222,7 @@ breakdown lives in **`docs/design/P9-PLAN.md`**.
   and app-icon disguise are deliberately cut (see `docs/BACKLOG.md`).
 - **P9f — Storage & download safety**: a proactive **low-storage guard** (pre-flight free-space
   gate) and **battery-aware pause** on the scheduler; **orphaned-file cleanup**; and **device
-  free/total** on the Storage screen. (PiP from P9c deferred to v2/P15; scheduling deferred.)
+  free/total** on the Storage screen. (PiP from P9c deferred to v2/P16; scheduling deferred.)
 - **P9g/P9h/P9i/P9j — Actions, menus & polish**: a shared per-item **context menu** + **outbound
   Share** across the grids (P9g); **library multi-select + bulk actions** (P9h); **screen-level
   action menus** — collection/album app-bar actions, whole-queue actions, item-detail richness
@@ -251,7 +251,7 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
 - **Universal graph features**: semantic search; **Related / "More like this"** (hybrid vector +
   graph re-rank); **entity hubs** (uploader/playlist/tag/site); **tag suggestions**; **proactive
   grouping** (a Duplicates auto-album + Suggested similarity albums in Collections→Albums); **interactive
-  graph visualization** (candidate `graphview`). *(Richer community-detection auto-albums = P12.)*
+  graph visualization** (candidate `graphview`). *(Richer community-detection auto-albums = P13.)*
 - **P10d — GrabBit Dashboard** (the capstone that unifies P10c; split into sub-PRs): a **Dashboard**
   home that becomes the **new default landing (`/`)** and a **5th** nav destination (Library moves to
   `/library`). Visualizes the on-device footprint — storage % by media/file type & platform, library
@@ -276,7 +276,41 @@ suggestions work; the Dashboard summarizes the on-device footprint; an extractiv
 items with enough text — all with the small embedder, no LLM.
 **Refs:** `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`, `docs/design/P-AI-PLAN.md`.
 
-## P11 — Device-tiered edge LLM engine  *(minimal feature surface)*
+## P11 — Activity Inbox (unified on-device notification center)
+**Goals:** give the app a single, persisted, **on-device** place to surface and manage everything it
+does in the background or wants to tell the user — download outcomes, transcript/backfill results,
+AI/graph activity, errors, capability-gated "disabled because…" notices, reminders, status updates,
+and actionable items. Built **before** the AI phases so their background work wires into it as it's
+built, rather than being retrofitted. Privacy-first and on-vision: **entirely local — no telemetry,
+no push, no cloud, no accounts**; lives behind the app lock.
+**Deliverables:**
+- A Drift **`notifications`** table (canonical, on-device) keyed by id, with `createdAt`, `category`
+  (download | transcript | ai | graph | system | reminder), `severity` (info | success | warning |
+  error), `title`, `body`, optional deep-link target (`targetRoute`/`itemId`/`taskId`), optional
+  actionable affordance, `readAt?`, `dedupeKey?`, `expiresAt?`.
+- A single **`NotificationCenter.post(...)`** write seam + `NotificationsRepository` + Riverpod
+  providers (`watchUnreadCount`, `watchFeed(filter)`, `markRead`/`markAllRead`, `dismiss`, `clear`);
+  every feature posts through this one seam.
+- **Producers wired in:** the queue (download complete/failed, pause reasons), P10f
+  backfill/auto-transcribe, `GraphSyncService` (rebuild done/failed); later phases (P12 model
+  download + capability-gating disables, P13 AI task results) emit into the same seam.
+- **UX:** an app-bar **bell with an unread badge** + a dedicated **`/inbox`** screen (grouped list,
+  severity styling, tap → deep-link, swipe-to-dismiss, category filters, mark-all-read, clear) + a
+  Dashboard recent-activity tile. (Not a 6th nav destination.)
+- **Retention:** a configurable `notificationRetentionDays` setting (default ~30; `0` = keep forever)
+  that auto-clears old items **lazily** on app/inbox open (no background scheduler); optional
+  per-category notify toggles, each with an `(i)` tooltip (the P10g pattern).
+- Complementary to the existing **OS/foreground notifications** (which stay the while-backgrounded
+  channel) — the inbox is the durable in-app record; an item may optionally also raise an OS
+  notification.
+Device-universal, **pure-Dart/UI + a Drift schema bump** (no native needed for the core). **Split
+into sub-PRs — granularity decided at P11 implementation-planning time.**
+**Exit criteria:** background work (downloads, transcripts/backfills, graph sync) posts durable,
+de-duplicated entries to the inbox; the bell badge reflects unread count; tapping an item deep-links
+to the relevant screen; items auto-clear per the retention setting; everything stays on-device.
+**Refs:** `docs/PRD.md` §7.5, `docs/ARCHITECTURE.md` §4, `docs/SPEC.md` §3–§4.
+
+## P12 — Device-tiered edge LLM engine  *(minimal feature surface)*
 **Goals:** enable on-device generation + transcription with **graceful capability-gating**. No
 cloud, no account, no credits.
 **Deliverables:** `DeviceCapabilityService` + device tiers + `ModelCapabilityMatrix`; on-demand
@@ -290,8 +324,8 @@ reason. **Model/licensing:** confirm current best models at phase start; **prefe
 low-end device those features are cleanly disabled with explanation.
 **Refs:** `docs/AI-SPEC.md` §3–4, `docs/design/P-AI-PLAN.md`.
 
-## P12 — LLM feature surface & polish (incl. local GraphRAG)
-**Goals:** the differentiating payoff, layered on P10 (graph+vector) + P11 (LLM).
+## P13 — LLM feature surface & polish (incl. local GraphRAG)
+**Goals:** the differentiating payoff, layered on P10 (graph+vector) + P12 (LLM).
 **Deliverables:**
 - **Transcription, abstractive summarization** (on the P10 TextRank floor), **translation, OCR** —
   all capability-gated.
@@ -305,7 +339,7 @@ offline; auto-albums cluster sensibly; rediscover surfaces central-but-stale ite
 gracefully on low-end devices.
 **Refs:** `docs/AI-SPEC.md` §5–6, `docs/GRAPH-SPEC.md` §7.
 
-## P13 — v1 Beta, Production Readiness & Launch
+## P14 — v1 Beta, Production Readiness & Launch
 **Goals:** harden and **ship v1** (now an AI-powered downloader + private media manager).
 **Deliverables:** **release signing** (keystore + CI secret; the ship blocker); performance
 hardening (large library grid/thumbnails, DB indices, big-playlist picker, AI/graph index build);
@@ -319,7 +353,7 @@ for sideload. **→ v1 complete (Android, free, offline, AI-powered).**
 
 # v2 — Local-only expansion (Windows + polish; still free/offline)
 
-## P14 — Windows Port
+## P15 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`); desktop storage
 adapter (filesystem export); desktop-adapted UI; **MSIX** packaging; binary update path. **Cozo on
@@ -328,7 +362,7 @@ Windows:** the C-API path — `cozo_c.dll` via `dart:ffi`/`ffigen` on a dedicate
 **Exit criteria:** Windows build downloads + manages media (incl. the graph/AI features); feature
 parity with v1. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P15 — Production Polish + Authenticated Content
+## P16 — Production Polish + Authenticated Content
 **Goals:** make the local-only app genuinely world-class and production-ready.
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced configuration,
 refined UX across all flows, robust update/onboarding.
@@ -344,7 +378,7 @@ distribution. **→ v2 complete.**
 
 The former v3 band (Supabase backend + accounts, Genkit→Gemini cloud AI, Stripe/PayPal credit
 monetization, public cloud launch) is **removed**. GrabBit is **free forever and fully offline**,
-sustained by an **optional donations link** (P13) — no ads, no telemetry, no accounts, no cloud. The
+sustained by an **optional donations link** (P14) — no ads, no telemetry, no accounts, no cloud. The
 `InferenceEngine` interface still leaves a *theoretical* seam for a future cloud implementation, but
 it is **not a planned phase**. (The corresponding cloud contracts in `docs/SPEC.md` §9.1–9.2 and
 `docs/ARCHITECTURE.md` §9 are retained only as a historical/optional reference, marked dropped.)

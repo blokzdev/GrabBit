@@ -34,8 +34,8 @@ a normal person can sideload and trust.
 
 | Band | Theme | Network | Money |
 |---|---|---|---|
-| **v1** | Android, free, on-device, **AI-powered**: downloader + private media manager (P0–P9), then the **on-device AI + relationship-graph pillar** (P10–P12), then beta & launch (P13). | Offline | Free |
-| **v2** | Local-only expansion: Windows parity (P14) + production polish & authenticated/cookie import (P15). | Offline | Free |
+| **v1** | Android, free, on-device, **AI-powered**: downloader + private media manager (P0–P9), then the **on-device AI + relationship-graph pillar** (P10, P12–P13), then beta & launch (P14). | Offline | Free |
+| **v2** | Local-only expansion: Windows parity (P15) + production polish & authenticated/cookie import (P16). | Offline | Free |
 
 The app is **free forever and fully offline**, sustained by an **optional donations link**. **No
 ads, no telemetry, no cloud, no accounts — ever.** AI is core to the vision, so **v1 ships *after*
@@ -75,9 +75,9 @@ the AI work**. (The former **v3** cloud-AI/credit band is **dropped**.)
 5. **Export:** select item(s) → "Save to device" into a chosen folder; OR enable
    "automatically store media to device" with a default destination.
 6. **Lock:** enable PIN/biometric so the private library requires auth to open.
-7. **Local AI (P10–P12):** transcribe/summarize/translate/OCR/auto-tag a saved item, fully
+7. **Local AI (P10, P12–P13):** transcribe/summarize/translate/OCR/auto-tag a saved item, fully
    on-device; greyed-out (and explained) on incapable devices.
-8. **Graph & discovery (P10–P12):** see **related items**, explore an uploader/tag **hub** or the
+8. **Graph & discovery (P10, P12–P13):** see **related items**, explore an uploader/tag **hub** or the
    interactive **graph view**, get **clustered auto-albums** and **"rediscover"** picks, and **ask
    your library** a natural-language question (local GraphRAG) — all on-device.
 
@@ -118,10 +118,24 @@ the AI work**. (The former **v3** cloud-AI/credit band is **dropped**.)
 
 ### 7.4 Configurability
 - Default mode, default quality/format/container, download-location policy, filename
-  templates, concurrency limit, network/metered-data policy, notification behavior,
-  theme (light/dark/system + dynamic color), language (i18n-ready).
+  templates, concurrency limit, network/metered-data policy, **notification behavior**
+  (Activity Inbox retention + per-category toggles, §7.5), theme (light/dark/system +
+  dynamic color), language (i18n-ready).
 
-## 8. Feature Set — On-device AI + Relationship Graph (v1, P10–P12, FREE)
+### 7.5 Activity Inbox & notifications (P11, device-universal)
+A single, persisted, **on-device** feed for everything the app does in the background or wants to
+tell the user — download outcomes, transcript/backfill results, AI/graph activity, errors,
+capability-gated "disabled because…" notices, reminders, status updates, and actionable items.
+- Surfaced via an app-bar **bell with an unread badge** + a dedicated **Inbox** screen (grouped,
+  filterable by category, tap → deep-link to the relevant item/screen, swipe-to-dismiss,
+  mark-all-read, clear) + a Dashboard recent-activity tile.
+- **Configurable retention:** items auto-clear after N days (configurable; can be set to keep
+  forever), plus optional per-category notify toggles.
+- **Privacy-first:** entirely local — no telemetry, no push, no cloud, no accounts — and behind the
+  app lock. Complements the existing OS/foreground notifications (the inbox is the durable in-app
+  record; OS notifications remain the while-backgrounded channel).
+
+## 8. Feature Set — On-device AI + Relationship Graph (v1, P10, P12–P13, FREE)
 
 The differentiating pillar, all on-device and free. Deep design: `docs/AI-SPEC.md`,
 `docs/GRAPH-SPEC.md`; delivery: `docs/design/P-AI-PLAN.md`.
@@ -133,14 +147,16 @@ on *any* device. Features: **semantic search**, **Related / "More like this"**, 
 (uploader/playlist/tag/site), **near-duplicate clusters**, **tag suggestions**, an **interactive
 graph view**, and a pure-Dart **extractive summary** floor (TextRank).
 
-### 8.2 Adaptive AI tiering (P11)
+### 8.2 Adaptive AI tiering (P12)
 At first run (and on demand), GrabBit runs a **device-capability diagnostic** (RAM, SoC/NPU/GPU, OS
 version, free storage) to compute a **device tier**. A **capability matrix** maps each AI feature to
 the local model(s) the device can run; unsupported features are **gracefully disabled** with a
-clear, friendly explanation — never a crash, never a silent no-op. Models are **downloaded on
+clear, friendly explanation — never a crash, never a silent no-op (these capability-gating notices,
+like model downloads and other background AI activity, surface in the **Activity Inbox**, §7.5).
+Models are **downloaded on
 demand** (not bundled) to keep the install lean. Runtime: **`flutter_gemma`** (MediaPipe/LiteRT-LM).
 
-### 8.3 LLM features + local GraphRAG (P12)
+### 8.3 LLM features + local GraphRAG (P13)
 - **Transcription** (whisper.cpp): audio/video → text/subtitles.
 - **Summarization** (local small LLM, layered on the TextRank floor): TL;DR, chapters.
 - **Translation & OCR** (ML Kit): translate transcripts; text from images.
@@ -217,7 +233,7 @@ support is via an optional external donations link only.
 
 ## 14. Open Questions (track, not blocking)
 
-- Exact per-tier model choices (light/mid LLM, embedder dim, whisper variant) — confirmed at P11
+- Exact per-tier model choices (light/mid LLM, embedder dim, whisper variant) — confirmed at P12
   start per `docs/AI-SPEC.md` §4.
 - APK-size budget impact of the Cozo native lib (measured in the first P10 APK build).
-- Donations provider/link for the About screen (P13).
+- Donations provider/link for the About screen (P14).
