@@ -27,6 +27,9 @@ import 'package:grabbit/features/lock/lock_screen.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/presentation/queue_screen.dart';
 import 'package:grabbit/features/settings/presentation/about_screen.dart';
+import 'package:grabbit/features/settings/presentation/ai_settings_screen.dart';
+import 'package:grabbit/features/settings/presentation/captions_settings_screen.dart';
+import 'package:grabbit/features/settings/presentation/downloads_settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -218,6 +221,24 @@ GoRouter appRouter(Ref ref) {
         name: 'about',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: '/settings/downloads',
+        name: 'settings-downloads',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DownloadsSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/captions',
+        name: 'settings-captions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CaptionsSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/ai',
+        name: 'settings-ai',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AiSettingsScreen(),
       ),
     ],
   );

@@ -750,6 +750,18 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       still visible and still builds a transcript when you open an older captioned item.
 - [ ] Toggling **Download captions** reveals/hides the Caption languages / Caption format detail rows.
 
+### P10j-c1 — Hybrid IA: settings sub-screens + General section  *(no AI/graph needed — works on any build)*
+- [ ] The **Settings landing** is short: a nav card with **Downloads**, **Captions & transcripts**,
+      **AI & graph** links, then **Downloader engine**, **Storage**, **Appearance**, **Security**,
+      **Privacy**, **General** inline.
+- [ ] Each nav row **opens its sub-screen** (own AppBar + back): Downloads holds the download options
+      (and Advanced download options in Advanced mode); Captions & transcripts holds the P10j-b pipeline;
+      AI & graph holds rebuild / semantic search / test embedder. Back returns to the landing.
+- [ ] Every moved control still **persists** (e.g. toggle Advanced mode / Faster downloads on the
+      Downloads sub-screen, Download captions on the Captions sub-screen) and survives leaving + reopening.
+- [ ] **General section** runs the maintenance actions: **About** opens the About screen; **Reset to
+      defaults** confirms then resets; **Clear cache** frees temporary files. The `⋮` overflow still works.
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
