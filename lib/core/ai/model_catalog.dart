@@ -30,7 +30,7 @@ class EmbedderModel {
   /// HTTPS URL of the SentencePiece tokenizer (same `.model` on every platform).
   final String tokenizerUrl;
 
-  /// Output vector dimension (768 for the whole Gecko/EmbeddingGemma family).
+  /// Output vector dimension (768 across the Gecko seq variants).
   final int dimension;
 
   /// Approximate total download size in MB, surfaced in the opt-in copy.

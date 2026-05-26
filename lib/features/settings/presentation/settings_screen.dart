@@ -586,7 +586,9 @@ Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
 
 /// Opt-in toggle for on-device semantic search (P10b-2). Enabling downloads the
 /// embedder model (one time, ~N MB) with a progress snackbar; disabling leaves
-/// the model untouched but stops using it. Everything works without it.
+/// the model untouched but stops using it. When the pinned model changes
+/// (P10g-1) an opted-in user sees an **Update AI model** row to fetch the new
+/// one (never auto-downloaded). Everything works without it.
 class _SemanticSearchTile extends ConsumerStatefulWidget {
   const _SemanticSearchTile();
 

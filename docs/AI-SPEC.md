@@ -63,12 +63,14 @@ abstract interface class InferenceEngine {
   Gecko 256** (`litert-community/Gecko-110m-en` → `Gecko_256_quant.tflite` + `sentencepiece.model`),
   110M params, **768-d** vectors, **256-token** window, ~114 MB, **Apache-2.0 + ungated** (no
   HuggingFace token). P10g-1 moved up from the seq64 export so the embed doc can carry a real
-  **transcript** slice; the seq512/1024 variants share the tokenizer + dimension and become a
-  capability-selected upgrade (P10g-2 / P11). The pinned id + dim live in
-  `lib/core/ai/model_catalog.dart`; P10b-2b keys the Cozo HNSW schema + graph fingerprint off them so a
-  model change → re-embed. **Pluggable multi-engine** (P10g-2) + a **multilingual** second engine
-  (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, onnxruntime — P10g-3) are layered on next, with
-  Gecko as the universal fallback. *(EmbeddingGemma-300M was evaluated and **dropped**: HF-license-gated —
+  **transcript** slice; the seq512/1024 variants share the tokenizer + dimension. The pinned id + dim
+  live in `lib/core/ai/model_catalog.dart`; P10b-2b keys the Cozo HNSW schema + graph fingerprint off
+  them so a model change → re-embed. A **pluggable multi-engine registry** (P10g-2, pure architecture)
+  and a **multilingual** second engine (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, onnxruntime —
+  P10g-3) are layered on next, with Gecko as the universal fallback. **Capability-driven behaviour — window
+  selection (256 vs 512), model upgrade/downgrade, automated graceful degradation/disable — is owned by the
+  P12 device-capability/tier system** (`DeviceCapabilityService`/`ModelCapabilityMatrix`, §2), which the
+  probe it builds makes possible. *(EmbeddingGemma-300M was evaluated and **dropped**: HF-license-gated —
   off the Apache-2.0/MIT preference — and unnecessary once Gecko's ungated longer-context exports were
   found.)* **Avoid** the unmaintained `mediapipe_text` pub plugin (v0.0.1, stale/experimental).
 - **Opt-in, never auto (P10b-2a).** A `semanticSearchEnabled` setting gates the embedder; toggling it

@@ -283,15 +283,17 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   layer. Delivered in sub-PRs:
   - **P10g-1** *(done)*: re-pin the Gecko export `seq64 → seq256` (Apache-2.0, ungated, 768-d, ~114 MB —
     4× the window) + add a window-capped transcript slice to the embed doc + one-time re-embed. No LLM.
-  - **P10g-2**: pluggable engine **registry + selection policy + graceful fallback**; the window becomes a
-    **selectable preference** (256 default, **512 as a higher-quality / capable-device option** — switching
-    re-embeds). Gecko-only; pure architecture.
+  - **P10g-2**: a runtime-agnostic engine **registry + model-selection seam** so multiple embedders can
+    coexist, with a basic load-failure fallback. Gecko-only, default model unchanged — **pure
+    architecture/refactor**, no user-facing model selection.
   - **P10g-3**: a second runtime (**onnxruntime**) + **multilingual** embedder
     (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, ungated, 50-lang) + on-device tokenizer, plugged
     into the registry with Gecko as the universal fallback.
-  - *Cross-phase*: device-tier **auto-selection** (256 / 512 / multilingual, with graceful disable on
-    low-end) lands with **P11**; **multivector chunking** (full long-transcript passage retrieval +
-    timestamped citations) with **P13/GraphRAG**. *(EmbeddingGemma was evaluated and dropped — HF-gated /
+  - *Cross-phase*: the **device-capability diagnostics + device-tier system (P12 —
+    `DeviceCapabilityService`/`ModelCapabilityMatrix`)** owns all capability-driven behaviour — **window
+    selection (256 vs 512), model upgrade/downgrade, and automated graceful degradation/disable** on
+    low-end devices — since these depend on the capability probe P12 builds. **Multivector chunking** (full
+    long-transcript passage retrieval + timestamped citations) lands with **P13/GraphRAG**. *(EmbeddingGemma was evaluated and dropped — HF-gated /
     off the Apache-MIT preference, and unnecessary once Gecko's longer-context exports were found.)*
 - **P10h — Full-text search over transcripts & metadata**: a SQLite **FTS5** index over
   transcript + description + title so the library is searchable by **spoken content** (today search is

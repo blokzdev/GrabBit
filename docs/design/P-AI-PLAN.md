@@ -29,7 +29,8 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
 - **P10b-2 — Embedder + vectors** *(split: the embedder is the heaviest, riskiest piece — a new
   native runtime + a model download)*:
   - **P10b-2a — Embedder foundation + opt-in setup** *(done, #74)*: minimal `InferenceEngine.embed()`
-    slice via `flutter_gemma` (Gecko 64, embedder-only, 768-d, ungated ~110 MB) behind a swappable
+    slice via `flutter_gemma` (Gecko 64, embedder-only, 768-d, ungated ~110 MB — superseded by Gecko 256
+    in P10g-1) behind a swappable
     interface; Android impl + graceful `UnavailableInferenceEngine`; **opt-in** model fetch (a
     `semanticSearchEnabled` setting) with progress; a first-run **"Set up AI features (or skip)"**
     screen sequenced after the disclaimer; a "Test embedder" self-test. **No** Cozo vectors yet.
@@ -128,14 +129,17 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     `buildEmbeddingDocs` (`embedding_doc.dart`, `_descCap`/`_transcriptCap` — caps are required so the
     appended transcript isn't truncated out of the window); bump `_edgeBuilderVersion`→3
     (`graph_sync_service.dart`) for the one-time re-embed; add an **"Update AI model"** affordance to the
-    Settings semantic-search tile (no silent download). Existing runtime, no prompts/Matryoshka/hosting.
-  - **P10g-2**: runtime-agnostic engine **registry + selection policy + graceful fallback**. The Gecko window
-    becomes a **selectable preference** (256 default, **512** as a higher-quality/capable-device option —
-    switching is a model-id change → one re-embed via the existing schema guard).
+    Settings semantic-search tile (no silent download). Existing runtime; no new model family or hosting.
+  - **P10g-2**: runtime-agnostic engine **registry + a model-selection seam** (so multiple embedders can
+    coexist) + a basic load-failure fallback. Gecko-only, default model unchanged — **pure architecture**,
+    no user-facing selection. (Switching models is a model-id change → one re-embed via the existing
+    `_ensureEmbeddingSchema` guard.)
   - **P10g-3**: add an **onnxruntime** runtime + **`paraphrase-multilingual-MiniLM-L12-v2`** (Apache-2.0,
     ungated, 50-lang, 384-d) + on-device tokenizer, plugged into the registry; Gecko stays the fallback.
-  - *Cross-phase*: device-tier auto-selection + graceful disable → **P11**; multivector chunking →
-    **P13/GraphRAG**. See `AI-SPEC.md` §3, §5.
+  - *Cross-phase*: **P12's device-capability diagnostics + device-tier system**
+    (`DeviceCapabilityService`/`ModelCapabilityMatrix`) owns capability-driven behaviour — **window
+    selection (256 vs 512), model upgrade/downgrade, automated graceful degradation/disable** (all depend
+    on P12's capability probe). Multivector chunking → **P13/GraphRAG**. See `AI-SPEC.md` §3, §5.
 - **P10h — Full-text search over transcripts & metadata** *(later)*: SQLite **FTS5** over
   transcript + description + title (today `metadata_repository` searches `LIKE` on title/description),
   making the library searchable by spoken content. Promotes the FTS backlog item.
