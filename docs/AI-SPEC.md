@@ -73,7 +73,9 @@ abstract interface class InferenceEngine {
   `UnavailableInferenceEngine`) + an `activeEmbedderModelProvider` seam (returns `defaultEmbedder`; the P12
   override point). A **multilingual** second engine (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0,
   onnxruntime — **P12**, as a capability-matrix embedder option) plugs into that factory, with Gecko as the
-  universal fallback. **Capability-driven behaviour — window
+  universal fallback. **Known limitation (until P12):** the active model is `Gecko-110m-**en**` (English) —
+  non-English transcripts/content still embed (degraded vector, never a crash), so semantic search /
+  "related" quality on non-English material is reduced until the multilingual engine lands. **Capability-driven behaviour — window
   selection (256 vs 512), model upgrade/downgrade, automated graceful degradation/disable — is owned by the
   P12 device-capability/tier system** (`DeviceCapabilityService`/`ModelCapabilityMatrix`, §2), which the
   probe it builds makes possible. *(EmbeddingGemma-300M was evaluated and **dropped**: HF-license-gated —
