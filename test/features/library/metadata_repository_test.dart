@@ -22,6 +22,8 @@ void main() {
     int size = 100,
     String site = 'youtube',
     int? durationSec,
+    int? height,
+    DateTime? createdAt,
   }) => db
       .into(db.mediaItems)
       .insert(
@@ -32,10 +34,11 @@ void main() {
           site: site,
           filePath: '/m/$id',
           type: type,
-          createdAt: DateTime.utc(2026, 1, day),
+          createdAt: createdAt ?? DateTime.utc(2026, 1, day),
           storageState: 'private',
           sizeBytes: Value(size),
           durationSec: Value(durationSec),
+          height: Value(height),
         ),
       );
 
@@ -188,6 +191,105 @@ void main() {
         )
         .first;
     expect(byUploadNewest.map((r) => r.id), ['short', 'long']);
+  });
+
+  group('P10i-d range buckets', () {
+    test('duration bucket narrows and excludes unknown durations', () async {
+      await seed('s', 'clip s', 'video', durationSec: 30);
+      await seed('m', 'clip m', 'video', durationSec: 180); // 3 min
+      await seed('n', 'clip n', 'video'); // null duration
+
+      for (final q in [
+        const LibraryQuery(durationBucket: DurationBucket.oneToFive),
+        const LibraryQuery(
+          search: 'clip',
+          durationBucket: DurationBucket.oneToFive,
+        ),
+      ]) {
+        final rows = await repo.watchFiltered(q).first;
+        expect(rows.map((r) => r.id), ['m'], reason: '$q');
+      }
+    });
+
+    test('resolution bucket narrows by height, excludes unknown', () async {
+      await seed('sd', 'clip sd', 'video', height: 480);
+      await seed('hd', 'clip hd', 'video', height: 1080);
+      await seed('uhd', 'clip uhd', 'video', height: 2160);
+      await seed('none', 'clip none', 'video'); // null height
+
+      for (final q in [
+        const LibraryQuery(resolutionBucket: ResolutionBucket.fullHd),
+        const LibraryQuery(
+          search: 'clip',
+          resolutionBucket: ResolutionBucket.fullHd,
+        ),
+      ]) {
+        final rows = await repo.watchFiltered(q).first;
+        expect(rows.map((r) => r.id), ['hd'], reason: '$q');
+      }
+    });
+
+    test('downloaded bucket filters by created_at', () async {
+      final now = DateTime.now();
+      await seed('recent', 'Recent', 'video', createdAt: now);
+      await seed(
+        'old',
+        'Old',
+        'video',
+        createdAt: now.subtract(const Duration(days: 400)),
+      );
+
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(downloadedBucket: DateBucket.last7))
+          .first;
+      expect(rows.map((r) => r.id), ['recent']);
+    });
+
+    test('uploaded bucket filters by upload_date, excludes unknown', () async {
+      final now = DateTime.now();
+      await seed('recent', 'clip recent', 'video');
+      await seed('old', 'clip old', 'video');
+      await seed('undated', 'clip undated', 'video');
+      await seedMeta(
+        'recent',
+        uploadDate: now.subtract(const Duration(days: 2)),
+      );
+      await seedMeta(
+        'old',
+        uploadDate: now.subtract(const Duration(days: 400)),
+      );
+
+      for (final q in [
+        const LibraryQuery(uploadedBucket: DateBucket.last30),
+        const LibraryQuery(search: 'clip', uploadedBucket: DateBucket.last30),
+      ]) {
+        final rows = await repo.watchFiltered(q).first;
+        expect(rows.map((r) => r.id), ['recent'], reason: '$q');
+      }
+    });
+  });
+
+  group('bucket range mappings', () {
+    test('duration ranges are contiguous seconds', () {
+      expect(DurationBucket.underMin.range, (0, 60));
+      expect(DurationBucket.twentyToHour.range, (1200, 3600));
+      expect(DurationBucket.overHour.range, (3600, null));
+    });
+
+    test('resolution ranges are contiguous heights', () {
+      expect(ResolutionBucket.sd.heightRange, (0, 720));
+      expect(ResolutionBucket.uhd.heightRange, (2160, null));
+    });
+
+    test('date buckets resolve relative to now', () {
+      final now = DateTime(2026, 5, 26, 14, 30);
+      expect(DateBucket.today.since(now), DateTime(2026, 5, 26));
+      expect(
+        DateBucket.last7.since(now),
+        now.subtract(const Duration(days: 7)),
+      );
+      expect(DateBucket.thisYear.since(now), DateTime(2026));
+    });
   });
 
   test('toggleFavorite persists and favoritesOnly filters', () async {

@@ -74,11 +74,23 @@ class LibraryFilter extends Notifier<LibraryQuery> {
       state = state.copyWith(favoritesOnly: value);
   void setHasTranscript(bool value) =>
       state = state.copyWith(hasTranscript: value);
+  void setDurationBucket(DurationBucket? b) =>
+      state = state.copyWith(durationBucket: () => b);
+  void setResolutionBucket(ResolutionBucket? b) =>
+      state = state.copyWith(resolutionBucket: () => b);
+  void setDownloadedBucket(DateBucket? b) =>
+      state = state.copyWith(downloadedBucket: () => b);
+  void setUploadedBucket(DateBucket? b) =>
+      state = state.copyWith(uploadedBucket: () => b);
   void clearFacets() => state = state.copyWith(
     site: () => null,
     uploader: () => null,
     playlistId: () => null,
     hasTranscript: false,
+    durationBucket: () => null,
+    resolutionBucket: () => null,
+    downloadedBucket: () => null,
+    uploadedBucket: () => null,
   );
 }
 

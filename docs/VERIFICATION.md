@@ -716,6 +716,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       width/height columns) → the app **opens without a "no such column" crash**.
 - [ ] **Backfill:** after upgrading, existing **video/image** items gain resolution chips within a moment
       of relaunch (background backfill); **audio** items stay chip-less and aren't re-scanned every launch.
+
+### P10i-d — Range filters + quality filter + sectioned sheet  *(no AI/graph needed — works on any build)*
+- [ ] Open **Filters** → the sheet shows labelled sections (Duration · Resolution · Downloaded · Uploaded ·
+      Content · Platform/Channel/Playlist) and **scrolls** without overflow on a small screen.
+- [ ] **Duration / Resolution buckets:** selecting a bucket narrows the grid; tapping the **active** chip
+      clears it. "4K" shows only ≥2160p items; items with unknown duration/size are **excluded**.
+- [ ] **Downloaded / Uploaded buckets:** narrow by the right date; items with **no upload date** are
+      excluded from an Uploaded bucket.
+- [ ] **Type-aware:** with **Image-only** selected the **Duration** section hides (and an active duration
+      bucket clears); with **Audio-only** the **Resolution** section hides; reselecting brings them back.
+- [ ] The filter **badge** count includes active buckets; **Clear all** resets every filter incl. buckets.
+
+## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
       **transcript/backfill**, a **graph** index rebuild — each shows up with the right category/severity.

@@ -137,7 +137,11 @@ and `media_metadata` (description, transcript) delete-then-reinsert the joined r
 (`NOT IN` guarded) indexes pre-existing rows on the v6→v7 upgrade. `MetadataRepository.watchFiltered`
 keyword search runs through it via `MATCH` (user input sanitized into a quoted, prefix-matched expression),
 ranked by `bm25()` for the **Relevance** sort; the empty-search path keeps the typed query.
-**v8 (P10i-c)** repairs `media_items.{width,height}`: those columns shipped in the table definition without
+`LibraryQuery` also carries **P10i-d preset-bucket range filters** — duration & resolution (by
+`height`), and date ranges for downloaded (`created_at`) and uploaded (`upload_date`, via the correlated
+subquery) — applied as `>= min (& < max)` / `>= since` on both query paths (no schema change); rows with a
+null value are excluded, and `library_options.dart` gates duration to timed media and resolution to sized
+media. **v8 (P10i-c)** repairs `media_items.{width,height}`: those columns shipped in the table definition without
 a migration, so DBs upgraded across that version were missing them. The v8 upgrade guard-adds each column
 only when `PRAGMA table_info` shows it absent (`addColumnIfMissing`) — a no-op on fresh installs that already
 have it. Width/height are captured at download (video from the `.info.json` sidecar, images by a header-only

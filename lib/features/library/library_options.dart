@@ -11,6 +11,9 @@ const Set<String> kAllTypes = {'video', 'audio', 'image'};
 /// Types that carry a timeline (duration, transcripts, …).
 const Set<String> kTimedTypes = {'video', 'audio'};
 
+/// Types that have pixel dimensions (for the resolution filter).
+const Set<String> kSizedTypes = {'video', 'image'};
+
 /// The active type scope: the explicit selection, or all types when nothing is
 /// selected (an empty selection means "no type filter").
 Set<String> activeTypeScope(Set<String> selected) =>
@@ -31,9 +34,17 @@ bool sortVisible(LibrarySort sort, Set<String> selectedTypes) =>
 bool transcriptApplies(Set<String> selectedTypes) =>
     kTimedTypes.intersection(activeTypeScope(selectedTypes)).isNotEmpty;
 
+/// Whether the duration range filter applies to the active scope (timed media).
+bool durationApplies(Set<String> selectedTypes) =>
+    kTimedTypes.intersection(activeTypeScope(selectedTypes)).isNotEmpty;
+
+/// Whether the resolution filter applies to the active scope (sized media).
+bool resolutionApplies(Set<String> selectedTypes) =>
+    kSizedTypes.intersection(activeTypeScope(selectedTypes)).isNotEmpty;
+
 /// Corrects a query after its type selection changes: resets an inapplicable
 /// sort (→ relevance while searching, else newest) and clears filters that no
-/// longer apply to the active type scope.
+/// longer apply to the active type scope. Date ranges always apply.
 LibraryQuery reconcile(LibraryQuery q) {
   var next = q;
   if (!sortVisible(next.sort, next.types)) {
@@ -45,6 +56,12 @@ LibraryQuery reconcile(LibraryQuery q) {
   }
   if (next.hasTranscript && !transcriptApplies(next.types)) {
     next = next.copyWith(hasTranscript: false);
+  }
+  if (next.durationBucket != null && !durationApplies(next.types)) {
+    next = next.copyWith(durationBucket: () => null);
+  }
+  if (next.resolutionBucket != null && !resolutionApplies(next.types)) {
+    next = next.copyWith(resolutionBucket: () => null);
   }
   return next;
 }
