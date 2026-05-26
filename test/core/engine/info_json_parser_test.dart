@@ -42,6 +42,19 @@ void main() {
       expect(info.uploader, isNull);
       expect(info.sourceId, isNull);
     });
+
+    test('extracts positive integer width/height', () {
+      final info = parseInfoJson({'width': 1920, 'height': 1080});
+      expect(info.width, 1920);
+      expect(info.height, 1080);
+    });
+
+    test('treats missing or non-positive dimensions as null', () {
+      expect(parseInfoJson({'height': 720}).width, isNull);
+      final zero = parseInfoJson({'width': 0, 'height': -5});
+      expect(zero.width, isNull);
+      expect(zero.height, isNull);
+    });
   });
 
   group('parseInfoJsonString', () {
