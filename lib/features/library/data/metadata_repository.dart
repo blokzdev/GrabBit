@@ -349,6 +349,19 @@ class MetadataRepository {
     );
   }
 
+  /// Stores the extracted plain-text [transcript] (P10f). Upserts so it works
+  /// for items whose metadata row predates this column.
+  Future<void> updateTranscript(String itemId, String transcript) async {
+    await _db
+        .into(_db.mediaMetadata)
+        .insertOnConflictUpdate(
+          MediaMetadataCompanion.insert(
+            itemId: itemId,
+            transcript: Value(transcript),
+          ),
+        );
+  }
+
   // --- Tags ---
 
   Stream<List<Tag>> watchTagsForItem(String itemId) {

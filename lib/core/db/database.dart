@@ -63,6 +63,9 @@ class MediaMetadata extends Table {
   TextColumn get playlistId => text().nullable()();
   TextColumn get playlistTitle => text().nullable()();
   TextColumn get tags => text().nullable()(); // comma-joined
+  // P10f: plain-text transcript extracted from caption sidecars; feeds the
+  // summary and (later) FTS/GraphRAG. Null until built.
+  TextColumn get transcript => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {itemId};
@@ -144,7 +147,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -168,6 +171,9 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(mediaItems, mediaItems.contentHash);
         await m.addColumn(mediaItems, mediaItems.lastAccessedAt);
         await m.addColumn(downloadTasks, downloadTasks.orderIndex);
+      }
+      if (from < 5) {
+        await m.addColumn(mediaMetadata, mediaMetadata.transcript);
       }
       await _createIndices();
     },

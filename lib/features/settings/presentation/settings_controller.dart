@@ -85,6 +85,12 @@ class SettingsController extends _$SettingsController {
   Future<void> setSubtitleFormat(String value) async =>
       _update((await future).copyWith(subtitleFormat: value));
 
+  Future<void> setAutoTranscribe(bool value) async =>
+      _update((await future).copyWith(autoTranscribe: value));
+
+  Future<void> setTranscriptBackfill(bool value) async =>
+      _update((await future).copyWith(transcriptBackfill: value));
+
   Future<void> setSponsorBlockMode(String value) async =>
       _update((await future).copyWith(sponsorBlockMode: value));
 

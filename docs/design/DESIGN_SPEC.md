@@ -187,9 +187,10 @@ populated · partial selection · source errors.
 
 ### `[x]` Item Detail — `/item/:id` (P7g)
 Hero media (Chewie player for video / zoomable image); large title; an auto-hiding extractive
-**Summary** TL;DR (P10e — pure-Dart TextRank over the description, bullet sentences); metadata section
-(uploader, platform, playlist, date, expandable description); tag chips; primary "Save to
-device" (shows destination + "Saved" state); secondary actions Move / Edit / Studio.
+**Summary** TL;DR (P10e — pure-Dart TextRank, P10f-1 prefers the transcript over the description, bullet
+sentences); metadata section (uploader, platform, playlist, date, expandable description); an auto-hiding
+expandable **Transcript** section (P10f-1, built from caption sidecars); tag chips; primary "Save to
+device" (shows destination + "Saved" state); secondary actions Move / Edit / Studio / **Build transcript**.
 Video + image variants.
 
 ### `[x]` Metadata Edit — `/item/:id/edit` (P7h)

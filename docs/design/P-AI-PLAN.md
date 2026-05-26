@@ -101,10 +101,19 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
 - **P10e — Extractive summaries** *(done)*: zero-dependency pure-Dart **TextRank** floor (`lib/core/text/textrank.dart`)
   over an item's **description**, surfaced as an auto-hiding "Summary" TL;DR on the item-detail screen.
   Runs on any device, no model/network.
-- **P10f — Transcript-text capture** *(next)*: on-demand "Get transcript" action + a "fetch
-  auto-captions" setting; parse/dedupe the downloaded `.vtt/.srt` sidecars into a stored
-  `MediaMetadata.transcript`, which then becomes the preferred TextRank source (and feeds future
-  search/RAG).
+- **P10f-1 — Transcript-text capture (pure-Dart)** *(done)*: parse/dedupe the `.vtt/.srt` sidecars
+  already on disk (`lib/core/text/transcript_dedup.dart` + `lib/features/library/data/transcript_service.dart`,
+  reusing the player's `WebVTTCaptionFile`/`SubRipCaptionFile` parsers — no new dep) into a stored
+  `MediaMetadata.transcript` (schema v5). Shown as an auto-hiding "Transcript" section and used as the
+  preferred TextRank source (`transcript ?? description`). Built via a manual "Build transcript" action,
+  with opt-in Settings toggles for automatic transcription (at download) and lazy backfill (on open).
+- **P10f-2 — On-demand caption fetch (native)** *(next)*: a subtitle-only `--skip-download` fetch via
+  Pigeon/Kotlin with a language selector (defaults to the in-app language), plus a "fetch auto-captions
+  on download" setting, for items that have no captions yet. Reuses P10f-1's extractor/store. Needs a
+  debug-APK build to verify.
+- **P10g — Settings IA & consistency pass** *(later)*: regroup/nest the settings screen, roll the
+  `(i)`-info-tooltip pattern (seeded in P10f-1) across non-obvious settings, and reconcile gaps
+  introduced during P8–P10. Pure-Dart/UI.
 
 **Exit:** on any device, the Cozo index builds & rebuilds; semantic search + "related" return
 sensible results offline; entity hubs and the graph view render; near-dup clusters and tag

@@ -244,6 +244,30 @@ class _SettingsList extends ConsumerWidget {
                 ),
               ],
               SwitchListTile(
+                secondary: const Tooltip(
+                  message:
+                      'Build a text transcript from downloaded captions '
+                      'automatically, so summaries use the spoken content.',
+                  child: Icon(Icons.info_outline),
+                ),
+                title: const Text('Auto-build transcripts'),
+                subtitle: const Text('From captions, after each download'),
+                value: settings.autoTranscribe,
+                onChanged: controller.setAutoTranscribe,
+              ),
+              SwitchListTile(
+                secondary: const Tooltip(
+                  message:
+                      'Build transcripts for older downloads the first time '
+                      'you open them, if they have caption files.',
+                  child: Icon(Icons.info_outline),
+                ),
+                title: const Text('Backfill transcripts on open'),
+                subtitle: const Text('For items downloaded earlier'),
+                value: settings.transcriptBackfill,
+                onChanged: controller.setTranscriptBackfill,
+              ),
+              SwitchListTile(
                 title: const Text('Embed thumbnail'),
                 value: settings.embedThumbnail,
                 onChanged: controller.setEmbedThumbnail,

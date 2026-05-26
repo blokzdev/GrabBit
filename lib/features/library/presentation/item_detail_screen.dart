@@ -20,6 +20,7 @@ import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
@@ -73,6 +74,8 @@ class ItemDetailScreen extends ConsumerWidget {
                     await context.push('/item/$itemId/graph');
                   case 'edit':
                     await context.push('/item/$itemId/edit');
+                  case 'transcript':
+                    await _buildTranscript(context, ref, row);
                   case 'share':
                     await shareItems(ref, [row]);
                   case 'copy':
@@ -104,6 +107,10 @@ class ItemDetailScreen extends ConsumerWidget {
                     child: Text('View in graph'),
                   ),
                 const PopupMenuItem(value: 'edit', child: Text('Edit info')),
+                const PopupMenuItem(
+                  value: 'transcript',
+                  child: Text('Build transcript'),
+                ),
                 const PopupMenuItem(value: 'share', child: Text('Share file')),
                 const PopupMenuItem(
                   value: 'copy',
@@ -235,6 +242,7 @@ class _ItemBody extends StatelessWidget {
               _DetailChips(item: item),
               _SummarySection(itemId: item.id),
               _MetadataSection(itemId: item.id),
+              _TranscriptSection(itemId: item.id, mediaPath: item.filePath),
               if (item.notes != null && item.notes!.isNotEmpty) ...[
                 SizedBox(height: tokens.spaceMd),
                 Text(item.notes!, style: theme.textTheme.bodyMedium),
@@ -419,15 +427,15 @@ class _DetailChips extends StatelessWidget {
 /// Uploader / username / playlist / upload date + an expandable description,
 /// from the metadata captured at download time.
 /// Extractive TextRank summary (P10e) for an item's text. Memoized per item;
-/// recomputes whenever the item's metadata changes. Today the source is the
-/// description; once transcripts land (P10f) this becomes `transcript ??
-/// description` and the watching UI updates automatically.
+/// recomputes whenever the item's metadata changes. Prefers the captured
+/// transcript (P10f) and falls back to the description; because it watches the
+/// metadata, the summary recomputes the instant a transcript is written.
 final itemSummaryProvider = Provider.family<List<String>, String>((
   ref,
   itemId,
 ) {
   final meta = ref.watch(metadataForItemProvider(itemId)).asData?.value;
-  final text = meta?.description;
+  final text = meta?.transcript ?? meta?.description;
   if (text == null || text.trim().isEmpty) return const [];
   return summarize(text);
 });
@@ -466,6 +474,93 @@ class _SummarySection extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+/// Manual "Build transcript" action (P10f): extracts text from the item's
+/// caption sidecars and stores it, so the summary and transcript view update.
+Future<void> _buildTranscript(
+  BuildContext context,
+  WidgetRef ref,
+  MediaItem row,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final transcript = await ref
+      .read(transcriptServiceProvider)
+      .extractTranscript(row.filePath);
+  if (transcript == null) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('No caption files found for this item')),
+    );
+    return;
+  }
+  await ref
+      .read(metadataRepositoryProvider)
+      .updateTranscript(row.id, transcript);
+  messenger.showSnackBar(const SnackBar(content: Text('Transcript built')));
+}
+
+/// The stored transcript (P10f) in an expandable block. Hidden when there's no
+/// transcript; when "backfill on open" is enabled it builds one once from any
+/// caption sidecars the first time the item is opened.
+class _TranscriptSection extends ConsumerStatefulWidget {
+  const _TranscriptSection({required this.itemId, required this.mediaPath});
+  final String itemId;
+  final String mediaPath;
+
+  @override
+  ConsumerState<_TranscriptSection> createState() => _TranscriptSectionState();
+}
+
+class _TranscriptSectionState extends ConsumerState<_TranscriptSection> {
+  bool _backfillAttempted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    final meta = ref
+        .watch(metadataForItemProvider(widget.itemId))
+        .asData
+        ?.value;
+    final backfillOn =
+        ref
+            .watch(settingsControllerProvider)
+            .asData
+            ?.value
+            .transcriptBackfill ??
+        false;
+    final transcript = meta?.transcript;
+
+    if (transcript == null || transcript.trim().isEmpty) {
+      if (backfillOn && !_backfillAttempted) {
+        _backfillAttempted = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _runBackfill());
+      }
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Transcript', style: theme.textTheme.titleSmall),
+          SizedBox(height: tokens.spaceXs),
+          _ExpandableText(text: transcript),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _runBackfill() async {
+    final transcript = await ref
+        .read(transcriptServiceProvider)
+        .extractTranscript(widget.mediaPath);
+    if (transcript == null || !mounted) return;
+    await ref
+        .read(metadataRepositoryProvider)
+        .updateTranscript(widget.itemId, transcript);
   }
 }
 
