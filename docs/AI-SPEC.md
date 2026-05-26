@@ -72,7 +72,8 @@ abstract interface class InferenceEngine {
   + an `inferenceEngineFor(model)` factory (routes a model to its runtime engine; unsupported →
   `UnavailableInferenceEngine`) + an `activeEmbedderModelProvider` seam (returns `defaultEmbedder`; the P12
   override point). A **multilingual** second engine (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0,
-  onnxruntime — P10g-3) plugs into that factory, with Gecko as the universal fallback. **Capability-driven behaviour — window
+  onnxruntime — **P12**, as a capability-matrix embedder option) plugs into that factory, with Gecko as the
+  universal fallback. **Capability-driven behaviour — window
   selection (256 vs 512), model upgrade/downgrade, automated graceful degradation/disable — is owned by the
   P12 device-capability/tier system** (`DeviceCapabilityService`/`ModelCapabilityMatrix`, §2), which the
   probe it builds makes possible. *(EmbeddingGemma-300M was evaluated and **dropped**: HF-license-gated —
@@ -105,7 +106,7 @@ abstract interface class InferenceEngine {
 | **Light (<0.5–~0.6B)** | **SmolLM-135M**, **Qwen3-0.6B** | **Apache-2.0** | Clean; low-end-device floor. |
 | **Mid (~1–3B)** | **Phi-4-Mini** | **MIT** | Clean. |
 | **Mid (capable)** | **Gemma 3 1B / 3n E2B** | **Gemma** (custom use-policy) | Usable + strong, **but vet Gemma's use policy before bundling** — it carries prohibited-use terms. |
-| **Embedder** | **Gecko 256** (110M, 768-d, 256-tok, ~114 MB) · multilingual: **MiniLM-L12-v2** (P10g-3) | **Apache-2.0**, ungated | Universal tier; embeddings only. Pinned P10g-1; pluggable in P10g-2. |
+| **Embedder** | **Gecko 256** (110M, 768-d, 256-tok, ~114 MB) · multilingual: **MiniLM-L12-v2** (P12) | **Apache-2.0**, ungated | Universal tier; embeddings only. Pinned P10g-1; pluggable in P10g-2. |
 | **Transcription** | whisper.cpp (tiny→large-v3-turbo) | MIT | Size-gated by tier. |
 
 ---

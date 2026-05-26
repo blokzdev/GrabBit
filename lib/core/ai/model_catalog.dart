@@ -1,6 +1,6 @@
 /// The on-device runtime that backs an [EmbedderModel]. `inferenceEngineFor`
 /// (see `inference_engine_factory.dart`) maps each value to a concrete
-/// [InferenceEngine]. P10g-3 adds `onnx` for the multilingual MiniLM engine.
+/// [InferenceEngine]. P12 adds `onnx` for the multilingual MiniLM engine.
 enum EmbedderRuntime { flutterGemma }
 
 /// The pinned on-device embedder model. A minimal precursor to P12's full model
@@ -13,7 +13,7 @@ enum EmbedderRuntime { flutterGemma }
 /// real slice of the **transcript** (see `embedding_doc.dart`). The seq512/1024
 /// variants share this tokenizer + dimension; the pluggable engine seam lands in
 /// P10g-2, and the capability-selected window upgrade is owned by the P12
-/// device-tier system. Multilingual is added via a second engine in P10g-3.
+/// device-tier system. Multilingual is added via a second engine in P12.
 ///
 /// `id`/`dimension` are persisted by P10b-2b so a model change re-keys the Cozo
 /// HNSW relation + graph fingerprint (a new model → re-embed).

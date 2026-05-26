@@ -136,8 +136,11 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     selected model), and an `activeEmbedderModelProvider` **selection seam** returning `defaultEmbedder`.
     Gecko-only, default unchanged, no consumer changes (all read `engine.model`) — **pure architecture**.
     (Switching models is a model-id change → one re-embed via the existing `_ensureEmbeddingSchema` guard.)
-  - **P10g-3**: add an **onnxruntime** runtime + **`paraphrase-multilingual-MiniLM-L12-v2`** (Apache-2.0,
-    ungated, 50-lang, 384-d) + on-device tokenizer, plugged into the registry; Gecko stays the fallback.
+  - *Multilingual embedder → moved to **P12***: the **onnxruntime** + **`paraphrase-multilingual-MiniLM-L12-v2`**
+    (Apache-2.0, ungated, 50-lang, 384-d) + on-device tokenizer engine is **install-global, capability+content
+    selected** (one shared HNSW index → no per-language mixing) and needs P12's model-download/integrity
+    infra, so it lands in P12 as a capability-matrix embedder option (plugged into the g-2 registry seam;
+    Gecko stays the fallback). **P10g is complete after g-2.**
   - *Cross-phase*: **P12's device-capability diagnostics + device-tier system**
     (`DeviceCapabilityService`/`ModelCapabilityMatrix`) owns capability-driven behaviour — **window
     selection (256 vs 512), model upgrade/downgrade, automated graceful degradation/disable** (all depend
@@ -170,6 +173,10 @@ suggestions work — all with the small embedder, no LLM.
 - On-demand **model catalog + download + integrity check + caching** (install stays lean).
 - `InferenceEngine` impls: **`flutter_gemma`** (generation; wraps MediaPipe LLM Inference / LiteRT-LM)
   + **whisper.cpp** (`whisper_ggml_plus` / `whisper_kit`); ML Kit (OCR/translate) where it fits.
+- **Multilingual embedder option** (moved from P10g-3): an **onnxruntime** runtime +
+  **`paraphrase-multilingual-MiniLM-L12-v2`** (Apache-2.0, 50-lang, 384-d) + on-device tokenizer, registered
+  in `ModelCapabilityMatrix` and plugged into the **P10g-2** registry seam (`inferenceEngineFor` + a new
+  `EmbedderRuntime.onnx`). Install-global selection, re-embeds on switch; Gecko stays the universal fallback.
 - **Capability-gating**: unsupported features clearly disabled with a friendly reason.
 - **Model/licensing**: confirm current best models at phase start; **prefer Apache-2.0/MIT**
   (SmolLM-135M, Qwen3-0.6B, Phi-4-Mini); Gemma usable but **vet its use policy**. *(AI-SPEC §4)*
