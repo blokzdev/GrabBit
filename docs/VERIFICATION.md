@@ -666,6 +666,11 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       re-embeds. Declining leaves the app working.
 - [ ] On a device that can't run the model, semantic search degrades gracefully (no crash).
 
+### P10g-2 — Pluggable embedder registry (pure architecture; CI-covered)
+- [ ] No new user-facing surface — covered by `flutter test` (factory model-propagation + Unavailable
+      fallback + `activeEmbedderModel` default). On-device sanity: semantic search + "related" behave
+      exactly as P10g-1 and **Test embedder** still reports "768-d · N embedded" (the refactor is transparent).
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built

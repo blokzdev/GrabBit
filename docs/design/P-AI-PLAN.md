@@ -130,10 +130,12 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     appended transcript isn't truncated out of the window); bump `_edgeBuilderVersion`→3
     (`graph_sync_service.dart`) for the one-time re-embed; add an **"Update AI model"** affordance to the
     Settings semantic-search tile (no silent download). Existing runtime; no new model family or hosting.
-  - **P10g-2**: runtime-agnostic engine **registry + a model-selection seam** (so multiple embedders can
-    coexist) + a basic load-failure fallback. Gecko-only, default model unchanged — **pure architecture**,
-    no user-facing selection. (Switching models is a model-id change → one re-embed via the existing
-    `_ensureEmbeddingSchema` guard.)
+  - **P10g-2** *(done)*: runtime-agnostic seam — an `EmbedderRuntime` discriminator on `EmbedderModel`, an
+    `inferenceEngineFor(model)` factory (`inference_engine_factory.dart`) that routes a model to its runtime
+    engine (unsupported runtime/platform → graceful `UnavailableInferenceEngine`, which now carries the
+    selected model), and an `activeEmbedderModelProvider` **selection seam** returning `defaultEmbedder`.
+    Gecko-only, default unchanged, no consumer changes (all read `engine.model`) — **pure architecture**.
+    (Switching models is a model-id change → one re-embed via the existing `_ensureEmbeddingSchema` guard.)
   - **P10g-3**: add an **onnxruntime** runtime + **`paraphrase-multilingual-MiniLM-L12-v2`** (Apache-2.0,
     ungated, 50-lang, 384-d) + on-device tokenizer, plugged into the registry; Gecko stays the fallback.
   - *Cross-phase*: **P12's device-capability diagnostics + device-tier system**
