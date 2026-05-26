@@ -22,6 +22,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `flutter_local_notifications` | Notification channel + terminal (complete/failed) notifications. The **foreground-service notification itself is built natively** in `DownloadService.kt` (FGS lifecycle requires it) |
 | `video_player`, `chewie` | In-app media playback (P1) |
 | `crypto` | Salted PIN hashing for app lock (P2) |
+| `image` | Pure-Dart, header-only decode to read image pixel dimensions on-device — no native, no full pixel decode (P10i-c) |
 | `flutter_svg` | Render the brand SVG mark in-app at any size (P7) |
 | `flutter_launcher_icons` (dev) | Generate the adaptive launcher icon — foreground + brand background + **monochrome** (Android-13 themed) — from PNG masters (P7) |
 | `flutter_native_splash` (dev) | Generate the branded (Android-12+) splash, light/dark (P7) |
@@ -119,7 +120,7 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 //   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
 ```
 
-Migration strategy: Drift `schemaVersion` (currently **7**); write `MigrationStrategy`
+Migration strategy: Drift `schemaVersion` (currently **8**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
@@ -136,7 +137,12 @@ and `media_metadata` (description, transcript) delete-then-reinsert the joined r
 (`NOT IN` guarded) indexes pre-existing rows on the v6→v7 upgrade. `MetadataRepository.watchFiltered`
 keyword search runs through it via `MATCH` (user input sanitized into a quoted, prefix-matched expression),
 ranked by `bm25()` for the **Relevance** sort; the empty-search path keeps the typed query.
-**Planned: v8 (P11)** adds the `notifications` table backing the Activity Inbox.
+**v8 (P10i-c)** repairs `media_items.{width,height}`: those columns shipped in the table definition without
+a migration, so DBs upgraded across that version were missing them. The v8 upgrade guard-adds each column
+only when `PRAGMA table_info` shows it absent (`addColumnIfMissing`) — a no-op on fresh installs that already
+have it. Width/height are captured at download (video from the `.info.json` sidecar, images by a header-only
+decode via the `image` package) and best-effort backfilled for legacy items by `MediaDimensionService`.
+**Planned: v9 (P11)** adds the `notifications` table backing the Activity Inbox.
 
 ---
 

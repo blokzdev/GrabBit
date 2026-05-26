@@ -706,7 +706,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       (Newest) and the grid isn't left empty. Run a **search** (→ Relevance), narrow to **Image-only**, then
       clear the search → the restored sort is valid (not a stuck/hidden duration sort).
 
-## P11 — Activity Inbox  *(v1)*
+### P10i-c — Media dimensions: capture & backfill  *(no AI/graph needed — works on any build)*
+- [ ] **Video capture:** download a video → its detail screen shows a resolution chip (e.g. `1920×1080`).
+- [ ] **Image capture:** download an image → the chip shows the image's pixel size.
+- [ ] **Audio:** download audio → **no** resolution chip (audio has no dimensions, correctly).
+- [ ] **Split-chapters:** a `--split-chapters` download → each chapter item shows the source video's
+      resolution.
+- [ ] **Migration / upgrade:** install over a build that predates this work (or whose DB lacks the
+      width/height columns) → the app **opens without a "no such column" crash**.
+- [ ] **Backfill:** after upgrading, existing **video/image** items gain resolution chips within a moment
+      of relaunch (background backfill); **audio** items stay chip-less and aren't re-scanned every launch.
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
       **transcript/backfill**, a **graph** index rebuild — each shows up with the right category/severity.

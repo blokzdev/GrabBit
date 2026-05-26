@@ -150,7 +150,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -182,6 +182,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 6) {
         await m.addColumn(mediaMetadata, mediaMetadata.transcriptCues);
       }
+      if (from < 8) {
+        // width/height shipped in the table definition without a migration, so
+        // DBs upgraded across that version lack the columns while fresh installs
+        // have them — guard-add to repair the former without breaking the latter.
+        await addColumnIfMissing('media_items', 'width');
+        await addColumnIfMissing('media_items', 'height');
+      }
       await _createIndices();
       await _createFtsObjects();
     },
@@ -189,6 +196,17 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// Adds a nullable INTEGER [column] to [table] only when it isn't already
+  /// present. Idempotent: a no-op when `createAll` already produced the column
+  /// (fresh installs), a real `ALTER TABLE` when an older DB upgraded without it.
+  Future<void> addColumnIfMissing(String table, String column) async {
+    final info = await customSelect('PRAGMA table_info($table)').get();
+    final exists = info.any((row) => row.read<String>('name') == column);
+    if (!exists) {
+      await customStatement('ALTER TABLE $table ADD COLUMN $column INTEGER');
+    }
+  }
 
   /// Facet indices for library filtering/browsing. Idempotent so it can run on
   /// both fresh creates and upgrades.

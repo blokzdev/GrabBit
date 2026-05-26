@@ -12,6 +12,8 @@ class InfoJson {
     this.description,
     this.tags,
     this.extractor,
+    this.width,
+    this.height,
   });
 
   final String? uploader; // channel / author display name
@@ -22,6 +24,8 @@ class InfoJson {
   final String? description;
   final String? tags; // comma-joined
   final String? extractor; // site key
+  final int? width; // pixel width of the (merged) video
+  final int? height; // pixel height
 }
 
 /// Parses a decoded `.info.json` map. Falls back across related keys and is
@@ -30,6 +34,11 @@ InfoJson parseInfoJson(Map<String, dynamic> json) {
   String? str(String key) {
     final v = json[key];
     return v is String && v.trim().isNotEmpty ? v : null;
+  }
+
+  int? dimension(String key) {
+    final v = json[key];
+    return v is num && v > 0 ? v.toInt() : null;
   }
 
   final rawTags = json['tags'];
@@ -50,6 +59,8 @@ InfoJson parseInfoJson(Map<String, dynamic> json) {
     description: str('description'),
     tags: (tags != null && tags.isNotEmpty) ? tags : null,
     extractor: str('extractor_key') ?? str('extractor'),
+    width: dimension('width'),
+    height: dimension('height'),
   );
 }
 

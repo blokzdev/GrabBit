@@ -45,6 +45,7 @@ dependencies:
   chewie: ^1.14.1
   crypto: ^3.0.7
   ffmpeg_kit_flutter_new: ^4.1.0
+  image: ^4.8.0              # P10i-c: header-only decode to read image pixel dimensions on-device (pure-Dart)
 
   # Brand (P7)
   flutter_svg: ^2.3.0        # render the brand SVG mark in-app (resolution-independent)

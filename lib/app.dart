@@ -8,6 +8,7 @@ import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/routing/app_router.dart';
 import 'package:grabbit/core/theme/app_theme.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
+import 'package:grabbit/features/library/data/media_dimension_service.dart';
 import 'package:grabbit/features/lock/auto_lock_controller.dart';
 import 'package:grabbit/features/settings/data/privacy_service.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
@@ -43,6 +44,8 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
       _maybeAutoUpdate();
       _maybeSyncGraph();
       _initShareIntake();
+      // Backfill pixel dimensions for items downloaded before P10i-c. Non-blocking.
+      unawaited(ref.read(mediaDimensionServiceProvider).backfillDimensions());
     });
   }
 

@@ -14,6 +14,7 @@ import 'package:grabbit/core/battery/battery_service.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/utils/image_dimensions.dart';
 import 'package:grabbit/core/utils/media_type.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
@@ -439,6 +440,14 @@ class QueueController extends _$QueueController {
       for (final (i, mediaFile) in outputs.media.indexed) {
         final itemId = single ? id : '${id}__$i';
         final ext = mediaFile.path.split('.').last.toLowerCase();
+        final type = queued.request.audioOnly ? 'audio' : mediaTypeForExt(ext);
+        // Pixel dimensions: images read from the file header (true output size),
+        // video from the info.json (shared across split-chapter files), audio none.
+        final (width, height) = switch (type) {
+          'image' => await readImageDimensions(mediaFile) ?? (null, null),
+          'video' => (info?.width, info?.height),
+          _ => (null, null),
+        };
         await db
             .into(db.mediaItems)
             .insertOnConflictUpdate(
@@ -448,12 +457,14 @@ class QueueController extends _$QueueController {
                 sourceUrl: queued.request.url,
                 site: queued.site ?? info?.extractor ?? 'unknown',
                 filePath: mediaFile.path,
-                type: queued.request.audioOnly ? 'audio' : mediaTypeForExt(ext),
+                type: type,
                 createdAt: DateTime.now(),
                 storageState: 'private',
                 durationSec: Value(single ? queued.durationSec : null),
                 sizeBytes: Value(await mediaFile.length()),
                 thumbPath: Value(outputs.thumb?.path),
+                width: Value(width),
+                height: Value(height),
               ),
             );
         if (hasMetadata) {
