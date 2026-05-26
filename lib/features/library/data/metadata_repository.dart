@@ -24,6 +24,55 @@ enum LibrarySort {
   uploadOldest,
 }
 
+/// P10i-d preset duration ranges (seconds). Timed media only; items with an
+/// unknown duration never match a bucket.
+enum DurationBucket {
+  underMin,
+  oneToFive,
+  fiveToTwenty,
+  twentyToHour,
+  overHour,
+}
+
+extension DurationBucketRange on DurationBucket {
+  /// `[min, max)` in seconds; `max == null` means unbounded.
+  (int min, int? max) get range => switch (this) {
+    DurationBucket.underMin => (0, 60),
+    DurationBucket.oneToFive => (60, 300),
+    DurationBucket.fiveToTwenty => (300, 1200),
+    DurationBucket.twentyToHour => (1200, 3600),
+    DurationBucket.overHour => (3600, null),
+  };
+}
+
+/// P10i-d preset resolution tiers, by pixel height. Video/image only; items
+/// with unknown dimensions never match a bucket.
+enum ResolutionBucket { sd, hd, fullHd, uhd }
+
+extension ResolutionBucketRange on ResolutionBucket {
+  /// `[min, max)` pixel height; `max == null` means unbounded.
+  (int min, int? max) get heightRange => switch (this) {
+    ResolutionBucket.sd => (0, 720),
+    ResolutionBucket.hd => (720, 1080),
+    ResolutionBucket.fullHd => (1080, 2160),
+    ResolutionBucket.uhd => (2160, null),
+  };
+}
+
+/// P10i-d preset date ranges, used for both the downloaded (created_at) and
+/// uploaded (upload_date) filters.
+enum DateBucket { today, last7, last30, thisYear }
+
+extension DateBucketSince on DateBucket {
+  /// The inclusive lower bound for "within this range", relative to [now].
+  DateTime since(DateTime now) => switch (this) {
+    DateBucket.today => DateTime(now.year, now.month, now.day),
+    DateBucket.last7 => now.subtract(const Duration(days: 7)),
+    DateBucket.last30 => now.subtract(const Duration(days: 30)),
+    DateBucket.thisYear => DateTime(now.year),
+  };
+}
+
 /// Search / filter / sort parameters for the library grid.
 class LibraryQuery {
   const LibraryQuery({
@@ -37,6 +86,10 @@ class LibraryQuery {
     this.tag,
     this.favoritesOnly = false,
     this.hasTranscript = false,
+    this.durationBucket,
+    this.resolutionBucket,
+    this.downloadedBucket,
+    this.uploadedBucket,
   });
 
   final String search; // FTS over title + description + transcript (P10h)
@@ -49,13 +102,21 @@ class LibraryQuery {
   final String? tag; // tag facet (by tag name)
   final bool favoritesOnly;
   final bool hasTranscript; // P10h: only items with an extracted transcript
+  final DurationBucket? durationBucket; // P10i-d
+  final ResolutionBucket? resolutionBucket; // P10i-d
+  final DateBucket? downloadedBucket; // P10i-d: by created_at
+  final DateBucket? uploadedBucket; // P10i-d: by upload_date
 
   /// Active metadata facets (excludes search/type/sort/collection).
   int get activeFacetCount =>
       (site != null ? 1 : 0) +
       (uploader != null ? 1 : 0) +
       (playlistId != null ? 1 : 0) +
-      (hasTranscript ? 1 : 0);
+      (hasTranscript ? 1 : 0) +
+      (durationBucket != null ? 1 : 0) +
+      (resolutionBucket != null ? 1 : 0) +
+      (downloadedBucket != null ? 1 : 0) +
+      (uploadedBucket != null ? 1 : 0);
 
   LibraryQuery copyWith({
     String? search,
@@ -68,6 +129,10 @@ class LibraryQuery {
     String? Function()? tag,
     bool? favoritesOnly,
     bool? hasTranscript,
+    DurationBucket? Function()? durationBucket,
+    ResolutionBucket? Function()? resolutionBucket,
+    DateBucket? Function()? downloadedBucket,
+    DateBucket? Function()? uploadedBucket,
   }) => LibraryQuery(
     search: search ?? this.search,
     types: types ?? this.types,
@@ -79,6 +144,18 @@ class LibraryQuery {
     tag: tag != null ? tag() : this.tag,
     favoritesOnly: favoritesOnly ?? this.favoritesOnly,
     hasTranscript: hasTranscript ?? this.hasTranscript,
+    durationBucket: durationBucket != null
+        ? durationBucket()
+        : this.durationBucket,
+    resolutionBucket: resolutionBucket != null
+        ? resolutionBucket()
+        : this.resolutionBucket,
+    downloadedBucket: downloadedBucket != null
+        ? downloadedBucket()
+        : this.downloadedBucket,
+    uploadedBucket: uploadedBucket != null
+        ? uploadedBucket()
+        : this.uploadedBucket,
   );
 }
 
@@ -173,6 +250,29 @@ class MetadataRepository {
         ),
       );
     }
+    // P10i-d range buckets. `>= min (& < max)` on a nullable column excludes
+    // rows with an unknown value (NULL comparisons are never true).
+    final now = DateTime.now();
+    if (q.durationBucket != null) {
+      final (min, max) = q.durationBucket!.range;
+      query.where((t) => t.durationSec.isBiggerOrEqualValue(min));
+      if (max != null) {
+        query.where((t) => t.durationSec.isSmallerThanValue(max));
+      }
+    }
+    if (q.resolutionBucket != null) {
+      final (min, max) = q.resolutionBucket!.heightRange;
+      query.where((t) => t.height.isBiggerOrEqualValue(min));
+      if (max != null) query.where((t) => t.height.isSmallerThanValue(max));
+    }
+    if (q.downloadedBucket != null) {
+      final since = q.downloadedBucket!.since(now);
+      query.where((t) => t.createdAt.isBiggerOrEqualValue(since));
+    }
+    if (q.uploadedBucket != null) {
+      final since = q.uploadedBucket!.since(now);
+      query.where((_) => _uploadDateExpr.isBiggerOrEqualValue(since));
+    }
     query.orderBy(switch (q.sort) {
       // Relevance is meaningless without a query → fall back to newest.
       LibrarySort.newest ||
@@ -260,6 +360,34 @@ class MetadataRepository {
         'JOIN tags t ON t.id = mt.tag_id WHERE t.name = ?)',
       );
       vars.add(Variable.withString(q.tag!));
+    }
+    // P10i-d range buckets (mirror the typed path; nulls excluded by `>=`).
+    final now = DateTime.now();
+    if (q.durationBucket != null) {
+      final (min, max) = q.durationBucket!.range;
+      where.add('mi.duration_sec >= ?');
+      vars.add(Variable.withInt(min));
+      if (max != null) {
+        where.add('mi.duration_sec < ?');
+        vars.add(Variable.withInt(max));
+      }
+    }
+    if (q.resolutionBucket != null) {
+      final (min, max) = q.resolutionBucket!.heightRange;
+      where.add('mi.height >= ?');
+      vars.add(Variable.withInt(min));
+      if (max != null) {
+        where.add('mi.height < ?');
+        vars.add(Variable.withInt(max));
+      }
+    }
+    if (q.downloadedBucket != null) {
+      where.add('mi.created_at >= ?');
+      vars.add(Variable.withDateTime(q.downloadedBucket!.since(now)));
+    }
+    if (q.uploadedBucket != null) {
+      where.add('$_uploadDateSubqueryMi >= ?');
+      vars.add(Variable.withDateTime(q.uploadedBucket!.since(now)));
     }
     final order = switch (q.sort) {
       LibrarySort.relevance => 'bm25(media_fts)',

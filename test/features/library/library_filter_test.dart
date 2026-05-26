@@ -19,6 +19,59 @@ void main() {
       const LibraryQuery(site: 'youtube', hasTranscript: true).activeFacetCount,
       2,
     );
+    // P10i-d range/quality buckets each count as an active facet.
+    expect(
+      const LibraryQuery(
+        durationBucket: DurationBucket.overHour,
+        resolutionBucket: ResolutionBucket.uhd,
+        downloadedBucket: DateBucket.last7,
+        uploadedBucket: DateBucket.thisYear,
+      ).activeFacetCount,
+      4,
+    );
+  });
+
+  test('bucket setters update and clearFacets resets them (P10i-d)', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final c = container.read(libraryFilterProvider.notifier);
+
+    c.setDurationBucket(DurationBucket.oneToFive);
+    c.setResolutionBucket(ResolutionBucket.fullHd);
+    c.setDownloadedBucket(DateBucket.last7);
+    c.setUploadedBucket(DateBucket.thisYear);
+    var q = container.read(libraryFilterProvider);
+    expect(q.durationBucket, DurationBucket.oneToFive);
+    expect(q.resolutionBucket, ResolutionBucket.fullHd);
+    expect(q.activeFacetCount, 4);
+
+    c.clearFacets();
+    q = container.read(libraryFilterProvider);
+    expect(q.durationBucket, isNull);
+    expect(q.resolutionBucket, isNull);
+    expect(q.downloadedBucket, isNull);
+    expect(q.uploadedBucket, isNull);
+  });
+
+  test('narrowing type clears inapplicable range buckets (P10i-d)', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final c = container.read(libraryFilterProvider.notifier);
+
+    // Duration applies to timed media → cleared when narrowing to images-only.
+    c.setDurationBucket(DurationBucket.overHour);
+    c.setDownloadedBucket(DateBucket.last30);
+    c.toggleType('image');
+    var q = container.read(libraryFilterProvider);
+    expect(q.durationBucket, isNull);
+    expect(q.downloadedBucket, DateBucket.last30); // dates always apply
+
+    // Resolution applies to sized media → cleared when narrowing to audio-only.
+    c.setTypes(const {});
+    c.setResolutionBucket(ResolutionBucket.uhd);
+    c.toggleType('audio');
+    q = container.read(libraryFilterProvider);
+    expect(q.resolutionBucket, isNull);
   });
 
   test('facet setters update and clearFacets resets them', () {
