@@ -46,6 +46,19 @@ _(nothing active — pick the next batch from below)_
       "Unsupported URL"). Tracked at yt-dlp #10870/#9990. Not fixable in-app; GrabBit now shows a
       clear "not supported yet" notice for it (and any unsupported link) instead of a misleading
       "update" prompt. Revisit if/when yt-dlp adds photo-post support.
+- [ ] **Enumerate a video's available caption languages** in the P10f-2 "Get transcript" picker
+      (instead of the curated list). **Deferred indefinitely:** YouTube's `automatic_captions` lists
+      ~100 machine-translated languages, so a useful "available" list needs fragile filtering (real
+      `subtitles` + the *original* auto-caption language); it also needs native probe/JSON-parsing
+      changes + a `MediaInfo`/Pigeon DTO field and a pre-picker network round-trip (latency + a failure
+      surface). The curated picker is robust (yt-dlp simply no-ops on an unavailable language), so this
+      isn't worth the complexity now. *(From P10f-2.)*
+- [ ] **(testing debt) Widget test for the P10f-2 "Get transcript" UI flow** — the menu →
+      language-picker → fetch → store path isn't widget-tested: it does real `dart:io` caption-file
+      reads (don't complete in `flutter_test`'s fake-async zone) and the screen has a perpetual
+      related-items shimmer (so `pumpAndSettle` hangs). The request-building (`buildCaptionFetchRequest`)
+      + `skipDownload` serialization/mapping are unit-tested; the end-to-end flow is APK-verified.
+      Revisit with `tester.runAsync` + faked transcript/engine providers. *(From P10f-2.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
@@ -57,6 +70,9 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [x] Queue **drag-to-reorder** + aggregate **dashboard** (live speed / ETA / total size) →
   shipped in **P9d** (`docs/design/P9-PLAN.md`). Speed/size are recovered by parsing the
   yt-dlp progress line in Dart (`core/engine/progress_line.dart`).
+- [ ] **FTS5 full-text search** → scheduled as **P10h** (`docs/ROADMAP.md`): SQLite FTS5 over
+  transcript + description + title, so the library is searchable by **spoken content** (P10f
+  transcripts), not just title/description `LIKE`. *(Promoted now that transcripts exist.)*
 
 ## Cut from P8 / P9 (deliberate — kept here with rationale)
 - [ ] **aria2c external downloader** — youtubedl-android ships no aria2c binary; bundling an
@@ -72,7 +88,6 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
       coordinate with the download service; revisit in v2.
 - [ ] **Download scheduling** (run at a time / wifi window) — needs WorkManager + alarm logic.
 - [ ] **Per-folder lock** — adds lock-state to the virtual-folder model + many UI gates.
-- [ ] **FTS5 full-text search** — start with indexed `LIKE` (P9b); adopt FTS5 only if perf demands.
 - [ ] **Configurable storage location** (internal vs SD / external app-specific dir) — deferred
       from P9f: scoped-storage complexity (volume enumeration, migrating an existing library,
       removable-media eject). The P9f low-storage guard mitigates the immediate pain.

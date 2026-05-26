@@ -57,6 +57,7 @@ extension DownloadRequestMapper on DownloadRequest {
     sponsorBlockCategories: sponsorBlockCategories,
     embedChapters: embedChapters,
     splitChapters: splitChapters,
+    skipDownload: skipDownload,
   );
 }
 

@@ -59,6 +59,22 @@ class YtDlpHost(
                     // names the file. Empty template falls back to the title.
                     val template = request.filenameTemplate.ifEmpty { "%(title)s.%(ext)s" }
                     addOption("-o", "${request.outputDir}/${request.taskId}/$template")
+                    // P10f-2: subtitles-only fetch (on-demand "Get transcript").
+                    // Write just the caption file — no media, thumbnail, info-json,
+                    // or embedding, since there's no media to attach to.
+                    if (request.skipDownload) {
+                        addOption("--skip-download")
+                        request.subtitleLangs?.filterNotNull()
+                            ?.takeIf { it.isNotEmpty() }?.let { langs ->
+                                addOption("--write-subs")
+                                if (request.autoSubs) addOption("--write-auto-subs")
+                                addOption("--sub-langs", langs.joinToString(","))
+                                request.subtitleFormat?.takeIf { it != "best" }?.let {
+                                    addOption("--convert-subs", it)
+                                }
+                            }
+                        return@apply
+                    }
                     if (request.audioOnly) {
                         addOption("-x")
                         addOption("--audio-format", request.container ?: "m4a")

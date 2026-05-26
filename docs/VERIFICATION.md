@@ -616,11 +616,9 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Runs on a **low-end device** without jank or crash (pure Dart, synchronous, tiny input).
 
 ### P10f-1 — Transcript-text capture (pure-Dart)
-- [ ] Download an item **with subtitles enabled** (so `.vtt/.srt` sidecars land), then **More → Build
-      transcript** → a **Transcript** section appears with the spoken text, and the **Summary** now
-      derives from the transcript (not the description). No model/network.
-- [ ] For an item with **no caption files**, **Build transcript** shows *"No caption files found for
-      this item"* — no crash; the description-based summary is unaffected.
+- [ ] Download an item **with subtitles enabled** (so `.vtt/.srt` sidecars land), then **More → Get
+      transcript** → a **Transcript** section appears with the spoken text (built offline from the local
+      captions), and the **Summary** now derives from the transcript (not the description).
 - [ ] **Settings → Auto-build transcripts** ON → a fresh download that has captions gets a transcript
       with no manual step.
 - [ ] **Settings → Backfill transcripts on open** ON → opening an older item that has sidecars builds
@@ -628,8 +626,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Auto-caption "rollover" repetition is **de-duplicated** — the transcript reads as continuous
       text, not repeated phrases.
 - [ ] Both Settings toggles show an **(i)** info affordance explaining what they do.
-- [ ] *(On-demand fetch of captions for items that have none — with a language selector — is P10f-2,
-      native.)*
+
+### P10f-2 — On-demand caption fetch (native — needs an APK build)
+- [ ] On an item with **no local captions**, **More → Get transcript** opens a **language picker**
+      (default = app language); pick one → captions fetch over the network → a **Transcript** section +
+      transcript-derived **Summary** appear, and the fetched subtitle is also selectable in the player.
+- [ ] **Other…** in the picker accepts a typed language code (e.g. `nl`).
+- [ ] Picking a language the video lacks → *"No captions available in <Language>"* (no crash);
+      offline / bad URL → *"Couldn't fetch captions…"*.
+- [ ] The fetch creates **no entry in the download Queue** and **no new library item**.
+- [ ] An item that already has local captions still builds **offline** (no network) via the same action.
 
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*

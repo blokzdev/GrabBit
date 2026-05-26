@@ -102,7 +102,9 @@ abstract interface class InferenceEngine {
 
 ### P10 — baseline (device-universal; no LLM)
 - **Embeddings** (Gecko 64, 768-d) → indexed in Cozo HNSW, **cached + incremental** via
-  `GraphSyncService.backfillEmbeddings()` (P10b-2b done; see `GRAPH-SPEC.md` §5–§6).
+  `GraphSyncService.backfillEmbeddings()` (P10b-2b done; see `GRAPH-SPEC.md` §5–§6). The embedding doc
+  uses title/uploader/playlist/tags/description today; **P10g** adds the **transcript** (chunked/sliced,
+  since it exceeds the embedder's input window) so semantic search/related/GraphRAG run on spoken content.
 - **Semantic search** (vector) complementing the existing `LIKE` search *(P10c-a, shipped)*.
 - **Related / "More like this"** *(P10c-b, shipped)*; **entity hubs** *(P10c-c — navigable hubs in
   c-1, the tag co-occurrence "Related tags" strip in c-2; cross-type creator/playlist ranking
@@ -113,7 +115,8 @@ abstract interface class InferenceEngine {
 - **Extractive summaries (TextRank)** — zero-dependency, pure-Dart floor; the always-available TL;DR.
   *(P10e shipped)* v1 input was the item **description**; *(P10f-1 shipped)* a de-duplicated
   **transcript** parsed from caption sidecars (`MediaMetadata.transcript`) is now the preferred source
-  (`transcript ?? description`) and also feeds future FTS/GraphRAG retrieval.
+  (`transcript ?? description`) and also feeds the semantic index (**P10g**), full-text search
+  (**P10h**, FTS5), and future GraphRAG retrieval.
 
 ### P12 — tiered edge-LLM engine (minimal feature surface)
 - `DeviceCapabilityService` + tiers + `ModelCapabilityMatrix`; model catalog + download + integrity +

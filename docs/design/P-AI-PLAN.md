@@ -107,13 +107,31 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   `MediaMetadata.transcript` (schema v5). Shown as an auto-hiding "Transcript" section and used as the
   preferred TextRank source (`transcript ?? description`). Built via a manual "Build transcript" action,
   with opt-in Settings toggles for automatic transcription (at download) and lazy backfill (on open).
-- **P10f-2 — On-demand caption fetch (native)** *(next)*: a subtitle-only `--skip-download` fetch via
-  Pigeon/Kotlin with a language selector (defaults to the in-app language), plus a "fetch auto-captions
-  on download" setting, for items that have no captions yet. Reuses P10f-1's extractor/store. Needs a
-  debug-APK build to verify.
-- **P10g — Settings IA & consistency pass** *(later)*: regroup/nest the settings screen, roll the
-  `(i)`-info-tooltip pattern (seeded in P10f-1) across non-obvious settings, and reconcile gaps
-  introduced during P8–P10. Pure-Dart/UI.
+- **P10f-2 — On-demand caption fetch (native)** *(done)*: a unified **"Get transcript"** action that
+  uses local captions first, else fetches them (`skipDownload` → `--skip-download` via Pigeon/Kotlin)
+  in a chosen language (curated picker, default = in-app language) into the item's media folder, then
+  reuses P10f-1's `extractTranscript`/`updateTranscript`. The fetch runs the engine directly (no queue
+  entry). Verified with a debug-APK build. Available-language enumeration deferred (see `BACKLOG.md`).
+- **P10f-3 — Auto-download captions setting (native)** *(next)*: opt-in setting that grabs captions in
+  the in-app language on every download (when no explicit subtitle langs set), feeding auto-transcribe;
+  groups the transcript toggles into a "Transcripts" settings section beside "Subtitles".
+- **P10f-4 — Timestamped, tap-to-seek transcript** *(later)*: retain caption-cue timings (today
+  `captionsToTranscript` keeps only `.text`) in a timed representation stored beside the flat transcript;
+  item-detail renders a scrollable transcript whose lines **seek the player**; groundwork for timestamped
+  GraphRAG citations. Pure-Dart/UI + a schema addition.
+- **P10g — Transcript-powered semantic index** *(later)*: include transcript text in the embedding doc
+  (`lib/core/graph/embedding_doc.dart` today uses title/uploader/playlist/tags/description only) so
+  semantic search · "related" · GraphRAG run on spoken content. Needs **chunking / a representative
+  slice** (transcripts exceed the embedder's input window) + an `_edgeBuilderVersion` bump in
+  `graph_sync_service.dart` (one-time re-embed). Existing embedder, no LLM. See `AI-SPEC.md` §5.
+- **P10h — Full-text search over transcripts & metadata** *(later)*: SQLite **FTS5** over
+  transcript + description + title (today `metadata_repository` searches `LIKE` on title/description),
+  making the library searchable by spoken content. Promotes the FTS backlog item.
+- **P10i — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: information
+  architecture (regroup/nest into clear sections) **+ UI/UX refinement** (visual polish, control-type
+  consistency, discoverability/settings-search), roll the `(i)`-info-tooltip pattern across non-obvious
+  settings with plain-language copy, and reconcile gaps from P8–P10 — including clarifying the
+  subtitles-vs-transcripts model. Kept last so it tidies up after the feature subphases. Pure-Dart/UI.
 
 **Exit:** on any device, the Cozo index builds & rebuilds; semantic search + "related" return
 sensible results offline; entity hubs and the graph view render; near-dup clusters and tag
