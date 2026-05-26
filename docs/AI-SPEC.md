@@ -48,6 +48,9 @@ abstract interface class InferenceEngine {
   broadly — gate accordingly.)
 - **Separation from `GraphStore`:** `embed()` *produces* vectors; `GraphStore` *stores/searches*
   them (see `GRAPH-SPEC.md`). Only `GraphSyncService` calls both.
+- **Engine selection (P10g-2):** `inferenceEngineFor(EmbedderModel)` maps a model to its runtime engine
+  (routing on `EmbedderModel.runtime`); `activeEmbedderModelProvider` is the single seam choosing *which*
+  model — it returns `defaultEmbedder` today and is the override point for `ModelCapabilityMatrix` (P12).
 
 ---
 
@@ -65,9 +68,11 @@ abstract interface class InferenceEngine {
   HuggingFace token). P10g-1 moved up from the seq64 export so the embed doc can carry a real
   **transcript** slice; the seq512/1024 variants share the tokenizer + dimension. The pinned id + dim
   live in `lib/core/ai/model_catalog.dart`; P10b-2b keys the Cozo HNSW schema + graph fingerprint off
-  them so a model change → re-embed. A **pluggable multi-engine registry** (P10g-2, pure architecture)
-  and a **multilingual** second engine (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, onnxruntime —
-  P10g-3) are layered on next, with Gecko as the universal fallback. **Capability-driven behaviour — window
+  them so a model change → re-embed. **P10g-2** made selection pluggable: an `EmbedderRuntime` discriminator
+  + an `inferenceEngineFor(model)` factory (routes a model to its runtime engine; unsupported →
+  `UnavailableInferenceEngine`) + an `activeEmbedderModelProvider` seam (returns `defaultEmbedder`; the P12
+  override point). A **multilingual** second engine (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0,
+  onnxruntime — P10g-3) plugs into that factory, with Gecko as the universal fallback. **Capability-driven behaviour — window
   selection (256 vs 512), model upgrade/downgrade, automated graceful degradation/disable — is owned by the
   P12 device-capability/tier system** (`DeviceCapabilityService`/`ModelCapabilityMatrix`, §2), which the
   probe it builds makes possible. *(EmbeddingGemma-300M was evaluated and **dropped**: HF-license-gated —

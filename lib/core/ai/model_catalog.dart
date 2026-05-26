@@ -1,3 +1,8 @@
+/// The on-device runtime that backs an [EmbedderModel]. `inferenceEngineFor`
+/// (see `inference_engine_factory.dart`) maps each value to a concrete
+/// [InferenceEngine]. P10g-3 adds `onnx` for the multilingual MiniLM engine.
+enum EmbedderRuntime { flutterGemma }
+
 /// The pinned on-device embedder model. A minimal precursor to P12's full model
 /// catalog — for P10 we ship exactly one embedder, chosen for an Apache-2.0,
 /// ungated download (no HuggingFace token).
@@ -19,6 +24,7 @@ class EmbedderModel {
     required this.tokenizerUrl,
     required this.dimension,
     required this.approxDownloadMb,
+    this.runtime = EmbedderRuntime.flutterGemma,
   });
 
   /// Stable identifier (the model filename without extension). Persisted so a
@@ -36,6 +42,9 @@ class EmbedderModel {
 
   /// Approximate total download size in MB, surfaced in the opt-in copy.
   final int approxDownloadMb;
+
+  /// Which on-device runtime serves this model — the factory routes on it.
+  final EmbedderRuntime runtime;
 }
 
 /// The single embedder GrabBit ships in v1.
@@ -48,3 +57,7 @@ const EmbedderModel geckoEmbedder = EmbedderModel(
   dimension: 768,
   approxDownloadMb: 114,
 );
+
+/// The embedder selected by default. `activeEmbedderModelProvider` returns this
+/// today; P12's device-capability/tier system is the override point.
+const EmbedderModel defaultEmbedder = geckoEmbedder;

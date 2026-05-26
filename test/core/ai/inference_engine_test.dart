@@ -13,6 +13,11 @@ void main() {
       expect(geckoEmbedder.tokenizerUrl, startsWith('https://'));
       expect(geckoEmbedder.approxDownloadMb, greaterThan(0));
     });
+
+    test('runs on the flutter_gemma runtime and is the default (P10g-2)', () {
+      expect(geckoEmbedder.runtime, EmbedderRuntime.flutterGemma);
+      expect(defaultEmbedder, geckoEmbedder);
+    });
   });
 
   group('UnavailableInferenceEngine', () {
@@ -22,6 +27,19 @@ void main() {
       expect(engine.isAvailable, isFalse);
       expect(engine.dimension, geckoEmbedder.dimension);
       expect(engine.model, geckoEmbedder);
+    });
+
+    test('reflects the model it is given (P10g-2)', () {
+      const other = EmbedderModel(
+        id: 'other',
+        modelUrl: 'https://example.com/m.tflite',
+        tokenizerUrl: 'https://example.com/t.model',
+        dimension: 384,
+        approxDownloadMb: 50,
+      );
+      const e = UnavailableInferenceEngine(other);
+      expect(e.model, other);
+      expect(e.dimension, 384);
     });
 
     test('ensureReady stays false without throwing', () async {

@@ -7,7 +7,9 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 /// callers disable semantic features cleanly; [embed]/[downloadModel] throw
 /// [InferenceErrorCode.unavailable] rather than crash.
 class UnavailableInferenceEngine implements InferenceEngine {
-  const UnavailableInferenceEngine();
+  const UnavailableInferenceEngine([this._model = geckoEmbedder]);
+
+  final EmbedderModel _model;
 
   static const _ex = InferenceException(
     InferenceErrorCode.unavailable,
@@ -15,13 +17,13 @@ class UnavailableInferenceEngine implements InferenceEngine {
   );
 
   @override
-  EmbedderModel get model => geckoEmbedder;
+  EmbedderModel get model => _model;
 
   @override
   bool get isAvailable => false;
 
   @override
-  int get dimension => geckoEmbedder.dimension;
+  int get dimension => _model.dimension;
 
   @override
   Future<void> downloadModel({

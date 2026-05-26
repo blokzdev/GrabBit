@@ -283,9 +283,10 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   layer. Delivered in sub-PRs:
   - **P10g-1** *(done)*: re-pin the Gecko export `seq64 → seq256` (Apache-2.0, ungated, 768-d, ~114 MB —
     4× the window) + add a window-capped transcript slice to the embed doc + one-time re-embed. No LLM.
-  - **P10g-2**: a runtime-agnostic engine **registry + model-selection seam** so multiple embedders can
-    coexist, with a basic load-failure fallback. Gecko-only, default model unchanged — **pure
-    architecture/refactor**, no user-facing model selection.
+  - **P10g-2** *(done)*: a runtime-agnostic seam — an `EmbedderRuntime` discriminator, an
+    `inferenceEngineFor(model)` factory (unsupported runtime/platform → graceful fallback), and an
+    `activeEmbedderModel` **selection provider** (returns the default; the override point for P12).
+    Gecko-only, default unchanged, no consumer changes — **pure architecture/refactor**.
   - **P10g-3**: a second runtime (**onnxruntime**) + **multilingual** embedder
     (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, ungated, 50-lang) + on-device tokenizer, plugged
     into the registry with Gecko as the universal fallback.
