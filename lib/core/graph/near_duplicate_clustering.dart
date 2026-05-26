@@ -6,7 +6,7 @@ library;
 import 'dart:math' as math;
 
 /// Default cosine-distance ceiling for two items to count as "similar". Tight by
-/// design (high precision) — looser thematic grouping is P12's community
+/// design (high precision) — looser thematic grouping is P13's community
 /// detection. Tunable; the vector values themselves are only exercised on the
 /// arm64 native engine, so this is validated on-device.
 const double kSimilarityMaxDistance = 0.2;
@@ -36,7 +36,7 @@ String pairKey(String a, String b) => a.compareTo(b) <= 0 ? '$a|$b' : '$b|$a';
 /// of each other are edges, and connected components become clusters. Pairs in
 /// [excludePairs] (e.g. exact duplicates) are not edges. Only components with
 /// `minSize ≤ size ≤ maxSize` are returned — singletons/pairs are dropped and
-/// over-large "blob" components are discarded (that's P12's job). Clusters are
+/// over-large "blob" components are discarded (that's P13's job). Clusters are
 /// ordered largest-first; ids within a cluster keep their input order.
 List<List<String>> clusterBySimilarity(
   List<({String id, List<double> v})> items, {

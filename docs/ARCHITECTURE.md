@@ -17,7 +17,7 @@ structured so any agent can implement a feature without re-deriving the design.
 ├──────────────────────────────────────────────────────────────┤
 │ Domain (pure Dart)                                             │
 │  entities · repository interfaces · use cases                  │
-│  DownloadEngine · GraphStore (P10) · InferenceEngine (P11)     │
+│  DownloadEngine · GraphStore (P10) · InferenceEngine (P12)     │
 ├──────────────────────────────────────────────────────────────┤
 │ Data                                                           │
 │  Drift (SQLite) repos [canonical] · file storage · settings    │
@@ -26,8 +26,8 @@ structured so any agent can implement a feature without re-deriving the design.
 │ Platform / Native                                              │
 │  Android: Kotlin host → Pigeon → youtubedl-android (Py+yt-dlp+ffmpeg)
 │           + CozoDB (cozo_android AAR) · foreground svc · MediaStore
-│           flutter_gemma (MediaPipe/LiteRT-LM) · whisper.cpp · ML Kit (P11)
-│  Windows: Dart Process → yt-dlp.exe/ffmpeg.exe · Cozo via dart:ffi (P14)
+│           flutter_gemma (MediaPipe/LiteRT-LM) · whisper.cpp · ML Kit (P12)
+│  Windows: Dart Process → yt-dlp.exe/ffmpeg.exe · Cozo via dart:ffi (P15)
 └──────────────────────────────────────────────────────────────┘
 (Former "Cloud (v3)" layer — Supabase/Gemini/Stripe — is DROPPED; see §9.)
 ```
@@ -94,6 +94,10 @@ Tables (full schema in `docs/SPEC.md`):
   done|error|canceled), progress, error_code, retries, created_at.
 - **settings** — single-row or key/value (mode, quality defaults, storage policy,
   destination folder, naming template, theme, locale, lock config).
+- **notifications** (P11) — id, created_at, category (download|transcript|ai|graph|
+  system|reminder), severity (info|success|warning|error), title, body, optional
+  deep-link (target_route/item_id/task_id), read_at, dedupe_key, expires_at. Backs the
+  Activity Inbox.
 
 Migrations: Drift schema versioning; never destructive without migration.
 
@@ -102,6 +106,13 @@ holds a **derived, rebuildable** graph (nodes/edges) + HNSW embedding index keye
 `media_items.id`. No user-visible mutation lands in Cozo only — repositories write Drift first, then
 `GraphSyncService` projects into Cozo (incrementally + on-demand rebuild). A corrupt/stale index is
 never data loss — delete and rebuild. Full design: `docs/GRAPH-SPEC.md`.
+
+**Activity Inbox (P11).** A single, on-device notification store: features post through one
+`NotificationCenter.post(...)` write seam into the **canonical** `notifications` Drift table; the
+`/inbox` UI + app-bar unread badge watch it via Riverpod. The existing **OS/foreground notifications**
+are a complementary *presentation* channel (while backgrounded), not a second source of truth. Old
+entries are swept **lazily** on app/inbox open per a configurable retention setting (no background
+scheduler). Entirely on-device; no telemetry/push/cloud.
 
 ---
 
@@ -137,19 +148,19 @@ never data loss — delete and rebuild. Full design: `docs/GRAPH-SPEC.md`.
 - **Permissions:** least-privilege; request notification + foreground-service;
   storage access only when exporting (scoped storage, no broad MANAGE_EXTERNAL).
 - **No telemetry, ever.** No secrets in client — there is **no backend/cloud** (v3 dropped); the
-  only network calls are downloads and a one-time, integrity-checked model download (P11).
+  only network calls are downloads and a one-time, integrity-checked model download (P12).
 
 ---
 
-## 8. On-Device AI + Graph Architecture (v1, P10–P12)
+## 8. On-Device AI + Graph Architecture (v1, P10, P12–P13)
 
 Two pure-Dart seams mirror the `DownloadEngine` pattern; deep design in `docs/AI-SPEC.md` and
 `docs/GRAPH-SPEC.md`.
 
 - **`GraphStore`** (`core/graph/`, P10) — the on-device relationship graph + vector index, backed by
   **CozoDB** (Android `cozo_android` AAR via a `CozoHostApi` Pigeon bridge; Windows via `dart:ffi` in
-  P14). Platform-branched provider, like `downloadEngineProvider`.
-- **`InferenceEngine`** (`core/ai/`, P11) — local AI runtime via **`flutter_gemma`** (embeddings +
+  P15). Platform-branched provider, like `downloadEngineProvider`.
+- **`InferenceEngine`** (`core/ai/`, P12) — local AI runtime via **`flutter_gemma`** (embeddings +
   generation + RAG; MediaPipe/LiteRT-LM), **whisper.cpp**, **ML Kit**.
 - **`GraphQueryService`** (`core/graph/`, P10c) — read-side orchestration over `GraphStore.runScript`
   (vector nearest-neighbour, deterministic neighbour traversals, tag co-occurrence), mirroring how
@@ -157,7 +168,7 @@ Two pure-Dart seams mirror the `DownloadEngine` pattern; deep design in `docs/AI
   builders live in `cozo_query.dart`; ranking in `related_ranking.dart` / `cooccurrence_ranking.dart`.
   UI reads it via providers, never CozoScript.
 - `embed()` *produces* vectors; `GraphStore` *stores/searches* them; only `GraphSyncService` bridges
-  both. This lets the deterministic + similarity graph (P10) ship independent of the LLM stack (P11).
+  both. This lets the deterministic + similarity graph (P10) ship independent of the LLM stack (P12).
 
 The `InferenceEngine` contract:
 
@@ -195,7 +206,7 @@ fall back), but it is **not a planned phase** and nothing in the app depends on 
 - Shared: all Dart (domain, data, presentation, Drift, Riverpod).
 - Divergent: only the engine impl (Pigeon/native vs Process) and storage adapter
   (MediaStore vs filesystem) and packaging.
-- Windows arrives in Roadmap **P14** by adding `WindowsProcessEngine` + a desktop storage adapter +
+- Windows arrives in Roadmap **P15** by adding `WindowsProcessEngine` + a desktop storage adapter +
   the Cozo `dart:ffi` `GraphStore` impl + MSIX packaging — no domain/UI rewrite.
 
 ---

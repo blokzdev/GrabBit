@@ -1,7 +1,7 @@
 # GrabBit — Backlog
 
 > Living list of device-test findings and UX/feature refinements that don't map to a
-> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P15);
+> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P16);
 > `docs/VERIFICATION.md` holds the on-device checklist.
 
 ## In progress
@@ -24,7 +24,7 @@ _(nothing active — pick the next batch from below)_
 - [ ] **16 KB page-size** validation on Pixel 9 / Android 15+ (ffmpeg/python native
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 - [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
-      v2/P15: it's native, on-device-only verification, and pure polish.)*
+      v2/P16: it's native, on-device-only verification, and pure polish.)*
 - [ ] **Duplicate bulk-cleanup keep-policy** — P10c-d-1's **Clean up** keeps the *oldest* copy in each
       group. Offer alternatives (keep *largest* / *newest* / let the user pick which to keep) if the
       fixed policy proves too blunt on-device. *(From P10c-d-1.)*
@@ -77,8 +77,8 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
       from P9f: scoped-storage complexity (volume enumeration, migrating an existing library,
       removable-media eject). The P9f low-storage guard mitigates the immediate pain.
 - [ ] **Extractive TextRank summarization** (pure-Dart, zero-dependency) — considered for P9 and
-      deferred to **P12** as the always-available baseline tier beneath the local LLM summary
-      (see `docs/ROADMAP.md` P12). Acts on captured descriptions/subtitles/transcripts.
+      deferred to **P13** as the always-available baseline tier beneath the local LLM summary
+      (see `docs/ROADMAP.md` P13). Acts on captured descriptions/subtitles/transcripts.
 
 ## Done
 - [x] **Engine auto-update on launch** + Settings toggle (fresh installs were failing

@@ -50,7 +50,7 @@ dependencies:
   flutter_svg: ^2.3.0        # render the brand SVG mark in-app (resolution-independent)
 
   # On-device AI (P10b-2): MediaPipe/LiteRT runtime, loaded embedder-only for the
-  # opt-in semantic-search embedder (Gecko); also the planned P11 LLM runtime.
+  # opt-in semantic-search embedder (Gecko); also the planned P12 LLM runtime.
   flutter_gemma: ^0.16.1
 
   # Graph visualization (P10c-e): force-directed explorer for a media item's

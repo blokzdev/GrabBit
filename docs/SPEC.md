@@ -27,12 +27,12 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | `flutter_native_splash` (dev) | Generate the branded (Android-12+) splash, light/dark (P7) |
 | **Bundled fonts** `Outfit` (display) + `Inter` (body) in `assets/fonts/` | Brand type, **bundled not fetched** — offline + privacy-first (no `google_fonts` runtime call) (P7) |
 | Export to device: **hand-rolled Pigeon channel** (SAF + MediaStore) — no `media_store_plus`/`shared_storage` dep (see §5) | Export to gallery / user-picked folder |
-| `dio` | HTTP (P11 on-device model downloads) |
+| `dio` | HTTP (P12 on-device model downloads) |
 | `freezed`, `json_serializable` | Immutable models / JSON |
 | `intl` + `flutter_localizations` | i18n (ARB) |
 | `logger` | Structured logging |
 | **Android native:** `io.github.junkfood02.youtubedl-android:{library,ffmpeg}:0.17.3` (Maven Central; yt-dlp + ffmpeg + Python; Kotlin pkg `com.yausername.youtubedl_android`) | Download engine |
-| **Graph+vector (P10):** `io.github.cozodb:cozo_android:0.7.2` (Maven Central AAR) via a `CozoHostApi` Pigeon bridge; `ffi`+`ffigen` (dev) for the Windows `dart:ffi` impl (P14). MPL-2.0. | On-device graph + HNSW vector DB. See `docs/GRAPH-SPEC.md`. |
+| **Graph+vector (P10):** `io.github.cozodb:cozo_android:0.7.2` (Maven Central AAR) via a `CozoHostApi` Pigeon bridge; `ffi`+`ffigen` (dev) for the Windows `dart:ffi` impl (P15). MPL-2.0. | On-device graph + HNSW vector DB. See `docs/GRAPH-SPEC.md`. |
 | **On-device AI (P10b-2+):** `flutter_gemma` (MediaPipe/LiteRT-LM — embeddings + LLM + RAG; added P10b-2 embedder-only), a whisper.cpp pkg (`whisper_ggml_plus`/`whisper_kit`), ML Kit (OCR/translate) | On-device/edge AI. See `docs/AI-SPEC.md`. |
 | **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
 | **Charts (P10d-2):** `fl_chart` | On-device Dashboard storage donuts + library-activity bars. Pure-Dart (CustomPainter), no native deps, no telemetry. |
@@ -102,6 +102,7 @@ BoolColumn isFavorite; TextColumn? contentHash; DateTimeColumn? lastAccessedAt; 
 // metadata (v2 adds uploaderId, channelId, sourceId, playlistId, playlistTitle, tags)
 TextColumn itemId; TextColumn? uploader; DateTimeColumn? uploadDate;
 TextColumn? description; TextColumn? originalUrl;
+TextColumn? transcript;                                  // v5 (P10f-1): caption-derived text
 // tags(id,name) + media_tags(itemId,tagId)
 // collections(id,name,createdAt) + media_collections(itemId,collectionId)
 // download_tasks
@@ -109,16 +110,20 @@ TextColumn id; TextColumn url; TextColumn requestJson; TextColumn status;
 RealColumn progress; TextColumn? errorCode; IntColumn retries; DateTimeColumn createdAt;
 IntColumn orderIndex;                                    // v3 (P9d): queue reorder
 // settings (key/value JSON, single row)
+// notifications (v6, P11): id, createdAt, category, severity, title, body,
+//   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
 ```
 
-Migration strategy: Drift `schemaVersion` (currently **4**); write `MigrationStrategy`
+Migration strategy: Drift `schemaVersion` (currently **5**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
 indices on `is_favorite`/`content_hash`/`created_at`. **v4 (P9b-4)** adds a
-`media_metadata.source_id` index for preventive (pre-download) source-id dedupe. `contentHash`
+`media_metadata.source_id` index for preventive (pre-download) source-id dedupe. **v5 (P10f-1)**
+adds `media_metadata.transcript` (caption-sidecar text feeding the summary). `contentHash`
 is populated lazily by the P9b-3 duplicate scan (`DedupeService`, off-isolate); `lastAccessedAt`
 is set on playback (P9c). The probe (`MediaInfo`/`MediaInfoDto`) now carries the source `id`.
+**Planned: v6 (P11)** adds the `notifications` table backing the Activity Inbox.
 
 ---
 
@@ -142,11 +147,14 @@ is set on playback (P9c). The probe (`MediaInfo`/`MediaInfoDto`) now carries the
   "subtitleLangs": "",              // P8c; CSV langs (e.g. en,es); "" = off
   "subtitleAuto": false,            // P8c; --write-auto-subs
   "subtitleFormat": "srt",          // P8c; --convert-subs (srt|vtt|ass|best)
+  "autoTranscribe": false,          // P10f-1; build transcript from captions after download
+  "transcriptBackfill": false,      // P10f-1; build transcript on first open of older items
   "sponsorBlockMode": "off",        // P8c; off|mark|remove
   "sponsorBlockCategories": "sponsor", // P8c; CSV SponsorBlock categories
   "embedChapters": false,           // P8c; --embed-chapters
   "splitChapters": false,           // P8c; --split-chapters (N library items)
   "wifiOnly": false,
+  "notificationRetentionDays": 30,  // P11; Activity Inbox auto-clear after N days (0 = keep forever)
   "theme": "system",                // system|light|dark
   "dynamicColor": true,
   "locale": null,                   // null = system
@@ -207,12 +215,13 @@ enum DownloadErrorCode {
 ```
 - Retry transient (`network`, some `extractorFailed`) up to N with exponential
   backoff; never retry `unsupportedSite`/`permissionDenied`.
-- Map each code to a user-friendly message + actionable hint; log technical detail.
+- Map each code to a user-friendly message + actionable hint; log technical detail. From P11,
+  user-relevant failures (and other notable background outcomes) also post to the **Activity Inbox**.
 - `storageFull` stays a terminal, reactive classification of a yt-dlp "no space" failure; P9f
   adds a **proactive** pre-flight low-storage guard that holds new downloads *before* they start
   (the scheduler's `minFreeSpaceMb` gate), so the reactive code is the fallback, not the front line.
 
-**AI/graph errors (P10–P12):** `modelDownloadFailed`, `modelIntegrityFailed`,
+**AI/graph errors (P10, P12–P13):** `modelDownloadFailed`, `modelIntegrityFailed`,
 `modelUnsupportedOnDevice` (a *gating* state — disable the feature with a friendly reason, not a
 user-facing error), `inferenceFailed`, `transcriptionFailed`, `indexUnavailable`. Never crash; gate
 rather than fail where the device can't run a model. See `docs/AI-SPEC.md` §8 / `docs/GRAPH-SPEC.md` §8.
@@ -226,7 +235,7 @@ rather than fail where the device can't run a model. See `docs/AI-SPEC.md` §8 /
   `minSdk` chosen to satisfy youtubedl-android (confirm at P0).
 - **Android (P10):** the Cozo engine is a Maven AAR (`cozo_android`) — **no NDK/Rust build in CI**;
   set `abiFilters` and measure APK-size impact in the first P10 APK build.
-- **Windows (P14):** bundle `yt-dlp.exe` + `ffmpeg.exe` + `cozo_c.dll` in install dir (the Cozo
+- **Windows (P15):** bundle `yt-dlp.exe` + `ffmpeg.exe` + `cozo_c.dll` in install dir (the Cozo
   `dart:ffi` impl, prefer the native-assets `hook/build.dart`); package as **MSIX**; verify binary
   update path.
 
@@ -252,9 +261,9 @@ Budget rules per CLAUDE.md §6: ubuntu only, cache, manual APKs, no push-builds.
 
 ---
 
-## 9. AI Contracts (on-device, P10–P12)
+## 9. AI Contracts (on-device, P10, P12–P13)
 
-> **Banding:** all AI is **on-device (v1, P10–P12)** and never requires an account, network
+> **Banding:** all AI is **on-device (v1, P10, P12–P13)** and never requires an account, network
 > (beyond a one-time model download), or credits. Deep design: `docs/AI-SPEC.md`
 > (runtime/models/GraphRAG) and `docs/GRAPH-SPEC.md` (graph + vector store).
 
@@ -263,7 +272,7 @@ The former v3 cloud contracts (Postgres credit ledger, Edge Functions → Genkit
 webhooks) are **removed** — no backend, no accounts, no credits. The `InferenceEngine` keeps a
 theoretical-only cloud seam (`docs/AI-SPEC.md` §1), but it is unplanned.
 
-### 9.3 On-device AI (v1, P10–P12)
+### 9.3 On-device AI (v1, P10, P12–P13)
 - `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion, freeStorageMB }`.
 - Device tiers (e.g. low / mid / high) → `ModelCapabilityMatrix`:
   `feature → eligibleLocalModels[byTier]`.

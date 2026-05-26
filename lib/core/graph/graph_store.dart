@@ -1,6 +1,6 @@
 /// Platform-agnostic on-device graph + vector store. Backed by CozoDB on Android
 /// (via a Pigeon→Kotlin bridge); a `dart:ffi` implementation follows on Windows
-/// in P14. The relationship graph and AI vector index live here as a **derived,
+/// in P15. The relationship graph and AI vector index live here as a **derived,
 /// rebuildable index** beside the canonical Drift database (see
 /// docs/GRAPH-SPEC.md). UI and feature code depend only on this interface, never
 /// a concrete engine.

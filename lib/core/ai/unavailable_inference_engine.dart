@@ -3,7 +3,7 @@ import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 
 /// Graceful no-op [InferenceEngine] for platforms without the native embedder
-/// (Windows until P14, CI, any other host). [isAvailable] is always false, so
+/// (Windows until P15, CI, any other host). [isAvailable] is always false, so
 /// callers disable semantic features cleanly; [embed]/[downloadModel] throw
 /// [InferenceErrorCode.unavailable] rather than crash.
 class UnavailableInferenceEngine implements InferenceEngine {

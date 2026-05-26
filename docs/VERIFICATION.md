@@ -631,7 +631,19 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] *(On-demand fetch of captions for items that have none — with a language selector — is P10f-2,
       native.)*
 
-## P11 — Device-tiered edge LLM engine  *(v1)*
+## P11 — Activity Inbox  *(v1)*
+*(Forward-looking — detailed checks added when the phase is built.)*
+- [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
+      **transcript/backfill**, a **graph** index rebuild — each shows up with the right category/severity.
+- [ ] The app-bar **bell** shows an **unread badge**; opening the **Inbox** marks items read and the
+      badge clears.
+- [ ] Tapping an entry **deep-links** to the relevant item/screen; **swipe-to-dismiss** and
+      **clear / mark-all-read** work; **category filters** narrow the list.
+- [ ] Items **auto-clear** per **Settings → notification retention** (and "keep forever" when set to 0);
+      the sweep happens on open, no background scheduler.
+- [ ] Everything stays **on-device** (no network/telemetry) and the Inbox is **behind the app lock**.
+
+## P12 — Device-tiered edge LLM engine  *(v1)*
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.
@@ -639,16 +651,16 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] On a **low-end** device: LLM features are **cleanly disabled with a friendly reason** (no
       crash, no silent no-op).
 
-## P12 — LLM features + local GraphRAG  *(v1)*
+## P13 — LLM features + local GraphRAG  *(v1)*
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.
 - [ ] **"Ask your library"**: a natural-language question returns a grounded answer citing real
       library items — **fully offline** (airplane mode).
 - [ ] **Graph-clustered auto-albums**, **"Rediscover"** (centrality), and **path/bridge** discovery
       produce sensible results.
-- [ ] All P12 features gate gracefully on incapable devices.
+- [ ] All P13 features gate gracefully on incapable devices.
 
-## P13 — v1 Beta, Production Readiness & Launch  *(v1)*
+## P14 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.
 - [ ] i18n scaffolding present.
@@ -672,8 +684,8 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 
 ## v1 release (full regression with the **release** APK)
 1. **Release signing** configured (keystore + CI secret) so the release APK installs
-   — done in **P13**.
+   — done in **P14**.
 2. Build with **Build APK → release = true**, install the signed release APK.
-3. Run **every** section above (P0 → P13) end-to-end on a real device.
+3. Run **every** section above (P0 → P14) end-to-end on a real device.
 4. Confirm: privacy (nothing in Gallery until exported), app lock, background downloads, playback,
    and the **on-device AI + graph** features (incl. Cozo loading on the AOT release build) all work.

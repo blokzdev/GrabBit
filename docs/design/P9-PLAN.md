@@ -66,7 +66,7 @@ three PRs:
   track change, reusing the video controller). **markPlayed** stamps `lastAccessedAt` on first play
   → fills P9b-2's Recently-played album. Shared `subtitle_files` util (reused by Media Studio).
   Also backfilled the P8/P9 VERIFICATION checklist. **Shipped.**
-- **`[→]` P9c-2 — Picture-in-Picture (native): deferred to `docs/BACKLOG.md`** (revisit v2/P13).
+- **`[→]` P9c-2 — Picture-in-Picture (native): deferred to `docs/BACKLOG.md`** (revisit v2/P16).
   It's native, on-device-only verification, and pure polish — not worth a native APK round now.
 - **Background audio is deferred** (`docs/BACKLOG.md`).
 - **Exit / review:** change speed/loop and pick a subtitle track in-player (P9c-1). *(PiP backlog.)*
