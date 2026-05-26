@@ -16,9 +16,12 @@ const Set<String> kTimedTypes = {'video', 'audio'};
 Set<String> activeTypeScope(Set<String> selected) =>
     selected.isEmpty ? kAllTypes : selected;
 
-/// Media types a sort is meaningful for. Universal today; the duration sorts
-/// (P10i-b) will narrow to [kTimedTypes].
-Set<String> sortAppliesTo(LibrarySort sort) => kAllTypes;
+/// Media types a sort is meaningful for. Duration sorts narrow to timed media;
+/// everything else (incl. upload-date — any media can carry one) is universal.
+Set<String> sortAppliesTo(LibrarySort sort) => switch (sort) {
+  LibrarySort.longest || LibrarySort.shortest => kTimedTypes,
+  _ => kAllTypes,
+};
 
 /// Whether a sort should be offered for the current type selection.
 bool sortVisible(LibrarySort sort, Set<String> selectedTypes) =>

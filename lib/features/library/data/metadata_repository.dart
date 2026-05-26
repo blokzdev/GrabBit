@@ -15,6 +15,13 @@ enum LibrarySort {
   // P10h: FTS relevance (bm25). Only meaningful with an active search query;
   // falls back to newest ordering when the query is empty.
   relevance,
+  // P10i-b: media duration. Timed-media only (see library_options.dart); null
+  // durations (split-chapter files, images) sort last in both directions.
+  longest,
+  shortest,
+  // P10i-b: source upload date (media_metadata.upload_date); null dates last.
+  uploadNewest,
+  uploadOldest,
 }
 
 /// Search / filter / sort parameters for the library grid.
@@ -81,6 +88,18 @@ class PlaylistFacet {
   final String id;
   final String title;
 }
+
+// P10i-b: a row's source upload date, fetched from media_metadata for ordering
+// the typed (non-search) library query, which selects only media_items.
+const _uploadDateSubquery =
+    '(SELECT upload_date FROM media_metadata WHERE item_id = media_items.id)';
+const _uploadDateExpr = CustomExpression<DateTime>(_uploadDateSubquery);
+const _uploadDateIsNull = CustomExpression<bool>(
+  '$_uploadDateSubquery IS NULL',
+);
+// Same subquery for the search path, where media_items is aliased `mi`.
+const _uploadDateSubqueryMi =
+    '(SELECT upload_date FROM media_metadata WHERE item_id = mi.id)';
 
 /// Tags, collections, notes/title edits, and parameterized library queries.
 class MetadataRepository {
@@ -154,22 +173,40 @@ class MetadataRepository {
         ),
       );
     }
-    query.orderBy([
-      switch (q.sort) {
-        // Relevance is meaningless without a query → fall back to newest.
-        LibrarySort.newest ||
-        LibrarySort.relevance => (t) => OrderingTerm.desc(t.createdAt),
-        LibrarySort.oldest => (t) => OrderingTerm.asc(t.createdAt),
-        LibrarySort.titleAsc => (t) => OrderingTerm.asc(t.title),
-        LibrarySort.titleDesc => (t) => OrderingTerm.desc(t.title),
-        LibrarySort.largest => (t) => OrderingTerm.desc(t.sizeBytes),
-        LibrarySort.smallest => (t) => OrderingTerm.asc(t.sizeBytes),
-        // NULLs (never played) sort last on DESC in SQLite.
-        LibrarySort.recentlyPlayed => (t) => OrderingTerm.desc(
-          t.lastAccessedAt,
-        ),
-      },
-    ]);
+    query.orderBy(switch (q.sort) {
+      // Relevance is meaningless without a query → fall back to newest.
+      LibrarySort.newest ||
+      LibrarySort.relevance => [(t) => OrderingTerm.desc(t.createdAt)],
+      LibrarySort.oldest => [(t) => OrderingTerm.asc(t.createdAt)],
+      LibrarySort.titleAsc => [(t) => OrderingTerm.asc(t.title)],
+      LibrarySort.titleDesc => [(t) => OrderingTerm.desc(t.title)],
+      LibrarySort.largest => [(t) => OrderingTerm.desc(t.sizeBytes)],
+      LibrarySort.smallest => [(t) => OrderingTerm.asc(t.sizeBytes)],
+      // NULLs (never played) sort last on DESC in SQLite.
+      LibrarySort.recentlyPlayed => [
+        (t) => OrderingTerm.desc(t.lastAccessedAt),
+      ],
+      // P10i-b: a leading `IS NULL` term sinks null durations last regardless
+      // of the value direction (avoids relying on `NULLS LAST` syntax).
+      LibrarySort.longest => [
+        (t) => OrderingTerm.asc(t.durationSec.isNull()),
+        (t) => OrderingTerm.desc(t.durationSec),
+      ],
+      LibrarySort.shortest => [
+        (t) => OrderingTerm.asc(t.durationSec.isNull()),
+        (t) => OrderingTerm.asc(t.durationSec),
+      ],
+      // P10i-b: upload_date lives on media_metadata, not on this row → order by
+      // a correlated subquery, with null dates last (same IS NULL lead term).
+      LibrarySort.uploadNewest => [
+        (_) => OrderingTerm.asc(_uploadDateIsNull),
+        (_) => OrderingTerm.desc(_uploadDateExpr),
+      ],
+      LibrarySort.uploadOldest => [
+        (_) => OrderingTerm.asc(_uploadDateIsNull),
+        (_) => OrderingTerm.asc(_uploadDateExpr),
+      ],
+    });
     return query.watch();
   }
 
@@ -233,6 +270,13 @@ class MetadataRepository {
       LibrarySort.largest => 'mi.size_bytes DESC',
       LibrarySort.smallest => 'mi.size_bytes ASC',
       LibrarySort.recentlyPlayed => 'mi.last_accessed_at DESC',
+      // P10i-b: leading IS NULL term keeps null durations/dates last either way.
+      LibrarySort.longest => 'mi.duration_sec IS NULL, mi.duration_sec DESC',
+      LibrarySort.shortest => 'mi.duration_sec IS NULL, mi.duration_sec ASC',
+      LibrarySort.uploadNewest =>
+        '$_uploadDateSubqueryMi IS NULL, $_uploadDateSubqueryMi DESC',
+      LibrarySort.uploadOldest =>
+        '$_uploadDateSubqueryMi IS NULL, $_uploadDateSubqueryMi ASC',
     };
     final sql =
         'SELECT mi.* FROM media_items mi '

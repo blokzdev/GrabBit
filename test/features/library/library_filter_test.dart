@@ -75,6 +75,43 @@ void main() {
   });
 
   test(
+    'narrowing to images-only resets an inapplicable duration sort (P10i-b)',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final c = container.read(libraryFilterProvider.notifier);
+
+      c.setSort(LibrarySort.longest);
+      c.toggleType('image');
+      final q = container.read(libraryFilterProvider);
+      expect(q.types, {'image'});
+      // Duration sorts don't apply to images → reconciled back to newest.
+      expect(q.sort, LibrarySort.newest);
+    },
+  );
+
+  test(
+    'clearing a search reconciles the restored sort against the type scope (P10i-b)',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final c = container.read(libraryFilterProvider.notifier);
+
+      c.setSort(LibrarySort.longest);
+      c.setSearch('cats'); // → relevance, remembers longest
+      expect(container.read(libraryFilterProvider).sort, LibrarySort.relevance);
+
+      // Narrow to images while searching, then clear the query.
+      c.toggleType('image');
+      c.setSearch('');
+      final q = container.read(libraryFilterProvider);
+      // The remembered duration sort no longer applies → reconciled to newest,
+      // not blindly restored.
+      expect(q.sort, LibrarySort.newest);
+    },
+  );
+
+  test(
     'entering a search auto-selects relevance, clearing restores it (P10h)',
     () {
       final container = ProviderContainer();

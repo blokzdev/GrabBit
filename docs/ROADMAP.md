@@ -303,15 +303,18 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   (bm25) that auto-selects while a query is active (overridable, reverts on clear) and a **Has-transcript**
   filter. Promotes the long-standing FTS backlog item.
 - **P10i — Dynamic, type-aware library sort & filter system**: a richer, contextual library discovery
-  surface, delivered in three PRs. **P10i-a** — **multi-select type filter** (video / audio / image,
+  surface, delivered in four PRs. **P10i-a** — **multi-select type filter** (video / audio / image,
   extensible to future formats) + the **type-aware option-narrowing** foundation (available sort/filter
   options adapt to the active type selection, e.g. duration/transcript hidden for an images-only scope,
   with a defined fallback that resets an inapplicable sort to Relevance/Newest and clears inapplicable
   filters). **P10i-b** — new **sorts**: duration (longest/shortest) and original upload-date (distinct from
-  download-date), with nulls sorted last. **P10i-c** — new **range filters** (preset buckets): duration,
-  downloaded-date, and uploaded-date, in a redesigned sectioned filter sheet. Pure-Dart/UI over the
-  existing `LibraryQuery`/`watchFiltered`. (A **quality/resolution** HD/4K filter is **deferred**: the
-  download pipeline doesn't capture `width`/`height` today, so it needs a capture + backfill step first.)
+  download-date), with nulls sorted last. **P10i-c** — **media-dimension capture**: a migration that
+  backfills the never-migrated `width`/`height` columns, plus capturing video dims from the `.info.json`
+  sidecar and image dims by decoding the file (pure-Dart, no native), a best-effort on-disk backfill for
+  existing items, and surfacing resolution in item detail. **P10i-d** — new **range filters** (preset
+  buckets): duration, downloaded-date, and uploaded-date, **plus the quality/resolution (HD/4K) filter**
+  (now backed by the dimensions captured in P10i-c), in a redesigned sectioned filter sheet. Pure-Dart/UI
+  over the existing `LibraryQuery`/`watchFiltered`.
 - **P10j — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: (a) **information
   architecture** — regroup/nest settings into clear sections; (b) **UI/UX refinement** — visual polish,
   control-type consistency, section headers, discoverability (e.g. settings search/quick-jump);

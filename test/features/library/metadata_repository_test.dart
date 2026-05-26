@@ -21,6 +21,7 @@ void main() {
     int day = 1,
     int size = 100,
     String site = 'youtube',
+    int? durationSec,
   }) => db
       .into(db.mediaItems)
       .insert(
@@ -34,6 +35,7 @@ void main() {
           createdAt: DateTime.utc(2026, 1, day),
           storageState: 'private',
           sizeBytes: Value(size),
+          durationSec: Value(durationSec),
         ),
       );
 
@@ -44,6 +46,7 @@ void main() {
     String? playlistId,
     String? playlistTitle,
     String? transcript,
+    DateTime? uploadDate,
   }) => db
       .into(db.mediaMetadata)
       .insert(
@@ -54,6 +57,7 @@ void main() {
           playlistId: Value(playlistId),
           playlistTitle: Value(playlistTitle),
           transcript: Value(transcript),
+          uploadDate: Value(uploadDate),
         ),
       );
 
@@ -129,6 +133,61 @@ void main() {
         .watchFiltered(const LibraryQuery(sort: LibrarySort.smallest))
         .first;
     expect(rows.first.id, 'a');
+  });
+
+  test('duration sorts order by length with null durations last', () async {
+    await seed('short', 'S', 'video', durationSec: 30);
+    await seed('long', 'L', 'video', durationSec: 600);
+    await seed('none', 'N', 'video'); // null duration (e.g. split-chapter)
+
+    final longest = await repo
+        .watchFiltered(const LibraryQuery(sort: LibrarySort.longest))
+        .first;
+    expect(longest.map((r) => r.id), ['long', 'short', 'none']);
+
+    final shortest = await repo
+        .watchFiltered(const LibraryQuery(sort: LibrarySort.shortest))
+        .first;
+    expect(shortest.map((r) => r.id), ['short', 'long', 'none']);
+  });
+
+  test('upload-date sorts order by metadata date with nulls last', () async {
+    await seed('old', 'O', 'video');
+    await seed('new', 'N', 'video');
+    await seed('undated', 'U', 'video'); // no metadata row → null upload date
+    await seedMeta('old', uploadDate: DateTime.utc(2020, 1, 1));
+    await seedMeta('new', uploadDate: DateTime.utc(2024, 6, 1));
+
+    final newest = await repo
+        .watchFiltered(const LibraryQuery(sort: LibrarySort.uploadNewest))
+        .first;
+    expect(newest.map((r) => r.id), ['new', 'old', 'undated']);
+
+    final oldest = await repo
+        .watchFiltered(const LibraryQuery(sort: LibrarySort.uploadOldest))
+        .first;
+    expect(oldest.map((r) => r.id), ['old', 'new', 'undated']);
+  });
+
+  test('new sorts also apply on the search path', () async {
+    await seed('short', 'clip short', 'video', durationSec: 30);
+    await seed('long', 'clip long', 'video', durationSec: 600);
+    await seedMeta('short', uploadDate: DateTime.utc(2024, 1, 1));
+    await seedMeta('long', uploadDate: DateTime.utc(2020, 1, 1));
+
+    final byLongest = await repo
+        .watchFiltered(
+          const LibraryQuery(search: 'clip', sort: LibrarySort.longest),
+        )
+        .first;
+    expect(byLongest.map((r) => r.id), ['long', 'short']);
+
+    final byUploadNewest = await repo
+        .watchFiltered(
+          const LibraryQuery(search: 'clip', sort: LibrarySort.uploadNewest),
+        )
+        .first;
+    expect(byUploadNewest.map((r) => r.id), ['short', 'long']);
   });
 
   test('toggleFavorite persists and favoritesOnly filters', () async {
