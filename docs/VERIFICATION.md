@@ -614,7 +614,22 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] Summary bullets are **verbatim excerpts** of the description (extractive), readable, and stable
       across reopening the item.
 - [ ] Runs on a **low-end device** without jank or crash (pure Dart, synchronous, tiny input).
-- [ ] *(Transcript/subtitle text as a richer summary source is deferred to P10f.)*
+
+### P10f-1 — Transcript-text capture (pure-Dart)
+- [ ] Download an item **with subtitles enabled** (so `.vtt/.srt` sidecars land), then **More → Build
+      transcript** → a **Transcript** section appears with the spoken text, and the **Summary** now
+      derives from the transcript (not the description). No model/network.
+- [ ] For an item with **no caption files**, **Build transcript** shows *"No caption files found for
+      this item"* — no crash; the description-based summary is unaffected.
+- [ ] **Settings → Auto-build transcripts** ON → a fresh download that has captions gets a transcript
+      with no manual step.
+- [ ] **Settings → Backfill transcripts on open** ON → opening an older item that has sidecars builds
+      its transcript once (Transcript/Summary appear after a moment).
+- [ ] Auto-caption "rollover" repetition is **de-duplicated** — the transcript reads as continuous
+      text, not repeated phrases.
+- [ ] Both Settings toggles show an **(i)** info affordance explaining what they do.
+- [ ] *(On-demand fetch of captions for items that have none — with a language selector — is P10f-2,
+      native.)*
 
 ## P11 — Device-tiered edge LLM engine  *(v1)*
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.

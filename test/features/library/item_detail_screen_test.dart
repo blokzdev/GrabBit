@@ -245,4 +245,49 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
+
+  testWidgets(
+    'shows a Transcript section and summarizes the transcript (P10f)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const transcript =
+          'The whales surfaced near the boat at dawn. '
+          'Researchers recorded the whales calling to each other. '
+          'The pod of whales travels north each spring. '
+          'Tracking the whales helps map their migration route. '
+          'The whales dove deep before disappearing from view.';
+      await pump(
+        tester,
+        _item(),
+        metadata: const MediaMetadataData(
+          itemId: 'x',
+          description: 'Short note.',
+          transcript: transcript,
+        ),
+      );
+
+      expect(find.text('Transcript'), findsOneWidget);
+      // Summary is derived from the transcript, not the short description.
+      expect(find.text('Summary'), findsOneWidget);
+      expect(find.textContaining('whales'), findsWidgets);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'no Transcript section when transcript is null (P10f)',
+    (tester) async {
+      await pump(
+        tester,
+        _item(),
+        metadata: const MediaMetadataData(itemId: 'x', description: 'Hi.'),
+      );
+      expect(find.text('Transcript'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
 }

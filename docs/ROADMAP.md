@@ -259,9 +259,17 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   **`fl_chart`** viz. All on-device, no telemetry. See `docs/design/P-AI-PLAN.md`.
 - **P10e — Extractive summaries**: a zero-dependency, pure-Dart **TextRank** floor over an item's
   **description**, surfaced as an auto-hiding "Summary" TL;DR on item-detail.
-- **P10f — Transcript-text capture**: an on-demand "Get transcript" action + a "fetch auto-captions"
-  setting; parse/dedupe the downloaded `.vtt/.srt` sidecars into a stored `MediaMetadata.transcript`,
-  which then becomes the preferred TextRank source (and feeds later search/RAG).
+- **P10f — Transcript-text capture** (split into two PRs because the second touches native code):
+  - **P10f-1** *(pure-Dart, done)*: parse/dedupe the `.vtt/.srt` sidecars already on disk into a stored
+    `MediaMetadata.transcript` (schema v5), shown as an auto-hiding "Transcript" section and used as the
+    preferred TextRank source. Built via a manual "Build transcript" action, with opt-in Settings
+    toggles for automatic transcription (at download) and lazy backfill (on open).
+  - **P10f-2** *(native)*: an on-demand "Get transcript" fetch (`--skip-download` via Pigeon/Kotlin)
+    with a language selector for items that lack captions, plus a "fetch auto-captions on download"
+    setting. Verified with a debug-APK build.
+- **P10g — Settings IA & consistency pass**: regroup/nest the settings screen into clear sections, roll
+  the `(i)`-info-tooltip pattern (seeded in P10f-1) across non-obvious settings, and reconcile gaps/
+  inconsistencies introduced during P8–P10. Pure-Dart/UI.
 **Exit criteria:** on any device, the Cozo index builds & rebuilds; semantic search + "related"
 return sensible results offline; entity hubs and the graph view render; near-dup clusters and tag
 suggestions work; the Dashboard summarizes the on-device footprint; an extractive TL;DR appears on

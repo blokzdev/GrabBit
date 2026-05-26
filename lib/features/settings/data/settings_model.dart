@@ -50,6 +50,10 @@ abstract class SettingsModel with _$SettingsModel {
     @Default('') String subtitleLangs,
     @Default(false) bool subtitleAuto,
     @Default('srt') String subtitleFormat,
+    // P10f: build a text transcript from downloaded captions automatically,
+    // and backfill older items the first time they're opened. Both opt-in.
+    @Default(false) bool autoTranscribe,
+    @Default(false) bool transcriptBackfill,
     @Default('off') String sponsorBlockMode,
     @Default('sponsor') String sponsorBlockCategories,
     @Default(false) bool embedChapters,

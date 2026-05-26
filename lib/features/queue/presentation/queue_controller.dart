@@ -17,6 +17,8 @@ import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/core/utils/media_type.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/queue/data/completed_outputs.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
@@ -475,6 +477,28 @@ class QueueController extends _$QueueController {
         }
       }
     });
+
+    // P10f: build a transcript from the caption sidecars now on disk, if the
+    // user opted into automatic transcription.
+    final settings = await ref.read(settingsControllerProvider.future);
+    if (settings.autoTranscribe) {
+      final transcripts = ref.read(transcriptServiceProvider);
+      final metadata = ref.read(metadataRepositoryProvider);
+      final langs = queued.request.subtitleLangs;
+      final preferLang = (langs != null && langs.isNotEmpty)
+          ? langs.first
+          : null;
+      for (final (i, mediaFile) in outputs.media.indexed) {
+        final itemId = single ? id : '${id}__$i';
+        final transcript = await transcripts.extractTranscript(
+          mediaFile.path,
+          preferLang: preferLang,
+        );
+        if (transcript != null) {
+          await metadata.updateTranscript(itemId, transcript);
+        }
+      }
+    }
   }
 
   /// Filename without directory or extension — the per-chapter title for splits.

@@ -111,8 +111,9 @@ abstract interface class InferenceEngine {
   **interactive graph viz** — render *(P10c-e, shipped)* + interaction *(P10c-f, shipped)* — read via
   `GraphQueryService`; graph features detailed in `GRAPH-SPEC.md` §7. **(P10c graph pillar complete.)**
 - **Extractive summaries (TextRank)** — zero-dependency, pure-Dart floor; the always-available TL;DR.
-  *(P10e shipped)* v1 input is the item **description**; subtitle/transcript text becomes the preferred
-  source once **P10f** captures it (`MediaMetadata.transcript`).
+  *(P10e shipped)* v1 input was the item **description**; *(P10f-1 shipped)* a de-duplicated
+  **transcript** parsed from caption sidecars (`MediaMetadata.transcript`) is now the preferred source
+  (`transcript ?? description`) and also feeds future FTS/GraphRAG retrieval.
 
 ### P11 — tiered edge-LLM engine (minimal feature surface)
 - `DeviceCapabilityService` + tiers + `ModelCapabilityMatrix`; model catalog + download + integrity +
