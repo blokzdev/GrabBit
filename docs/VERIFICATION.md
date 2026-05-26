@@ -728,6 +728,14 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       bucket clears); with **Audio-only** the **Resolution** section hides; reselecting brings them back.
 - [ ] The filter **badge** count includes active buckets; **Clear all** resets every filter incl. buckets.
 
+### P10j-a — Settings widget foundation + touch-friendly help  *(no AI/graph needed — works on any build)*
+- [ ] **Settings renders unchanged:** every section (Downloads, Transcripts, Advanced download options in
+      Advanced mode, Downloader engine, Storage, Appearance, Security, Privacy, Graph database) and every
+      control still appears, toggles, and persists exactly as before (behavior-preserving refactor).
+- [ ] **Info help opens on a single tap** (not long-press): tap the **(i)** on any Transcripts row →
+      a bottom sheet with the setting's title + plain-language explanation appears; dismiss by swipe/scrim.
+- [ ] Dropdowns (quality, theme, audio format, etc.) still open and apply the chosen value.
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
