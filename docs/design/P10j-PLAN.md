@@ -129,8 +129,13 @@ cost — any control is reachable by name. Sub-screens are top-level `GoRoute`s 
 
 ## Subphases
 
-### `[ ]` P10j-a — Foundation: reusable settings widgets + touch-friendly `InfoHint`
+### `[~]` P10j-a — Foundation: reusable settings widgets + touch-friendly `InfoHint`
 **Branch:** `claude/p10j-a-settings-foundation` · **Behavior-preserving refactor.**
+
+> **Status:** implemented — widget kit (`SettingsSection`/`SettingsSwitchTile`/`SettingsChoiceTile`/
+> `SettingsNavTile`) + `InfoHint` (modal sheet) under `lib/features/settings/presentation/widgets/`;
+> `settings_screen.dart` adopts them and the 3 transcript tooltips now open on **tap**. CI-green
+> (format · analyze · 590 tests). **Pending on-device spot-check** (info sheet on touch).
 
 Extract the repeated patterns into a small, consistent widget kit under
 `lib/features/settings/presentation/widgets/`, and replace the long-press `Tooltip` with a
