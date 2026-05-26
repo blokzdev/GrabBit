@@ -686,6 +686,14 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Live updates:** editing a title or (re)building a transcript updates search results without a
       restart; odd characters in the query (`-`, `"`, `:`) never error.
 
+### P10i-a — Multi-select type filter + type-aware option narrowing  *(no AI/graph needed — works on any build)*
+- [ ] **Multi-select types:** the Video / Audio / Image chips toggle independently; selecting several shows
+      the **union** of those types; deselecting all (none selected) shows everything.
+- [ ] **Type-aware narrowing:** with **only Image** selected, the **Has transcript** row disappears from the
+      filter sheet; reselecting Video/Audio brings it back.
+- [ ] **Reconciliation:** turning **Has transcript** on, then narrowing to **Image-only**, silently clears it
+      (no stuck/hidden filter); the grid isn't left empty by an inapplicable filter.
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built

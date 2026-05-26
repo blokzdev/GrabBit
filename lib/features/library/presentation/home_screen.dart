@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/brand_badge.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/library_options.dart';
 import 'package:grabbit/features/library/presentation/explorer_view.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_view.dart';
@@ -96,40 +97,34 @@ class _BrandTitle extends StatelessWidget {
 class _SortAction extends ConsumerWidget {
   const _SortAction();
 
+  // Sorts offered in the library menu, in display order. Relevance is gated on
+  // an active query; the rest are gated by type-applicability (P10i).
+  static const _labels = <LibrarySort, String>{
+    LibrarySort.relevance: 'Relevance',
+    LibrarySort.newest: 'Newest',
+    LibrarySort.oldest: 'Oldest',
+    LibrarySort.recentlyPlayed: 'Recently played',
+    LibrarySort.titleAsc: 'Title A–Z',
+    LibrarySort.titleDesc: 'Title Z–A',
+    LibrarySort.largest: 'Largest',
+    LibrarySort.smallest: 'Smallest',
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(libraryFilterProvider);
+    final searching = filter.search.trim().isNotEmpty;
     return PopupMenuButton<LibrarySort>(
       icon: const Icon(Icons.sort),
       tooltip: 'Sort',
       initialValue: filter.sort,
       onSelected: ref.read(libraryFilterProvider.notifier).setSort,
       itemBuilder: (context) => [
-        // Relevance only ranks against an active query; offer it while searching.
-        if (filter.search.trim().isNotEmpty)
-          const PopupMenuItem(
-            value: LibrarySort.relevance,
-            child: Text('Relevance'),
-          ),
-        const PopupMenuItem(value: LibrarySort.newest, child: Text('Newest')),
-        const PopupMenuItem(value: LibrarySort.oldest, child: Text('Oldest')),
-        const PopupMenuItem(
-          value: LibrarySort.recentlyPlayed,
-          child: Text('Recently played'),
-        ),
-        const PopupMenuItem(
-          value: LibrarySort.titleAsc,
-          child: Text('Title A–Z'),
-        ),
-        const PopupMenuItem(
-          value: LibrarySort.titleDesc,
-          child: Text('Title Z–A'),
-        ),
-        const PopupMenuItem(value: LibrarySort.largest, child: Text('Largest')),
-        const PopupMenuItem(
-          value: LibrarySort.smallest,
-          child: Text('Smallest'),
-        ),
+        for (final entry in _labels.entries)
+          if (entry.key == LibrarySort.relevance
+              ? searching
+              : sortVisible(entry.key, filter.types))
+            PopupMenuItem(value: entry.key, child: Text(entry.value)),
       ],
     );
   }

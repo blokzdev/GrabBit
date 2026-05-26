@@ -80,7 +80,7 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
     final filtering = semantic
         ? _semanticQuery.isNotEmpty
         : filter.search.isNotEmpty ||
-              filter.type != null ||
+              filter.types.isNotEmpty ||
               filter.favoritesOnly ||
               filter.hasTranscript;
     final rows = items.asData?.value ?? const <MediaItem>[];
@@ -115,7 +115,7 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
             },
             onType: (v) {
               _clear();
-              controller.setType(v);
+              controller.toggleType(v);
             },
             onFavorites: (v) {
               _clear();
@@ -243,7 +243,7 @@ class _FilterBar extends StatelessWidget {
   /// Semantic search runs on submit, not per keystroke.
   final ValueChanged<String> onSubmit;
   final ValueChanged<String> onSearch;
-  final ValueChanged<String?> onType;
+  final ValueChanged<String> onType;
   final ValueChanged<bool> onFavorites;
   final VoidCallback onFilters;
 
@@ -314,19 +314,12 @@ class _FilterBar extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        for (final type in const [
-                          null,
-                          'video',
-                          'audio',
-                          'image',
-                        ])
+                        for (final type in const ['video', 'audio', 'image'])
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: FilterChip(
-                              label: Text(
-                                type == null ? 'All' : _typeLabel(type),
-                              ),
-                              selected: filter.type == type,
+                              label: Text(_typeLabel(type)),
+                              selected: filter.types.contains(type),
                               onSelected: (_) => onType(type),
                             ),
                           ),

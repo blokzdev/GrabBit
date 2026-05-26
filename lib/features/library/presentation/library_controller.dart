@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/library_options.dart';
 
 // Manual providers (not riverpod_generator): the generator currently can't
 // resolve Drift's generated `MediaItem` row type in a provider return
@@ -50,7 +51,16 @@ class LibraryFilter extends Notifier<LibraryQuery> {
     state = next;
   }
 
-  void setType(String? type) => state = state.copyWith(type: () => type);
+  /// Adds/removes a media type from the multi-select filter (empty = all), then
+  /// reconciles so a now-inapplicable sort/filter is reset (P10i).
+  void toggleType(String type) {
+    final next = {...state.types};
+    next.contains(type) ? next.remove(type) : next.add(type);
+    state = reconcile(state.copyWith(types: next));
+  }
+
+  void setTypes(Set<String> types) =>
+      state = reconcile(state.copyWith(types: types));
   void setSort(LibrarySort sort) => state = state.copyWith(sort: sort);
   void setCollection(int? id) => state = state.copyWith(collectionId: () => id);
   void setSite(String? site) => state = state.copyWith(site: () => site);
