@@ -21,7 +21,7 @@ enum LibrarySort {
 class LibraryQuery {
   const LibraryQuery({
     this.search = '',
-    this.type,
+    this.types = const {},
     this.collectionId,
     this.sort = LibrarySort.newest,
     this.site,
@@ -33,7 +33,7 @@ class LibraryQuery {
   });
 
   final String search; // FTS over title + description + transcript (P10h)
-  final String? type; // video | audio | image | null (all)
+  final Set<String> types; // video/audio/image; empty = all (P10i)
   final int? collectionId;
   final LibrarySort sort;
   final String? site; // platform facet
@@ -52,7 +52,7 @@ class LibraryQuery {
 
   LibraryQuery copyWith({
     String? search,
-    String? Function()? type,
+    Set<String>? types,
     int? Function()? collectionId,
     LibrarySort? sort,
     String? Function()? site,
@@ -63,7 +63,7 @@ class LibraryQuery {
     bool? hasTranscript,
   }) => LibraryQuery(
     search: search ?? this.search,
-    type: type != null ? type() : this.type,
+    types: types ?? this.types,
     collectionId: collectionId != null ? collectionId() : this.collectionId,
     sort: sort ?? this.sort,
     site: site != null ? site() : this.site,
@@ -97,8 +97,8 @@ class MetadataRepository {
     if (search.isNotEmpty) return _watchSearch(q, search);
 
     final query = _db.select(_db.mediaItems);
-    if (q.type != null) {
-      query.where((t) => t.type.equals(q.type!));
+    if (q.types.isNotEmpty) {
+      query.where((t) => t.type.isIn(q.types.toList()));
     }
     if (q.site != null) {
       query.where((t) => t.site.equals(q.site!));
@@ -183,9 +183,9 @@ class MetadataRepository {
     final vars = <Variable<Object>>[
       Variable.withString(_ftsMatchQuery(search)),
     ];
-    if (q.type != null) {
-      where.add('mi.type = ?');
-      vars.add(Variable.withString(q.type!));
+    if (q.types.isNotEmpty) {
+      where.add('mi.type IN (${List.filled(q.types.length, '?').join(', ')})');
+      vars.addAll(q.types.map(Variable.withString));
     }
     if (q.site != null) {
       where.add('mi.site = ?');

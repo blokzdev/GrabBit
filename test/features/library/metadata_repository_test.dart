@@ -72,10 +72,45 @@ void main() {
     await seed('c', 'Alpha', 'video');
     final rows = await repo
         .watchFiltered(
-          const LibraryQuery(type: 'video', sort: LibrarySort.titleAsc),
+          const LibraryQuery(types: {'video'}, sort: LibrarySort.titleAsc),
         )
         .first;
     expect(rows.map((r) => r.id), ['c', 'a']);
+  });
+
+  test(
+    'multi-select type filter returns the union of selected types',
+    () async {
+      await seed('a', 'Vid', 'video');
+      await seed('b', 'Song', 'audio');
+      await seed('c', 'Pic', 'image');
+      final rows = await repo
+          .watchFiltered(
+            const LibraryQuery(
+              types: {'video', 'audio'},
+              sort: LibrarySort.oldest,
+            ),
+          )
+          .first;
+      expect(rows.map((r) => r.id), ['a', 'b']);
+    },
+  );
+
+  test('empty type set returns all types', () async {
+    await seed('a', 'Vid', 'video');
+    await seed('b', 'Pic', 'image');
+    final rows = await repo.watchFiltered(const LibraryQuery()).first;
+    expect(rows.map((r) => r.id).toSet(), {'a', 'b'});
+  });
+
+  test('search path honours a multi-type filter', () async {
+    await seed('a', 'Cats video', 'video');
+    await seed('b', 'Cats song', 'audio');
+    await seed('c', 'Cats pic', 'image');
+    final rows = await repo
+        .watchFiltered(const LibraryQuery(search: 'cats', types: {'image'}))
+        .first;
+    expect(rows.map((r) => r.id), ['c']);
   });
 
   test('sorts by largest size', () async {

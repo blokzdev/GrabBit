@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/library_options.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 
 /// Opens the Library facet filters (platform / channel / playlist) as a sheet.
@@ -45,14 +46,18 @@ class _LibraryFilterSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Has transcript'),
-              subtitle: const Text('Only items with extracted captions'),
-              value: filter.hasTranscript,
-              onChanged: controller.setHasTranscript,
-            ),
-            const SizedBox(height: 8),
+            // Transcripts only exist for timed media; hide for an images-only
+            // type selection (P10i).
+            if (transcriptApplies(filter.types)) ...[
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Has transcript'),
+                subtitle: const Text('Only items with extracted captions'),
+                value: filter.hasTranscript,
+                onChanged: controller.setHasTranscript,
+              ),
+              const SizedBox(height: 8),
+            ],
             if (sites.isNotEmpty) ...[
               Text('Platform', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),

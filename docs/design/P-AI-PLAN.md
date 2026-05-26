@@ -149,11 +149,13 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   trigger-synced + backfilled on the v6→v7 migration) over title + description + **transcript**, replacing
   the `LIKE` search in `metadata_repository`, so the library is searchable by spoken content. Adds a
   **Relevance** sort (bm25, auto-selected while searching, overridable) and a **Has-transcript** filter.
-- **P10i — Dynamic, type-aware library sort & filter system** *(later)*: richer, contextual library
-  discovery — multi-select type filter (+ future formats), duration & upload-date sorts,
-  quality/resolution + duration-range + date-range filters, and **type-aware option narrowing** (available
-  sort/filter options adapt to the active type, with a defined fallback when one becomes inapplicable). Its
-  own filter-sheet/sort-menu design pass. Pure-Dart/UI over `LibraryQuery`/`watchFiltered`.
+- **P10i — Dynamic, type-aware library sort & filter system** *(3 PRs)*: richer, contextual library
+  discovery. **P10i-a** — multi-select type filter (+ future formats) + the **type-aware option-narrowing**
+  foundation (options adapt to the active type; an inapplicable sort resets to Relevance/Newest and
+  inapplicable filters clear). **P10i-b** — duration & upload-date sorts (nulls last). **P10i-c** —
+  duration + downloaded/uploaded date-range filters (preset buckets) in a sectioned filter sheet.
+  Pure-Dart/UI over `LibraryQuery`/`watchFiltered`. Quality/resolution (HD/4K) is **deferred** — the
+  download pipeline doesn't capture `width`/`height` yet.
 - **P10j — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: information
   architecture (regroup/nest into clear sections) **+ UI/UX refinement** (visual polish, control-type
   consistency, discoverability/settings-search), roll the `(i)`-info-tooltip pattern across non-obvious

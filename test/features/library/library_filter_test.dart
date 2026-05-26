@@ -6,7 +6,10 @@ import 'package:grabbit/features/library/presentation/library_controller.dart';
 void main() {
   test('LibraryQuery.activeFacetCount counts only metadata facets', () {
     expect(const LibraryQuery().activeFacetCount, 0);
-    expect(const LibraryQuery(search: 'x', type: 'video').activeFacetCount, 0);
+    expect(
+      const LibraryQuery(search: 'x', types: {'video'}).activeFacetCount,
+      0,
+    );
     expect(
       const LibraryQuery(site: 'youtube', uploader: 'Rick').activeFacetCount,
       2,
@@ -40,6 +43,35 @@ void main() {
     q = container.read(libraryFilterProvider);
     expect([q.site, q.uploader, q.playlistId], [null, null, null]);
     expect(q.hasTranscript, isFalse);
+  });
+
+  test(
+    'toggleType narrows to an images-only scope and clears transcript (P10i)',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final c = container.read(libraryFilterProvider.notifier);
+
+      c.setHasTranscript(true);
+      c.toggleType('image');
+      final q = container.read(libraryFilterProvider);
+      expect(q.types, {'image'});
+      // Transcripts can't apply to an images-only scope → reconciled away.
+      expect(q.hasTranscript, isFalse);
+    },
+  );
+
+  test('toggleType adds then removes a type', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final c = container.read(libraryFilterProvider.notifier);
+
+    c.toggleType('video');
+    expect(container.read(libraryFilterProvider).types, {'video'});
+    c.toggleType('audio');
+    expect(container.read(libraryFilterProvider).types, {'video', 'audio'});
+    c.toggleType('video');
+    expect(container.read(libraryFilterProvider).types, {'audio'});
   });
 
   test(
