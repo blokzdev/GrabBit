@@ -127,7 +127,9 @@ indices on `is_favorite`/`content_hash`/`created_at`. **v4 (P9b-4)** adds a
 adds `media_metadata.transcript` (caption-sidecar text feeding the summary). `contentHash`
 is populated lazily by the P9b-3 duplicate scan (`DedupeService`, off-isolate); `lastAccessedAt`
 is set on playback (P9c). The probe (`MediaInfo`/`MediaInfoDto`) now carries the source `id`.
-**Planned: v6 (P11)** adds the `notifications` table backing the Activity Inbox.
+**Planned: v6 (P11)** adds the `notifications` table backing the Activity Inbox; **P10f-4** adds a
+timestamped-cue representation beside the flat transcript (tap-to-seek); **P10h** adds a SQLite **FTS5**
+index over `transcript`+`description`+`title` (search by spoken content).
 
 ---
 

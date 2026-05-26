@@ -70,6 +70,9 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [x] Queue **drag-to-reorder** + aggregate **dashboard** (live speed / ETA / total size) →
   shipped in **P9d** (`docs/design/P9-PLAN.md`). Speed/size are recovered by parsing the
   yt-dlp progress line in Dart (`core/engine/progress_line.dart`).
+- [ ] **FTS5 full-text search** → scheduled as **P10h** (`docs/ROADMAP.md`): SQLite FTS5 over
+  transcript + description + title, so the library is searchable by **spoken content** (P10f
+  transcripts), not just title/description `LIKE`. *(Promoted now that transcripts exist.)*
 
 ## Cut from P8 / P9 (deliberate — kept here with rationale)
 - [ ] **aria2c external downloader** — youtubedl-android ships no aria2c binary; bundling an
@@ -85,7 +88,6 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
       coordinate with the download service; revisit in v2.
 - [ ] **Download scheduling** (run at a time / wifi window) — needs WorkManager + alarm logic.
 - [ ] **Per-folder lock** — adds lock-state to the virtual-folder model + many UI gates.
-- [ ] **FTS5 full-text search** — start with indexed `LIKE` (P9b); adopt FTS5 only if perf demands.
 - [ ] **Configurable storage location** (internal vs SD / external app-specific dir) — deferred
       from P9f: scoped-storage complexity (volume enumeration, migrating an existing library,
       removable-media eject). The P9f low-storage guard mitigates the immediate pain.

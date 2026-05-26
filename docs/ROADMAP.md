@@ -272,9 +272,25 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   - **P10f-3** *(native, next)*: opt-in **"Auto-download captions"** setting — grabs captions in the
     in-app language on every download (when no explicit subtitle langs set) so transcripts build
     automatically; introduces a "Transcripts" settings group beside "Subtitles".
-- **P10g — Settings IA & consistency pass**: regroup/nest the settings screen into clear sections, roll
-  the `(i)`-info-tooltip pattern (seeded in P10f-1) across non-obvious settings, and reconcile gaps/
-  inconsistencies introduced during P8–P10. Pure-Dart/UI.
+  - **P10f-4** *(later)*: **timestamped, tap-to-seek transcript** — retain caption-cue timings (the flat
+    transcript today discards them) in a timed representation stored alongside it; item-detail shows a
+    scrollable transcript whose lines **seek the player** (YouTube-style); also lays the groundwork for
+    timestamped citations in future GraphRAG. Device-universal, pure-Dart/UI + a schema addition.
+- **P10g — Transcript-powered semantic index**: feed transcript text into the embedding input (today
+  the embedder uses title/uploader/playlist/tags/**description** only), so semantic search · "related" ·
+  future GraphRAG run on the **spoken content**. Requires **chunking / a representative slice**
+  (transcripts far exceed the embedder's input window) + an embed-version bump (one-time re-embed). Uses
+  the existing P10 embedder — no LLM.
+- **P10h — Full-text search over transcripts & metadata**: a SQLite **FTS5** index over
+  transcript + description + title so the library is searchable by **spoken content** (today search is
+  `LIKE` on title/description). Promotes the long-standing FTS backlog item.
+- **P10i — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: (a) **information
+  architecture** — regroup/nest settings into clear sections; (b) **UI/UX refinement** — visual polish,
+  control-type consistency, section headers, discoverability (e.g. settings search/quick-jump);
+  (c) roll the `(i)`-info-tooltip pattern (seeded in P10f-1) across non-obvious settings with
+  plain-language copy; (d) reconcile gaps/inconsistencies introduced during P8–P10, **including**
+  clarifying the subtitles-vs-transcripts model. Kept **last** so it tidies up after the feature
+  subphases. Pure-Dart/UI.
 **Exit criteria:** on any device, the Cozo index builds & rebuilds; semantic search + "related"
 return sensible results offline; entity hubs and the graph view render; near-dup clusters and tag
 suggestions work; the Dashboard summarizes the on-device footprint; an extractive TL;DR appears on
@@ -304,7 +320,7 @@ no push, no cloud, no accounts**; lives behind the app lock.
   Dashboard recent-activity tile. (Not a 6th nav destination.)
 - **Retention:** a configurable `notificationRetentionDays` setting (default ~30; `0` = keep forever)
   that auto-clears old items **lazily** on app/inbox open (no background scheduler); optional
-  per-category notify toggles, each with an `(i)` tooltip (the P10g pattern).
+  per-category notify toggles, each with an `(i)` tooltip (the pattern rolled out in P10i).
 - Complementary to the existing **OS/foreground notifications** (which stay the while-backgrounded
   channel) — the inbox is the durable in-app record; an item may optionally also raise an OS
   notification.
