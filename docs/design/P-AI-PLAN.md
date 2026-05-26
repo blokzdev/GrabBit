@@ -159,22 +159,22 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   quality/resolution (HD/4K) filter (backed by P10i-c's dimensions), in a sectioned filter sheet.
   Pure-Dart/UI over `LibraryQuery`/`watchFiltered`.
 - **P10j — Settings IA, UX refinement & consistency pass** *(final P10 subphase; 3 PRs — see
-  `docs/design/P10j-PLAN.md`)*: information architecture (**single screen + search** — keep one
-  scrollable screen with tighter grouping/order + Simple/Advanced disclosure, add a settings
-  search/quick-jump that scrolls to any control by name) **+ UI/UX refinement**, replacing the long-press
-  `(i)` `Tooltip` with a **tappable `InfoHint`** rolled across non-obvious settings with plain-language
-  copy, and clarifying the subtitles-vs-transcripts model into one coherent **Captions & transcripts**
-  pipeline (UI-only — no change to download behavior). Kept last so it tidies up after the feature
-  subphases. Pure-Dart/UI; no schema migration; no new routes. Sub-PRs:
+  `docs/design/P10j-PLAN.md`)*: information architecture (**Hybrid + search** — a category landing with
+  small/stable sections inline and heavy/growth groups, Downloads/Captions/AI, as tap-in sub-screens, plus
+  a settings search/quick-jump spanning all) **+ UI/UX refinement**, replacing the long-press `(i)`
+  `Tooltip` with a **tappable `InfoHint`** rolled across non-obvious settings with plain-language copy, and
+  clarifying the subtitles-vs-transcripts model into one coherent **Captions & transcripts** pipeline
+  (UI-only — no change to download behavior). Kept last so it tidies up after the feature subphases.
+  Pure-Dart/UI; no schema migration. Sub-PRs:
   - **P10j-a — Foundation:** reusable settings widgets (`SettingsSection`/`SettingsSwitchTile`/
     `SettingsChoiceTile`/`SettingsNavTile`) + a touch-friendly `InfoHint` (modal sheet, replaces the
     long-press tooltip); behavior-preserving.
   - **P10j-b — Captions & transcripts:** merge the subtitle (Downloads) + transcript controls into one
     pipeline section, unify vocabulary, make the hidden auto-caption dependency explicit; 1:1 onto
     existing `SettingsModel` fields, no `download_request_builder` change.
-  - **P10j-c — Regroup + search + rollout:** reorder the sections on the single screen, add a
-    static-indexed settings search/quick-jump (scroll-to + highlight), roll `InfoHint` across non-obvious
-    controls, and add a **General** section surfacing About/Reset/Clear-cache out of the overflow.
+  - **P10j-c — Hybrid IA + search + rollout:** `/settings/downloads` + `/settings/captions` +
+    `/settings/ai` sub-screens, a static-indexed settings search/quick-jump, `InfoHint` rollout across
+    non-obvious controls, and a **General** section surfacing About/Reset/Clear-cache out of the overflow.
 
 **Exit:** on any device, the Cozo index builds & rebuilds; semantic search + "related" return
 sensible results offline; entity hubs and the graph view render; near-dup clusters and tag

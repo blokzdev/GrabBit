@@ -41,11 +41,14 @@ few rough edges have accumulated. The refinement is guided by five principles:
    the vocabulary drifts ("subtitles" vs "captions"), and there's a **hidden interaction**
    (explicit subtitle languages silently suppress the auto-caption fetch — see below). Unify
    the wording and the layout so the pipeline reads as a story.
-4. **Shorten the path to any control without fragmenting.** ~70 controls is a lot of
-   thumb-travel, but splitting into many sub-screens adds taps and hurts "scan everything".
-   Keep a **single scrollable screen** with tighter grouping/order and lean harder on
-   Simple/Advanced disclosure, and add a **search/quick-jump** so any setting is one query
-   away — the discoverability win without the navigation cost.
+4. **Scale for the AI settings coming in P12/P13.** ~70 controls is already a long phone
+   scroll, and P12/P13 add a large cluster (model catalog/download, capability gating, model
+   selector, transcription/translation/OCR, GraphRAG chat, auto-tagging) — mostly in the AI
+   area. Adopt a **Hybrid IA**: a category landing with small/stable sections **inline** and
+   heavy/growth sections (Downloads, Captions & transcripts, AI & graph) as **tap-in
+   sub-screens**, plus a **settings search** so any control is reachable by name. This is the
+   platform-standard (iOS/Android system Settings) pattern; search neutralizes the extra-tap
+   cost.
 5. **Behavior-preserving.** This is a *refinement* pass. No download-engine semantics change
    (the deeper `subtitleLangs`/`autoDownloadCaptions`/`autoSubs` precedence rework is
    explicitly **out of scope** — see "Deferred").
@@ -77,8 +80,8 @@ recurring control patterns (`SwitchListTile`, `ListTile` + `DropdownButton`, `Li
 route, `FilterChip` multi-select) are hand-rolled inline each time.
 
 **Routing:** `/settings` is a `StatefulShellBranch`; `/storage` and `/about` are **top-level
-`GoRoute`s** reached via `context.push`. P10j adds **no new routes** — the single-screen
-approach keeps everything on `/settings`.
+`GoRoute`s** reached via `context.push`. That `push` pattern is the template for the new P10j
+sub-screens (`/settings/downloads`, `/settings/captions`, `/settings/ai`).
 
 ### The captions ⟷ transcripts confusion (the headline problem)
 
@@ -97,34 +100,30 @@ search.** P10j-b makes that pipeline legible **without changing the precedence**
 
 ---
 
-## Target information architecture (Single screen + Search)
+## Target information architecture (Hybrid + search)
 
-Keep the **one scrollable `/settings` screen**, but tighten the section order, fold the
-scattered caption/transcript controls into one section, and add a **search/quick-jump** at
-the top so any control is reachable by name without scrolling. No new routes; the only
-existing sub-screens stay as-is (`/storage`, `/about` via `context.push`).
+A category **landing** that keeps small/stable sections inline, promotes the heavy/growth
+sections to their own screens, and adds a search field that spans everything.
 
 ```
-/settings  (single screen)
-  ┌─ [ search / quick-jump ]   ── filters to a flat results list; tap → scroll-to control
-  ├─ ▸  Downloads                 (mode, quality, concurrency, network/storage/battery, filename, embeds)
-  ├─ ▸  Captions & transcripts    (P10j-b: download captions → build transcript pipeline)
-  ├─ ▸  Advanced download options (Advanced-mode only: fragments, rate limit, audio, sponsor, chapters, extra args)
-  ├─ ▸  Downloader engine         (yt-dlp version/update)
-  ├─ ▸  Storage                   ("Storage & cleanup" still → /storage)
-  ├─ ▸  Appearance
-  ├─ ▸  Security
-  ├─ ▸  Privacy
-  ├─ ▸  AI & graph                (was "Graph database")
-  └─ ▸  General                   (About, Reset to defaults, Clear cache — out of the overflow)
+/settings  (landing)
+  ┌─ [ search / quick-jump ]
+  ├─ →  Downloads               (nav → /settings/downloads; folds in Advanced opts when Advanced mode)
+  ├─ →  Captions & transcripts  (nav → /settings/captions)
+  ├─ →  AI & graph              (nav → /settings/ai; was "Graph database" — the big growth area)
+  ├─ ▸  Appearance              (inline)
+  ├─ ▸  Storage                 (inline; "Storage & cleanup" still → /storage)
+  ├─ ▸  Security                (inline)
+  ├─ ▸  Privacy                 (inline)
+  ├─ ▸  Downloader engine       (inline)
+  └─ ▸  General                 (inline: About, Reset to defaults, Clear cache — out of the ⋮ overflow)
 ```
 
-Rationale: a single screen preserves "scan everything" and costs zero taps; **search**
-removes the only real downside (finding one control in ~70). Length is managed by
-Simple/Advanced disclosure (Advanced options stay hidden in Simple mode) and the regrouping —
-not by fragmenting into sub-screens, which would add navigation overhead on a phone. The
-caption/transcript consolidation (P10j-b) also removes a chunk of the Downloads section's
-weight.
+Rationale: small/stable sections stay inline so a 2-toggle section (Privacy) doesn't waste a
+whole screen; the heavy and growth-prone groups (Downloads ~14, Advanced ~10, the future AI
+cluster) get room to scale without lengthening the landing. **Search** removes the extra-tap
+cost — any control is reachable by name. Sub-screens are top-level `GoRoute`s pushed like
+`/storage`. The caption/transcript consolidation (P10j-b) also lightens the Downloads group.
 
 ---
 
@@ -163,8 +162,8 @@ on a transcript row → explanation sheet appears" (touch check CI can't do).
 
 Merge the subtitle controls (from *Downloads*) and the transcript controls (the *Transcripts*
 section) into a single **"Captions & transcripts"** section that narrates the pipeline, and
-unify the vocabulary. Built as a **self-contained `SettingsSection`** placed inline, between
-Downloads and Advanced download options in the regrouped order.
+unify the vocabulary. Built as a **self-contained `SettingsSection`** placed inline for now;
+P10j-c moves it onto the `/settings/captions` sub-screen.
 
 - **Vocabulary (pick one, apply everywhere):**
   - **Captions** = the text tracks yt-dlp downloads/embeds (sidecar `.srt/.vtt` or embedded).
@@ -191,32 +190,34 @@ same field; a real download with each combination behaves as it did pre-P10j (ve
 explicit langs vs auto-captions vs transcript build). `VERIFICATION.md` updated with the
 caption/transcript combinations to spot-check.
 
-### `[ ]` P10j-c — Regroup + search + `InfoHint` rollout + surfaced maintenance
-**Branch:** `claude/p10j-c-ia-search` · **Single-screen restructure (no new routes).**
+### `[ ]` P10j-c — Hybrid IA + search + `InfoHint` rollout + surfaced maintenance
+**Branch:** `claude/p10j-c-ia-search` · **The restructure.**
 
-- **Regroup + reorder.** Apply the section order above on the one screen: Downloads →
-  Captions & transcripts → Advanced download options → Engine → Storage → Appearance →
-  Security → Privacy → AI & graph (renamed from "Graph database") → General. Trim the
-  Downloads section now that captions moved out.
-- **Search / quick-jump.** A search field pinned atop the list, backed by a **static settings
-  index** — `{ id, label, keywords, anchor }` for every control (anchor = a `GlobalKey`/index
-  the list can scroll to). Typing filters to a flat results list; tapping a result collapses
-  search and **scrolls to / highlights** the control in place (no navigation). The index is a
-  single hand-maintained list (one entry per control); a unit test asserts every entry's
-  anchor exists on the screen, so the index can't silently rot.
+- **Sub-screens.** Add top-level routes `/settings/downloads`, `/settings/captions`,
+  `/settings/ai` (`app_router.dart`, mirroring `/storage`, pushed from the landing via
+  `SettingsNavTile`). Move the *Downloads* controls (and, gated by Advanced mode, *Advanced
+  download options*) to `/settings/downloads`; move P10j-b's section to `/settings/captions`;
+  move the AI/graph section to `/settings/ai`. Landing keeps Appearance, Storage, Security,
+  Privacy, Downloader engine, General inline.
+- **Search / quick-jump.** A search field atop the landing backed by a **static settings
+  index** — `{ id, label, keywords, location }` for every control (location = inline section
+  anchor or a sub-screen route). Typing filters to a flat results list; tapping a result
+  navigates to its screen/section. The index is a single hand-maintained list (one entry per
+  control); a unit test asserts every entry resolves to a real destination, so it can't
+  silently rot.
 - **`InfoHint` rollout.** Add plain-language hints to the non-obvious controls: faster
   downloads, concurrent fragments, rate limit, skip-already-downloaded, SponsorBlock, min free
   space, low-battery threshold, secure delete, dynamic color, AMOLED, semantic search, rebuild
   graph index. (Obvious toggles like "Wi-Fi only" stay hint-free — no noise.)
-- **Surface maintenance.** Add a **General** section with **About**, **Reset to defaults**,
-  **Clear cache** as rows (reusing the overflow's existing handlers). Keep the `⋮` overflow as
-  a shortcut.
+- **Surface maintenance.** Add a **General** section on the landing with **About**, **Reset to
+  defaults**, **Clear cache** as rows (reusing the overflow's existing handlers). Keep the `⋮`
+  overflow as a shortcut.
 
-**Exit:** sections are reordered and scannable; search jumps to any control by name (scroll +
-highlight); non-obvious controls have tappable help; maintenance actions are visible without
-the overflow. `flutter analyze` clean; tests cover the search index resolver and result
-filtering. `VERIFICATION.md`: run a search and follow a result to the highlighted control,
-confirm reset/clear-cache from the General section.
+**Exit:** landing is short and scannable; Downloads/Captions/AI open as sub-screens; search
+jumps to any control by name; non-obvious controls have tappable help; maintenance actions are
+visible without the overflow. `flutter analyze` clean; tests cover the search index resolver
+and result filtering. `VERIFICATION.md`: navigate to each sub-screen, run a search and follow a
+result, confirm reset/clear-cache from the General section.
 
 ---
 
@@ -245,9 +246,9 @@ trailing icon so help is attached to the control it explains.
   (selection fires `onChanged`), and the P10j-c search index resolver (every entry resolves;
   query filters correctly). `dart format` + `flutter analyze` + `flutter test` green.
 - **On-device (`VERIFICATION.md`, manual APK):** info hints open on tap (not long-press);
-  caption/transcript download combinations behave unchanged; search → result → scroll/highlight
-  the control; maintenance actions from the General section. APK build is manual/user-triggered
-  (CLAUDE.md §6) — batch the on-device checks into one build at phase end.
+  caption/transcript download combinations behave unchanged; sub-screen navigation + back;
+  search → result → destination; maintenance actions from the General section. APK build is
+  manual/user-triggered (CLAUDE.md §6) — batch the on-device checks into one build at phase end.
 
 ---
 
@@ -262,4 +263,3 @@ trailing icon so help is attached to the control it explains.
   `DropdownButton`). Within Settings the dropdown convention is consistent; harmonizing across
   features is a separate concern.
 - **Windows settings parity** — v2 / P15.
-```
