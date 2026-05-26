@@ -2,7 +2,7 @@ import 'package:grabbit/core/graph/graph_error.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
 
 /// Graceful no-op [GraphStore] for platforms without a native engine yet —
-/// Windows (its `dart:ffi` impl lands in P14) and any other host. [isAvailable]
+/// Windows (its `dart:ffi` impl lands in P15) and any other host. [isAvailable]
 /// is always false, so callers disable graph features cleanly; mutating calls
 /// throw [GraphErrorCode.unavailable] rather than crash.
 class UnavailableGraphStore implements GraphStore {

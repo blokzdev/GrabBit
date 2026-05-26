@@ -20,7 +20,7 @@ searchable and self-organizing — no cloud, no accounts.
 
 | Band | Theme | Network | Money |
 |---|---|---|---|
-| **v1** | Android, free, on-device, **AI-powered**: downloader + private media manager, then the on-device AI + relationship-graph pillar (P10–P12), then beta & launch (P13) | Offline | Free |
+| **v1** | Android, free, on-device, **AI-powered**: downloader + private media manager, then the Activity Inbox (P11) + the on-device AI + relationship-graph pillar (P10, P12–P13), then beta & launch (P14) | Offline | Free |
 | **v2** | Local-only expansion: Windows parity + production polish + authenticated/cookie import | Offline | Free |
 
 *(AI is core to the vision, so v1 ships **after** the AI work. The previously planned

@@ -48,7 +48,7 @@ final suggestedAlbumsProvider = FutureProvider<List<SuggestedAlbum>>((
 });
 
 /// Labels a cluster by its newest item's title (truncated) — a recognisable
-/// anchor. Richer naming (dominant tag/uploader, LLM) is P12.
+/// anchor. Richer naming (dominant tag/uploader, LLM) is P13.
 String _label(List<MediaItem> items) {
   final rep = items.reduce((a, b) => a.createdAt.isAfter(b.createdAt) ? a : b);
   final t = rep.title.trim();

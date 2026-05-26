@@ -9,7 +9,8 @@ by default; later phases assume earlier exit criteria are met.
 Legend (two version bands — the former **v3 cloud/credits band is dropped**):
 - **v1 — Android, free, on-device, AI-powered:** P0–P14. Core downloader + private media manager
   (P0–P9), then the **on-device AI + graph pillar** — P10 (baseline edge AI + Cozo graph/vector
-  foundation) · P12 (device-tiered edge LLM engine) · P13 (LLM features + local GraphRAG) — then
+  foundation) · P12 (device-tiered edge LLM engine) · P13 (LLM features + local GraphRAG) — with the
+  **Activity Inbox (P11)** slotted between P10 and the edge-LLM work, then
   **P14 (beta, production readiness & launch)**. AI is core to the vision, so **v1 ships *after* it**.
 - **v2 — local-only expansion (still free/offline):** P15 (Windows parity) · P16 (production polish
   + authenticated/cookie import).

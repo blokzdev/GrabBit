@@ -2,7 +2,7 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 
 /// Platform-agnostic on-device inference engine. P10b-2a exposes only the
 /// **embedding** slice that powers semantic search / similarity; generation and
-/// transcription arrive with the LLM runtime in P11. Backed by `flutter_gemma`
+/// transcription arrive with the LLM runtime in P12. Backed by `flutter_gemma`
 /// (embedder-only) on Android; a graceful no-op stub elsewhere and until the
 /// user opts in. UI and feature code depend only on this interface, never a
 /// concrete runtime (mirrors `GraphStore` / `DownloadEngine`).

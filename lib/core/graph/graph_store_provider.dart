@@ -12,7 +12,7 @@ part 'graph_store_provider.g.dart';
 ///
 /// Unsupported platforms get [UnavailableGraphStore] (graceful degradation, per
 /// docs/AI-SPEC.md) rather than an error — the Windows `dart:ffi` impl replaces
-/// it in P14.
+/// it in P15.
 @Riverpod(keepAlive: true)
 GraphStore graphStore(Ref ref) {
   if (Platform.isAndroid) return AndroidCozoGraphStore();

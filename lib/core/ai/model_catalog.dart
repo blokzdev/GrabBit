@@ -1,4 +1,4 @@
-/// The pinned on-device embedder model. A minimal precursor to P11's full model
+/// The pinned on-device embedder model. A minimal precursor to P12's full model
 /// catalog — for P10b-2 we ship exactly one embedder, chosen for the smallest
 /// download and **no gated-model auth** (no HuggingFace token).
 ///
