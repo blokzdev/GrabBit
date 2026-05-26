@@ -115,11 +115,11 @@ TextColumn id; TextColumn url; TextColumn requestJson; TextColumn status;
 RealColumn progress; TextColumn? errorCode; IntColumn retries; DateTimeColumn createdAt;
 IntColumn orderIndex;                                    // v3 (P9d): queue reorder
 // settings (key/value JSON, single row)
-// notifications (v7, P11): id, createdAt, category, severity, title, body,
+// notifications (v8, P11): id, createdAt, category, severity, title, body,
 //   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
 ```
 
-Migration strategy: Drift `schemaVersion` (currently **6**); write `MigrationStrategy`
+Migration strategy: Drift `schemaVersion` (currently **7**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
@@ -129,8 +129,14 @@ adds `media_metadata.transcript` (caption-sidecar text feeding the summary). **v
 `media_metadata.transcriptCues` (timestamped lines, JSON, for the synced tap-to-seek view). `contentHash`
 is populated lazily by the P9b-3 duplicate scan (`DedupeService`, off-isolate); `lastAccessedAt`
 is set on playback (P9c). The probe (`MediaInfo`/`MediaInfoDto`) now carries the source `id`.
-**Planned: v7 (P11)** adds the `notifications` table backing the Activity Inbox; **P10h** adds a SQLite
-**FTS5** index over `transcript`+`description`+`title` (search by spoken content).
+**v7 (P10h)** adds `media_fts`, a SQLite **FTS5** virtual table over `title`+`description`+`transcript`
+(keyed by `item_id`, `tokenize='unicode61 remove_diacritics 2'`). It is **not** a Drift table: it is
+created/synced by raw SQL in the migration — AFTER INSERT/UPDATE/DELETE triggers on `media_items` (title)
+and `media_metadata` (description, transcript) delete-then-reinsert the joined row, and a one-time backfill
+(`NOT IN` guarded) indexes pre-existing rows on the v6→v7 upgrade. `MetadataRepository.watchFiltered`
+keyword search runs through it via `MATCH` (user input sanitized into a quoted, prefix-matched expression),
+ranked by `bm25()` for the **Relevance** sort; the empty-search path keeps the typed query.
+**Planned: v8 (P11)** adds the `notifications` table backing the Activity Inbox.
 
 ---
 

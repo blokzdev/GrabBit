@@ -81,7 +81,8 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
         ? _semanticQuery.isNotEmpty
         : filter.search.isNotEmpty ||
               filter.type != null ||
-              filter.favoritesOnly;
+              filter.favoritesOnly ||
+              filter.hasTranscript;
     final rows = items.asData?.value ?? const <MediaItem>[];
     final selectedItems = [
       for (final r in rows)

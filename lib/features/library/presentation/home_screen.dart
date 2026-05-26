@@ -104,17 +104,32 @@ class _SortAction extends ConsumerWidget {
       tooltip: 'Sort',
       initialValue: filter.sort,
       onSelected: ref.read(libraryFilterProvider.notifier).setSort,
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: LibrarySort.newest, child: Text('Newest')),
-        PopupMenuItem(value: LibrarySort.oldest, child: Text('Oldest')),
-        PopupMenuItem(
+      itemBuilder: (context) => [
+        // Relevance only ranks against an active query; offer it while searching.
+        if (filter.search.trim().isNotEmpty)
+          const PopupMenuItem(
+            value: LibrarySort.relevance,
+            child: Text('Relevance'),
+          ),
+        const PopupMenuItem(value: LibrarySort.newest, child: Text('Newest')),
+        const PopupMenuItem(value: LibrarySort.oldest, child: Text('Oldest')),
+        const PopupMenuItem(
           value: LibrarySort.recentlyPlayed,
           child: Text('Recently played'),
         ),
-        PopupMenuItem(value: LibrarySort.titleAsc, child: Text('Title A–Z')),
-        PopupMenuItem(value: LibrarySort.titleDesc, child: Text('Title Z–A')),
-        PopupMenuItem(value: LibrarySort.largest, child: Text('Largest')),
-        PopupMenuItem(value: LibrarySort.smallest, child: Text('Smallest')),
+        const PopupMenuItem(
+          value: LibrarySort.titleAsc,
+          child: Text('Title A–Z'),
+        ),
+        const PopupMenuItem(
+          value: LibrarySort.titleDesc,
+          child: Text('Title Z–A'),
+        ),
+        const PopupMenuItem(value: LibrarySort.largest, child: Text('Largest')),
+        const PopupMenuItem(
+          value: LibrarySort.smallest,
+          child: Text('Smallest'),
+        ),
       ],
     );
   }

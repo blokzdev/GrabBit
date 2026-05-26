@@ -28,10 +28,28 @@ final mediaItemByIdProvider = FutureProvider.family<MediaItem?, String>((
 
 /// Current search/filter/sort for the library grid.
 class LibraryFilter extends Notifier<LibraryQuery> {
+  // The sort to restore when an active search query is cleared (P10h). Set when
+  // entering search (which auto-selects relevance) so clearing returns the user
+  // to whatever ordering they had before.
+  LibrarySort? _sortBeforeSearch;
+
   @override
   LibraryQuery build() => const LibraryQuery();
 
-  void setSearch(String value) => state = state.copyWith(search: value);
+  void setSearch(String value) {
+    final wasSearching = state.search.trim().isNotEmpty;
+    final isSearching = value.trim().isNotEmpty;
+    var next = state.copyWith(search: value);
+    if (isSearching && !wasSearching) {
+      _sortBeforeSearch = state.sort;
+      next = next.copyWith(sort: LibrarySort.relevance);
+    } else if (!isSearching && wasSearching) {
+      next = next.copyWith(sort: _sortBeforeSearch ?? LibrarySort.newest);
+      _sortBeforeSearch = null;
+    }
+    state = next;
+  }
+
   void setType(String? type) => state = state.copyWith(type: () => type);
   void setSort(LibrarySort sort) => state = state.copyWith(sort: sort);
   void setCollection(int? id) => state = state.copyWith(collectionId: () => id);
@@ -40,10 +58,13 @@ class LibraryFilter extends Notifier<LibraryQuery> {
   void setPlaylist(String? id) => state = state.copyWith(playlistId: () => id);
   void setFavoritesOnly(bool value) =>
       state = state.copyWith(favoritesOnly: value);
+  void setHasTranscript(bool value) =>
+      state = state.copyWith(hasTranscript: value);
   void clearFacets() => state = state.copyWith(
     site: () => null,
     uploader: () => null,
     playlistId: () => null,
+    hasTranscript: false,
   );
 }
 

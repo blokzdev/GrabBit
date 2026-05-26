@@ -145,10 +145,16 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
     (`DeviceCapabilityService`/`ModelCapabilityMatrix`) owns capability-driven behaviour — **window
     selection (256 vs 512), model upgrade/downgrade, automated graceful degradation/disable** (all depend
     on P12's capability probe). Multivector chunking → **P13/GraphRAG**. See `AI-SPEC.md` §3, §5.
-- **P10h — Full-text search over transcripts & metadata** *(later)*: SQLite **FTS5** over
-  transcript + description + title (today `metadata_repository` searches `LIKE` on title/description),
-  making the library searchable by spoken content. Promotes the FTS backlog item.
-- **P10i — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: information
+- **P10h — Full-text search over transcripts & metadata** *(done)*: SQLite **FTS5** (`media_fts`,
+  trigger-synced + backfilled on the v6→v7 migration) over title + description + **transcript**, replacing
+  the `LIKE` search in `metadata_repository`, so the library is searchable by spoken content. Adds a
+  **Relevance** sort (bm25, auto-selected while searching, overridable) and a **Has-transcript** filter.
+- **P10i — Dynamic, type-aware library sort & filter system** *(later)*: richer, contextual library
+  discovery — multi-select type filter (+ future formats), duration & upload-date sorts,
+  quality/resolution + duration-range + date-range filters, and **type-aware option narrowing** (available
+  sort/filter options adapt to the active type, with a defined fallback when one becomes inapplicable). Its
+  own filter-sheet/sort-menu design pass. Pure-Dart/UI over `LibraryQuery`/`watchFiltered`.
+- **P10j — Settings IA, UX refinement & consistency pass** *(final P10 subphase)*: information
   architecture (regroup/nest into clear sections) **+ UI/UX refinement** (visual polish, control-type
   consistency, discoverability/settings-search), roll the `(i)`-info-tooltip pattern across non-obvious
   settings with plain-language copy, and reconcile gaps from P8–P10 — including clarifying the

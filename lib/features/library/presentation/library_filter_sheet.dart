@@ -45,6 +45,14 @@ class _LibraryFilterSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Has transcript'),
+              subtitle: const Text('Only items with extracted captions'),
+              value: filter.hasTranscript,
+              onChanged: controller.setHasTranscript,
+            ),
+            const SizedBox(height: 8),
             if (sites.isNotEmpty) ...[
               Text('Platform', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
