@@ -122,8 +122,8 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   `transcript_service.extractTimed`. Item-detail renders a synced scrollable transcript (`_SyncedTranscript`)
   whose lines **seek the player** and highlight/auto-scroll with playback; the player controller is shared
   via a screen-scoped `ValueNotifier`. Groundwork for timestamped GraphRAG citations. Pure-Dart/UI.
-- **P10g — Transcript-powered semantic index (multi-engine embedder)**: include the transcript in the embed
-  doc and grow the embedder into a pluggable, capability-selected layer. Sub-PRs:
+- **P10g — Transcript-powered semantic index (multi-engine embedder)** *(complete after g-2)*: include the
+  transcript in the embed doc and grow the embedder into a pluggable layer. Sub-PRs:
   - **P10g-1** *(done)*: re-pin `geckoEmbedder` `Gecko_64_quant → Gecko_256_quant` in `model_catalog.dart`
     (768-d unchanged, ~114 MB, 256-token, Apache-2.0/ungated); add a **window-capped** transcript slice to
     `buildEmbeddingDocs` (`embedding_doc.dart`, `_descCap`/`_transcriptCap` — caps are required so the
