@@ -637,6 +637,15 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] The fetch creates **no entry in the download Queue** and **no new library item**.
 - [ ] An item that already has local captions still builds **offline** (no network) via the same action.
 
+### P10f-3 — Auto-download captions setting (needs an APK build)
+- [ ] **Settings → Transcripts** shows a dedicated section with **Auto-download captions**,
+      **Auto-build transcripts**, and **Backfill transcripts on open** (each with an `(i)` tooltip).
+- [ ] Turn **Auto-download captions** ON (leave "Download subtitles" off) → download a captioned video →
+      a caption file is fetched; with **Auto-build transcripts** also on, a **Transcript** + Summary
+      appear with no manual step.
+- [ ] A video with **no** captions → downloads fine, no error, no transcript.
+- [ ] With explicit **Download subtitles** languages set, those still win (the setting doesn't override).
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built

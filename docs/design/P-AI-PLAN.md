@@ -112,9 +112,10 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   in a chosen language (curated picker, default = in-app language) into the item's media folder, then
   reuses P10f-1's `extractTranscript`/`updateTranscript`. The fetch runs the engine directly (no queue
   entry). Verified with a debug-APK build. Available-language enumeration deferred (see `BACKLOG.md`).
-- **P10f-3 — Auto-download captions setting (native)** *(next)*: opt-in setting that grabs captions in
+- **P10f-3 — Auto-download captions setting (pure-Dart)** *(done)*: opt-in setting that grabs captions in
   the in-app language on every download (when no explicit subtitle langs set), feeding auto-transcribe;
-  groups the transcript toggles into a "Transcripts" settings section beside "Subtitles".
+  groups the transcript toggles into a dedicated "Transcripts" settings section. Reuses the P8c subtitle
+  path (no native change); the in-app default language is `SettingsModel.captionLanguage`.
 - **P10f-4 — Timestamped, tap-to-seek transcript** *(later)*: retain caption-cue timings (today
   `captionsToTranscript` keeps only `.text`) in a timed representation stored beside the flat transcript;
   item-detail renders a scrollable transcript whose lines **seek the player**; groundwork for timestamped
