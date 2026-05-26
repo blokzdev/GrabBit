@@ -6,7 +6,7 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/unavailable_inference_engine.dart';
 
 /// Maps a selected [EmbedderModel] to the [InferenceEngine] that can run it on
-/// this host — the runtime "registry" seam. P10g-3 adds the `onnx` case for the
+/// this host — the runtime "registry" seam. P12 adds the `onnx` case for the
 /// multilingual MiniLM engine; P12 chooses *which* model via the capability
 /// matrix. A model whose runtime isn't available here falls back to the graceful
 /// [UnavailableInferenceEngine] (semantic features stay off, never crash), which

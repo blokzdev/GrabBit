@@ -665,6 +665,8 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       **"Update AI model"** row in Settings (no silent download); tapping it fetches Gecko_256 and
       re-embeds. Declining leaves the app working.
 - [ ] On a device that can't run the model, semantic search degrades gracefully (no crash).
+- [ ] **Known limitation (until P12):** Gecko is English-optimized — non-English queries/content return
+      results without crashing, but relevance is weaker. The multilingual engine lands in P12.
 
 ### P10g-2 — Pluggable embedder registry (pure architecture; CI-covered)
 - [ ] No new user-facing surface — covered by `flutter test` (factory model-propagation + Unavailable

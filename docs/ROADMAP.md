@@ -277,19 +277,20 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
     transcript discarded them) as JSON in `MediaMetadata.transcriptCues` (schema v6); item-detail shows a
     scrollable transcript whose lines **seek the player** and the playing line highlights/auto-scrolls;
     lays groundwork for timestamped GraphRAG citations. Device-universal, pure-Dart/UI; APK-verified.
-- **P10g — Transcript-powered semantic index (multi-engine embedder)**: feed the **transcript** into the
-  embedding input (today: title/uploader/playlist/tags/**description** only) so semantic search · "related" ·
-  future GraphRAG run on the **spoken content**, and grow the embedder into a pluggable, capability-selected
-  layer. Delivered in sub-PRs:
+- **P10g — Transcript-powered semantic index (multi-engine embedder)** *(complete after g-2)*: feed the
+  **transcript** into the embedding input (was: title/uploader/playlist/tags/**description** only) so
+  semantic search · "related" · future GraphRAG run on the **spoken content**, and grow the embedder into a
+  pluggable layer. Delivered in sub-PRs:
   - **P10g-1** *(done)*: re-pin the Gecko export `seq64 → seq256` (Apache-2.0, ungated, 768-d, ~114 MB —
     4× the window) + add a window-capped transcript slice to the embed doc + one-time re-embed. No LLM.
   - **P10g-2** *(done)*: a runtime-agnostic seam — an `EmbedderRuntime` discriminator, an
     `inferenceEngineFor(model)` factory (unsupported runtime/platform → graceful fallback), and an
     `activeEmbedderModel` **selection provider** (returns the default; the override point for P12).
     Gecko-only, default unchanged, no consumer changes — **pure architecture/refactor**.
-  - **P10g-3**: a second runtime (**onnxruntime**) + **multilingual** embedder
-    (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0, ungated, 50-lang) + on-device tokenizer, plugged
-    into the registry with Gecko as the universal fallback.
+  - *Multilingual embedder → moved to **P12***: the onnxruntime + `paraphrase-multilingual-MiniLM-L12-v2`
+    engine is **install-global, capability+content selected** (a single shared HNSW index rules out
+    per-language mixing), so it belongs with P12's capability matrix + model-download infra; the g-2 seam
+    hosts it cleanly when it lands.
   - *Cross-phase*: the **device-capability diagnostics + device-tier system (P12 —
     `DeviceCapabilityService`/`ModelCapabilityMatrix`)** owns all capability-driven behaviour — **window
     selection (256 vs 512), model upgrade/downgrade, and automated graceful degradation/disable** on
@@ -353,8 +354,10 @@ cloud, no account, no credits.
 **model catalog + download + integrity check + caching** (install stays lean); `InferenceEngine`
 impls via **`flutter_gemma`** (generation; wraps MediaPipe LLM Inference / LiteRT-LM) and
 **whisper.cpp** (`whisper_ggml_plus` / `whisper_kit`) for transcription; ML Kit (OCR/translate)
-where it fits; capability-gating so unsupported features are clearly disabled with a friendly
-reason. **Model/licensing:** confirm current best models at phase start; **prefer Apache-2.0/MIT**
+where it fits; a **multilingual embedder option** (`paraphrase-multilingual-MiniLM-L12-v2`,
+Apache-2.0, onnxruntime) selected via the capability matrix — install-global, re-embeds on switch,
+plugged into the P10g-2 registry seam; capability-gating so unsupported features are clearly disabled
+with a friendly reason. **Model/licensing:** confirm current best models at phase start; **prefer Apache-2.0/MIT**
 (SmolLM-135M, Qwen3-0.6B, Phi-4-Mini); Gemma usable but **vet its use policy before bundling**.
 **Exit criteria:** on a capable device, download a model and generate/transcribe offline; on a
 low-end device those features are cleanly disabled with explanation.
