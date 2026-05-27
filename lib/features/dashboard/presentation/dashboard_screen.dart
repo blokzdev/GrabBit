@@ -15,6 +15,7 @@ import 'package:grabbit/features/dashboard/presentation/dashboard_providers.dart
 import 'package:grabbit/features/dashboard/presentation/widgets/activity_chart_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/duplicates_callout.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/graph_entry_tile.dart';
+import 'package:grabbit/features/dashboard/presentation/widgets/recent_activity_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/recent_media_row.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/storage_donut_tile.dart';
@@ -22,6 +23,7 @@ import 'package:grabbit/features/dashboard/presentation/widgets/suggestions_tile
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 
 /// The app home (P10d): an at-a-glance view of the on-device footprint —
@@ -35,7 +37,10 @@ class DashboardScreen extends ConsumerWidget {
     final summary = ref.watch(dashboardSummaryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const _BrandTitle()),
+      appBar: AppBar(
+        title: const _BrandTitle(),
+        actions: const [_InboxBellAction()],
+      ),
       body: switch (summary) {
         AsyncError(:final error) => ErrorView(
           message: 'Failed to load your dashboard: $error',
@@ -165,6 +170,7 @@ class _DashboardBody extends ConsumerWidget {
               title: 'Recently opened',
               provider: recentlyPlayedProvider,
             ),
+            const RecentActivityTile(),
             const SuggestionsTile(),
             const DuplicatesCallout(),
             const GraphEntryTile(),
@@ -236,6 +242,26 @@ class _DashboardSkeleton extends StatelessWidget {
           childAspectRatio: 1.3,
           children: List.generate(4, (_) => Skeleton(radius: tokens.radiusLg)),
         ),
+      ),
+    );
+  }
+}
+
+/// App-bar bell that opens the Activity Inbox, badged with the unread count.
+class _InboxBellAction extends ConsumerWidget {
+  const _InboxBellAction();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread =
+        ref.watch(unreadNotificationCountProvider).asData?.value ?? 0;
+    return IconButton(
+      tooltip: 'Activity',
+      onPressed: () => context.push('/inbox'),
+      icon: Badge(
+        isLabelVisible: unread > 0,
+        label: Text('$unread'),
+        child: const Icon(Icons.notifications_outlined),
       ),
     );
   }

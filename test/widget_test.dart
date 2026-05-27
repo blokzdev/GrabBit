@@ -6,6 +6,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/data/settings_repository.dart';
@@ -34,6 +35,10 @@ void main() {
           ),
           collectionsProvider.overrideWith(
             (ref) => Stream.value(<Collection>[]),
+          ),
+          notificationFeedProvider.overrideWith((ref) => const Stream.empty()),
+          unreadNotificationCountProvider.overrideWith(
+            (ref) => const Stream.empty(),
           ),
         ],
         child: const GrabBitApp(),

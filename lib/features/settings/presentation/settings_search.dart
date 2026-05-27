@@ -6,12 +6,14 @@ const settingsLandingDestination = 'landing';
 const downloadsSettingsRoute = '/settings/downloads';
 const captionsSettingsRoute = '/settings/captions';
 const aiSettingsRoute = '/settings/ai';
+const notificationsSettingsRoute = '/settings/notifications';
 
 const Set<String> kSettingsDestinations = {
   settingsLandingDestination,
   downloadsSettingsRoute,
   captionsSettingsRoute,
   aiSettingsRoute,
+  notificationsSettingsRoute,
 };
 
 /// One searchable control. [label] is the control's exact on-screen title (the
@@ -223,6 +225,37 @@ const List<SettingsSearchEntry> kSettingsSearchIndex = [
     section: 'AI & graph',
     destination: aiSettingsRoute,
     keywords: ['diagnostic', 'embedding model'],
+  ),
+  // --- Notifications sub-screen -----------------------------------------------
+  SettingsSearchEntry(
+    label: 'Keep notifications',
+    section: 'Notifications',
+    destination: notificationsSettingsRoute,
+    keywords: ['retention', 'history', 'clear', 'days', 'auto delete'],
+  ),
+  SettingsSearchEntry(
+    label: 'Download activity',
+    section: 'Notifications',
+    destination: notificationsSettingsRoute,
+    keywords: ['download notifications', 'complete', 'finished', 'alerts'],
+  ),
+  SettingsSearchEntry(
+    label: 'Transcript activity',
+    section: 'Notifications',
+    destination: notificationsSettingsRoute,
+    keywords: ['transcript notifications', 'captions', 'alerts'],
+  ),
+  SettingsSearchEntry(
+    label: 'AI activity',
+    section: 'Notifications',
+    destination: notificationsSettingsRoute,
+    keywords: ['ai notifications', 'semantic', 'embeddings', 'alerts'],
+  ),
+  SettingsSearchEntry(
+    label: 'Graph activity',
+    section: 'Notifications',
+    destination: notificationsSettingsRoute,
+    keywords: ['graph notifications', 'index', 'rebuild', 'alerts'],
   ),
   // --- Landing (inline sections) ----------------------------------------------
   SettingsSearchEntry(

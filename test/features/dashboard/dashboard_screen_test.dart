@@ -13,7 +13,16 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
 import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
+
+// The Dashboard's activity bell + recent-activity tile read these; stub them as
+// empty streams so the tests never open the real DB or leave a drift stream's
+// close-timer pending at teardown.
+final _notificationStubs = [
+  notificationFeedProvider.overrideWith((ref) => const Stream.empty()),
+  unreadNotificationCountProvider.overrideWith((ref) => const Stream.empty()),
+];
 
 MediaItem _item(String id, int size) => MediaItem(
   id: id,
@@ -45,6 +54,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ..._notificationStubs,
           libraryItemsProvider.overrideWith(
             (ref) => Stream.value([_item('a', 100), _item('b', 50)]),
           ),
@@ -101,6 +111,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ..._notificationStubs,
           libraryItemsProvider.overrideWith(
             (ref) => Stream.value(<MediaItem>[]),
           ),
@@ -124,6 +135,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ..._notificationStubs,
           libraryItemsProvider.overrideWith(
             (ref) => Completer<List<MediaItem>>().future.asStream(),
           ),
@@ -147,6 +159,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ..._notificationStubs,
           libraryItemsProvider.overrideWith(
             (ref) => Stream<List<MediaItem>>.error(Exception('boom')),
           ),

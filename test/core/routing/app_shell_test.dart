@@ -7,6 +7,7 @@ import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 
 DownloadTask _task(String status) => DownloadTask(
@@ -36,6 +37,10 @@ Future<void> _pumpApp(
         libraryItemsProvider.overrideWith((ref) => Stream.value(<MediaItem>[])),
         queueTasksProvider.overrideWith((ref) => Stream.value(tasks)),
         collectionsProvider.overrideWith((ref) => Stream.value(<Collection>[])),
+        notificationFeedProvider.overrideWith((ref) => const Stream.empty()),
+        unreadNotificationCountProvider.overrideWith(
+          (ref) => const Stream.empty(),
+        ),
       ],
       child: const GrabBitApp(),
     ),

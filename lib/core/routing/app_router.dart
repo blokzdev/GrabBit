@@ -24,12 +24,14 @@ import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/ai_setup_screen.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
 import 'package:grabbit/features/lock/lock_screen.dart';
+import 'package:grabbit/features/notifications/presentation/inbox_screen.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/presentation/queue_screen.dart';
 import 'package:grabbit/features/settings/presentation/about_screen.dart';
 import 'package:grabbit/features/settings/presentation/ai_settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/captions_settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/downloads_settings_screen.dart';
+import 'package:grabbit/features/settings/presentation/notifications_settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -239,6 +241,18 @@ GoRouter appRouter(Ref ref) {
         name: 'settings-ai',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AiSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/notifications',
+        name: 'settings-notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationsSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/inbox',
+        name: 'inbox',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const InboxScreen(),
       ),
     ],
   );
