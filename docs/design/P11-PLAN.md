@@ -95,12 +95,22 @@ The durable data layer only — no UI, no producers, no OS notifications.
 - **Exit / review:** real background work produces durable, de-duplicated, deep-linking entries.
   **Implemented (CI-verifiable; no APK needed); pending on-device spot-check.**
 
-### `[ ]` P11d — Terminal OS notifications *(native — needs an APK build)*
-- `flutter_local_notifications`: Android channel + `POST_NOTIFICATIONS` runtime permission
-  (API 33+); raise a system notification on download complete/failed, gated by the same category
-  toggles. Complementary to the existing foreground-service progress notification.
+### `[~]` P11d — Terminal OS notifications *(native — needs an APK build)*
+- `flutter_local_notifications` (already in `pubspec`; `POST_NOTIFICATIONS` already in the manifest and
+  requested at download start by the foreground service) — so **no pubspec/manifest/Kotlin change**:
+  pure-Dart wiring behind a `SystemNotificationService` interface (Android impl + Noop, mirroring
+  `BatteryService`). Raises a system notification on download complete/failed on a **distinct**
+  `grabbit_activity` channel (separate from the foreground-service `grabbit_downloads`/id-42 progress
+  notification), gated by the same `notifyDownload` toggle.
+- Only raised when the app is **backgrounded** (a new `appLifecycleStateProvider`, updated from
+  `app.dart`'s lifecycle observer) — the in-app inbox already covers the foreground case. Errors honor
+  the toggle for the OS popup, but the inbox still records them unconditionally.
+- Tap carries the entry's `targetRoute` as payload → `appRouterProvider.go(route)` (with an `/inbox`
+  fallback for stale targets). Cold-start taps route via `getNotificationAppLaunchDetails()` at startup,
+  mirroring share-intake's `takeInitialUrl()`.
 - **Exit / review:** with the app backgrounded, a finished/failed download raises an OS
-  notification that opens the relevant screen; disabling the category suppresses it.
+  notification that opens the relevant screen (cold start too); disabling the category suppresses it;
+  a foregrounded completion raises no OS popup. *(Notification status-bar icon polish backlogged.)*
 
 ### `[ ]` P11e — Actionable inbox entries *(pure Dart)*
 - Per-entry `⋮` actions on inbox tiles (mirroring P9g `showMediaActions`): **Retry** a failed

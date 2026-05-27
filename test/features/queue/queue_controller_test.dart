@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
@@ -10,10 +11,12 @@ import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/battery/battery_service.dart';
+import 'package:grabbit/core/lifecycle/app_lifecycle_provider.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
+import 'package:grabbit/features/notifications/data/system_notification_service.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
@@ -125,6 +128,28 @@ class FakeForegroundService implements ForegroundService {
   Future<bool> isUnmetered() async => unmetered;
 }
 
+/// Records OS-notification show calls so tests can assert on them.
+class FakeSystemNotificationService implements SystemNotificationService {
+  final List<({String taskId, String route, bool isError})> shown = [];
+
+  @override
+  Future<void> initialize({required void Function(String route) onTap}) async {}
+
+  @override
+  Future<void> showDownload({
+    required String taskId,
+    required String title,
+    String? body,
+    required String route,
+    required bool isError,
+  }) async {
+    shown.add((taskId: taskId, route: route, isError: isError));
+  }
+
+  @override
+  Future<String?> takeLaunchRoute() async => null;
+}
+
 /// Network monitor whose change events the test fires manually.
 class FakeNetworkMonitor implements NetworkMonitor {
   final _controller = StreamController<void>.broadcast();
@@ -208,6 +233,7 @@ void main() {
   late FakeNetworkMonitor fakeNetwork;
   late FakeDiskSpaceService fakeDisk;
   late FakeBatteryService fakeBattery;
+  late FakeSystemNotificationService fakeOsNotifier;
   late Directory mediaDir;
 
   ProviderContainer makeContainer() => ProviderContainer(
@@ -218,6 +244,7 @@ void main() {
       networkMonitorProvider.overrideWithValue(fakeNetwork),
       diskSpaceServiceProvider.overrideWithValue(fakeDisk),
       batteryServiceProvider.overrideWithValue(fakeBattery),
+      systemNotificationServiceProvider.overrideWithValue(fakeOsNotifier),
       mediaStorageProvider.overrideWithValue(FakeMediaStorage(mediaDir)),
       queueConfigProvider.overrideWithValue(
         const QueueConfig(baseRetryDelay: Duration(milliseconds: 5)),
@@ -232,6 +259,7 @@ void main() {
     fakeNetwork = FakeNetworkMonitor();
     fakeDisk = FakeDiskSpaceService();
     fakeBattery = FakeBatteryService();
+    fakeOsNotifier = FakeSystemNotificationService();
     mediaDir = Directory.systemTemp.createTempSync('grabbit_qmedia_');
     container = makeContainer();
     repo = container.read(queueRepositoryProvider);
@@ -368,6 +396,78 @@ void main() {
       expect(n.targetRoute, '/queue');
     },
   );
+
+  test('a backgrounded completion raises an OS notification (P11d)', () async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_os_done_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/vid1').create();
+    await File('${dir.path}/vid1/My Clip.mp4').writeAsString('data');
+
+    container
+        .read(appLifecycleStateProvider.notifier)
+        .set(AppLifecycleState.paused);
+    await controller.enqueue(_qd('vid1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('vid1'));
+    engine.complete('vid1');
+
+    await waitFor(() async => fakeOsNotifier.shown.isNotEmpty);
+    final n = fakeOsNotifier.shown.single;
+    expect(n.taskId, 'vid1');
+    expect(n.route, '/item/vid1');
+    expect(n.isError, isFalse);
+  });
+
+  test('a backgrounded failure raises an OS notification (P11d)', () async {
+    container
+        .read(appLifecycleStateProvider.notifier)
+        .set(AppLifecycleState.paused);
+    await controller.enqueue(_qd('t1'));
+    await waitFor(() async => engine.running.contains('t1'));
+    engine.fail('t1', DownloadErrorCode.unsupportedSite);
+
+    await waitFor(() async => fakeOsNotifier.shown.isNotEmpty);
+    final n = fakeOsNotifier.shown.single;
+    expect(n.taskId, 't1');
+    expect(n.route, '/queue');
+    expect(n.isError, isTrue);
+  });
+
+  test('a foregrounded completion raises no OS notification (P11d)', () async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_os_fg_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/vid1').create();
+    await File('${dir.path}/vid1/My Clip.mp4').writeAsString('data');
+
+    // Lifecycle defaults to resumed; the in-app inbox already covers this case.
+    await controller.enqueue(_qd('vid1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('vid1'));
+    engine.complete('vid1');
+
+    // Wait for the inbox entry (the producer ran), then assert no OS popup.
+    await waitFor(
+      () async => (await db.select(db.notifications).get()).isNotEmpty,
+    );
+    expect(fakeOsNotifier.shown, isEmpty);
+  });
+
+  test('muting download notifications suppresses the OS popup but keeps the '
+      'inbox error record (P11d)', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setNotifyDownload(false);
+    container
+        .read(appLifecycleStateProvider.notifier)
+        .set(AppLifecycleState.paused);
+    await controller.enqueue(_qd('t1'));
+    await waitFor(() async => engine.running.contains('t1'));
+    engine.fail('t1', DownloadErrorCode.unsupportedSite);
+
+    // Errors always record in the inbox, even with the toggle off.
+    await waitFor(
+      () async => (await db.select(db.notifications).get()).isNotEmpty,
+    );
+    expect(fakeOsNotifier.shown, isEmpty);
+  });
 
   test('a canceled download posts no activity entry (P11c)', () async {
     await controller.enqueue(_qd('t1'));

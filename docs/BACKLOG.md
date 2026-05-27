@@ -8,6 +8,10 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **P11d — dedicated notification status-bar icon.** OS notifications use
+      `@mipmap/ic_launcher` as the small icon, which Android renders as a solid square in the status
+      bar. Ship a monochrome white/transparent small icon (e.g. `@drawable/ic_stat_grabbit`) for the
+      proper finish. *(From P11d — cosmetic only.)*
 - [ ] **P7n — Two-pane list-detail + foldable hinge/posture polish.** Show list-detail
       side-by-side on Expanded+ widths (Library↔Item Detail, Collections↔detail); avoid the
       hinge via `MediaQuery.displayFeatures`/`hinge`; preserve selection/scroll across
