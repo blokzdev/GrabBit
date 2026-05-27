@@ -80,6 +80,15 @@ abstract class SettingsModel with _$SettingsModel {
     // flips it false, so only a brand-new user sees disclaimer → ai-setup.
     @Default(false) bool semanticSearchEnabled,
     @Default(true) bool aiSetupSeen,
+    // Activity inbox (P11). Retention 0 = keep forever; otherwise entries are
+    // swept lazily once older than this many days. The per-category notify
+    // toggles gate whether that category is recorded at all (errors and system
+    // notices are always recorded regardless).
+    @Default(30) int notificationRetentionDays,
+    @Default(true) bool notifyDownload,
+    @Default(true) bool notifyTranscript,
+    @Default(true) bool notifyAi,
+    @Default(true) bool notifyGraph,
   }) = _SettingsModel;
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) =>

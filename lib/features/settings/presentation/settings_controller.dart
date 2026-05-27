@@ -143,6 +143,21 @@ class SettingsController extends _$SettingsController {
   Future<void> setGraphIndexVersion(String version) async =>
       _update((await future).copyWith(graphIndexVersion: version));
 
+  Future<void> setNotificationRetentionDays(int days) async =>
+      _update((await future).copyWith(notificationRetentionDays: days));
+
+  Future<void> setNotifyDownload(bool value) async =>
+      _update((await future).copyWith(notifyDownload: value));
+
+  Future<void> setNotifyTranscript(bool value) async =>
+      _update((await future).copyWith(notifyTranscript: value));
+
+  Future<void> setNotifyAi(bool value) async =>
+      _update((await future).copyWith(notifyAi: value));
+
+  Future<void> setNotifyGraph(bool value) async =>
+      _update((await future).copyWith(notifyGraph: value));
+
   /// Restores all preferences to their defaults, but preserves the app-lock
   /// (its PIN lives in secure storage) and the accepted disclaimer (resetting
   /// it would force re-onboarding).

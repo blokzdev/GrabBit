@@ -123,6 +123,35 @@ class DownloadTasks extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// P11: the durable, on-device activity inbox (see ROADMAP §P11, SPEC §3).
+/// Append-only log of everything the app does in the background. `itemId`
+/// intentionally has NO foreign key: an entry must outlive the item it
+/// references (a "download done" notice survives deleting that item), so a
+/// cascade would wrongly erase history. Deep-link targets resolve defensively
+/// at tap time.
+class Notifications extends Table {
+  TextColumn get id => text()(); // 'ntf_<micros>_<seq>'
+  TextColumn get category =>
+      text()(); // download | transcript | ai | graph | system | reminder
+  TextColumn get severity => text()(); // info | success | warning | error
+  TextColumn get title => text()();
+  TextColumn get body => text().nullable()();
+  TextColumn get targetRoute => text().nullable()(); // go_router deep-link
+  TextColumn get itemId =>
+      text().nullable()(); // MediaItems.id (no FK — see above)
+  TextColumn get taskId => text().nullable()(); // DownloadTasks.id
+  TextColumn get dedupeKey => text().nullable()(); // null = never coalesced
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()(); // bumped on coalesce
+  DateTimeColumn get readAt => dateTime().nullable()(); // null = unread
+  DateTimeColumn get expiresAt =>
+      dateTime().nullable()(); // null = keep forever
+  IntColumn get coalesceCount => integer().withDefault(const Constant(1))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 /// Single-row settings blob (JSON), keyed on a fixed id (see SPEC §4).
 class AppSettings extends Table {
   IntColumn get id => integer().withDefault(const Constant(0))();
@@ -143,6 +172,7 @@ class AppSettings extends Table {
     MediaCollections,
     DownloadTasks,
     AppSettings,
+    Notifications,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -150,7 +180,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -188,6 +218,9 @@ class AppDatabase extends _$AppDatabase {
         // have them — guard-add to repair the former without breaking the latter.
         await addColumnIfMissing('media_items', 'width');
         await addColumnIfMissing('media_items', 'height');
+      }
+      if (from < 9) {
+        await m.createTable(notifications);
       }
       await _createIndices();
       await _createFtsObjects();
@@ -239,6 +272,23 @@ class AppDatabase extends _$AppDatabase {
     // P9b-4: fast source-id lookups for preventive (pre-download) dedupe.
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_media_metadata_source_id ON media_metadata (source_id)',
+    );
+    // P11: activity inbox — feed order, unread badge, category filter, lazy
+    // retention sweep, and dedupe-key coalesce lookups.
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications (created_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications (read_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_category ON notifications (category)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_expires_at ON notifications (expires_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_notifications_dedupe_key ON notifications (dedupe_key)',
     );
   }
 
