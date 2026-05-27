@@ -10,6 +10,7 @@ import 'package:grabbit/features/settings/data/settings_repository.dart';
 import 'package:grabbit/features/settings/presentation/ai_settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/captions_settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/downloads_settings_screen.dart';
+import 'package:grabbit/features/settings/presentation/notifications_settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_screen.dart';
 import 'package:grabbit/features/settings/presentation/settings_search.dart';
 
@@ -21,6 +22,8 @@ Widget _screenFor(String destination) {
       return const CaptionsSettingsScreen();
     case aiSettingsRoute:
       return const AiSettingsScreen();
+    case notificationsSettingsRoute:
+      return const NotificationsSettingsScreen();
     default:
       return const SettingsScreen();
   }

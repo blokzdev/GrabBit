@@ -61,15 +61,21 @@ The durable data layer only — no UI, no producers, no OS notifications.
 - **Exit / review:** a pre-P11 install upgrades to v9 with no data loss; the seam/repo/sweep/gating
   pass CI. **Implemented; pending on-device upgrade spot-check.**
 
-### `[ ]` P11b — Inbox UX + notification settings *(pure Dart/widget)*
-- `/inbox` screen: grouped feed, severity styling, tap → deep-link, swipe-to-dismiss, category
-  filters, mark-all-read, clear.
-- App-bar **bell + unread badge** (reuses the existing Material 3 `Badge` pattern); Dashboard
-  **recent-activity tile**. (Not a 6th nav destination.)
-- **`/settings/notifications`** sub-screen (P10j sub-screen pattern): retention control + the four
-  per-category toggles with `InfoHint`s; landing nav tile + settings-search index entries.
+### `[~]` P11b — Inbox UX + notification settings *(pure Dart/widget)*
+- `/inbox` screen (`InboxScreen`): newest-first feed, severity-styled tiles, tap → deep-link,
+  swipe-to-dismiss (`Dismissible`), category `FilterChip`s, Clear-all (confirm + snackbar). Opening
+  marks all read so the bell badge clears.
+- App-bar **bell + unread badge** on the Dashboard (`_InboxBellAction`, Material 3 `Badge` over
+  `unreadNotificationCountProvider`); Dashboard **recent-activity tile** (`RecentActivityTile`,
+  auto-hides when empty). Not a 6th nav destination — `/inbox` is pushed over the shell.
+- **`/settings/notifications`** sub-screen (`SettingsSubScaffold`): retention dropdown (Forever /
+  7 / 14 / 30 / 90 days) + the four per-category toggles, each with an `InfoHint`; landing nav tile +
+  five settings-search index entries.
+- Shared `notification_style.dart` (severity→icon/color, category icon/label, `relativeTime`) reused
+  by the inbox tile and the Dashboard tile.
 - **Exit / review:** the bell badge reflects unread; opening the inbox marks read; filters/dismiss/
-  clear work; retention + toggles persist.
+  clear work; retention + toggles persist. **Implemented (CI-verifiable; no APK needed); pending
+  on-device spot-check.**
 
 ### `[ ]` P11c — Producers wired through the seam *(pure Dart)*
 - Queue: `_onDone`/`_onError`/`_onCanceled` post download complete/failed/pause-reason entries

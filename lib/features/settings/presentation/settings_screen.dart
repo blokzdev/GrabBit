@@ -273,6 +273,12 @@ class _SettingsListState extends ConsumerState<_SettingsList> {
               subtitle: 'Semantic search and the on-device graph',
               onTap: () => context.push('/settings/ai'),
             ),
+            SettingsNavTile(
+              leading: Icons.notifications_outlined,
+              title: 'Notifications',
+              subtitle: 'Activity alerts and retention',
+              onTap: () => context.push('/settings/notifications'),
+            ),
           ],
         ),
         KeyedSubtree(

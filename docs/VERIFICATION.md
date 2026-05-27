@@ -782,7 +782,21 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       (No inbox UI yet; this is the migration smoke check. The seam, repository, retention sweep and
       gating are CI-covered by unit tests.)
 
-### P11b–d — UX, producers & OS notifications
+### P11b — Inbox UX + notification settings  *(no AI/graph needed — works on any build)*
+*(No producers yet — P11c wires real events. To exercise P11b on-device, post a couple of synthetic
+entries, or verify after P11c lands.)*
+- [ ] The Dashboard app-bar **bell** shows an **unread badge** when there are unread entries; tapping
+      it opens the **Activity** inbox and the badge **clears** (opening marks all read).
+- [ ] The inbox lists entries **newest-first** with severity-styled icons; **swipe** a row to dismiss
+      it; **category filter chips** narrow the list; **Clear all** (with confirm) empties it.
+- [ ] Tapping an entry that has a target **deep-links** to the relevant screen.
+- [ ] The Dashboard **recent-activity tile** shows the latest entries (and is **hidden** when there
+      are none); **See all** opens the inbox.
+- [ ] **Settings → Notifications**: the four category toggles and the retention choice (Forever /
+      7 / 14 / 30 / 90 days) **persist across relaunch**; settings **search** finds them
+      (e.g. "retention", "download notifications").
+
+### P11c–d — producers & OS notifications
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
       **transcript/backfill**, a **graph** index rebuild — each shows up with the right category/severity.
 - [ ] The app-bar **bell** shows an **unread badge**; opening the **Inbox** marks items read and the
