@@ -204,34 +204,46 @@ same field; a real download with each combination behaves as it did pre-P10j (ve
 explicit langs vs auto-captions vs transcript build). `VERIFICATION.md` updated with the
 caption/transcript combinations to spot-check.
 
-### `[ ]` P10j-c — Hybrid IA + search + `InfoHint` rollout + surfaced maintenance
-**Branch:** `claude/p10j-c-ia-search` · **The restructure.**
+> **P10j-c is split into two PRs** (the search depends on the sub-screens existing, and two
+> smaller green PRs review better on a phone).
 
-- **Sub-screens.** Add top-level routes `/settings/downloads`, `/settings/captions`,
-  `/settings/ai` (`app_router.dart`, mirroring `/storage`, pushed from the landing via
-  `SettingsNavTile`). Move the *Downloads* controls (and, gated by Advanced mode, *Advanced
-  download options*) to `/settings/downloads`; move P10j-b's section to `/settings/captions`;
-  move the AI/graph section to `/settings/ai`. Landing keeps Appearance, Storage, Security,
-  Privacy, Downloader engine, General inline.
-- **Search / quick-jump.** A search field atop the landing backed by a **static settings
-  index** — `{ id, label, keywords, location }` for every control (location = inline section
-  anchor or a sub-screen route). Typing filters to a flat results list; tapping a result
-  navigates to its screen/section. The index is a single hand-maintained list (one entry per
-  control); a unit test asserts every entry resolves to a real destination, so it can't
-  silently rot.
-- **`InfoHint` rollout.** Add plain-language hints to the non-obvious controls: faster
-  downloads, concurrent fragments, rate limit, skip-already-downloaded, SponsorBlock, min free
-  space, low-battery threshold, secure delete, dynamic color, AMOLED, semantic search, rebuild
-  graph index. (Obvious toggles like "Wi-Fi only" stay hint-free — no noise.)
-- **Surface maintenance.** Add a **General** section on the landing with **About**, **Reset to
-  defaults**, **Clear cache** as rows (reusing the overflow's existing handlers). Keep the `⋮`
-  overflow as a shortcut.
+### `[~]` P10j-c1 — IA restructure: sub-screens + General section
+**Branch:** `claude/p10j-c1-settings-subscreens` · **The structural move.**
 
-**Exit:** landing is short and scannable; Downloads/Captions/AI open as sub-screens; search
-jumps to any control by name; non-obvious controls have tappable help; maintenance actions are
-visible without the overflow. `flutter analyze` clean; tests cover the search index resolver
-and result filtering. `VERIFICATION.md`: navigate to each sub-screen, run a search and follow a
-result, confirm reset/clear-cache from the General section.
+- **Sub-screens.** Three top-level routes `/settings/downloads`, `/settings/captions`,
+  `/settings/ai` (`app_router.dart`, `parentNavigatorKey: _rootNavigatorKey`, mirroring
+  `/storage`), pushed from the landing via `SettingsNavTile`. *Downloads* (+ Advanced download
+  options, gated by Advanced mode) → `/settings/downloads`; *Captions & transcripts* →
+  `/settings/captions`; the AI/graph section (retitled **AI & graph**) → `/settings/ai`. The
+  self-contained bespoke widgets move with their sections.
+- **Landing** keeps a nav card (the three links) + Downloader engine, Storage, Appearance,
+  Security, Privacy inline, plus a new **General** section (About · Reset to defaults · Clear
+  cache) reusing the extracted `confirmResetSettings`/`clearAppCache`; the `⋮` overflow stays
+  as a shortcut.
+- New `SettingsCard` (header-less group) + `SettingsSubScaffold` (shared sub-screen chrome).
+
+> **Status:** implemented — `downloads_settings_screen.dart`, `captions_settings_screen.dart`,
+> `ai_settings_screen.dart` + the two shared widgets; landing slimmed; 3 routes added; tests
+> split into per-sub-screen files + a go_router nav test. CI-green (format · analyze · 593
+> tests). **Pending on-device spot-check.**
+
+### `[ ]` P10j-c2 — settings search + `InfoHint` rollout
+**Branch:** `claude/p10j-c2-search-hints` · **Polish on top of the restructure.**
+
+- **Search / quick-jump.** A search field atop the landing backed by a **static settings index**
+  (`lib/features/settings/presentation/settings_search.dart`) — `{ id, label, keywords,
+  destination }`, `destination` ∈ the three routes or `'landing'`. Typing filters to a flat
+  results list; tapping pushes the sub-screen route (or scroll-to for a landing section). A
+  drift-guard test pumps each destination (with conditional rows revealed) and asserts every
+  indexed label is present, so the index can't silently rot.
+- **`InfoHint` rollout.** Plain-language hints on the non-obvious controls in their now-current
+  files — Downloads sub-screen (faster downloads, concurrent fragments, rate limit,
+  skip-already-downloaded, SponsorBlock, min free space, low-battery threshold), AI sub-screen
+  (semantic search, rebuild graph index), landing (secure delete, dynamic color, AMOLED).
+  (Obvious toggles like "Wi-Fi only" stay hint-free.)
+
+**Exit:** typing a term lists matching controls and jumps to them; non-obvious controls have
+tappable help. CI green; `VERIFICATION.md`: run a search and follow a result.
 
 ---
 
