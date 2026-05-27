@@ -70,6 +70,7 @@ class LibraryFilter extends Notifier<LibraryQuery> {
   void setSite(String? site) => state = state.copyWith(site: () => site);
   void setUploader(String? u) => state = state.copyWith(uploader: () => u);
   void setPlaylist(String? id) => state = state.copyWith(playlistId: () => id);
+  void setTag(String? t) => state = state.copyWith(tag: () => t);
   void setFavoritesOnly(bool value) =>
       state = state.copyWith(favoritesOnly: value);
   void setHasTranscript(bool value) =>
@@ -86,6 +87,7 @@ class LibraryFilter extends Notifier<LibraryQuery> {
     site: () => null,
     uploader: () => null,
     playlistId: () => null,
+    tag: () => null,
     hasTranscript: false,
     durationBucket: () => null,
     resolutionBucket: () => null,

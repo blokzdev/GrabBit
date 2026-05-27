@@ -82,11 +82,15 @@ void main() {
     c.setSite('tiktok');
     c.setUploader('Rick');
     c.setPlaylist('PL1');
+    c.setTag('music');
     c.setHasTranscript(true);
     var q = container.read(libraryFilterProvider);
-    expect([q.site, q.uploader, q.playlistId], ['tiktok', 'Rick', 'PL1']);
+    expect(
+      [q.site, q.uploader, q.playlistId, q.tag],
+      ['tiktok', 'Rick', 'PL1', 'music'],
+    );
     expect(q.hasTranscript, isTrue);
-    expect(q.activeFacetCount, 4);
+    expect(q.activeFacetCount, 5);
 
     // Setting a facet back to null clears just that one.
     c.setSite(null);
@@ -94,7 +98,7 @@ void main() {
 
     c.clearFacets();
     q = container.read(libraryFilterProvider);
-    expect([q.site, q.uploader, q.playlistId], [null, null, null]);
+    expect([q.site, q.uploader, q.playlistId, q.tag], [null, null, null, null]);
     expect(q.hasTranscript, isFalse);
   });
 

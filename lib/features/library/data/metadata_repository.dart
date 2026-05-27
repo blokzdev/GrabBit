@@ -112,6 +112,7 @@ class LibraryQuery {
       (site != null ? 1 : 0) +
       (uploader != null ? 1 : 0) +
       (playlistId != null ? 1 : 0) +
+      (tag != null ? 1 : 0) +
       (hasTranscript ? 1 : 0) +
       (durationBucket != null ? 1 : 0) +
       (resolutionBucket != null ? 1 : 0) +
@@ -466,6 +467,17 @@ class MetadataRepository {
     return q.map((r) => r.read(_db.mediaMetadata.uploader)!).watch();
   }
 
+  /// Distinct tag names actually applied to library items (for the facet picker).
+  Stream<List<String>> watchDistinctTags() {
+    final q =
+        _db.selectOnly(_db.mediaTags, distinct: true).join([
+            innerJoin(_db.tags, _db.tags.id.equalsExp(_db.mediaTags.tagId)),
+          ])
+          ..addColumns([_db.tags.name])
+          ..orderBy([OrderingTerm.asc(_db.tags.name)]);
+    return q.map((r) => r.read(_db.tags.name)!).watch();
+  }
+
   /// Distinct playlists present in the library.
   Stream<List<PlaylistFacet>> watchDistinctPlaylists() {
     final q = _db.selectOnly(_db.mediaMetadata, distinct: true)
@@ -794,6 +806,10 @@ final distinctUploadersProvider = StreamProvider<List<String>>(
 
 final distinctPlaylistsProvider = StreamProvider<List<PlaylistFacet>>(
   (ref) => ref.watch(metadataRepositoryProvider).watchDistinctPlaylists(),
+);
+
+final distinctTagsProvider = StreamProvider<List<String>>(
+  (ref) => ref.watch(metadataRepositoryProvider).watchDistinctTags(),
 );
 
 // Smart / auto albums (P9b-2).

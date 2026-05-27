@@ -38,7 +38,7 @@
 
 ---
 
-### `[~]` P11a — Notifications data foundation *(pure Dart; CI-verifiable)*
+### `[x]` P11a — Notifications data foundation *(pure Dart; CI-verifiable)*
 The durable data layer only — no UI, no producers, no OS notifications.
 - `notifications` Drift table at **schema v9** (`lib/core/db/database.dart`): id, category,
   severity, title, body?, targetRoute?, itemId? (no FK), taskId?, dedupeKey?, createdAt,
@@ -61,7 +61,7 @@ The durable data layer only — no UI, no producers, no OS notifications.
 - **Exit / review:** a pre-P11 install upgrades to v9 with no data loss; the seam/repo/sweep/gating
   pass CI. **Implemented; pending on-device upgrade spot-check.**
 
-### `[~]` P11b — Inbox UX + notification settings *(pure Dart/widget)*
+### `[x]` P11b — Inbox UX + notification settings *(pure Dart/widget)*
 - `/inbox` screen (`InboxScreen`): newest-first feed, severity-styled tiles, tap → deep-link,
   swipe-to-dismiss (`Dismissible`), category `FilterChip`s, Clear-all (confirm + snackbar). Opening
   marks all read so the bell badge clears.
@@ -77,7 +77,7 @@ The durable data layer only — no UI, no producers, no OS notifications.
   clear work; retention + toggles persist. **Implemented (CI-verifiable; no APK needed); pending
   on-device spot-check.**
 
-### `[~]` P11c — Producers wired through the seam *(pure Dart)*
+### `[x]` P11c — Producers wired through the seam *(pure Dart)*
 - Queue (`queue_controller`): `_onDone` posts a download/success entry (deep-link to `/item/<id>`, or
   `/library` for split-chapter sets) and, when auto-transcribe built one, a single transcript/success
   entry per task; `_onError` posts a download/**error** entry (`friendlyError()` body, `/queue` route)
@@ -95,7 +95,7 @@ The durable data layer only — no UI, no producers, no OS notifications.
 - **Exit / review:** real background work produces durable, de-duplicated, deep-linking entries.
   **Implemented (CI-verifiable; no APK needed); pending on-device spot-check.**
 
-### `[~]` P11d — Terminal OS notifications *(native — needs an APK build)*
+### `[x]` P11d — Terminal OS notifications *(native — needs an APK build)*
 - `flutter_local_notifications` (already in `pubspec`; `POST_NOTIFICATIONS` already in the manifest and
   requested at download start by the foreground service) — so **no pubspec/manifest/Kotlin change**:
   pure-Dart wiring behind a `SystemNotificationService` interface (Android impl + Noop, mirroring
@@ -112,7 +112,7 @@ The durable data layer only — no UI, no producers, no OS notifications.
   notification that opens the relevant screen (cold start too); disabling the category suppresses it;
   a foregrounded completion raises no OS popup. *(Notification status-bar icon polish backlogged.)*
 
-### `[~]` P11e — Actionable inbox entries + per-item read *(pure Dart)*
+### `[x]` P11e — Actionable inbox entries + per-item read *(pure Dart)*
 - Per-entry `⋮` / long-press menu on inbox tiles (mirroring P9g `showMediaActions`,
   `showNotificationActions` in `notification_actions.dart`) — **lean** set: **Retry** a failed download
   (reuses the existing `QueueController.retry(taskId)` — then dismisses the stale error entry + a
