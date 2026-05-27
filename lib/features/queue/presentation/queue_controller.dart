@@ -17,9 +17,12 @@ import 'package:grabbit/core/storage/media_storage.dart';
 import 'package:grabbit/core/utils/image_dimensions.dart';
 import 'package:grabbit/core/utils/media_type.dart';
 import 'package:grabbit/core/utils/upload_date.dart';
+import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
+import 'package:grabbit/features/notifications/data/notification_enums.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/queue/data/completed_outputs.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
@@ -29,6 +32,13 @@ import 'package:grabbit/features/settings/presentation/settings_controller.dart'
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'queue_controller.g.dart';
+
+/// Outcome of persisting a finished download, used to compose its inbox entry.
+typedef _PersistResult = ({
+  String? primaryId,
+  int itemCount,
+  int transcriptCount,
+});
 
 class QueueConfig {
   const QueueConfig({
@@ -283,7 +293,7 @@ class QueueController extends _$QueueController {
             await _onDone(id, queued);
             return;
           case DownloadStage.error:
-            await _onError(id, p.errorCode);
+            await _onError(id, p.errorCode, queued);
             return;
           case DownloadStage.canceled:
             await _onCanceled(id);
@@ -305,17 +315,55 @@ class QueueController extends _$QueueController {
         }
       }
     } catch (_) {
-      await _onError(id, DownloadErrorCode.unknown);
+      await _onError(id, DownloadErrorCode.unknown, queued);
     }
   }
 
   Future<void> _onDone(String id, QueuedDownload queued) async {
-    await _persistCompleted(id, queued);
+    final result = await _persistCompleted(id, queued);
     await _repo.setProgress(id, 100);
     await _repo.setStatus(id, TaskStatus.done);
     _finish(id);
     await _maybeAutoExport(id);
+    await _postDownloadDone(id, queued, result);
     await _pump();
+  }
+
+  /// Records the finished download (and any auto-built transcript) in the
+  /// activity inbox. One entry per task — split-chapter downloads deep-link to
+  /// the library rather than a single chapter.
+  Future<void> _postDownloadDone(
+    String id,
+    QueuedDownload queued,
+    _PersistResult result,
+  ) async {
+    if (result.itemCount == 0) return;
+    final single = result.itemCount == 1 && result.primaryId != null;
+    final route = single ? '/item/${result.primaryId}' : '/library';
+    final center = ref.read(notificationCenterProvider);
+    await center.post(
+      category: NotificationCategory.download,
+      severity: NotificationSeverity.success,
+      title: queued.title,
+      body: result.itemCount > 1 ? 'Saved ${result.itemCount} files' : null,
+      targetRoute: route,
+      itemId: single ? result.primaryId : null,
+      taskId: id,
+      dedupeKey: 'download_$id',
+    );
+    if (result.transcriptCount > 0) {
+      await center.post(
+        category: NotificationCategory.transcript,
+        severity: NotificationSeverity.success,
+        title: queued.title,
+        body: result.transcriptCount > 1
+            ? '${result.transcriptCount} transcripts ready'
+            : 'Transcript ready',
+        targetRoute: route,
+        itemId: single ? result.primaryId : null,
+        dedupeKey: 'transcript_$id',
+      );
+    }
   }
 
   Future<void> _maybeAutoExport(String id) async {
@@ -334,11 +382,16 @@ class QueueController extends _$QueueController {
     } catch (_) {}
   }
 
-  Future<void> _onError(String id, DownloadErrorCode? code) async {
+  Future<void> _onError(
+    String id,
+    DownloadErrorCode? code,
+    QueuedDownload queued,
+  ) async {
     final task = await _repo.byId(id);
     final config = ref.read(queueConfigProvider);
     final retryable = (code ?? DownloadErrorCode.unknown).isRetryable;
     if (task != null && retryable && task.retries < config.maxRetries) {
+      // Transient: a retry is scheduled, so don't notify yet.
       await _repo.bumpRetries(id);
       await _repo.setStatus(id, TaskStatus.queued);
       _finish(id);
@@ -350,6 +403,19 @@ class QueueController extends _$QueueController {
     } else {
       await _repo.setStatus(id, TaskStatus.error, errorCode: code?.name);
       _finish(id);
+      // Terminal failure: record it (errors are always kept). Shares the
+      // download dedupe key, so a later successful retry updates this entry.
+      await ref
+          .read(notificationCenterProvider)
+          .post(
+            category: NotificationCategory.download,
+            severity: NotificationSeverity.error,
+            title: queued.title,
+            body: friendlyError(code, 'Download failed'),
+            targetRoute: '/queue',
+            taskId: id,
+            dedupeKey: 'download_$id',
+          );
       await _pump();
     }
   }
@@ -404,13 +470,17 @@ class QueueController extends _$QueueController {
     );
   }
 
-  Future<void> _persistCompleted(String id, QueuedDownload queued) async {
+  Future<_PersistResult> _persistCompleted(
+    String id,
+    QueuedDownload queued,
+  ) async {
+    const empty = (primaryId: null, itemCount: 0, transcriptCount: 0);
     // Files land in a per-task subfolder (see YtDlpHost `-o`): the task id names
     // the folder, the user's template names the file inside it.
     final dir = Directory('${queued.request.outputDir}/$id');
-    if (!dir.existsSync()) return;
+    if (!dir.existsSync()) return empty;
     final outputs = classifyDownloadOutputs(dir.listSync().whereType<File>());
-    if (outputs.media.isEmpty) return;
+    if (outputs.media.isEmpty) return empty;
 
     // Rich metadata from the .info.json sidecar (shared across split-chapter
     // files), falling back to whatever the queued item already carried.
@@ -491,6 +561,7 @@ class QueueController extends _$QueueController {
 
     // P10f: build a transcript from the caption sidecars now on disk, if the
     // user opted into automatic transcription.
+    var transcriptCount = 0;
     final settings = await ref.read(settingsControllerProvider.future);
     if (settings.autoTranscribe) {
       final transcripts = ref.read(transcriptServiceProvider);
@@ -511,9 +582,16 @@ class QueueController extends _$QueueController {
             timed.flat,
             cuesJson: timed.cuesJson,
           );
+          transcriptCount++;
         }
       }
     }
+
+    return (
+      primaryId: single ? id : '${id}__0',
+      itemCount: outputs.media.length,
+      transcriptCount: transcriptCount,
+    );
   }
 
   /// Filename without directory or extension — the per-chapter title for splits.

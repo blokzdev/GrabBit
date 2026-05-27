@@ -13,6 +13,7 @@ import 'package:grabbit/core/battery/battery_service.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
@@ -327,6 +328,57 @@ void main() {
     expect(item, isNotNull);
     expect(item!.title, 'Title vid1');
     expect(item.type, 'video');
+  });
+
+  test('a completed download posts a success activity entry (P11c)', () async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_ntf_done_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/vid1').create();
+    await File('${dir.path}/vid1/My Clip.mp4').writeAsString('data');
+
+    await controller.enqueue(_qd('vid1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('vid1'));
+    engine.complete('vid1');
+
+    await waitFor(
+      () async => (await db.select(db.notifications).get()).isNotEmpty,
+    );
+    final n = (await db.select(db.notifications).get()).single;
+    expect(n.category, NotificationCategory.download);
+    expect(n.severity, NotificationSeverity.success);
+    expect(n.taskId, 'vid1');
+    expect(n.targetRoute, '/item/vid1');
+  });
+
+  test(
+    'a terminal download failure posts an error activity entry (P11c)',
+    () async {
+      await controller.enqueue(_qd('t1'));
+      await waitFor(() async => engine.running.contains('t1'));
+      engine.fail('t1', DownloadErrorCode.unsupportedSite);
+
+      await waitFor(
+        () async => (await db.select(db.notifications).get()).isNotEmpty,
+      );
+      final n = (await db.select(db.notifications).get()).single;
+      expect(n.category, NotificationCategory.download);
+      expect(n.severity, NotificationSeverity.error);
+      expect(n.taskId, 't1');
+      expect(n.body, isNotNull);
+      expect(n.targetRoute, '/queue');
+    },
+  );
+
+  test('a canceled download posts no activity entry (P11c)', () async {
+    await controller.enqueue(_qd('t1'));
+    await waitFor(() async => engine.running.contains('t1'));
+    await controller.cancelAll();
+    await waitFor(
+      () async => (await repo.byId('t1'))?.status == TaskStatus.canceled,
+    );
+    // Give any stray async post a chance to land, then assert none did.
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(await db.select(db.notifications).get(), isEmpty);
   });
 
   test(

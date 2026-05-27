@@ -68,6 +68,17 @@ _(nothing active — pick the next batch from below)_
       substring proves too strict in practice. *(From P10j-c2.)*
 - [ ] **Persist recent settings searches** (and consider a single global, app-wide search that spans
       Settings + library). Out of scope for P10j-c2's Settings-only quick-jump. *(From P10j-c2.)*
+- [ ] **Activity Inbox — batch/bulk download summary.** A playlist/bulk job posts one entry per task
+      (`download_<id>` dedupe is per-task). Coalesce a batch into a single "N downloads completed"
+      entry to cut inbox noise. *(From P11c.)*
+- [ ] **Activity Inbox — undo on swipe-dismiss.** Swiping a notification dismisses it immediately;
+      add a "Dismissed · Undo" snackbar to restore an accidental swipe. *(From P11c.)*
+- [ ] **Activity Inbox — retroactive retention re-derivation.** `expiresAt` is derived per row at
+      insert (P11a), so changing the retention setting only affects *future* entries. A future pass
+      could recompute existing rows on change. *(Accepted P11a tradeoff; from P11c.)*
+- [ ] **Activity Inbox — `reminder`-category producers.** The `reminder` category + always-record
+      gating exist with no producer yet. Candidate nudges (items missing transcripts, a held batch
+      waiting to start, low-storage reminder) — needs a product call to avoid nagging. *(From P11c.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_

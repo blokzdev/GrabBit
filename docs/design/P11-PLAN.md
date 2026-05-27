@@ -77,13 +77,23 @@ The durable data layer only — no UI, no producers, no OS notifications.
   clear work; retention + toggles persist. **Implemented (CI-verifiable; no APK needed); pending
   on-device spot-check.**
 
-### `[ ]` P11c — Producers wired through the seam *(pure Dart)*
-- Queue: `_onDone`/`_onError`/`_onCanceled` post download complete/failed/pause-reason entries
-  (deep-link to the item; `friendlyError()` body on failures; per-task `dedupeKey`).
-- P10f transcript backfill / auto-transcribe posts on completion/failure.
-- `GraphSyncService` posts on **failure** and on **explicit/manual** rebuilds only — never the
-  debounced auto-sync (would spam). Inbox-open sweep trigger added.
-- **Exit / review:** real background work produces durable, de-duplicated entries that deep-link.
+### `[~]` P11c — Producers wired through the seam *(pure Dart)*
+- Queue (`queue_controller`): `_onDone` posts a download/success entry (deep-link to `/item/<id>`, or
+  `/library` for split-chapter sets) and, when auto-transcribe built one, a single transcript/success
+  entry per task; `_onError` posts a download/**error** entry (`friendlyError()` body, `/queue` route)
+  **only on terminal failure** — transient retries stay silent. `_persistCompleted` returns
+  `(primaryId, itemCount, transcriptCount)` to compose those.
+- **Cancel/pause are intentionally not notified** (deliberate foreground actions, not "missed"
+  activity). The item-detail transcript paths (manual button + offline backfill-on-open) are
+  foreground too → not notified.
+- **Graph** posts from the explicit Settings → "Rebuild graph index" action
+  (`ai_settings_screen._rebuildGraph`: success / unavailable-warning / error), **not** from
+  `GraphSyncService` — so the debounced auto-sync and startup `syncIfStale` stay silent.
+- Inbox-open retention sweep added to `InboxScreen.initState` (second trigger after app startup).
+- `download_<id>` dedupe key is shared by success+error (a retried task updates one entry);
+  `transcript_<id>` and `graph_rebuild` are separate.
+- **Exit / review:** real background work produces durable, de-duplicated, deep-linking entries.
+  **Implemented (CI-verifiable; no APK needed); pending on-device spot-check.**
 
 ### `[ ]` P11d — Terminal OS notifications *(native — needs an APK build)*
 - `flutter_local_notifications`: Android channel + `POST_NOTIFICATIONS` runtime permission
@@ -91,3 +101,11 @@ The durable data layer only — no UI, no producers, no OS notifications.
   toggles. Complementary to the existing foreground-service progress notification.
 - **Exit / review:** with the app backgrounded, a finished/failed download raises an OS
   notification that opens the relevant screen; disabling the category suppresses it.
+
+### `[ ]` P11e — Actionable inbox entries *(pure Dart)*
+- Per-entry `⋮` actions on inbox tiles (mirroring P9g `showMediaActions`): **Retry** a failed
+  download (new `QueueController.retry(taskId)`), **Open source URL**, **Open**/**Share**,
+  **Mark read**/**Dismiss** — shown context-aware by category/severity/fields, resolved defensively
+  from `taskId`/`itemId` (both may be deleted). Promoted from backlog as a high-value UX win.
+- **Exit / review:** a failed-download entry retries from the inbox; completed entries open/share;
+  stale targets degrade gracefully.
