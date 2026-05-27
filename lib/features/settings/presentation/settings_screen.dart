@@ -15,6 +15,8 @@ import 'package:grabbit/features/lock/pin_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
+import 'package:grabbit/features/settings/presentation/settings_search.dart';
+import 'package:grabbit/features/settings/presentation/widgets/info_hint.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_section.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_tiles.dart';
 import 'package:path_provider/path_provider.dart';
@@ -106,41 +108,176 @@ Future<void> clearAppCache(BuildContext context) async {
 
 /// The settings landing: links to the heavy sub-screens, the small/stable
 /// sections inline, and a General section for maintenance.
-class _SettingsList extends ConsumerWidget {
+class _SettingsList extends ConsumerStatefulWidget {
   const _SettingsList({required this.settings});
   final SettingsModel settings;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SettingsList> createState() => _SettingsListState();
+}
+
+class _SettingsListState extends ConsumerState<_SettingsList> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  // Inline landing sections, keyed so a search result can scroll to one.
+  static const _inlineSections = [
+    'Downloader engine',
+    'Storage',
+    'Appearance',
+    'Security',
+    'Privacy',
+    'General',
+  ];
+  final Map<String, GlobalKey> _sectionKeys = {
+    for (final s in _inlineSections) s: GlobalKey(),
+  };
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _clearSearch() {
+    setState(() {
+      _query = '';
+      _searchController.clear();
+    });
+  }
+
+  void _onResultTap(SettingsSearchEntry entry) {
+    if (!entry.isLanding) {
+      context.push(entry.destination);
+      return;
+    }
+    // Landing control: drop back to the landing, then scroll its section in.
+    _clearSearch();
+    final key = _sectionKeys[entry.section];
+    if (key == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = key.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.1,
+          duration: const Duration(milliseconds: 300),
+        );
+      }
+    });
+  }
+
+  IconData _iconFor(SettingsSearchEntry entry) {
+    switch (entry.destination) {
+      case downloadsSettingsRoute:
+        return Icons.download_outlined;
+      case captionsSettingsRoute:
+        return Icons.closed_caption_outlined;
+      case aiSettingsRoute:
+        return Icons.hub_outlined;
+      default:
+        return Icons.settings_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tokens = GrabBitTokens.of(context);
-    final controller = ref.read(settingsControllerProvider.notifier);
+    final searching = _query.trim().isNotEmpty;
     return ContentBounds(
-      child: ListView(
-        padding: EdgeInsets.only(top: tokens.spaceLg, bottom: tokens.spaceLg),
+      child: Column(
         children: [
-          SettingsCard(
-            children: [
-              SettingsNavTile(
-                leading: Icons.download_outlined,
-                title: 'Downloads',
-                subtitle: 'Quality, format, filename, advanced options',
-                onTap: () => context.push('/settings/downloads'),
-              ),
-              SettingsNavTile(
-                leading: Icons.closed_caption_outlined,
-                title: 'Captions & transcripts',
-                subtitle: 'Download captions and build transcripts',
-                onTap: () => context.push('/settings/captions'),
-              ),
-              SettingsNavTile(
-                leading: Icons.hub_outlined,
-                title: 'AI & graph',
-                subtitle: 'Semantic search and the on-device graph',
-                onTap: () => context.push('/settings/ai'),
-              ),
-            ],
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.spaceLg,
+              tokens.spaceLg,
+              tokens.spaceLg,
+              tokens.spaceSm,
+            ),
+            child: SearchBar(
+              controller: _searchController,
+              hintText: 'Search settings',
+              leading: const Icon(Icons.search),
+              trailing: searching
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        tooltip: 'Clear',
+                        onPressed: _clearSearch,
+                      ),
+                    ]
+                  : null,
+              onChanged: (v) => setState(() => _query = v),
+            ),
           ),
-          SettingsSection(
+          Expanded(
+            child: searching ? _buildResults(tokens) : _buildLanding(tokens),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResults(GrabBitTokens tokens) {
+    final results = searchSettings(_query);
+    if (results.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(tokens.spaceXl),
+          child: Text(
+            'No settings match “${_query.trim()}”',
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: EdgeInsets.only(bottom: tokens.spaceLg),
+      itemCount: results.length,
+      itemBuilder: (context, i) {
+        final entry = results[i];
+        return ListTile(
+          leading: Icon(_iconFor(entry)),
+          title: Text(entry.label),
+          subtitle: Text(entry.section),
+          onTap: () => _onResultTap(entry),
+        );
+      },
+    );
+  }
+
+  Widget _buildLanding(GrabBitTokens tokens) {
+    final settings = widget.settings;
+    final controller = ref.read(settingsControllerProvider.notifier);
+    return ListView(
+      padding: EdgeInsets.only(bottom: tokens.spaceLg),
+      children: [
+        SettingsCard(
+          children: [
+            SettingsNavTile(
+              leading: Icons.download_outlined,
+              title: 'Downloads',
+              subtitle: 'Quality, format, filename, advanced options',
+              onTap: () => context.push('/settings/downloads'),
+            ),
+            SettingsNavTile(
+              leading: Icons.closed_caption_outlined,
+              title: 'Captions & transcripts',
+              subtitle: 'Download captions and build transcripts',
+              onTap: () => context.push('/settings/captions'),
+            ),
+            SettingsNavTile(
+              leading: Icons.hub_outlined,
+              title: 'AI & graph',
+              subtitle: 'Semantic search and the on-device graph',
+              onTap: () => context.push('/settings/ai'),
+            ),
+          ],
+        ),
+        KeyedSubtree(
+          key: _sectionKeys['Downloader engine'],
+          child: SettingsSection(
             icon: Icons.system_update_alt,
             title: 'Downloader engine',
             children: [
@@ -154,7 +291,10 @@ class _SettingsList extends ConsumerWidget {
               ),
             ],
           ),
-          SettingsSection(
+        ),
+        KeyedSubtree(
+          key: _sectionKeys['Storage'],
+          child: SettingsSection(
             icon: Icons.sd_storage_outlined,
             title: 'Storage',
             children: [
@@ -193,7 +333,10 @@ class _SettingsList extends ConsumerWidget {
               ),
             ],
           ),
-          SettingsSection(
+        ),
+        KeyedSubtree(
+          key: _sectionKeys['Appearance'],
+          child: SettingsSection(
             icon: Icons.palette_outlined,
             title: 'Appearance',
             children: [
@@ -221,21 +364,39 @@ class _SettingsList extends ConsumerWidget {
                 subtitle: 'Use colors from your wallpaper',
                 value: settings.dynamicColor,
                 onChanged: controller.setDynamicColor,
+                hint: const InfoHint(
+                  title: 'Dynamic color',
+                  body:
+                      'Recolor the app from your wallpaper (Android 12+). Turn '
+                      "off to use GrabBit's own brand colors.",
+                ),
               ),
               SettingsSwitchTile(
                 title: 'Pure black (AMOLED)',
                 subtitle: 'True-black background for the dark theme',
                 value: settings.amoledDark,
                 onChanged: controller.setAmoledDark,
+                hint: const InfoHint(
+                  title: 'Pure black (AMOLED)',
+                  body:
+                      'Use a true-black dark theme. On OLED/AMOLED screens '
+                      'black pixels switch off, which can save battery.',
+                ),
               ),
             ],
           ),
-          SettingsSection(
+        ),
+        KeyedSubtree(
+          key: _sectionKeys['Security'],
+          child: SettingsSection(
             icon: Icons.lock_outline,
             title: 'Security',
             children: [_AppLockSection(appLock: settings.appLock)],
           ),
-          SettingsSection(
+        ),
+        KeyedSubtree(
+          key: _sectionKeys['Privacy'],
+          child: SettingsSection(
             icon: Icons.privacy_tip_outlined,
             title: 'Privacy',
             children: [
@@ -248,15 +409,23 @@ class _SettingsList extends ConsumerWidget {
               ),
               SettingsSwitchTile(
                 title: 'Secure delete',
-                subtitle:
-                    'Overwrite files before deleting — slower, and only '
-                    'best-effort on flash storage',
+                subtitle: 'Overwrite files before deleting',
                 value: settings.secureDelete,
                 onChanged: controller.setSecureDelete,
+                hint: const InfoHint(
+                  title: 'Secure delete',
+                  body:
+                      'Overwrite a file before deleting so it is harder to '
+                      'recover. Slower, and only best-effort on flash storage '
+                      '(wear-levelling may keep copies).',
+                ),
               ),
             ],
           ),
-          SettingsSection(
+        ),
+        KeyedSubtree(
+          key: _sectionKeys['General'],
+          child: SettingsSection(
             icon: Icons.settings_outlined,
             title: 'General',
             children: [
@@ -282,8 +451,8 @@ class _SettingsList extends ConsumerWidget {
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

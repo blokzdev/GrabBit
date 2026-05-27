@@ -4,6 +4,7 @@ import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/filename_template.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
+import 'package:grabbit/features/settings/presentation/widgets/info_hint.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_section.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_subscaffold.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_tiles.dart';
@@ -59,6 +60,13 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                     'Experimental — uses more CPU and data.',
                 value: settings.concurrentFragments > 1,
                 onChanged: (v) => controller.setConcurrentFragments(v ? 4 : 1),
+                hint: const InfoHint(
+                  title: 'Faster downloads',
+                  body:
+                      'Fetch a video in several pieces at once for higher '
+                      'speed. Uses more CPU and data, and a few sites throttle '
+                      'or block it — turn off if downloads start failing.',
+                ),
               ),
               SettingsSwitchTile(
                 title: 'Wi-Fi only',
@@ -71,6 +79,12 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                 subtitle: 'Hold downloads below this free space',
                 value: settings.minFreeSpaceMb,
                 onChanged: controller.setMinFreeSpaceMb,
+                hint: const InfoHint(
+                  title: 'Pause when storage is low',
+                  body:
+                      'Hold new downloads when the device has less than this '
+                      'much free space, so a big download can\'t fill the disk.',
+                ),
                 items: const [
                   DropdownMenuItem(value: 0, child: Text('Off')),
                   DropdownMenuItem(value: 500, child: Text('500 MB')),
@@ -90,6 +104,12 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                   title: 'Low-battery threshold',
                   value: settings.lowBatteryThreshold,
                   onChanged: controller.setLowBatteryThreshold,
+                  hint: const InfoHint(
+                    title: 'Low-battery threshold',
+                    body:
+                        'Downloads pause once the battery drops to this level '
+                        '(or the device enters power saver).',
+                  ),
                   items: const [
                     DropdownMenuItem(value: 10, child: Text('10%')),
                     DropdownMenuItem(value: 15, child: Text('15%')),
@@ -120,6 +140,13 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                   subtitle: 'Parallel pieces per download',
                   value: settings.concurrentFragments.clamp(1, 8),
                   onChanged: controller.setConcurrentFragments,
+                  hint: const InfoHint(
+                    title: 'Concurrent fragments',
+                    body:
+                        'How many pieces of one video to fetch in parallel. '
+                        'Higher can be faster but uses more CPU and data; some '
+                        'sites throttle it.',
+                  ),
                   items: [
                     for (var i = 1; i <= 8; i++)
                       DropdownMenuItem(value: i, child: Text('$i')),
@@ -129,6 +156,12 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                   title: 'Download speed limit',
                   value: settings.rateLimit,
                   onChanged: controller.setRateLimit,
+                  hint: const InfoHint(
+                    title: 'Download speed limit',
+                    body:
+                        'Cap how fast GrabBit downloads, to leave bandwidth for '
+                        'other apps. "Unlimited" uses whatever is available.',
+                  ),
                   items: const [
                     DropdownMenuItem(value: '', child: Text('Unlimited')),
                     DropdownMenuItem(value: '500K', child: Text('500 KB/s')),
@@ -176,12 +209,27 @@ class DownloadsSettingsScreen extends ConsumerWidget {
                       'skipped (no new file).',
                   value: settings.useDownloadArchive,
                   onChanged: controller.setUseDownloadArchive,
+                  hint: const InfoHint(
+                    title: 'Skip already-downloaded',
+                    body:
+                        'GrabBit keeps a small archive file of what you have '
+                        'fetched. Re-adding the same video (e.g. from a '
+                        'playlist) is skipped instead of downloaded again.',
+                  ),
                 ),
                 SettingsChoiceTile<String>(
                   title: 'SponsorBlock',
                   subtitle: 'Mark or remove sponsor segments',
                   value: settings.sponsorBlockMode,
                   onChanged: controller.setSponsorBlockMode,
+                  hint: const InfoHint(
+                    title: 'SponsorBlock',
+                    body:
+                        'Uses the community SponsorBlock database to find '
+                        'sponsor segments. "Mark" adds chapters at them; '
+                        '"Remove" cuts them from the file. Crowd-sourced, so '
+                        'segments may occasionally be off.',
+                  ),
                   items: const [
                     DropdownMenuItem(value: 'off', child: Text('Off')),
                     DropdownMenuItem(value: 'mark', child: Text('Mark')),

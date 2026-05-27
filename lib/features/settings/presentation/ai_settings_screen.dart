@@ -5,6 +5,7 @@ import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
+import 'package:grabbit/features/settings/presentation/widgets/info_hint.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_section.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_subscaffold.dart';
 
@@ -26,7 +27,21 @@ class AiSettingsScreen extends ConsumerWidget {
               subtitle: const Text(
                 'Reproject your library into the on-device graph',
               ),
-              trailing: const Icon(Icons.play_arrow_outlined),
+              trailing: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InfoHintButton(
+                    InfoHint(
+                      title: 'Rebuild graph index',
+                      body:
+                          'Rebuilds the on-device relationship graph from your '
+                          'library. Normally kept in sync automatically — use '
+                          'this if related items or hubs look out of date.',
+                    ),
+                  ),
+                  Icon(Icons.play_arrow_outlined),
+                ],
+              ),
               onTap: () => _rebuildGraph(context, ref),
             ),
             const _SemanticSearchTile(),
@@ -139,6 +154,16 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
     return Column(
       children: [
         SwitchListTile(
+          secondary: const InfoHintButton(
+            InfoHint(
+              title: 'Semantic search',
+              body:
+                  'Find library items by meaning, not just keywords — all '
+                  'on-device. Turning it on downloads a small embedding model '
+                  'once; nothing leaves your device, and search still works '
+                  'without it.',
+            ),
+          ),
           title: const Text('Semantic search'),
           subtitle: Text(
             'Search your library by meaning, on-device. '

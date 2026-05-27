@@ -7,6 +7,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/data/settings_repository.dart';
 import 'package:grabbit/features/settings/presentation/downloads_settings_screen.dart';
+import 'package:grabbit/features/settings/presentation/widgets/info_hint.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db) async {
   tester.view.physicalSize = const Size(1000, 3000);
@@ -62,6 +63,21 @@ void main() {
     final saved = (await SettingsRepository(db).read()).filenameTemplate;
     expect(saved, '{title}{channel}');
     expect(find.textContaining('Rick Astley'), findsOneWidget);
+  });
+
+  testWidgets('a rolled-out InfoHint opens its sheet on tap', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await _pump(tester, db);
+
+    // The first hinted control is "Faster downloads".
+    await tester.tap(find.byType(InfoHintButton).first);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Fetch a video in several pieces'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('advanced download options appear only in advanced mode', (
