@@ -137,6 +137,30 @@ void main() {
     expect(rows.every((r) => r.readAt != null), isTrue);
   });
 
+  testWidgets('opening the inbox sweeps expired entries (P11c)', (
+    tester,
+  ) async {
+    final past = DateTime.now().subtract(const Duration(days: 1));
+    await db
+        .into(db.notifications)
+        .insert(
+          NotificationsCompanion.insert(
+            id: 'old',
+            category: NotificationCategory.system,
+            severity: NotificationSeverity.info,
+            title: 'Expired',
+            createdAt: past,
+            updatedAt: past,
+            expiresAt: Value(past),
+          ),
+        );
+
+    await tester.pumpWidget(wrap(const []));
+    await tester.pumpAndSettle();
+
+    expect(await db.select(db.notifications).get(), isEmpty);
+  });
+
   testWidgets('Clear all empties the feed after confirming', (tester) async {
     await seed('a', title: 'Doomed');
     await tester.pumpWidget(wrap([feedRow('a', title: 'Doomed')]));

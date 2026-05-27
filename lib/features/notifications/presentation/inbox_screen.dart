@@ -40,9 +40,12 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   @override
   void initState() {
     super.initState();
-    // Opening the inbox counts as seeing it: clear unread (and the bell badge).
+    // Opening the inbox counts as seeing it: clear unread (and the bell badge),
+    // and run the lazy retention sweep (the second trigger after app startup).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ref.read(notificationsRepositoryProvider).markAllRead());
+      final repo = ref.read(notificationsRepositoryProvider);
+      unawaited(repo.markAllRead());
+      unawaited(repo.sweepExpired(DateTime.now()));
     });
   }
 

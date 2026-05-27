@@ -4,6 +4,8 @@ import 'package:grabbit/core/ai/inference_engine_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
+import 'package:grabbit/features/notifications/data/notification_enums.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:grabbit/features/settings/presentation/widgets/info_hint.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_section.dart';
@@ -55,21 +57,51 @@ class AiSettingsScreen extends ConsumerWidget {
 
 Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
+  // Captured before the await so a mid-rebuild navigation can't read a
+  // disposed ref.
+  final center = ref.read(notificationCenterProvider);
+  final sync = ref.read(graphSyncServiceProvider);
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(const SnackBar(content: Text('Rebuilding graph index…')));
-  final stats = await ref.read(graphSyncServiceProvider).rebuild();
-  messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Text(
-          stats.available
-              ? 'Graph rebuilt — ${stats.mediaNodes} media · ${stats.edges} edges'
-              : 'Graph engine unavailable on this device',
+  try {
+    final stats = await sync.rebuild();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            stats.available
+                ? 'Graph rebuilt — ${stats.mediaNodes} media · ${stats.edges} edges'
+                : 'Graph engine unavailable on this device',
+          ),
         ),
-      ),
+      );
+    await center.post(
+      category: NotificationCategory.graph,
+      severity: stats.available
+          ? NotificationSeverity.success
+          : NotificationSeverity.warning,
+      title: stats.available
+          ? 'Graph index rebuilt'
+          : 'Graph engine unavailable',
+      body: stats.available
+          ? '${stats.mediaNodes} media · ${stats.edges} edges'
+          : "On-device graph isn't available on this device.",
+      dedupeKey: 'graph_rebuild',
     );
+  } catch (e) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Graph rebuild failed')));
+    await center.post(
+      category: NotificationCategory.graph,
+      severity: NotificationSeverity.error,
+      title: 'Graph rebuild failed',
+      body: 'Something went wrong rebuilding the graph index.',
+      dedupeKey: 'graph_rebuild',
+    );
+  }
 }
 
 /// Opt-in toggle for on-device semantic search (P10b-2). Enabling downloads the

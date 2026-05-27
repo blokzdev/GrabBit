@@ -796,15 +796,24 @@ entries, or verify after P11c lands.)*
       7 / 14 / 30 / 90 days) **persist across relaunch**; settings **search** finds them
       (e.g. "retention", "download notifications").
 
-### P11c–d — producers & OS notifications
-- [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
-      **transcript/backfill**, a **graph** index rebuild — each shows up with the right category/severity.
-- [ ] The app-bar **bell** shows an **unread badge**; opening the **Inbox** marks items read and the
-      badge clears.
-- [ ] Tapping an entry **deep-links** to the relevant item/screen; **swipe-to-dismiss** and
-      **clear / mark-all-read** work; **category filters** narrow the list.
-- [ ] Items **auto-clear** per **Settings → notification retention** (and "keep forever" when set to 0);
-      the sweep happens on open, no background scheduler.
+### P11c — producers wired through the seam  *(no AI/graph needed — works on any build)*
+- [ ] A real **download completing** adds a "Downloaded" entry that **deep-links to the item**
+      (split-chapter downloads link to the library; the entry shows "Saved N files").
+- [ ] A **failed** download (e.g. a bad/unsupported link) adds an **error** entry with a friendly
+      reason that links to the queue — and it appears **even with the Downloads toggle off** (errors
+      are always recorded). A **transient retry** does **not** post; only the terminal failure does.
+- [ ] **Canceling** a download posts **nothing**.
+- [ ] With **auto-transcribe on**, a captioned download adds a separate "Transcript ready" entry
+      (one per download); with the **Transcripts toggle off**, none. Opening an item and letting the
+      offline backfill build a transcript posts **nothing** (foreground).
+- [ ] **Settings → AI & graph → Rebuild graph index** adds a **graph** entry (success with counts, or
+      "Graph engine unavailable"); a normal **library edit** (which triggers the debounced auto-sync)
+      posts **nothing**.
+- [ ] Opening the Inbox **sweeps expired** entries (per the retention setting; "Forever" keeps them).
+
+### P11d — OS notifications  *(native — needs an APK build)*
+- [ ] With the app backgrounded, a finished/failed download raises a **system notification** that
+      opens the relevant screen; disabling the category suppresses it.
 - [ ] Everything stays **on-device** (no network/telemetry) and the Inbox is **behind the app lock**.
 
 ## P12 — Device-tiered edge LLM engine  *(v1)*
