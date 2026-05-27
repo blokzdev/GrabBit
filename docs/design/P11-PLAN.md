@@ -112,10 +112,18 @@ The durable data layer only — no UI, no producers, no OS notifications.
   notification that opens the relevant screen (cold start too); disabling the category suppresses it;
   a foregrounded completion raises no OS popup. *(Notification status-bar icon polish backlogged.)*
 
-### `[ ]` P11e — Actionable inbox entries *(pure Dart)*
-- Per-entry `⋮` actions on inbox tiles (mirroring P9g `showMediaActions`): **Retry** a failed
-  download (new `QueueController.retry(taskId)`), **Open source URL**, **Open**/**Share**,
-  **Mark read**/**Dismiss** — shown context-aware by category/severity/fields, resolved defensively
-  from `taskId`/`itemId` (both may be deleted). Promoted from backlog as a high-value UX win.
-- **Exit / review:** a failed-download entry retries from the inbox; completed entries open/share;
-  stale targets degrade gracefully.
+### `[~]` P11e — Actionable inbox entries + per-item read *(pure Dart)*
+- Per-entry `⋮` / long-press menu on inbox tiles (mirroring P9g `showMediaActions`,
+  `showNotificationActions` in `notification_actions.dart`) — **lean** set: **Retry** a failed download
+  (reuses the existing `QueueController.retry(taskId)` — then dismisses the stale error entry + a
+  "Retrying…" snackbar), **Open source URL**, **Copy source URL**, **Share file** (completed items),
+  **Dismiss**. Context-aware by category/severity, resolved defensively from `itemId`
+  (`mediaItemByIdProvider`) / `taskId` (`queueRepositoryProvider.byId`) — both may be deleted, so the
+  source URL falls back item→`sourceUrl` else task→`url`, and each row only renders when its target
+  exists. (No per-entry "Open" — tap navigates; no per-entry "Mark read" — see below.)
+- **Read-model refinement:** dropped bulk **mark-all-read-on-open**; entries are now marked read
+  **per item when opened/tapped** (modern behavior, so the unread badge/bold styling is meaningful),
+  plus an explicit **"Mark all read"** app-bar action.
+- **Exit / review:** a failed-download entry retries from the inbox (and the entry clears); completed
+  entries share/open/copy their URL; stale targets degrade gracefully; entries stay unread until tapped;
+  "Mark all read" clears the badge.
