@@ -165,11 +165,28 @@ lean for speed, not for a minutes budget:
 - **Hard rules**: never auto-build APKs on push (they're slow and rarely needed per
   commit); always ubuntu for Android (faster + cheap); cache aggressively; batch
   changes before triggering an APK build.
+- **Be green locally before pushing.** Run the three gates locally first —
+  `dart format --set-exit-if-changed .` · `flutter analyze` · `flutter test` — and only
+  push when they pass. Run `dart run build_runner build` **only when codegen inputs
+  changed** (Drift tables, Riverpod/Freezed/JSON-annotated classes). CI is the safety
+  net, not the first place a failure should surface.
 
 ---
 
 ## 7. Git Workflow
 
+- **Development loop (plan → approve → execute).** For any non-trivial change, work in
+  **plan mode first**: explore (Explore agents / targeted reads), design thoroughly, ask
+  clarifying questions (`AskUserQuestion`) only at genuine forks, write the plan to the
+  plan file, then **`ExitPlanMode` for the maintainer's approval — do not start coding
+  until approved.** Once a (sub)phase is approved, the agent **leads execution
+  autonomously, end-to-end** — branch, code, test, format/analyze, commit, push, open the
+  PR — **without pausing for per-command/tool approval** (the harness allow-rules in
+  `.claude/settings.json` back this). Still **pause to confirm** for genuinely ambiguous
+  product forks and for **risky/irreversible actions** (force-push, history rewrite,
+  deleting shared branches/state, dependency downgrades). Split a large phase into
+  reviewable subphases (the maintainer reviews **on a phone** — smaller green PRs win) and
+  confirm the split first.
 - **`main`** is the default, integration branch — **never commit directly to it.**
 - **Branches are single-use per PR.** Each PR gets its own **fresh** branch, **cut from the latest
   `main`**, named for the work it contains: **`claude/p<N><sub>-<short-topic>`** for a (sub)phase
@@ -191,10 +208,12 @@ lean for speed, not for a minutes budget:
   tells the agent; the agent syncs local `main` and starts the next (sub)phase's
   branch. (A "phase" with no subphases opens one PR; a phase split into subphases
   opens one PR per subphase.)
-- **Always update `docs/VERIFICATION.md`** in the same PR whenever it adds
-  user-facing behavior: add the on-device checks CI can't cover (real downloads,
-  native, notifications, biometrics, etc.). Keeping it current is mandatory — it's
-  the v1-release regression checklist.
+- **Same-PR doc upkeep.** Every (sub)phase PR also: (a) **updates `docs/VERIFICATION.md`**
+  whenever it adds user-facing behavior — the on-device checks CI can't cover (real
+  downloads, native, notifications, biometrics, etc.); mandatory, it's the v1-release
+  regression checklist; (b) **flips the relevant plan-doc status marker** (e.g.
+  `docs/design/P11-PLAN.md` `[~]`→`[x]`); and (c) **logs any deliberate deferral in
+  `docs/BACKLOG.md`, tagged `(From P<N><sub>.)`**.
 - Mid-(sub)phase — i.e. work that doesn't yet meet a boundary — do **not** open a PR
   unless explicitly asked.
 
