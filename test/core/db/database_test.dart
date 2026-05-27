@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 8 with all tables created', () async {
-    expect(db.schemaVersion, 8);
+  test('opens at schema version 9 with all tables created', () async {
+    expect(db.schemaVersion, 9);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -26,6 +26,7 @@ void main() {
         'media_collections',
         'download_tasks',
         'app_settings',
+        'notifications',
       ]),
     );
 
@@ -550,6 +551,119 @@ void main() {
     final updated = await upgraded.select(upgraded.mediaItems).getSingle();
     expect(updated.width, 1920);
     expect(updated.height, 1080);
+  });
+
+  test('upgrades a v8 database to v9, adding the notifications table', () async {
+    // Seed a full v8-schema DB (no notifications table) at user_version=8 so
+    // opening AppDatabase (v9) runs the from<9 onUpgrade branch.
+    final upgraded = AppDatabase(
+      NativeDatabase.memory(
+        setup: (raw) {
+          raw.execute('''
+            CREATE TABLE media_items (
+              id TEXT NOT NULL PRIMARY KEY,
+              title TEXT NOT NULL,
+              source_url TEXT NOT NULL,
+              site TEXT NOT NULL,
+              file_path TEXT NOT NULL,
+              type TEXT NOT NULL,
+              duration_sec INTEGER,
+              size_bytes INTEGER,
+              width INTEGER,
+              height INTEGER,
+              thumb_path TEXT,
+              created_at INTEGER NOT NULL,
+              storage_state TEXT NOT NULL,
+              notes TEXT,
+              folder_id INTEGER,
+              is_favorite INTEGER NOT NULL DEFAULT 0,
+              content_hash TEXT,
+              last_accessed_at INTEGER
+            )''');
+          raw.execute('''
+            CREATE TABLE media_metadata (
+              item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+              uploader TEXT,
+              upload_date INTEGER,
+              description TEXT,
+              original_url TEXT,
+              uploader_id TEXT,
+              channel_id TEXT,
+              source_id TEXT,
+              playlist_id TEXT,
+              playlist_title TEXT,
+              tags TEXT,
+              transcript TEXT,
+              transcript_cues TEXT
+            )''');
+          raw.execute('''
+            CREATE TABLE download_tasks (
+              id TEXT NOT NULL PRIMARY KEY,
+              url TEXT NOT NULL,
+              request_json TEXT NOT NULL,
+              status TEXT NOT NULL,
+              progress REAL NOT NULL DEFAULT 0,
+              error_code TEXT,
+              retries INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL,
+              order_index INTEGER NOT NULL DEFAULT 0
+            )''');
+          raw.execute('''
+            CREATE TABLE app_settings (
+              id INTEGER NOT NULL PRIMARY KEY DEFAULT 0,
+              data TEXT NOT NULL
+            )''');
+          raw.execute(
+            'INSERT INTO media_items (id, title, source_url, site, file_path, '
+            'type, created_at, storage_state) VALUES '
+            "('old1', 'Old clip', 'https://x/v', 'youtube', '/m/old1.mp4', "
+            "'video', 0, 'private')",
+          );
+          raw.execute('PRAGMA user_version = 8');
+        },
+      ),
+    );
+    addTearDown(upgraded.close);
+
+    // The pre-existing row survives the upgrade.
+    final item = await upgraded.select(upgraded.mediaItems).getSingle();
+    expect(item.id, 'old1');
+
+    // The new notifications table exists and round-trips an insert.
+    await upgraded
+        .into(upgraded.notifications)
+        .insert(
+          NotificationsCompanion.insert(
+            id: 'ntf_test',
+            category: 'system',
+            severity: 'info',
+            title: 'Hello',
+            createdAt: DateTime.utc(2026),
+            updatedAt: DateTime.utc(2026),
+          ),
+        );
+    final notifs = await upgraded.select(upgraded.notifications).get();
+    expect(notifs, hasLength(1));
+    expect(notifs.single.coalesceCount, 1);
+    expect(notifs.single.readAt, isNull);
+
+    // All five notification indices were created on upgrade.
+    final indices = await upgraded
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type='index' AND "
+          "name LIKE 'idx_notifications_%'",
+        )
+        .get();
+    expect(
+      indices.map((r) => r.read<String>('name')).toSet(),
+      containsAll(<String>[
+        'idx_notifications_created_at',
+        'idx_notifications_read_at',
+        'idx_notifications_category',
+        'idx_notifications_expires_at',
+        'idx_notifications_dedupe_key',
+      ]),
+    );
   });
 
   test(

@@ -10,6 +10,7 @@ import 'package:grabbit/core/theme/app_theme.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
 import 'package:grabbit/features/library/data/media_dimension_service.dart';
 import 'package:grabbit/features/lock/auto_lock_controller.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/settings/data/privacy_service.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
@@ -46,6 +47,10 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
       _initShareIntake();
       // Backfill pixel dimensions for items downloaded before P10i-c. Non-blocking.
       unawaited(ref.read(mediaDimensionServiceProvider).backfillDimensions());
+      // P11: lazily drop expired activity-inbox entries on launch (no scheduler).
+      unawaited(
+        ref.read(notificationsRepositoryProvider).sweepExpired(DateTime.now()),
+      );
     });
   }
 

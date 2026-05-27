@@ -262,5 +262,7 @@ Include a clear user-responsibility disclaimer in-app and on the landing site.
   DB v3, library power, player, queue, lock hardening).
 - `docs/design/P-AI-PLAN.md` — (P10, P12–P13) edge-AI + graph delivery sub-roadmap (lean; references
   `GRAPH-SPEC.md` + `AI-SPEC.md` for the deep design).
+- `docs/design/P11-PLAN.md` — (P11) Activity Inbox sub-roadmap (P11a–P11d: data foundation, inbox
+  UX + settings, producers, OS notifications).
 
 When in doubt, these + this file win over memory.

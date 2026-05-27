@@ -774,7 +774,15 @@ Independently testable now (the picker UI for expansion lands in P3-B):
       Secure delete, Dynamic color, Pure black (AMOLED) (landing).
 
 ## P11 — Activity Inbox  *(v1)*
-*(Forward-looking — detailed checks added when the phase is built.)*
+*(Forward-looking — detailed checks added per subphase as the phase is built.)*
+
+### P11a — Notifications data foundation  *(no AI/graph needed — works on any build)*
+- [ ] A debug APK built over an **existing pre-P11 install** opens with **no data loss** — the
+      schema v8→v9 upgrade adds the `notifications` table without disturbing library/queue/settings.
+      (No inbox UI yet; this is the migration smoke check. The seam, repository, retention sweep and
+      gating are CI-covered by unit tests.)
+
+### P11b–d — UX, producers & OS notifications
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
       **transcript/backfill**, a **graph** index rebuild — each shows up with the right category/severity.
 - [ ] The app-bar **bell** shows an **unread badge**; opening the **Inbox** marks items read and the
