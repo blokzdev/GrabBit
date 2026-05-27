@@ -9,6 +9,19 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/notifications/presentation/inbox_screen.dart';
+import 'package:grabbit/features/queue/data/queue_repository.dart';
+import 'package:grabbit/features/queue/presentation/queue_controller.dart';
+
+/// QueueController stand-in that records retry calls without touching the engine.
+class _FakeQueueController extends QueueController {
+  String? retriedId;
+
+  @override
+  Future<void> build() async {}
+
+  @override
+  Future<void> retry(String id) async => retriedId = id;
+}
 
 void main() {
   late AppDatabase db;
@@ -21,18 +34,36 @@ void main() {
     String id, {
     String title = 'T',
     String category = NotificationCategory.system,
+    String severity = NotificationSeverity.info,
     String? targetRoute,
+    String? taskId,
+    String? itemId,
     DateTime? createdAt,
   }) => Notification(
     id: id,
     category: category,
-    severity: NotificationSeverity.info,
+    severity: severity,
     title: title,
     targetRoute: targetRoute,
+    taskId: taskId,
+    itemId: itemId,
     createdAt: createdAt ?? DateTime.utc(2026),
     updatedAt: createdAt ?? DateTime.utc(2026),
     coalesceCount: 1,
   );
+
+  // Inserts a failed queue row so the ⋮ menu's `byId` lookup resolves it.
+  Future<void> seedFailedTask(String id) => db
+      .into(db.downloadTasks)
+      .insert(
+        DownloadTasksCompanion.insert(
+          id: id,
+          url: 'https://example.com/$id',
+          requestJson: '{}',
+          status: TaskStatus.error,
+          createdAt: DateTime.utc(2026),
+        ),
+      );
 
   // Inserts a real row so command side-effects (markAllRead / clear) are
   // observable in the DB.
@@ -126,7 +157,9 @@ void main() {
     expect(find.text('A download'), findsNothing);
   });
 
-  testWidgets('opening the inbox marks everything read', (tester) async {
+  testWidgets('opening the inbox no longer marks entries read (P11e)', (
+    tester,
+  ) async {
     await seed('a', title: 'Unread one');
     await seed('b', title: 'Unread two');
 
@@ -134,7 +167,137 @@ void main() {
     await tester.pumpAndSettle();
 
     final rows = await db.select(db.notifications).get();
+    expect(rows.every((r) => r.readAt == null), isTrue);
+  });
+
+  testWidgets('tapping an entry marks only that entry read (P11e)', (
+    tester,
+  ) async {
+    await seed('a', title: 'Tap me');
+    await seed('b', title: 'Leave me');
+
+    await tester.pumpWidget(
+      wrap([feedRow('a', title: 'Tap me'), feedRow('b', title: 'Leave me')]),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tap me'));
+    await tester.pumpAndSettle();
+
+    final a = await (db.select(
+      db.notifications,
+    )..where((t) => t.id.equals('a'))).getSingle();
+    final b = await (db.select(
+      db.notifications,
+    )..where((t) => t.id.equals('b'))).getSingle();
+    expect(a.readAt, isNotNull);
+    expect(b.readAt, isNull);
+  });
+
+  testWidgets('Mark all read marks every entry read (P11e)', (tester) async {
+    await seed('a', title: 'One');
+    await seed('b', title: 'Two');
+
+    await tester.pumpWidget(wrap([feedRow('a'), feedRow('b')]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.done_all));
+    await tester.pumpAndSettle();
+
+    final rows = await db.select(db.notifications).get();
     expect(rows.every((r) => r.readAt != null), isTrue);
+  });
+
+  testWidgets('the entry menu offers Retry only for failed downloads (P11e)', (
+    tester,
+  ) async {
+    await seedFailedTask('t1');
+    await tester.pumpWidget(
+      wrap([
+        feedRow(
+          'n1',
+          title: 'Failed dl',
+          category: NotificationCategory.download,
+          severity: NotificationSeverity.error,
+          taskId: 't1',
+        ),
+      ]),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Retry download'), findsOneWidget);
+    expect(find.text('Open source URL'), findsOneWidget);
+    expect(find.text('Dismiss'), findsOneWidget);
+  });
+
+  testWidgets('the entry menu hides Retry for a plain system entry (P11e)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap([feedRow('s1', title: 'System note')]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Retry download'), findsNothing);
+    expect(find.text('Dismiss'), findsOneWidget);
+  });
+
+  testWidgets('Dismiss from the menu removes the entry (P11e)', (tester) async {
+    await seed('a', title: 'Doomed');
+    await tester.pumpWidget(wrap([feedRow('a', title: 'Doomed')]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dismiss'));
+    await tester.pumpAndSettle();
+
+    expect(await db.select(db.notifications).get(), isEmpty);
+  });
+
+  testWidgets('Retry re-queues the download and dismisses the entry (P11e)', (
+    tester,
+  ) async {
+    await seed('n1', title: 'Failed dl');
+    await seedFailedTask('t1');
+    final fake = _FakeQueueController();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          notificationFeedByCategoryProvider.overrideWith(
+            (ref, category) => Stream.value([
+              feedRow(
+                'n1',
+                title: 'Failed dl',
+                category: NotificationCategory.download,
+                severity: NotificationSeverity.error,
+                taskId: 't1',
+              ),
+            ]),
+          ),
+          unreadNotificationCountProvider.overrideWith(
+            (ref) => Stream.value(0),
+          ),
+          queueControllerProvider.overrideWith(() => fake),
+        ],
+        child: const MaterialApp(home: InboxScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retry download'));
+    await tester.pumpAndSettle();
+
+    expect(fake.retriedId, 't1');
+    expect(await db.select(db.notifications).get(), isEmpty);
   });
 
   testWidgets('opening the inbox sweeps expired entries (P11c)', (

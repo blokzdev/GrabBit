@@ -822,6 +822,17 @@ entries, or verify after P11c lands.)*
       a failure is still recorded in the in-app inbox.
 - [ ] Everything stays **on-device** (no network/telemetry) and the Inbox is **behind the app lock**.
 
+### P11e — Actionable inbox entries + per-item read  *(no AI/graph needed — works on any build)*
+- [ ] A **failed-download** entry's `⋮` (or long-press) offers **Retry** → the download re-runs and the
+      stale error entry disappears (with a "Retrying…" snackbar).
+- [ ] **Open source URL** launches the original link in the browser; **Copy source URL** copies it —
+      for both a **completed** entry (from the item) and a **failed** one (from the queue task).
+- [ ] **Share file** on a completed entry opens the system share sheet for the downloaded file.
+- [ ] **Dismiss** from the menu removes the entry (matching swipe-to-dismiss).
+- [ ] An entry whose item/task was deleted hides the actions that no longer apply (no crash).
+- [ ] Entries stay **unread (bold + dot)** until tapped; opening the inbox no longer clears everything;
+      the bell badge decrements as entries are read; **Mark all read** clears the badge in one tap.
+
 ## P12 — Device-tiered edge LLM engine  *(v1)*
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install

@@ -12,11 +12,13 @@ import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
+import 'package:grabbit/features/notifications/presentation/notification_actions.dart';
 import 'package:grabbit/features/notifications/presentation/notification_style.dart';
 
 /// `/inbox` — the Activity Inbox feed (P11b). Newest-first list of background
-/// activity, filterable by category, swipe-to-dismiss, with a Clear-all action.
-/// Opening the screen marks everything read so the app-bar bell badge clears.
+/// activity, filterable by category, swipe-to-dismiss, per-entry `⋮` actions
+/// (P11e), with Mark-all-read + Clear-all app-bar actions. Entries are marked
+/// read individually when opened, not in bulk on screen entry.
 class InboxScreen extends ConsumerStatefulWidget {
   const InboxScreen({super.key});
 
@@ -40,12 +42,13 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   @override
   void initState() {
     super.initState();
-    // Opening the inbox counts as seeing it: clear unread (and the bell badge),
-    // and run the lazy retention sweep (the second trigger after app startup).
+    // Entries are marked read individually when opened (see the tile's onTap),
+    // so opening the inbox no longer bulk-clears unread — it only runs the lazy
+    // retention sweep (the second trigger after app startup).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final repo = ref.read(notificationsRepositoryProvider);
-      unawaited(repo.markAllRead());
-      unawaited(repo.sweepExpired(DateTime.now()));
+      unawaited(
+        ref.read(notificationsRepositoryProvider).sweepExpired(DateTime.now()),
+      );
     });
   }
 
@@ -78,6 +81,12 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       appBar: AppBar(
         title: const Text('Activity'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.done_all),
+            tooltip: 'Mark all read',
+            onPressed: () =>
+                ref.read(notificationsRepositoryProvider).markAllRead(),
+          ),
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: 'Clear all',
@@ -181,15 +190,24 @@ class _NotificationTile extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
         isThreeLine: notification.body != null,
-        trailing: unread
-            ? Icon(Icons.circle, size: 10, color: scheme.primary)
-            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (unread) Icon(Icons.circle, size: 10, color: scheme.primary),
+            IconButton(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Actions',
+              onPressed: () =>
+                  showNotificationActions(context, ref, notification),
+            ),
+          ],
+        ),
         onTap: () {
-          final route = notification.targetRoute;
-          if (route == null) return;
           ref.read(notificationsRepositoryProvider).markRead(notification.id);
-          context.push(route);
+          final route = notification.targetRoute;
+          if (route != null) context.push(route);
         },
+        onLongPress: () => showNotificationActions(context, ref, notification),
       ),
     );
   }
