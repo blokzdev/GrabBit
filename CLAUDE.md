@@ -151,19 +151,20 @@ flutter build apk --release / flutter build appbundle       # release (manual)
 
 ## 6. CI Discipline — READ BEFORE TOUCHING `.github/`
 
-The maintainer is on **GitHub Free** with limited Actions minutes on a **private**
-repo (~2,000 min/mo) and **tests primarily from a phone** (no local IDE). CI is the
-only feedback loop. Be frugal:
+The repo is **public** on **GitHub Free**, so Actions minutes are **unlimited**. The
+real constraints now are **wall-clock feedback time** and that the maintainer **tests
+primarily from a phone** (no local IDE) — CI is the only automated feedback loop. Stay
+lean for speed, not for a minutes budget:
 
 - **`ci.yml` — AUTO** on PR + push to feature branches: `dart format` check →
-  `flutter analyze` → `flutter test`. **Ubuntu only** (1x multiplier), with pub
-  cache. Keep it ~2-4 min. This is the bug/error catcher.
+  `flutter analyze` → `flutter test`. **Ubuntu only**, with pub cache. Keep it ~2-4 min.
+  This is the bug/error catcher.
 - **`build-apk.yml` — MANUAL** (`workflow_dispatch`): builds a **debug APK**
   (boolean input to switch to release/AAB), Gradle + pub caching, uploads the APK
   as a **downloadable artifact** for on-device testing.
-- **Hard rules**: never auto-build APKs on push; always ubuntu for Android
-  (macOS=10x, windows=2x minutes); cache aggressively; batch changes before
-  triggering an APK build. Cannot make the repo public (YouTube downloader).
+- **Hard rules**: never auto-build APKs on push (they're slow and rarely needed per
+  commit); always ubuntu for Android (faster + cheap); cache aggressively; batch
+  changes before triggering an APK build.
 
 ---
 
@@ -236,6 +237,17 @@ with the terms of service and copyright law of the sites they use. GrabBit hosts
 **no** copyrighted content and ships **no** pre-loaded media. Distribution is
 off-Play-Store (sideload + landing site) precisely because of platform policies.
 Include a clear user-responsibility disclaimer in-app and on the landing site.
+
+The repo is **open-source under Apache-2.0** (see `LICENSE`) — the same posture as
+yt-dlp / Seal / NewPipe. To keep that posture defensible and reduce takedown risk,
+follow these rules in code and docs:
+- **Frame it as a general-purpose downloader**, never as a tool to circumvent DRM or
+  paywalls. Avoid "rip", "bypass", "unlock", "crack"-style language in identifiers,
+  comments, commits, and UI copy.
+- **Never commit copyrighted test media or real download URLs.** Tests use synthetic
+  fixtures and example.com-style placeholders only.
+- Keep the **user-responsibility disclaimer** prominent (onboarding + About + landing).
+- The maintainer keeps an **off-GitHub source mirror** so a takedown can't erase history.
 
 ---
 

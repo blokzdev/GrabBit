@@ -59,10 +59,14 @@ CI runs format → analyze → test on every push/PR. APK builds are manual
 
 ## Legal
 
-GrabBit is a general-purpose downloader; the user is responsible for complying with
-the terms of service and copyright law of the sites they use. GrabBit hosts no
-copyrighted content and ships no pre-loaded media.
+GrabBit is a **general-purpose downloader**; the user is solely responsible for
+complying with the terms of service and copyright law of the sites they use, and
+for only downloading content they have the right to. GrabBit hosts **no** copyrighted
+content, ships **no** pre-loaded media, and is **not** designed to circumvent any
+technical protection or DRM. It orchestrates the open-source `yt-dlp` + `ffmpeg`
+tools entirely on-device.
 
-All rights reserved. This project is proprietary and is intentionally published
-without an open-source license; no rights to use, copy, modify, or distribute are
-granted.
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE). You may use, modify, and
+distribute this software under those terms.
