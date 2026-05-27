@@ -227,8 +227,14 @@ caption/transcript combinations to spot-check.
 > split into per-sub-screen files + a go_router nav test. CI-green (format · analyze · 593
 > tests). **Pending on-device spot-check.**
 
-### `[ ]` P10j-c2 — settings search + `InfoHint` rollout
-**Branch:** `claude/p10j-c2-search-hints` · **Polish on top of the restructure.**
+### `[~]` P10j-c2 — settings search + `InfoHint` rollout
+**Branch:** `claude/p10j-c2-search-hints` · **Polish on top of the restructure — closes P10j.**
+
+> **Status:** implemented — `settings_search.dart` (static index + `searchSettings`); the landing is
+> now stateful with a Material `SearchBar` (results → push route, or clear + `ensureVisible` for a
+> landing section via per-section `GlobalKey`s); `InfoHint`s rolled across the agreed controls.
+> Drift-guard + filtering + navigation tests added. CI-green (format · analyze · 602 tests). The
+> three deferred search refinements logged in `docs/BACKLOG.md`. **Pending on-device spot-check.**
 
 - **Search / quick-jump.** A search field atop the landing backed by a **static settings index**
   (`lib/features/settings/presentation/settings_search.dart`) — `{ id, label, keywords,

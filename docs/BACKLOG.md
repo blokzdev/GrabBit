@@ -59,6 +59,15 @@ _(nothing active — pick the next batch from below)_
       related-items shimmer (so `pumpAndSettle` hangs). The request-building (`buildCaptionFetchRequest`)
       + `skipDownload` serialization/mapping are unit-tested; the end-to-end flow is APK-verified.
       Revisit with `tester.runAsync` + faked transcript/engine providers. *(From P10f-2.)*
+- [ ] **Settings search → scroll-to-and-highlight the exact control.** P10j-c2's search opens the
+      target sub-screen (or scrolls to a landing section); it doesn't yet scroll to and flash the
+      specific row within a sub-screen. The sub-screens are short so this is minor; add a transient
+      highlight + per-control anchors if it proves fiddly on device. *(From P10j-c2.)*
+- [ ] **Fuzzy / typo-tolerant settings search.** P10j-c2 does plain case-insensitive substring over
+      label + keywords. Add light fuzzy matching (e.g. token prefix / small edit distance) if exact
+      substring proves too strict in practice. *(From P10j-c2.)*
+- [ ] **Persist recent settings searches** (and consider a single global, app-wide search that spans
+      Settings + library). Out of scope for P10j-c2's Settings-only quick-jump. *(From P10j-c2.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_

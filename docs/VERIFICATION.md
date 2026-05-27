@@ -762,6 +762,17 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **General section** runs the maintenance actions: **About** opens the About screen; **Reset to
       defaults** confirms then resets; **Clear cache** frees temporary files. The `⋮` overflow still works.
 
+### P10j-c2 — settings search + InfoHint rollout  *(no AI/graph needed — works on any build)*
+- [ ] The **search bar** atop Settings filters as you type: e.g. "sponsorblock", "amoled", "subtitles"
+      (synonym) each show matching controls with their section name.
+- [ ] Tapping a **sub-screen** result opens that sub-screen (e.g. "SponsorBlock" → Downloads); tapping a
+      **landing** result clears the search and scrolls that section into view.
+- [ ] **No results** shows a clean "No settings match …" message; clearing the field restores the landing.
+- [ ] The new `(i)` **hints** open on tap (single tap, not long-press) on: Faster downloads, Concurrent
+      fragments, Download speed limit, Pause when storage is low, Low-battery threshold,
+      Skip already-downloaded, SponsorBlock (Downloads); Semantic search, Rebuild graph index (AI & graph);
+      Secure delete, Dynamic color, Pure black (AMOLED) (landing).
+
 ## P11 — Activity Inbox  *(v1)*
 *(Forward-looking — detailed checks added when the phase is built.)*
 - [ ] Background work posts durable entries to the Inbox: a finished/failed **download**, a built
