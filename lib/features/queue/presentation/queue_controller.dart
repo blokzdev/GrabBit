@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
@@ -11,6 +12,7 @@ import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/engine/info_json_parser.dart';
 import 'package:grabbit/core/battery/battery_service.dart';
+import 'package:grabbit/core/lifecycle/app_lifecycle_provider.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
@@ -23,6 +25,7 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
+import 'package:grabbit/features/notifications/data/system_notification_service.dart';
 import 'package:grabbit/features/queue/data/completed_outputs.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
@@ -364,6 +367,42 @@ class QueueController extends _$QueueController {
         dedupeKey: 'transcript_$id',
       );
     }
+    await _maybeNotifyOs(
+      taskId: id,
+      title: queued.title,
+      body: result.itemCount > 1
+          ? 'Saved ${result.itemCount} files'
+          : 'Download complete',
+      route: route,
+      isError: false,
+    );
+  }
+
+  /// Raises an OS (system-tray) notification for a terminal download event, but
+  /// only when the app is **backgrounded** (the in-app inbox covers the
+  /// foreground case) and the user hasn't muted the download category. A no-op
+  /// off Android / in tests.
+  Future<void> _maybeNotifyOs({
+    required String taskId,
+    required String title,
+    String? body,
+    required String route,
+    required bool isError,
+  }) async {
+    if (ref.read(appLifecycleStateProvider) == AppLifecycleState.resumed) {
+      return;
+    }
+    final settings = await ref.read(settingsControllerProvider.future);
+    if (!settings.notifyDownload) return;
+    await ref
+        .read(systemNotificationServiceProvider)
+        .showDownload(
+          taskId: taskId,
+          title: title,
+          body: body,
+          route: route,
+          isError: isError,
+        );
   }
 
   Future<void> _maybeAutoExport(String id) async {
@@ -416,6 +455,13 @@ class QueueController extends _$QueueController {
             taskId: id,
             dedupeKey: 'download_$id',
           );
+      await _maybeNotifyOs(
+        taskId: id,
+        title: queued.title,
+        body: friendlyError(code, 'Download failed'),
+        route: '/queue',
+        isError: true,
+      );
       await _pump();
     }
   }

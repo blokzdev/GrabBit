@@ -812,8 +812,14 @@ entries, or verify after P11c lands.)*
 - [ ] Opening the Inbox **sweeps expired** entries (per the retention setting; "Forever" keeps them).
 
 ### P11d — OS notifications  *(native — needs an APK build)*
-- [ ] With the app backgrounded, a finished/failed download raises a **system notification** that
-      opens the relevant screen; disabling the category suppresses it.
+- [ ] With the app **backgrounded**, a finished download raises a system notification on the
+      **Activity** channel; tapping it opens the item (and works from a **cold start** — app fully
+      killed, tap launches into the item).
+- [ ] A backgrounded **failed** download raises a notification that opens the **queue**.
+- [ ] A completion while the app is **foregrounded** raises **no** system notification (the in-app
+      inbox/badge still updates).
+- [ ] Turning off **Settings → Notifications → Download activity** suppresses the system popup, while
+      a failure is still recorded in the in-app inbox.
 - [ ] Everything stays **on-device** (no network/telemetry) and the Inbox is **behind the app lock**.
 
 ## P12 — Device-tiered edge LLM engine  *(v1)*

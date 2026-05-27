@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
+import 'package:grabbit/core/lifecycle/app_lifecycle_provider.dart';
 import 'package:grabbit/core/routing/app_router.dart';
 import 'package:grabbit/core/theme/app_theme.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
 import 'package:grabbit/features/library/data/media_dimension_service.dart';
 import 'package:grabbit/features/lock/auto_lock_controller.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
+import 'package:grabbit/features/notifications/data/system_notification_service.dart';
 import 'package:grabbit/features/settings/data/privacy_service.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/engine_update_controller.dart';
@@ -45,6 +47,7 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
       _maybeAutoUpdate();
       _maybeSyncGraph();
       _initShareIntake();
+      _initOsNotifications();
       // Backfill pixel dimensions for items downloaded before P10i-c. Non-blocking.
       unawaited(ref.read(mediaDimensionServiceProvider).backfillDimensions());
       // P11: lazily drop expired activity-inbox entries on launch (no scheduler).
@@ -91,6 +94,32 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
     ref.read(appRouterProvider).go('/add');
   }
 
+  /// Initializes OS notifications (P11d): registers the tap handler and routes a
+  /// cold-start launch (the app opened by tapping a notification). Non-blocking.
+  void _initOsNotifications() {
+    final service = ref.read(systemNotificationServiceProvider);
+    unawaited(
+      service
+          .initialize(onTap: _openNotificationRoute)
+          .then((_) => service.takeLaunchRoute())
+          .then((route) {
+            if (route != null) _openNotificationRoute(route);
+          })
+          .catchError((_) {}),
+    );
+  }
+
+  void _openNotificationRoute(String route) {
+    if (!mounted) return;
+    final router = ref.read(appRouterProvider);
+    // A stale target (e.g. a deleted item) falls back to the inbox.
+    try {
+      router.go(route);
+    } catch (_) {
+      router.go('/inbox');
+    }
+  }
+
   /// Throttled, non-blocking yt-dlp self-update on launch (keeps the engine
   /// current so public videos don't fail with "Please sign in"). Offline-safe.
   Future<void> _maybeAutoUpdate() async {
@@ -121,6 +150,7 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    ref.read(appLifecycleStateProvider.notifier).set(state);
     final autoLock = ref.read(autoLockProvider.notifier);
     switch (state) {
       case AppLifecycleState.paused:
