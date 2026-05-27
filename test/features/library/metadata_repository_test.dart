@@ -628,12 +628,27 @@ void main() {
         playlistTitle: 'Mix',
       );
       await seedMeta('b', uploader: 'Rick'); // duplicate uploader
+      await repo.addTagToItem('a', 'music');
+      await repo.addTagToItem('b', 'music'); // duplicate tag
+      await repo.addTagToItem('a', 'live');
 
       expect(await repo.watchDistinctSites().first, ['tiktok', 'youtube']);
       expect(await repo.watchDistinctUploaders().first, ['Rick']);
+      expect(await repo.watchDistinctTags().first, ['live', 'music']);
       final playlists = await repo.watchDistinctPlaylists().first;
       expect(playlists.map((p) => p.id), ['PL1']);
       expect(playlists.single.title, 'Mix');
+    });
+
+    test('filters by tag name', () async {
+      await seed('a', 'A', 'video');
+      await seed('b', 'B', 'video');
+      await repo.addTagToItem('a', 'music');
+
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(tag: 'music'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
     });
   });
 }

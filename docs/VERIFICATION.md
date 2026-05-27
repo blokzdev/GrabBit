@@ -727,6 +727,9 @@ Independently testable now (the picker UI for expansion lands in P3-B):
 - [ ] **Type-aware:** with **Image-only** selected the **Duration** section hides (and an active duration
       bucket clears); with **Audio-only** the **Resolution** section hides; reselecting brings them back.
 - [ ] The filter **badge** count includes active buckets; **Clear all** resets every filter incl. buckets.
+- [ ] **Tag facet (consistency sweep):** the filter sheet shows a **Tag** dropdown listing tags in use;
+      picking one narrows the grid to items with that tag, counts toward the badge, and is reset by
+      **Clear all**; the tag entity-hub still works unchanged.
 
 ### P10j-a — Settings widget foundation + touch-friendly help  *(no AI/graph needed — works on any build)*
 - [ ] **Settings renders unchanged:** every section (Downloads, Transcripts, Advanced download options in

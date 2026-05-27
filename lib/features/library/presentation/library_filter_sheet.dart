@@ -47,7 +47,9 @@ class _LibraryFilterSheet extends ConsumerWidget {
         ref.watch(distinctUploadersProvider).asData?.value ?? const [];
     final playlists =
         ref.watch(distinctPlaylistsProvider).asData?.value ?? const [];
-    final noFacets = sites.isEmpty && uploaders.isEmpty && playlists.isEmpty;
+    final tags = ref.watch(distinctTagsProvider).asData?.value ?? const [];
+    final noFacets =
+        sites.isEmpty && uploaders.isEmpty && playlists.isEmpty && tags.isEmpty;
 
     return SafeArea(
       child: Padding(
@@ -150,6 +152,15 @@ class _LibraryFilterSheet extends ConsumerWidget {
                   value: filter.playlistId,
                   options: {for (final p in playlists) p.id: p.title},
                   onChanged: controller.setPlaylist,
+                ),
+              ],
+              if (tags.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _FacetDropdown(
+                  label: 'Tag',
+                  value: filter.tag,
+                  options: {for (final t in tags) t: t},
+                  onChanged: controller.setTag,
                 ),
               ],
               if (noFacets)
