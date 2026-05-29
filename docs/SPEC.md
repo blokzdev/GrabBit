@@ -116,7 +116,7 @@ TextColumn id; TextColumn url; TextColumn requestJson; TextColumn status;
 RealColumn progress; TextColumn? errorCode; IntColumn retries; DateTimeColumn createdAt;
 IntColumn orderIndex;                                    // v3 (P9d): queue reorder
 // settings (key/value JSON, single row)
-// notifications (v8, P11): id, createdAt, category, severity, title, body,
+// notifications (v9, P11): id, createdAt, category, severity, title, body,
 //   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
 ```
 
@@ -128,7 +128,7 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 > spec does not bump the version for it. See ADR-0001 (schema-as-data) and ADR-0003 (MediaObject bridge);
 > overview in `docs/things-engine.md`.
 
-Migration strategy: Drift `schemaVersion` (currently **8**); write `MigrationStrategy`
+Migration strategy: Drift `schemaVersion` (currently **9**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
@@ -154,7 +154,7 @@ a migration, so DBs upgraded across that version were missing them. The v8 upgra
 only when `PRAGMA table_info` shows it absent (`addColumnIfMissing`) — a no-op on fresh installs that already
 have it. Width/height are captured at download (video from the `.info.json` sidecar, images by a header-only
 decode via the `image` package) and best-effort backfilled for legacy items by `MediaDimensionService`.
-**Planned: v9 (P11)** adds the `notifications` table backing the Activity Inbox.
+**v9 (P11)** adds the `notifications` table backing the Activity Inbox (shipped).
 
 ---
 
