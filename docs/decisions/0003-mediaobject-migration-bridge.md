@@ -42,6 +42,30 @@ re-extraction.**
   the rows below. The projection is **rebuildable and idempotent** — the same discipline as the Cozo
   index and the FTS backfill — so a Thing view can always be regenerated from the media tables.
 
+### MediaObject is the file-leaf
+
+In the Things graph (rooted at schema.org `Thing`, ADR-0001), Things fall into two operational classes.
+**File-backed Things** are `MediaObject` and its subtypes (`Audio`/`Image`/`VideoObject`,
+`DataDownload`, …): they carry the **bytes** — `contentUrl`, `contentSize`, `encodingFormat` — and are
+the one class whose canonical substrate is the media tables. **Pure-metadata Things** — `Recipe`,
+`Event`, `Place`, `Person`, `Product`, `Article` — own no bytes; they are *works/entities* that
+**reference** file-leaves via edges (ADR-0004). So `MediaObject` is the **universal file-leaf**: the
+single place the Thing graph touches the filesystem, the migration bridge, and the **fallback** type
+for any file intake that yields nothing richer (a download with no further extraction stays "just" a
+MediaObject, and can be enriched later — provenance per ADR-0004).
+
+**Documents fit with no gap.** A document is a `DigitalDocument` (a `CreativeWork` — a *sibling* of
+`MediaObject`, not a child), whose **bytes are still a `MediaObject`/`DataDownload`** attached via
+`encoding`. "File-backed" always bottoms out at a MediaObject; the document is the *work* that
+references it. So adding documents (or any non-media artifact) needs no new file substrate — just a
+content Thing pointing at a file-leaf.
+
+**Content↔file is many-to-many.** One file-leaf can back **many** content Things — a single downloaded
+video can yield a `Recipe`, an `Event`, and a transcript-derived `Article`, each linked to that one
+`VideoObject` (with `Clip`/`startOffset` for segments) — and one work can span **many** file-leaves.
+Bytes are stored once; the artifacts referencing them are unbounded (the "one grab, many artifacts"
+driver). Edge mechanics live in ADR-0004.
+
 ### Field-by-field mapping
 
 Canonical media columns → schema.org MediaObject (CreativeWork) properties:
@@ -75,6 +99,16 @@ JSON-LD (e.g. a `grabbit:` prefixed property block), not forced onto ill-fitting
 remain app-private state; `transcript_cues` in particular is a GrabBit timing extension over the
 standard `transcript`.
 
+### The existing graph is already multi-type
+
+The P10 Cozo graph already holds **non-media nodes** — uploader, playlist, tag, site —
+(`docs/GRAPH-SPEC.md`), so "everything is a Thing" *formalizes* a graph GrabBit already runs rather
+than inventing one. Those nodes map onto schema.org Thing types: **uploader → `Person`/`Organization`**
+(the `author`/`creator` edge target), **playlist → `CreativeWorkSeries`** (`isPartOf`), **site →
+`Organization`/`WebSite`** (`publisher`/`provider`), **tag → `DefinedTerm`** (`keywords`). The
+MediaObject bridge is the first *file-backed* Thing type; these entity nodes are the first
+*pure-metadata* Thing types, and the edges between them already exist.
+
 ## Consequences
 
 **Positive**
@@ -95,6 +129,13 @@ standard `transcript`.
   treating the media tables as canonical for file-lifecycle fields — i.e. one-directional projection,
   not dual editing. The exact persistence shape (materialized `things` rows vs. on-read view) is a v2
   implementation choice; this ADR fixes the *mapping contract*, not the storage mechanism.
+- **The committed direction is the *logical* spine, not a physical merge.** Things are GrabBit's
+  conceptual/graph spine (everything is a Thing; ADR-0001), with `MediaObject` as the file-leaf and the
+  media tables as its **canonical physical substrate** — zero migration, zero v1 change. **Physically
+  absorbing `media_items`/`media_metadata` into the generic `things` table (a full physical spine) is a
+  deferred, open question**, not a commitment — it carries real file-lifecycle migration weight (see the
+  rejected alternative below) and is unscheduled. The `things` id space is kept **alignable with
+  `media_items.id`** so the choice stays open without rework.
 - **A few properties need light derivation** (`duration` → ISO-8601, `encodingFormat` from
   container); these are pure transforms, no new capture.
 - **Extension-namespace properties are non-standard**, so they don't export to external schema.org
@@ -108,15 +149,19 @@ standard `transcript`.
 - **Invent a GrabBit-proprietary media Thing type instead of using MediaObject.** Rejected: throws
   away schema.org's existing, well-supported media vocabulary and the clean 1:1 mapping, and breaks
   interoperability/grounding for no benefit.
-- **Move media fully into the generic `things` table and retire `media_items`.** Rejected for the
-  bridge: the file-lifecycle/storage-state machinery (export, scoped storage, lock) is built on the
-  media tables; re-homing it is a large, risky change orthogonal to the Things model. Projection gets
-  the benefit without the upheaval.
+- **Move media fully into the generic `things` table and retire `media_items` (the full *physical*
+  spine).** Rejected *for the bridge* and **deferred as an open v2+ question** (logged in BACKLOG, by
+  PR 3/3): the file-lifecycle/storage-state machinery (export, scoped storage, lock) is built on the
+  media tables; re-homing it is a large, risky change orthogonal to the Things model. The **logical**
+  spine (projection, media tables canonical) gets the benefit now without the upheaval; the physical
+  merge can be revisited later if it ever pays for itself.
 
 ## Related
 
 - ADR-0001 — schema-as-data (the `things` store the projection targets).
 - ADR-0002 — narrow-then-fill curator (how *non-media* Things are populated; media needs no
   extraction).
+- ADR-0004 — relationships & provenance (the `grabbit:` extension namespace; the edges by which content
+  Things reference these file-leaves; many-to-many content↔file).
 - `docs/SPEC.md` §3 (the canonical media schema), `docs/ARCHITECTURE.md` §4, `docs/GRAPH-SPEC.md`.
 - `docs/things-engine.md` — v2 vision one-pager.
