@@ -189,6 +189,9 @@ suggestions work — all with the small embedder, no LLM.
 
 ## P12 — Device-tiered edge LLM engine  *(minimal feature surface)*
 
+> **Detailed sub-roadmap: [`docs/design/P12-PLAN.md`](P12-PLAN.md)** (P12a–P12g subphase breakdown +
+> phase-level decisions). This section is the lean summary.
+
 **Goal:** enable on-device generation + transcription with graceful capability-gating.
 
 - `DeviceCapabilityService` + device tiers + `ModelCapabilityMatrix`.

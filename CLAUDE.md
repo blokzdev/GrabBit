@@ -192,6 +192,13 @@ lean for speed, not for a minutes budget:
   deleting shared branches/state, dependency downgrades). Split a large phase into
   reviewable subphases (the maintainer reviews **on a phone** — smaller green PRs win) and
   confirm the split first.
+- **Top-level phases: map the whole phase first.** Before planning or building any subphase of a new
+  top-level phase `P<N>`, author and land a dedicated **`docs/design/P<N>-PLAN.md`** sub-roadmap — the
+  whole-phase map: the goal, a **granular subphase breakdown** (each with scope + exit criteria), and the
+  **phase-level decisions** — and get it **approved before** the first subphase is planned or built. The
+  map is its own small docs PR; it locks the decomposition (and keeps it phone-reviewable) before any
+  code. Then plan and execute each subphase as its own PR per the rules below. (P7/P8/P9/P10j/P11/P12
+  each have such a plan doc.)
 - **`main`** is the default, integration branch — **never commit directly to it.**
 - **Branches are single-use per PR.** Each PR gets its own **fresh** branch, **cut from the latest
   `main`**, named for the work it contains: **`claude/p<N><sub>-<short-topic>`** for a (sub)phase
@@ -300,6 +307,9 @@ follow these rules in code and docs:
   `GRAPH-SPEC.md` + `AI-SPEC.md` for the deep design).
 - `docs/design/P11-PLAN.md` — (P11) Activity Inbox sub-roadmap (P11a–P11e: data foundation, inbox
   UX + settings, producers, OS notifications, actionable entries + per-item read).
+- `docs/design/P12-PLAN.md` — (P12) device-tiered edge-LLM engine sub-roadmap (P12a–P12g: device
+  tiers/capability matrix, model catalog + download, multilingual embedder, LLM generation, whisper
+  transcription, Things-Engine seams, capability-gating UX).
 - `docs/things-engine.md` — (v2 initiative, no P-number) the **Things Engine** vision one-pager: the
   library reframed as a typed, on-device graph of schema.org Things.
 - `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,
