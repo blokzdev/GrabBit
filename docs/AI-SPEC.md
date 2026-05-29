@@ -130,7 +130,7 @@ abstract interface class InferenceEngine {
 | **Light (<0.5–~0.6B)** | **SmolLM-135M**, **Qwen3-0.6B** | **Apache-2.0** | Clean; low-end-device floor. |
 | **Mid (~1–3B)** | **Phi-4-Mini** | **MIT** | Clean. |
 | **Mid (capable)** | **Gemma 3 1B / 3n E2B** | **Gemma** (custom use-policy) | Usable + strong, **but vet Gemma's use policy before bundling** — it carries prohibited-use terms. |
-| **Embedder** | **Gecko 256** (110M, 768-d, 256-tok, ~114 MB) · multilingual: **MiniLM-L12-v2** (P12) | **Apache-2.0**, ungated | Universal tier; embeddings only. Pinned P10g-1; pluggable in P10g-2. |
+| **Embedder** | **Gecko 256** (110M, 768-d, 256-tok, ~114 MB) · multilingual: **MiniLM-L12-v2** (P12c-2: onnxruntime, int8 ~118 MB, 384-d, 128-tok) | **Apache-2.0**, ungated | Universal tier; embeddings only. Pinned P10g-1; pluggable P10g-2; MiniLM shipped P12c-2 (self-test-gated until P12c-3). |
 | **Transcription** | whisper.cpp (tiny→large-v3-turbo) | MIT | Size-gated by tier. |
 | **Function-calling** (`structured_extraction`) | **Qwen3-0.6B** · **FunctionGemma 270M** | **Apache-2.0** · **Gemma** (custom) | Backs `generateStructured` (§2). Qwen3-0.6B is clean; FunctionGemma carries Gemma's use-policy. **License fork deferred to P12 start** (architecture locked, model not). *(forward seam — ADR-0002.)* |
 

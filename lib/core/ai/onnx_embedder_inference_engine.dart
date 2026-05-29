@@ -152,12 +152,12 @@ class OnnxEmbedderInferenceEngine implements InferenceEngine {
 
   @override
   Future<void> close() async {
-    _session?.release();
+    await _session?.release();
     _session = null;
     _tokenizer = null;
   }
 
-  List<List<double>> _toRows(List seqRows) => [
+  List<List<double>> _toRows(List<dynamic> seqRows) => [
     for (final row in seqRows) (row as List).cast<double>(),
   ];
 }

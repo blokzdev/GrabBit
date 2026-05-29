@@ -19,10 +19,13 @@ void main() {
 
     test('an all-padding input pools to a zero vector', () {
       expect(
-        meanPool([
-          [1.0, 2.0],
-          [3.0, 4.0],
-        ], [0, 0]),
+        meanPool(
+          [
+            [1.0, 2.0],
+            [3.0, 4.0],
+          ],
+          [0, 0],
+        ),
         [0.0, 0.0],
       );
     });
@@ -39,7 +42,7 @@ void main() {
   });
 
   group('paraphraseMultilingualMiniLmL12V2 catalog entry', () {
-    final model = paraphraseMultilingualMiniLmL12V2;
+    const model = paraphraseMultilingualMiniLmL12V2;
 
     test('is the onnx multilingual model (384-d, 128-token window)', () {
       expect(model.runtime, EmbedderRuntime.onnx);

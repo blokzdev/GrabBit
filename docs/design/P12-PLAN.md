@@ -110,11 +110,18 @@ GPU); split risk-first into:
   `tokenizers` oracle) committed as fixtures — proven HF-byte-exact in CI, offline.
 - **Status:** implemented (CI-green). Dep: `unorm_dart` (pure-Dart NFKC). No live consumer until c-2.
 
-#### `[ ]` P12c-2 — onnx runtime + `OnnxEmbedderInferenceEngine` *(native; APK)*
+#### `[~]` P12c-2 — onnx runtime + `OnnxEmbedderInferenceEngine` *(native; APK)*
 - Add `onnxruntime_v2`; MiniLM catalog entry (`model.onnx` + `tokenizer.json` as P12b `ModelFile`s w/
   real URL/SHA-256/size; `runtime: onnx`, `dim 384`, 128-tok window). Engine: download → `createSession`
   → tokenize → run → mean-pool (masked) → L2-normalize → 384-d. Gated behind a **self-test tile** (no
   active-model change). Exit: on-device multilingual embed + sane cross-lingual similarity; 16KB device OK.
+- **Status:** implemented (CI-green). `OnnxEmbedderInferenceEngine` (`OrtSession.fromFile`; int64
+  `input_ids`/`attention_mask`/`token_type_ids`=zeros, fed adaptively per `session.inputNames`; pools
+  `last_hidden_state`); pinned `model_quantized.onnx` (118 MB int8) + the `tokenizer.json` c-1 was tested
+  against; `EmbedderModel.maxTokens` (Gecko 256 / MiniLM 128); factory takes `{downloads}`; multilingual
+  self-test tile. Pure `meanPool`/`l2Normalize` + catalog + non-Android-fallback unit-tested. **Pending
+  on-device APK spot-check** (cross-lingual similarity + 16KB device + int8 quality; fp16 235 MB is the
+  fallback if quality is poor).
 
 #### `[ ]` P12c-3 — Selection + re-embed + Gecko fallback + minimal UX *(native; APK)*
 - Register MiniLM in the matrix (tier-gated) + persisted install-global override; switch drives re-embed;
