@@ -77,7 +77,17 @@ It is invoked through a new `InferenceEngine.generateStructured(toolDefs, prompt
 (`docs/AI-SPEC.md` §2) and gated by a `structured_extraction` capability row in `ModelCapabilityMatrix`
 (`docs/AI-SPEC.md` §3). Branch (a) requires no model; branches (b)/(c) are **AI-tier-gated** — on a
 device that can't run the fill model, the Curator still serves branch (a) and degrades (b)/(c) to a
-generic/manual capture rather than crashing (consistent with AI-SPEC §1 graceful gating).
+generic/manual capture rather than crashing (consistent with AI-SPEC §1 graceful gating). Only the
+*fill* step is gated this way: capture, storage, the generic key/value view, and the graph itself are
+**device-universal**.
+
+### Provenance & confirmation
+
+Every Thing the Curator writes records **which branch produced it** in its `grabbit:` provenance block
+(`direct-parse` / `single-tool` / `narrowed-set`; ADR-0004). The branch also sets the trust default:
+**branch (a) direct-parse is deterministic and auto-applies**, while **model-filled Things from
+branches (b)/(c) are surfaced for confirmation** rather than silently asserted — the suggest-don't-assert
+rule (ADR-0004), a natural fit for the **P11 Activity Inbox**.
 
 ## Worked examples
 
@@ -143,6 +153,8 @@ These three drive the design and are the acceptance lens for the curator when it
 
 - ADR-0001 — schema-as-data (what a filled Thing is stored as).
 - ADR-0003 — MediaObject bridge (existing downloads as Things, no extraction needed).
+- ADR-0004 — relationships & provenance (the provenance block branches stamp; suggest-don't-assert for
+  branches b/c).
 - `docs/AI-SPEC.md` §2 (`generateStructured`), §3 (`structured_extraction` capability + model
   candidates), §4 (licensing/vetting), §5–6 (typed-node GraphRAG).
 - `docs/things-engine.md` — v2 vision one-pager.
