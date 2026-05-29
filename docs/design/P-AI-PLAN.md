@@ -202,6 +202,11 @@ suggestions work — all with the small embedder, no LLM.
 - **Capability-gating**: unsupported features clearly disabled with a friendly reason.
 - **Model/licensing**: confirm current best models at phase start; **prefer Apache-2.0/MIT**
   (SmolLM-135M, Qwen3-0.6B, Phi-4-Mini); Gemma usable but **vet its use policy**. *(AI-SPEC §4)*
+- **Things-Engine forward seams (inert in v1):** shape the **`generateStructured`** method on
+  `InferenceEngine` + the **`structured_extraction`** capability row (AI-SPEC §2–§4), and create the
+  **(planned) empty `things` table** (generic JSON-LD store; Drift stays canonical). No v1 feature uses
+  them; they exist so the v2 Things Engine slots in cheaply. *(ADR-0001, ADR-0002, ADR-0003;
+  `docs/things-engine.md`)*
 
 **Exit:** on a capable device, download a model and generate/transcribe offline; on a low-end device
 those are cleanly gated with explanation.
@@ -215,7 +220,9 @@ those are cleanly gated with explanation.
 - **Transcription, abstractive summarization** (on the P10 TextRank floor), **translation, OCR** —
   all gated.
 - **Natural-language "Ask your library" chat as local GraphRAG** — Cozo hybrid retrieval feeds the
-  local LLM; fully on-device. *(AI-SPEC §6)*
+  local LLM; fully on-device. *(AI-SPEC §6)* The harness operates over **generic typed nodes** (v1 media
+  + entity nodes are one case), so a future typed-Thing corpus needs no harness rework. *(forward seam —
+  ADR-0001, ADR-0004)*
 - **Advanced graph analytics & viz:** graph-clustered auto-albums (community detection), centrality
   **"Rediscover"**, path/bridge discovery, graph-view polish. *(GRAPH-SPEC §7)*
 - **Smart auto-tagging**; **model selector UX**.

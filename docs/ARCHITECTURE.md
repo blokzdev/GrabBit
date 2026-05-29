@@ -36,6 +36,10 @@ structured so any agent can implement a feature without re-deriving the design.
 Flutter/plugin imports. Dependencies point inward; outer layers implement inner
 interfaces. Everything platform-specific hides behind a domain interface.
 
+**Forward-compatibility:** the AI + graph layer is shaped during P12–P13 so a future typed-**Thing**
+corpus slots in without reworking it — see the v2 Things Engine (`docs/things-engine.md`,
+`docs/decisions/`); the concrete seams are noted in §4 and §8.
+
 ---
 
 ## 2. Download Engine Abstraction
@@ -100,6 +104,14 @@ Tables (full schema in `docs/SPEC.md`):
   Activity Inbox.
 
 Migrations: Drift schema versioning; never destructive without migration.
+
+**Forward seam — the (planned) `things` table (v2 Things Engine).** During P12–P13 a **generic
+`things` table** (schema.org Things as JSON-LD + promoted columns) is introduced **empty** as a forward
+seam; **Drift stays canonical and the Cozo graph stays the derived index**, with `things.id` kept
+alignable to `media_items.id` so existing media projects into typed MediaObject Things later with no
+re-download. This doc does **not** bump the schema version — the migration lands with the P12–P13
+implementation. Design: `docs/decisions/0001-schema-as-data-not-schema-as-code.md`,
+`docs/decisions/0003-mediaobject-migration-bridge.md`, `docs/things-engine.md`.
 
 **Drift is canonical; the graph/vector index is derived.** From P10, a bundled **CozoDB** engine
 holds a **derived, rebuildable** graph (nodes/edges) + HNSW embedding index keyed by
@@ -176,13 +188,20 @@ The `InferenceEngine` contract:
 abstract interface class InferenceEngine {
   Future<bool> canRun(ModelSpec m, DeviceProfile d);
   Stream<InferenceChunk> run(InferenceRequest r);
+  Future<StructuredResult> generateStructured(         // P12+ forward seam (v2 Things Engine)
+      List<ToolDef> toolDefs, String prompt);          // gated by `structured_extraction`
 }
 ```
+*(full method set in `docs/AI-SPEC.md` §2.)*
 
 - **DeviceCapabilityService** computes a `DeviceProfile` (RAM, SoC/NPU/GPU, OS
   version, free storage) → maps to a **device tier**.
 - **ModelCapabilityMatrix** maps `feature → eligibleLocalModels[byTier]`. Drives capability-gating
-  and the **model selector** UI; unsupported features are clearly disabled with a friendly reason.
+  and the **model selector** UI; unsupported features are clearly disabled with a friendly reason. A
+  **`structured_extraction`** row + the `generateStructured` seam above are shaped in P12 but **inert in
+  v1**, and the GraphRAG harness operates over **generic typed nodes** — so the v2 Things Engine slots
+  in without reworking this layer. *(forward seams — `docs/decisions/` ADR-0001–0004,
+  `docs/things-engine.md`.)*
 - **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) is the primary local runtime for
   embeddings + generation + on-device RAG; **whisper.cpp** backs transcription, **ML Kit** OCR/
   translate. Models are **downloaded on demand**, cached, and integrity-checked.
