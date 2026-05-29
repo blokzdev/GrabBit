@@ -19,22 +19,31 @@ their saved corpus — needs the structure, not just the bytes.
 what you save as **structured, AI-actionable artifacts** in a typed graph, then on-device AI can
 reason across it — relate a recipe to the video it came from, find every event in a place, answer
 questions over the whole library. That compounding is the moat: it grows more valuable with every
-artifact, and it's only possible because everything is **on-device** (free, private, forever — the
-GrabBit principle).
+artifact and **every link** — including the user- and AI-authored connections nobody else has — and
+it's only possible because everything is **on-device** (free, private, forever — the GrabBit
+principle).
 
-The artifacts are **schema.org Things**, stored as **JSON-LD in a generic typed graph** — schema is
-*data*, not 823 Dart classes (ADR-0001). The existing downloader and private library become the
-**foundation layer** that feeds the artifact library, not a parallel feature set: existing downloads
-become typed **MediaObject** Things by projection, with no re-download (ADR-0003). New artifacts are
-captured by a **curator** that does cheap work cheaply and calls a small on-device function-calling
-model only when content must be read semantically (ADR-0002).
+The artifacts are **schema.org Things** (the graph rooted at `Thing`, not just media), stored as
+**JSON-LD in a generic typed graph** — schema is *data*, not 823 Dart classes (ADR-0001). The existing
+downloader and private library become the **foundation layer**: every downloaded file is a
+**MediaObject file-leaf** — the bytes, stored once and canonical — and richer content Things (`Recipe`,
+`Event`, `Article`, even documents) **reference** those leaves via edges, so one grab can yield many
+artifacts with no byte duplication. Existing downloads become typed MediaObject Things by projection,
+with no re-download (ADR-0003). New artifacts are captured by a **curator** that does cheap work cheaply
+and calls a small on-device function-calling model only when content must be read semantically
+(ADR-0002). Relationships, and the **provenance** that makes every fact and link trustworthy and
+re-improvable, are first-class — and AI-inferred ones are **proposed, not silently asserted** (ADR-0004).
 
 ## Scope (v2, directional)
 
-- **Generic Thing store** — schema.org Things as JSON-LD in a `things` table; the schema.org
-  vocabulary bundled as a read-only validation/grounding asset (ADR-0001).
+- **Generic Thing store** — schema.org Things (the vocabulary rooted at `Thing`) as JSON-LD in a
+  `things` table; the schema.org vocabulary bundled as a read-only validation/grounding asset (ADR-0001).
 - **MediaObject bridge** — the v1 library becomes Audio/Image/VideoObject Things by projection; no
-  re-download, files don't move (ADR-0003).
+  re-download, files don't move (ADR-0003). MediaObject is the **file-leaf** (the bytes); content Things
+  reference it many-to-many.
+- **Relationships + provenance** — three edge kinds (vocabulary / authored / reified), every Thing and
+  edge stamped with where it came from, and AI-inferred links **proposed for confirmation** via the P11
+  inbox rather than silently asserted (ADR-0004).
 - **Curator + narrow-then-fill capture** — three-branch routing (direct-parse / single-tool /
   narrowed-set) over a function-calling small model via `generateStructured` (ADR-0002).
 - **A Unified Grab intake** — URL import + uploads + camera + barcode, all routed through the curator.
@@ -71,7 +80,8 @@ model only when content must be read semantically (ADR-0002).
 ## Related
 
 - ADRs: `docs/decisions/0001-schema-as-data-not-schema-as-code.md`,
-  `0002-narrow-then-fill-curator.md`, `0003-mediaobject-migration-bridge.md`.
+  `0002-narrow-then-fill-curator.md`, `0003-mediaobject-migration-bridge.md`,
+  `0004-relationships-provenance-and-the-authored-edge-moat.md`.
 - v1 seams: `docs/AI-SPEC.md` §2–6, `docs/design/P-AI-PLAN.md` (P12/P13), `docs/ARCHITECTURE.md` §8.
 - Logged in `docs/BACKLOG.md`; acknowledged (no phase number) in `docs/ROADMAP.md`; sibling v2 entry
   in `docs/PRD.md` §9.
