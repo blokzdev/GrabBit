@@ -18,6 +18,11 @@ void main() {
       expect(geckoEmbedder.runtime, EmbedderRuntime.flutterGemma);
       expect(defaultEmbedder, geckoEmbedder);
     });
+
+    test('carries no app-managed files — flutter_gemma manages them (P12b)', () {
+      // The plugin fetches/verifies Gecko opaquely, so no SHA-256'd ModelFiles.
+      expect(geckoEmbedder.files, isEmpty);
+    });
   });
 
   group('UnavailableInferenceEngine', () {
