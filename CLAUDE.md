@@ -42,6 +42,11 @@ The app is **free forever and fully offline**, sustained by an optional donation
 no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* the AI work**. See
 `docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`.
 
+> **v2 direction — the Things Engine.** A locked-but-unscheduled v2 initiative (no P-number) reframes the
+> library as a domain-agnostic, on-device graph of typed **schema.org Things** (recipes, events, places,
+> articles, products, and media). It **does not change v1 scope**. See `docs/things-engine.md` and
+> `docs/decisions/` (ADR-0001–0004).
+
 ---
 
 ## 2. Tech Stack & Rationale
@@ -295,5 +300,10 @@ follow these rules in code and docs:
   `GRAPH-SPEC.md` + `AI-SPEC.md` for the deep design).
 - `docs/design/P11-PLAN.md` — (P11) Activity Inbox sub-roadmap (P11a–P11e: data foundation, inbox
   UX + settings, producers, OS notifications, actionable entries + per-item read).
+- `docs/things-engine.md` — (v2 initiative, no P-number) the **Things Engine** vision one-pager: the
+  library reframed as a typed, on-device graph of schema.org Things.
+- `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,
+  not 823 classes); **ADR-0002** narrow-then-fill curator; **ADR-0003** MediaObject as the file-leaf +
+  migration bridge; **ADR-0004** relationships, provenance & the authored-edge moat.
 
 When in doubt, these + this file win over memory.

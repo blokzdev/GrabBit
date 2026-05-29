@@ -7,6 +7,10 @@ stay in a private in-app library by default; exporting to the device gallery is
 always an explicit choice. On-device AI + a relationship graph make the library
 searchable and self-organizing — no cloud, no accounts.
 
+> **Where it's going (v2):** the [Things Engine](docs/things-engine.md) extends the library from media
+> to a typed, interlinked graph of on-device **schema.org artifacts** (recipes, events, places, …). v1
+> ships unchanged first.
+
 **Platforms:** Android first (sideload APK/AAB, off the Play Store). Windows in v2.
 
 ## Core principle
@@ -56,6 +60,9 @@ CI runs format → analyze → test on every push/PR. APK builds are manual
 - [`docs/GRAPH-SPEC.md`](docs/GRAPH-SPEC.md) — on-device graph + vector DB (CozoDB)
 - [`docs/AI-SPEC.md`](docs/AI-SPEC.md) — on-device edge-AI design
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased delivery plan
+- [`docs/things-engine.md`](docs/things-engine.md) — the **Things Engine** (v2 vision: a typed,
+  on-device artifact library)
+- [`docs/decisions/`](docs/decisions) — Architecture Decision Records (ADR-0001–0004)
 
 ## Legal
 
