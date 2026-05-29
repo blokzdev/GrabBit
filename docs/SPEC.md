@@ -120,6 +120,14 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 //   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
 ```
 
+> **Forward seam (v2 Things Engine, no schema bump here).** A generic **`things`** table (schema.org
+> Things as JSON-LD + promoted columns) is planned to be introduced **empty** during P12–P13; existing
+> media then projects into `Audio`/`Image`/`VideoObject` Things by a field-by-field mapping (no
+> re-download, files don't move). **Drift stays canonical**, Cozo stays the derived index, and
+> `things.id` is kept alignable to `media_items.id`. The migration lands with that implementation — this
+> spec does not bump the version for it. See ADR-0001 (schema-as-data) and ADR-0003 (MediaObject bridge);
+> overview in `docs/things-engine.md`.
+
 Migration strategy: Drift `schemaVersion` (currently **8**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds

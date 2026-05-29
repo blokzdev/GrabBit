@@ -30,6 +30,10 @@ optional donations rather than ads or cloud fees.
 **North star:** the cleanest, most private, most capable media downloader/manager
 a normal person can sideload and trust.
 
+*(v2 direction: the **Things Engine** extends this from a media library to a typed, interlinked
+**artifact** library — recipes, events, places, articles, products, and media as schema.org Things — all
+still on-device. It does not change v1 scope; see `docs/things-engine.md`.)*
+
 ## 3. Version Strategy (two bands — v3/cloud dropped)
 
 | Band | Theme | Network | Money |
@@ -172,6 +176,11 @@ demand** (not bundled) to keep the install lean. Runtime: **`flutter_gemma`** (M
   configuration, deep polish.
 - **Authenticated/private content** (deferred from v1): per-site cookie/login import, stored via
   `flutter_secure_storage` — still on-device, no account, free.
+- **Things Engine** *(initiative, no P-number yet)*: reframes the library as a domain-agnostic graph of
+  typed **schema.org Things** (Recipe/Event/Place/Article/Product + the MediaObjects) stored as JSON-LD,
+  captured by a narrow-then-fill curator and reasoned over by on-device GraphRAG — all on-device, free.
+  Strategic decisions are locked (`docs/things-engine.md`, `docs/decisions/` ADR-0001–0004); not yet
+  scheduled.
 
 *(The former **v3** cloud-AI + credit band — Supabase accounts, Gemini, Stripe/PayPal — is
 **dropped**. The `InferenceEngine` interface keeps a theoretical cloud seam, but it is unplanned.)*
@@ -204,6 +213,9 @@ support is via an optional external donations link only.
 - No cloud sync of the user's library (media stays on-device).
 - No social/sharing network; GrabBit is a personal tool.
 - No ads or tracking.
+- No cloud Thing extraction or sync — the v2 **Things Engine** captures, extracts, and reasons entirely
+  on-device; and GrabBit is **not** a schema.org authoring/editing tool (it captures and organizes
+  Things, it doesn't author them).
 
 ## 12. Success Metrics
 
