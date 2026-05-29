@@ -54,6 +54,12 @@ dependencies:
   # opt-in semantic-search embedder (Gecko); also the planned P12 LLM runtime.
   flutter_gemma: ^0.16.1
 
+  # On-device AI (P12c): pure-Dart Unicode NFKC normalization for the
+  # hand-rolled XLM-RoBERTa (Unigram) tokenizer of the multilingual embedder.
+  # XLM-R's SentencePiece normalizer is NFKC-equivalent (verified against the
+  # HF tokenizer); MIT, no native deps.
+  unorm_dart: ^0.3.0
+
   # Graph visualization (P10c-e): force-directed explorer for a media item's
   # on-device graph neighborhood. Pure-Dart, no native deps.
   graphview: ^1.5.1
