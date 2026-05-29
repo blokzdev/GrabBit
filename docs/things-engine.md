@@ -45,7 +45,9 @@ re-improvable, are first-class — and AI-inferred ones are **proposed, not sile
   edge stamped with where it came from, and AI-inferred links **proposed for confirmation** via the P11
   inbox rather than silently asserted (ADR-0004).
 - **Curator + narrow-then-fill capture** — three-branch routing (direct-parse / single-tool /
-  narrowed-set) over a function-calling small model via `generateStructured` (ADR-0002).
+  narrowed-set) over a function-calling small model via `generateStructured` (ADR-0002). Only the
+  model-**fill** (branches b/c) is AI-tier-gated; **direct-parse capture, storage, the generic view, and
+  the graph are device-universal** — the Things floor runs on every device.
 - **A Unified Grab intake** — URL import + uploads + camera + barcode, all routed through the curator.
 - **~6 priority types** earn bespoke UI/exporters — **Recipe, Event, Place, Article, Product** + the
   three MediaObjects; the long tail renders via a generic key/value view (ADR-0001).
