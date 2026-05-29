@@ -544,6 +544,60 @@ data class DiskSpaceDto (
     return result
   }
 }
+
+/**
+ * Static device hardware facts for on-device AI capability tiering (P12a).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class DeviceInfoDto (
+  /** Total physical RAM in MB (`ActivityManager.MemoryInfo.totalMem`). */
+  val totalRamMb: Long,
+  /** Android API level (`Build.VERSION.SDK_INT`). */
+  val sdkInt: Long,
+  /** SoC/hardware id (`Build.SOC_MODEL` on API 31+, else `Build.HARDWARE`). */
+  val soc: String? = null,
+  /** Marketing model name (`Build.MODEL`), for diagnostics only. */
+  val model: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): DeviceInfoDto {
+      val totalRamMb = pigeonVar_list[0] as Long
+      val sdkInt = pigeonVar_list[1] as Long
+      val soc = pigeonVar_list[2] as String?
+      val model = pigeonVar_list[3] as String?
+      return DeviceInfoDto(totalRamMb, sdkInt, soc, model)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      totalRamMb,
+      sdkInt,
+      soc,
+      model,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as DeviceInfoDto
+    return EnginePigeonPigeonUtils.deepEquals(this.totalRamMb, other.totalRamMb) && EnginePigeonPigeonUtils.deepEquals(this.sdkInt, other.sdkInt) && EnginePigeonPigeonUtils.deepEquals(this.soc, other.soc) && EnginePigeonPigeonUtils.deepEquals(this.model, other.model)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.totalRamMb)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.sdkInt)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.soc)
+    result = 31 * result + EnginePigeonPigeonUtils.deepHash(this.model)
+    return result
+  }
+}
 private open class EnginePigeonPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -572,6 +626,11 @@ private open class EnginePigeonPigeonCodec : StandardMessageCodec() {
           DiskSpaceDto.fromList(it)
         }
       }
+      134.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          DeviceInfoDto.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -595,6 +654,10 @@ private open class EnginePigeonPigeonCodec : StandardMessageCodec() {
       }
       is DiskSpaceDto -> {
         stream.write(133)
+        writeValue(stream, value.toList())
+      }
+      is DeviceInfoDto -> {
+        stream.write(134)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -1093,6 +1156,42 @@ interface PrivacyHostApi {
             val wrapped: List<Any?> = try {
               api.setSecureFlag(enabledArg)
               listOf(null)
+            } catch (exception: Throwable) {
+              EnginePigeonPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+    }
+  }
+}
+/**
+ * Read-once device hardware probe backing the device tier (P12a). Cheap +
+ * synchronous on the host; the result is cached by `DeviceCapabilityService`.
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface DeviceHostApi {
+  fun deviceInfo(): DeviceInfoDto
+
+  companion object {
+    /** The codec used by DeviceHostApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      EnginePigeonPigeonCodec()
+    }
+    /** Sets up an instance of `DeviceHostApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: DeviceHostApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.grabbit.DeviceHostApi.deviceInfo$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.deviceInfo())
             } catch (exception: Throwable) {
               EnginePigeonPigeonUtils.wrapError(exception)
             }

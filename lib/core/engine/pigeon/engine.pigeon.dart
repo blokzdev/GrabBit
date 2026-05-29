@@ -567,6 +567,65 @@ class DiskSpaceDto {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// Static device hardware facts for on-device AI capability tiering (P12a).
+class DeviceInfoDto {
+  DeviceInfoDto({
+    required this.totalRamMb,
+    required this.sdkInt,
+    this.soc,
+    this.model,
+  });
+
+  /// Total physical RAM in MB (`ActivityManager.MemoryInfo.totalMem`).
+  int totalRamMb;
+
+  /// Android API level (`Build.VERSION.SDK_INT`).
+  int sdkInt;
+
+  /// SoC/hardware id (`Build.SOC_MODEL` on API 31+, else `Build.HARDWARE`).
+  String? soc;
+
+  /// Marketing model name (`Build.MODEL`), for diagnostics only.
+  String? model;
+
+  List<Object?> _toList() {
+    return <Object?>[totalRamMb, sdkInt, soc, model];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static DeviceInfoDto decode(Object result) {
+    result as List<Object?>;
+    return DeviceInfoDto(
+      totalRamMb: result[0]! as int,
+      sdkInt: result[1]! as int,
+      soc: result[2] as String?,
+      model: result[3] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! DeviceInfoDto || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(totalRamMb, other.totalRamMb) &&
+        _deepEquals(sdkInt, other.sdkInt) &&
+        _deepEquals(soc, other.soc) &&
+        _deepEquals(model, other.model);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
   @override
@@ -589,6 +648,9 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is DiskSpaceDto) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
+    } else if (value is DeviceInfoDto) {
+      buffer.putUint8(134);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -607,6 +669,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return ProgressDto.decode(readValue(buffer)!);
       case 133:
         return DiskSpaceDto.decode(readValue(buffer)!);
+      case 134:
+        return DeviceInfoDto.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -1172,5 +1236,44 @@ class PrivacyHostApi {
       pigeonVar_channelName,
       isNullValid: true,
     );
+  }
+}
+
+/// Read-once device hardware probe backing the device tier (P12a). Cheap +
+/// synchronous on the host; the result is cached by `DeviceCapabilityService`.
+class DeviceHostApi {
+  /// Constructor for [DeviceHostApi].  The [binaryMessenger] named argument is
+  /// available for dependency injection.  If it is left null, the default
+  /// BinaryMessenger will be used which routes to the host platform.
+  DeviceHostApi({
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) : pigeonVar_binaryMessenger = binaryMessenger,
+       pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty
+           ? '.$messageChannelSuffix'
+           : '';
+  final BinaryMessenger? pigeonVar_binaryMessenger;
+
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  final String pigeonVar_messageChannelSuffix;
+
+  Future<DeviceInfoDto> deviceInfo() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.grabbit.DeviceHostApi.deviceInfo$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as DeviceInfoDto;
   }
 }

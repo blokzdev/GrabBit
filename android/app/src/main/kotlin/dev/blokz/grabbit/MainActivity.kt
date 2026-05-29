@@ -1,6 +1,9 @@
 package dev.blokz.grabbit
 
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.view.WindowManager
 import dev.blokz.grabbit.cozo.CozoHost
 import dev.blokz.grabbit.cozo.CozoHostApi
@@ -50,6 +53,25 @@ class MainActivity : FlutterFragmentActivity() {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     }
                 }
+            }
+        })
+        // Device hardware probe for on-device AI capability tiering (P12a).
+        DeviceHostApi.setUp(messenger, object : DeviceHostApi {
+            override fun deviceInfo(): DeviceInfoDto {
+                val am = applicationContext
+                    .getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                val mem = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+                val soc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Build.SOC_MODEL
+                } else {
+                    Build.HARDWARE
+                }
+                return DeviceInfoDto(
+                    totalRamMb = mem.totalMem / (1024L * 1024L),
+                    sdkInt = Build.VERSION.SDK_INT.toLong(),
+                    soc = soc,
+                    model = Build.MODEL,
+                )
             }
         })
         // Warm up the engine (first run extracts Python) so the first probe is fast.
