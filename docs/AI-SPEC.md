@@ -50,7 +50,9 @@ abstract interface class InferenceEngine {
   *(forward seam for the v2 Things Engine — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 
 - **`DeviceCapabilityService`** computes a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion,
-  freeStorageMB }` → a **device tier** (e.g. low / mid / high).
+  freeStorageMB }` → a **device tier** (e.g. low / mid / high). *(P12a ships the RAM-primary subset —
+  `ramMb`/`sdkInt`/`soc` via a Pigeon `DeviceHostApi`; `freeStorageMB` arrives in P12b where
+  download-gating needs it, and `hasNpu`/`hasGpu` are best-effort/deferred — see `docs/BACKLOG.md`.)*
 - **`ModelCapabilityMatrix`** maps `feature → eligibleModels[byTier]`, driving capability-gating and
   the model-selector UI. (Context: 2026 flagships handle ~4B params at Q4; tiny 0.5–1B models fit
   broadly — gate accordingly.) Feature rows include `embeddings`, `generation`, `transcription`,

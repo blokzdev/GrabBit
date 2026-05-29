@@ -8,6 +8,12 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Device tier — `hasNpu`/`hasGpu` signals.** `DeviceProfile` tiers on RAM + OS today; reliable
+      NPU/GPU/accelerator detection is hard and wasn't needed for the RAM-driven tier. Add it if a later
+      model needs accelerator-aware gating. *(From P12a.)*
+- [ ] **Tier-aware embedder *window* variant.** Gecko ships seq256; higher tiers could load the
+      seq512/1024 export (same tokenizer/dim) for more transcript context — a real per-tier embedder
+      choice once the catalog + download generalization (P12b) lands. *(From P12a.)*
 - [ ] **P11d — dedicated notification status-bar icon.** OS notifications use
       `@mipmap/ic_launcher` as the small icon, which Android renders as a solid square in the status
       bar. Ship a monochrome white/transparent small icon (e.g. `@drawable/ic_stat_grabbit`) for the

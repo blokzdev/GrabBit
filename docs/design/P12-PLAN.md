@@ -54,7 +54,7 @@
 
 ---
 
-### `[ ]` P12a — Device capability, tiers & `ModelCapabilityMatrix` *(mostly pure Dart + thin native probe)*
+### `[~]` P12a — Device capability, tiers & `ModelCapabilityMatrix` *(mostly pure Dart + thin native probe)*
 The gating brain every later subphase plugs into.
 - **`DeviceCapabilityService`** → a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion, freeStorageMB }`
   → a **device tier** (low / mid / high). Thin native probe (RAM/SoC/free-storage) via a small platform
@@ -66,6 +66,13 @@ The gating brain every later subphase plugs into.
   matrix instead of always returning `defaultEmbedder` — a real, testable behaviour change now.
 - **Exit / review:** tier scoring reflects actual hardware (verified on ≥2 real devices — one low, one
   mid); embedder selection respects the tier; ineligible features report a clear reason.
+- **Status:** implemented (CI-green) — Pigeon `DeviceHostApi` (`ActivityManager.MemoryInfo.totalMem` +
+  `Build.*`) → `DeviceProfile{ramMb,sdkInt,soc,model}` → RAM-primary `tierFor`; sync `activeDeviceTier`
+  notifier; `ModelCapabilityMatrix.embedderFor(tier)` (Gecko at all tiers); `activeEmbedderModel` routed
+  through it; debug tier log at launch. **As-built deviations:** `freeStorageMb` deferred to **P12b**
+  (where download-gating uses it); `hasNpu/hasGpu` deferred (BACKLOG); the matrix carries only the
+  embedder dimension (the `AiFeature` rows land with their subphases — no dead code). **Pending
+  on-device spot-check** of the tier probe on two phones.
 
 ### `[ ]` P12b — Model catalog + download / integrity / caching *(pure Dart; reuses the flutter_gemma pattern)*
 Generalize the embedder-only asset plumbing into shared infra.

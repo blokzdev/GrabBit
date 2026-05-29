@@ -232,3 +232,32 @@ abstract class StorageHostApi {
 abstract class PrivacyHostApi {
   void setSecureFlag(bool enabled);
 }
+
+/// Static device hardware facts for on-device AI capability tiering (P12a).
+class DeviceInfoDto {
+  DeviceInfoDto({
+    required this.totalRamMb,
+    required this.sdkInt,
+    this.soc,
+    this.model,
+  });
+
+  /// Total physical RAM in MB (`ActivityManager.MemoryInfo.totalMem`).
+  int totalRamMb;
+
+  /// Android API level (`Build.VERSION.SDK_INT`).
+  int sdkInt;
+
+  /// SoC/hardware id (`Build.SOC_MODEL` on API 31+, else `Build.HARDWARE`).
+  String? soc;
+
+  /// Marketing model name (`Build.MODEL`), for diagnostics only.
+  String? model;
+}
+
+/// Read-once device hardware probe backing the device tier (P12a). Cheap +
+/// synchronous on the host; the result is cached by `DeviceCapabilityService`.
+@HostApi()
+abstract class DeviceHostApi {
+  DeviceInfoDto deviceInfo();
+}
