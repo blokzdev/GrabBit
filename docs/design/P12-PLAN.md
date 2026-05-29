@@ -94,16 +94,32 @@ Generalize the embedder-only asset plumbing into shared infra.
   MiniLM catalog entry (real URL/SHA-256/size) → P12c; download **resume/Range** → BACKLOG. **No
   on-device row** — infra not yet called live (first live download is P12c).
 
-### `[ ]` P12c — Multilingual embedder (onnxruntime + MiniLM-L12-v2) *(native — needs an APK build)*
-The first real model through the new infra — de-risks before the LLM lift. *(Moved from P10g-3.)*
-- Add an **`onnxruntime`** runtime + **`paraphrase-multilingual-MiniLM-L12-v2`** (Apache-2.0, 50-lang,
-  384-d) + on-device tokenizer; new `EmbedderRuntime.onnx`; register in the matrix; plug into
-  `inferenceEngineFor`.
-- Install-global selection; **re-embed on switch** (re-keys the Cozo HNSW relation via the existing
-  P10b-2b model-change machinery); **Gecko stays the universal fallback**.
-- **Exit / review:** switching to the multilingual embedder visibly improves non-English semantic
-  search/related; the re-embed runs to completion; reverting to Gecko works; low-end devices stay on
-  Gecko.
+### P12c — Multilingual embedder (onnxruntime + MiniLM-L12-v2) *(native — split into 3 PRs)*
+The first real model through the new infra — de-risks before the LLM lift. *(Moved from P10g-3.)* Keeps
+**`paraphrase-multilingual-MiniLM-L12-v2`** (Apache-2.0, 50-lang, 384-d, ~90 MB); **install-global**
+selection; **re-embed on switch** via the existing P10b-2b machinery (fingerprint `…​.embedderModelId` +
+`_ensureEmbeddingSchema` re-keys the Cozo HNSW at the new dim + `sha256(modelId+text)` cache); **Gecko
+stays the universal fallback**. **Decisions:** tokenizer **hand-rolled** in pure Dart (the `dart_*`
+SentencePiece packages don't faithfully tokenize XLM-R); ONNX plugin **`onnxruntime_v2`** (16KB-page +
+GPU); split risk-first into:
+
+#### `[~]` P12c-1 — XLM-R Unigram tokenizer *(pure-Dart, CI; no native, no behaviour change)*
+- `MultilingualEmbedderTokenizer` (`lib/core/ai/multilingual_tokenizer.dart`): NFKC (verified
+  XLM-R-charsmap-equivalent) + whitespace/metaspace + Unigram Viterbi + `<unk>`-merge + `<s>`/`</s>` +
+  truncation; loads the model's HF `tokenizer.json`. **Fidelity-gated** by golden vectors (the HF
+  `tokenizers` oracle) committed as fixtures — proven HF-byte-exact in CI, offline.
+- **Status:** implemented (CI-green). Dep: `unorm_dart` (pure-Dart NFKC). No live consumer until c-2.
+
+#### `[ ]` P12c-2 — onnx runtime + `OnnxEmbedderInferenceEngine` *(native; APK)*
+- Add `onnxruntime_v2`; MiniLM catalog entry (`model.onnx` + `tokenizer.json` as P12b `ModelFile`s w/
+  real URL/SHA-256/size; `runtime: onnx`, `dim 384`, 128-tok window). Engine: download → `createSession`
+  → tokenize → run → mean-pool (masked) → L2-normalize → 384-d. Gated behind a **self-test tile** (no
+  active-model change). Exit: on-device multilingual embed + sane cross-lingual similarity; 16KB device OK.
+
+#### `[ ]` P12c-3 — Selection + re-embed + Gecko fallback + minimal UX *(native; APK)*
+- Register MiniLM in the matrix (tier-gated) + persisted install-global override; switch drives re-embed;
+  Gecko fallback when onnx unavailable. Exit: non-English search visibly improves; re-embed completes;
+  revert works; low-end stays Gecko.
 
 ### `[ ]` P12d — Edge LLM generation (`flutter_gemma`) *(native — the big lift; needs an APK build)*
 - **Reconcile the contract:** add `generate(...)` to `InferenceEngine` (streaming chunks) and **update
