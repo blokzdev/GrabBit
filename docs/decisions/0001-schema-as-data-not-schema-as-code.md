@@ -23,9 +23,14 @@ Product, and the Audio/Image/VideoObject media types) — not only downloaded me
 value is a **typed, interlinked personal corpus**: a folder of media is inert, but a graph of typed
 Things with relationships is something on-device AI can reason over (memory-as-moat).
 
-schema.org is a **vocabulary of ~823 types** arranged in a deep `rdfs:subClassOf` hierarchy, each
-with dozens of properties, most of them optional and many shared across types. Two implementation
-shapes were on the table:
+schema.org is a **vocabulary of ~823 types** rooted at a single top type, **`Thing`**, and arranged
+beneath it in a deep `rdfs:subClassOf` hierarchy — with peer top-level branches including
+`CreativeWork` (which holds `MediaObject`, `Recipe`, `Article`, `DigitalDocument`, …), **`Event`**,
+**`Place`**, **`Person`**, **`Organization`**, **`Product`**, and `Intangible`. Each type carries
+dozens of properties, most optional and many shared. Note our priority types **span branches**:
+`Recipe`/`Article`/the MediaObjects are CreativeWorks, but **`Event`/`Place`/`Product` are not** — they
+hang directly off `Thing`. So a generic store must be rooted at **`Thing`**, not `CreativeWork`. Two
+implementation shapes were on the table:
 
 1. **Schema-as-code** — generate (or hand-write) a Dart class per schema.org type, with typed fields,
    and a Drift table (or column set) per type.
@@ -81,7 +86,9 @@ Concretely (design language — no schema bump or code lands in the foundation-d
 4. **The graph indexes Things generically.** Cozo nodes/edges and the HNSW vector index are keyed on
    `things.id` with `type` as a node attribute — so GraphRAG and graph features operate over **generic
    typed nodes** (ADR-0002 §worked-examples; `docs/AI-SPEC.md` §5–6), MediaObject being one type among
-   many rather than a special case.
+   many rather than a special case. A **Thing** is the canonical JSON-LD record here; its **node** is
+   the derived Cozo projection (one Thing ↔ one node). How relationships become **edges** (vocabulary,
+   authored, and reified) and how each Thing/edge carries **provenance** is fixed in **ADR-0004**.
 
 ## Consequences
 
@@ -129,4 +136,6 @@ Concretely (design language — no schema bump or code lands in the foundation-d
 - `docs/things-engine.md` — the v2 vision one-pager.
 - ADR-0002 — narrow-then-fill curator (how Things get *populated*).
 - ADR-0003 — MediaObject as the migration bridge (how existing downloads *become* Things).
+- ADR-0004 — relationships, provenance & the authored-edge moat (how Things *relate*, and how each
+  Thing/edge records where it came from).
 - `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md` — the graph + AI layers that index/reason over Things.
