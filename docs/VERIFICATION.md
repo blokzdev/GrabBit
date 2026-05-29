@@ -844,6 +844,8 @@ entries, or verify after P11c lands.)*
 - _(P12b) Model-download infra (`ModelDownloadService` + SHA-256 catalog) is pure-Dart and has no live
   caller yet — exercised by unit tests, **no on-device row**. The first real on-device download lands
   with P12c (multilingual embedder)._
+- _(P12c-1) The XLM-R multilingual tokenizer is pure-Dart, **fidelity-tested in CI** against HuggingFace
+  golden vectors — **no on-device row**. On-device multilingual embedding is verified at P12c-2/c-3._
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.
