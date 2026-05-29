@@ -1,0 +1,608 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "tokenizer": "xlm-roberta (unigram)",
+  "cases": [
+    {
+      "text": "Hello world",
+      "maxTokens": null,
+      "ids": [
+        0,
+        35378,
+        8999,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "Hola mundo, ¿cómo estás?",
+      "maxTokens": null,
+      "ids": [
+        0,
+        47958,
+        3307,
+        4,
+        3936,
+        190900,
+        79682,
+        32,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "Bonjour le monde",
+      "maxTokens": null,
+      "ids": [
+        0,
+        84602,
+        95,
+        11146,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "Guten Tag, Welt!",
+      "maxTokens": null,
+      "ids": [
+        0,
+        37410,
+        33,
+        4837,
+        4,
+        12389,
+        38,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "Olá mundo",
+      "maxTokens": null,
+      "ids": [
+        0,
+        91906,
+        3307,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "你好,世界",
+      "maxTokens": null,
+      "ids": [
+        0,
+        6,
+        124084,
+        4,
+        3221,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "こんにちは世界",
+      "maxTokens": null,
+      "ids": [
+        0,
+        6,
+        192661,
+        3221,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "안녕하세요 세계",
+      "maxTokens": null,
+      "ids": [
+        0,
+        107687,
+        21037,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "مرحبا بالعالم",
+      "maxTokens": null,
+      "ids": [
+        0,
+        665,
+        193478,
+        258,
+        1705,
+        77796,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "नमस्ते दुनिया",
+      "maxTokens": null,
+      "ids": [
+        0,
+        68700,
+        97883,
+        29405,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "Привет, мир",
+      "maxTokens": null,
+      "ids": [
+        0,
+        1813,
+        18454,
+        4,
+        11373,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "GrabBit semantic search test",
+      "maxTokens": null,
+      "ids": [
+        0,
+        78922,
+        571,
+        217,
+        484,
+        109109,
+        33938,
+        3034,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "Mixed 中文 and English 123",
+      "maxTokens": null,
+      "ids": [
+        0,
+        37286,
+        297,
+        6,
+        32095,
+        136,
+        14941,
+        37638,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "café 2024",
+      "maxTokens": null,
+      "ids": [
+        0,
+        26216,
+        387,
+        2357,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "ﬁ ① ², ½",
+      "maxTokens": null,
+      "ids": [
+        0,
+        809,
+        106,
+        116,
+        4,
+        78660,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "２０２４",
+      "maxTokens": null,
+      "ids": [
+        0,
+        387,
+        2357,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "ℨ Café",
+      "maxTokens": null,
+      "ids": [
+        0,
+        567,
+        61427,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "emoji 🎬🎵 test",
+      "maxTokens": null,
+      "ids": [
+        0,
+        28,
+        121505,
+        6,
+        246782,
+        245562,
+        3034,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "ᚠᚢᚦ runes",
+      "maxTokens": null,
+      "ids": [
+        0,
+        6,
+        3,
+        11675,
+        90,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "   leading and trailing   ",
+      "maxTokens": null,
+      "ids": [
+        0,
+        105207,
+        136,
+        141037,
+        214,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "tabs\tand\nnewlines",
+      "maxTokens": null,
+      "ids": [
+        0,
+        20928,
+        7,
+        136,
+        3525,
+        59801,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "don't, stop! (now)",
+      "maxTokens": null,
+      "ids": [
+        0,
+        2301,
+        25,
+        18,
+        4,
+        7279,
+        38,
+        15,
+        35613,
+        16,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "",
+      "maxTokens": null,
+      "ids": [
+        0,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1
+      ]
+    },
+    {
+      "text": "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ",
+      "maxTokens": 8,
+      "ids": [
+        0,
+        581,
+        63773,
+        119455,
+        6,
+        147797,
+        88203,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ",
+      "maxTokens": 16,
+      "ids": [
+        0,
+        581,
+        63773,
+        119455,
+        6,
+        147797,
+        88203,
+        7,
+        645,
+        70,
+        21,
+        3285,
+        10269,
+        5,
+        581,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "text": "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. ",
+      "maxTokens": 32,
+      "ids": [
+        0,
+        581,
+        63773,
+        119455,
+        6,
+        147797,
+        88203,
+        7,
+        645,
+        70,
+        21,
+        3285,
+        10269,
+        5,
+        581,
+        63773,
+        119455,
+        6,
+        147797,
+        88203,
+        7,
+        645,
+        70,
+        21,
+        3285,
+        10269,
+        5,
+        581,
+        63773,
+        119455,
+        6,
+        2
+      ],
+      "attentionMask": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}
