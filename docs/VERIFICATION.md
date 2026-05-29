@@ -841,6 +841,9 @@ entries, or verify after P11c lands.)*
       RAM/tier match the real device — spot-check on **two** phones (one low-RAM, one high-RAM). The app
       behaves identically (embedder still Gecko; semantic search unaffected). *(No UI in P12a — the tier
       is surfaced in Settings in P12g.)*
+- _(P12b) Model-download infra (`ModelDownloadService` + SHA-256 catalog) is pure-Dart and has no live
+  caller yet — exercised by unit tests, **no on-device row**. The first real on-device download lands
+  with P12c (multilingual embedder)._
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.

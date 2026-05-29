@@ -15,6 +15,9 @@ InferenceEngine inferenceEngineFor(EmbedderModel model) {
   switch (model.runtime) {
     case EmbedderRuntime.flutterGemma:
       if (Platform.isAndroid) return FlutterGemmaInferenceEngine(model);
+    case EmbedderRuntime.onnx:
+      // P12c lands the onnxruntime engine; until then no runtime can serve it.
+      break;
   }
   return UnavailableInferenceEngine(model);
 }

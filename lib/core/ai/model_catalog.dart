@@ -1,7 +1,17 @@
+import 'package:grabbit/core/ai/model_file.dart';
+
 /// The on-device runtime that backs an [EmbedderModel]. `inferenceEngineFor`
 /// (see `inference_engine_factory.dart`) maps each value to a concrete
-/// [InferenceEngine]. P12 adds `onnx` for the multilingual MiniLM engine.
-enum EmbedderRuntime { flutterGemma }
+/// [InferenceEngine].
+enum EmbedderRuntime {
+  /// MediaPipe / LiteRT via the flutter_gemma plugin (Gecko). The plugin fetches
+  /// and manages its files opaquely, so these entries carry no [EmbedderModel.files].
+  flutterGemma,
+
+  /// onnxruntime — the multilingual MiniLM engine (P12c). App-managed download
+  /// via `ModelDownloadService`; entries carry SHA-256'd [EmbedderModel.files].
+  onnx,
+}
 
 /// The pinned on-device embedder model. A minimal precursor to P12's full model
 /// catalog — for P10 we ship exactly one embedder, chosen for an Apache-2.0,
@@ -25,6 +35,7 @@ class EmbedderModel {
     required this.dimension,
     required this.approxDownloadMb,
     this.runtime = EmbedderRuntime.flutterGemma,
+    this.files = const [],
   });
 
   /// Stable identifier (the model filename without extension). Persisted so a
@@ -45,6 +56,12 @@ class EmbedderModel {
 
   /// Which on-device runtime serves this model — the factory routes on it.
   final EmbedderRuntime runtime;
+
+  /// App-managed downloadable assets (model + tokenizer), each with a SHA-256,
+  /// for file-based runtimes ([EmbedderRuntime.onnx]). **Empty for
+  /// [EmbedderRuntime.flutterGemma]**, whose files the plugin fetches and
+  /// verifies opaquely. `ModelDownloadService` consumes this list.
+  final List<ModelFile> files;
 }
 
 /// The single embedder GrabBit ships in v1.

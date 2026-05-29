@@ -74,7 +74,7 @@ The gating brain every later subphase plugs into.
   embedder dimension (the `AiFeature` rows land with their subphases — no dead code). **Pending
   on-device spot-check** of the tier probe on two phones.
 
-### `[ ]` P12b — Model catalog + download / integrity / caching *(pure Dart; reuses the flutter_gemma pattern)*
+### `[~]` P12b — Model catalog + download / integrity / caching *(pure Dart; reuses the flutter_gemma pattern)*
 Generalize the embedder-only asset plumbing into shared infra.
 - Extend `model_catalog.dart` beyond `EmbedderModel` to model **kinds** (embedder / LLM / transcription),
   each carrying id, file URLs, **SHA-256**, approx size, and runtime; grow the `EmbedderRuntime`/runtime
@@ -84,6 +84,15 @@ Generalize the embedder-only asset plumbing into shared infra.
 - Extend the `inference_engine_factory.dart` switch for the new runtimes (stubbed until P12c–P12e).
 - **Exit / review:** a catalog entry downloads, verifies, and caches; a corrupted/!matching-hash file is
   rejected with `InferenceErrorCode.downloadFailed`; re-install is a no-op.
+- **Status:** implemented (CI-green) — `ModelFile{url,sha256,sizeBytes,filename}`; generic
+  `ModelDownloadService` (`ensureDownloaded(modelId, files)` → streamed download + progress + streamed
+  SHA-256 verify + atomic `.part`→rename + idempotent skip + `DiskSpaceService` free-space guard +
+  in-flight de-dupe), `dart:io HttpClient` byte source behind an injected `ModelByteSource`;
+  `EmbedderRuntime.onnx` + `EmbedderModel.files` + factory stub. Full unit coverage (download/verify/
+  cache/reject/idempotent/space-guard/streamed-digest). **As-built (maintainer-confirmed) deferrals:**
+  typed `LlmModel`/`TranscriptionModel` classes + `ModelKind` → P12d/e (no dead code); the concrete
+  MiniLM catalog entry (real URL/SHA-256/size) → P12c; download **resume/Range** → BACKLOG. **No
+  on-device row** — infra not yet called live (first live download is P12c).
 
 ### `[ ]` P12c — Multilingual embedder (onnxruntime + MiniLM-L12-v2) *(native — needs an APK build)*
 The first real model through the new infra — de-risks before the LLM lift. *(Moved from P10g-3.)*

@@ -27,5 +27,20 @@ void main() {
       // CI/desktop hosts have no flutter_gemma runtime → Unavailable, never crash.
       expect(inferenceEngineFor(geckoEmbedder).isAvailable, isFalse);
     });
+
+    test('onnx runtime is stubbed to unavailable until P12c', () {
+      const onnx = EmbedderModel(
+        id: 'mini-multilingual',
+        modelUrl: 'https://example.com/model.onnx',
+        tokenizerUrl: 'https://example.com/tokenizer.json',
+        dimension: 384,
+        approxDownloadMb: 120,
+        runtime: EmbedderRuntime.onnx,
+      );
+      final engine = inferenceEngineFor(onnx);
+      expect(engine.isAvailable, isFalse);
+      expect(engine.model.id, 'mini-multilingual');
+      expect(engine.dimension, 384);
+    });
   });
 }

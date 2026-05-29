@@ -51,8 +51,14 @@ abstract interface class InferenceEngine {
 
 - **`DeviceCapabilityService`** computes a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion,
   freeStorageMB }` → a **device tier** (e.g. low / mid / high). *(P12a ships the RAM-primary subset —
-  `ramMb`/`sdkInt`/`soc` via a Pigeon `DeviceHostApi`; `freeStorageMB` arrives in P12b where
-  download-gating needs it, and `hasNpu`/`hasGpu` are best-effort/deferred — see `docs/BACKLOG.md`.)*
+  `ramMb`/`sdkInt`/`soc` via a Pigeon `DeviceHostApi`; `hasNpu`/`hasGpu` are best-effort/deferred — see
+  `docs/BACKLOG.md`. Free-storage gating lives in `ModelDownloadService`, which reads live free space via
+  `DiskSpaceService` at download time, so `freeStorageMB` on the profile stays unused/deferred.)*
+- **Model catalog + `ModelDownloadService` (P12b).** File-based models (onnxruntime, whisper) declare
+  their assets as `ModelFile { url, sha256, sizeBytes, filename }`; `ModelDownloadService` fetches each
+  with progress, verifies **SHA-256**, and caches it under app-private `<appSupport>/models/<modelId>/`
+  (atomic verify-then-rename, idempotent, free-space-guarded). The **flutter_gemma** embedder (Gecko)
+  keeps its own plugin-managed download (no app-side `ModelFile`/hash).
 - **`ModelCapabilityMatrix`** maps `feature → eligibleModels[byTier]`, driving capability-gating and
   the model-selector UI. (Context: 2026 flagships handle ~4B params at Q4; tiny 0.5–1B models fit
   broadly — gate accordingly.) Feature rows include `embeddings`, `generation`, `transcription`,

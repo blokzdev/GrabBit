@@ -14,6 +14,10 @@ _(nothing active — pick the next batch from below)_
 - [ ] **Tier-aware embedder *window* variant.** Gecko ships seq256; higher tiers could load the
       seq512/1024 export (same tokenizer/dim) for more transcript context — a real per-tier embedder
       choice once the catalog + download generalization (P12b) lands. *(From P12a.)*
+- [ ] **Model download resume / HTTP Range.** `ModelDownloadService` re-fetches a file whole if a
+      download is interrupted (the `.part` is overwritten next run; verify-then-rename means no
+      corruption risk). Add `Range`/resume if large-model re-downloads prove costly on flaky networks.
+      *(From P12b.)*
 - [ ] **P11d — dedicated notification status-bar icon.** OS notifications use
       `@mipmap/ic_launcher` as the small icon, which Android renders as a solid square in the status
       bar. Ship a monochrome white/transparent small icon (e.g. `@drawable/ic_stat_grabbit`) for the
