@@ -837,6 +837,10 @@ entries, or verify after P11c lands.)*
       the bell badge decrements as entries are read; **Mark all read** clears the badge in one tap.
 
 ## P12 — Device-tiered edge LLM engine  *(v1)*
+- [ ] **(P12a)** On launch, logcat shows `[P12a] device tier: <tier>  (DeviceProfile(ramMb: …))` whose
+      RAM/tier match the real device — spot-check on **two** phones (one low-RAM, one high-RAM). The app
+      behaves identically (embedder still Gecko; semantic search unaffected). *(No UI in P12a — the tier
+      is surfaced in Settings in P12g.)*
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.
