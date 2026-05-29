@@ -407,6 +407,11 @@ for sideload. **→ v1 complete (Android, free, offline, AI-powered).**
 
 # v2 — Local-only expansion (Windows + polish; still free/offline)
 
+> **Acknowledged (no phase number): the Things Engine.** A v2 initiative that reframes the library as a
+> domain-agnostic graph of typed **schema.org Things** (on-device, free, no cloud). Strategic decisions
+> are locked but it is **not yet scheduled** and carries **no P-number**; it sits alongside P15/P16, not
+> within them. See `docs/things-engine.md` (vision) and `docs/decisions/` (ADR-0001–0004).
+
 ## P15 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`); desktop storage

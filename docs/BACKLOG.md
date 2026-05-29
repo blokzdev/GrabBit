@@ -83,6 +83,14 @@ _(nothing active — pick the next batch from below)_
 - [ ] **Activity Inbox — `reminder`-category producers.** The `reminder` category + always-record
       gating exist with no producer yet. Candidate nudges (items missing transcripts, a held batch
       waiting to start, low-storage reminder) — needs a product call to avoid nagging. *(From P11c.)*
+- [ ] **Things Engine (v2) — the typed-artifact library.** Reframe the library as a domain-agnostic
+      graph of schema.org Things (Recipe/Event/Place/Article/Product + the MediaObjects), captured by a
+      narrow-then-fill curator and reasoned over by on-device GraphRAG. Strategic decisions are locked;
+      not yet scheduled (no P-number). *(Things Engine v2 — `docs/things-engine.md`, ADR-0001–0004.)*
+- [ ] **Things Engine — full physical spine (open question).** v2 adopts the *logical* spine (Things
+      are the conceptual/graph model; `media_items` stays canonical, `MediaObject` is the file-leaf).
+      Whether to physically absorb `media_items` into the generic `things` table is **deferred /
+      unscheduled** — real file-lifecycle migration weight, no urgency. *(Things Engine v2 — ADR-0003.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
