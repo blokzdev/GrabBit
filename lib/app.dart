@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/lifecycle/app_lifecycle_provider.dart';
@@ -48,6 +49,8 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
       _maybeSyncGraph();
       _initShareIntake();
       _initOsNotifications();
+      // P12a: probe the device capability tier once at launch (logs it in debug).
+      ref.read(activeDeviceTierProvider);
       // Backfill pixel dimensions for items downloaded before P10i-c. Non-blocking.
       unawaited(ref.read(mediaDimensionServiceProvider).backfillDimensions());
       // P11: lazily drop expired activity-inbox entries on launch (no scheduler).
