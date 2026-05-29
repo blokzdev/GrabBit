@@ -38,14 +38,25 @@ abstract interface class InferenceEngine {
   Future<List<double>> embed(String text);            // P10 (embeddings)
   Stream<InferenceChunk> generate(InferenceRequest r); // P12+ (LLM)
   Stream<TranscriptChunk> transcribe(AudioRef a);      // P12+ (whisper)
+  Future<StructuredResult> generateStructured(         // P12+ forward seam (ADR-0002)
+      List<ToolDef> toolDefs, String prompt);
 }
 ```
+
+- **`generateStructured(toolDefs, prompt)`** is a **function-calling / typed-tool-fill** seam: given a
+  small set of tool definitions it returns a structured result filling one. It is **inert in v1** (no v1
+  feature calls it) and gated by the `structured_extraction` capability (§3); shaping it on the contract
+  now is what lets the **v2 Things Engine** curator's fill step slot in without reworking this interface
+  *(forward seam for the v2 Things Engine — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 
 - **`DeviceCapabilityService`** computes a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion,
   freeStorageMB }` → a **device tier** (e.g. low / mid / high).
 - **`ModelCapabilityMatrix`** maps `feature → eligibleModels[byTier]`, driving capability-gating and
   the model-selector UI. (Context: 2026 flagships handle ~4B params at Q4; tiny 0.5–1B models fit
-  broadly — gate accordingly.)
+  broadly — gate accordingly.) Feature rows include `embeddings`, `generation`, `transcription`,
+  `ocr`/`translation`, plus a **`structured_extraction`** row — the AI-tier-gated capability backing
+  `generateStructured`; it is **unused by any v1 feature** and exists only so the v2 curator's fill step
+  is already gated *(forward seam for the v2 Things Engine — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 - **Separation from `GraphStore`:** `embed()` *produces* vectors; `GraphStore` *stores/searches*
   them (see `GRAPH-SPEC.md`). Only `GraphSyncService` calls both.
 - **Engine selection (P10g-2):** `inferenceEngineFor(EmbedderModel)` maps a model to its runtime engine
@@ -110,6 +121,7 @@ abstract interface class InferenceEngine {
 | **Mid (capable)** | **Gemma 3 1B / 3n E2B** | **Gemma** (custom use-policy) | Usable + strong, **but vet Gemma's use policy before bundling** — it carries prohibited-use terms. |
 | **Embedder** | **Gecko 256** (110M, 768-d, 256-tok, ~114 MB) · multilingual: **MiniLM-L12-v2** (P12) | **Apache-2.0**, ungated | Universal tier; embeddings only. Pinned P10g-1; pluggable in P10g-2. |
 | **Transcription** | whisper.cpp (tiny→large-v3-turbo) | MIT | Size-gated by tier. |
+| **Function-calling** (`structured_extraction`) | **Qwen3-0.6B** · **FunctionGemma 270M** | **Apache-2.0** · **Gemma** (custom) | Backs `generateStructured` (§2). Qwen3-0.6B is clean; FunctionGemma carries Gemma's use-policy. **License fork deferred to P12 start** (architecture locked, model not). *(forward seam — ADR-0002.)* |
 
 ---
 
@@ -137,6 +149,8 @@ abstract interface class InferenceEngine {
 ### P12 — tiered edge-LLM engine (minimal feature surface)
 - `DeviceCapabilityService` + tiers + `ModelCapabilityMatrix`; model catalog + download + integrity +
   caching; `flutter_gemma` generation impl; whisper.cpp transcription impl; capability-gating.
+- **`structured_extraction`** capability + the `generateStructured` seam (§2) are **shaped here** —
+  defined, gated, but driven by no v1 feature *(forward seam for the v2 Things Engine — ADR-0002)*.
 
 ### P13 — LLM feature surface & polish
 - **Transcription**, **abstractive summarization** (layered on the P10 TextRank floor),
@@ -153,9 +167,15 @@ abstract interface class InferenceEngine {
 Fully on-device natural-language Q&A over the private library:
 
 1. **Retrieve** via `GraphStore` (`GRAPH-SPEC.md`): hybrid **vector search + graph re-rank** (built
-   and tested in P10) selects the most relevant items + their graph neighborhood.
+   and tested in P10) selects the most relevant nodes + their graph neighborhood.
 2. **Generate** via `InferenceEngine` (`flutter_gemma`): the retrieved context + question feed a
-   small local LLM, which answers grounded in (and citing) the user's items.
+   small local LLM, which answers grounded in (and citing) the user's nodes.
+
+The harness operates over **generic typed nodes**, not a media-only collection: the v1 graph's media +
+entity nodes (uploader/playlist/tag/site) are one case, and a future typed-**Thing** corpus is the
+general case — so the retrieval/generation loop needs no rework when richer types arrive *(forward seam
+for the v2 Things Engine — `docs/decisions/0001-schema-as-data-not-schema-as-code.md`,
+`docs/decisions/0004-relationships-provenance-and-the-authored-edge-moat.md`)*.
 
 **Feasibility (affirmed):** Google AI Edge ships on-device RAG + function-calling libraries for SLMs
 (Gemma 3n); `flutter_gemma` has built-in on-device RAG; the **MobileRAG** approach runs a ~33M
