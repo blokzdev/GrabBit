@@ -5,6 +5,7 @@ import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/unavailable_generation_engine.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
+import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -41,5 +42,8 @@ GenerationModel? activeGenerationModel(Ref ref) {
 GenerationEngine generationEngine(Ref ref) {
   final model = ref.watch(activeGenerationModelProvider);
   if (model == null) return const UnavailableGenerationEngine();
-  return generationEngineFor(model);
+  return generationEngineFor(
+    model,
+    diskSpace: ref.watch(diskSpaceServiceProvider),
+  );
 }

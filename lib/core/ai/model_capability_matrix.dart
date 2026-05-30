@@ -40,7 +40,7 @@ class ModelCapabilityMatrix {
       switch (tier) {
         DeviceTier.low => const [],
         DeviceTier.mid => const [smolLm2_135mInstruct, qwen3_0_6b],
-        DeviceTier.high => const [qwen3_0_6b, qwen2_5_1_5b, qwen3_4b],
+        DeviceTier.high => const [qwen3_0_6b, qwen2_5_1_5b, gemma4E2b],
       };
 
   /// The default generation model offered at [tier] — the balanced pick, badged
