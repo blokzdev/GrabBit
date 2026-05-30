@@ -50,6 +50,17 @@ void main() {
       // the disclaimer (so existing installs aren't ambushed).
       expect(s.semanticSearchEnabled, isFalse);
       expect(s.aiSetupSeen, isTrue);
+      // P12d generation defaults: opt-in off, no model selected (tier rec).
+      expect(s.generationEnabled, isFalse);
+      expect(s.selectedGenerationModelId, '');
+    });
+
+    test('JSON round-trip preserves the P12d generation fields', () {
+      const s = SettingsModel(
+        generationEnabled: true,
+        selectedGenerationModelId: 'qwen3-0.6b',
+      );
+      expect(SettingsModel.fromJson(s.toJson()), s);
     });
 
     test('a legacy blob without the P9f fields decodes to defaults', () {
