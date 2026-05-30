@@ -167,8 +167,8 @@ Split risk-first:
   `DiskSpaceService` free-storage guard**; `getActiveModel` gpu→cpu fallback; `createChat(systemInstruction)`
   → streamed `TextResponse.token`); `modelTypeForId` map; factory routes Android+diskSpace → real engine.
   **Real models pinned** (ungated Apache-2.0 `litert-community` `.litertlm`, verified via unauthenticated
-  HEAD): SmolLM2-135M **143 MB** / Qwen3-0.6B **586 MB** (rec) / Qwen2.5-1.5B q8 **1.6 GB** / **Gemma-4 E2B
-  2.5 GB flagship**. **As-built deviation:** flagship Qwen3-4B → **Gemma-4 E2B** (Qwen3-4B has no LiteRT
+  HEAD): SmolLM2-135M **143 MB** / Qwen3-0.6B **614 MB** (rec) / Qwen2.5-1.5B q8 **1.6 GB** / **Gemma-4 E2B
+  2.59 GB flagship**. **As-built deviation:** flagship Qwen3-4B → **Gemma-4 E2B** (Qwen3-4B has no LiteRT
   build; Gemma 4 is Apache-2.0 + ungated, unlike gated Gemma-3). UI: a tier-gated generation card (picker
   with Recommended/size-band badges + a Labs self-test); hidden on low tier. Unit-tested (modelType map,
   storage guard, factory fallback, catalog URLs/flagship). **Pending APK spot-check** (pick → download →

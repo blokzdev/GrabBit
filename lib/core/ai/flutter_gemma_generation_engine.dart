@@ -7,15 +7,14 @@ import 'package:path_provider/path_provider.dart';
 
 /// Maps a [GenerationModel.modelTypeId] (a neutral catalog string) to the
 /// flutter_gemma [ModelType] — kept here so the pure-Dart catalog never imports
-/// the plugin. Unknown ids throw (a catalog/plugin mismatch is a bug, not a
-/// runtime condition).
+/// the plugin. Only the ids actually shipped in `allGenerationModels` are mapped;
+/// an unknown id throws (a catalog/plugin mismatch is a bug, not a runtime
+/// condition). Add a new arm here when the catalog gains a model.
 ModelType modelTypeForId(String id) => switch (id) {
   'general' => ModelType.general,
-  'gemmaIt' => ModelType.gemmaIt,
   'gemma4' => ModelType.gemma4,
   'qwen' => ModelType.qwen,
   'qwen3' => ModelType.qwen3,
-  'phi' => ModelType.phi,
   _ => throw ArgumentError('Unknown generation modelTypeId: $id'),
 };
 

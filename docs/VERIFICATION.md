@@ -846,7 +846,7 @@ entries, or verify after P11c lands.)*
   with P12c (multilingual embedder)._
 - _(P12c-1) The XLM-R multilingual tokenizer is pure-Dart, **fidelity-tested in CI** against HuggingFace
   golden vectors — **no on-device row**. On-device multilingual embedding is verified at P12c-2/c-3._
-- [ ] **(P12c-2)** AI settings → **Test multilingual embedder** → downloads MiniLM (~118 MB, progress +
+- [ ] **(P12c-2)** AI settings → **Test multilingual embedder** → downloads MiniLM (~127 MB, progress +
       SHA-256 verified) → reports cross-lingual similarity where the en/es translation pair scores **far
       higher** than the unrelated sentence. The active embedder is **unchanged** (Gecko); semantic search
       behaves as before.

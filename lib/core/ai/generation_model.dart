@@ -46,14 +46,17 @@ class GenerationModel {
   /// Human-facing name shown in the picker.
   final String displayName;
 
-  /// HTTPS URL of the LiteRT/`.task` model (consumed by flutter_gemma in P12d-2).
+  /// HTTPS URL of the `.litertlm` model (consumed by flutter_gemma in P12d-2).
   final String modelUrl;
 
   /// Neutral key mapped to a flutter_gemma `ModelType` in the d-2 engine (kept
   /// as a string so this pure-Dart catalog doesn't import the plugin).
   final String modelTypeId;
 
-  /// Approximate download size in MB, surfaced in the picker.
+  /// Approximate download size in **decimal MB** (bytes ÷ 1e6, matching what
+  /// Android's file/download UI shows), surfaced in the picker and used by the
+  /// engine's pre-download free-storage guard. Keep these as the model file's
+  /// real size — they are HEAD-verified against the pinned URLs.
   final int approxDownloadMb;
 
   /// Generation context window (tokens).
@@ -74,7 +77,7 @@ class GenerationModel {
 
 /// **Small** — SmolLM2-135M-Instruct (Apache-2.0, ungated): the lightest rung,
 /// runs widely; a direct upgrade over SmolLM1 on instruction-following.
-/// `litert-community/SmolLM2-135M-Instruct` (verified ~143 MB `.litertlm`).
+/// `litert-community/SmolLM2-135M-Instruct` (HEAD-verified ~143 MB `.litertlm`).
 const GenerationModel smolLm2_135mInstruct = GenerationModel(
   id: 'smollm2-135m-instruct',
   displayName: 'SmolLM2 135M',
@@ -89,7 +92,7 @@ const GenerationModel smolLm2_135mInstruct = GenerationModel(
 );
 
 /// **Balanced (recommended)** — Qwen3-0.6B (Apache-2.0, ungated): the default
-/// pick on capable devices. `litert-community/Qwen3-0.6B` (verified 614 MB
+/// pick on capable devices. `litert-community/Qwen3-0.6B` (HEAD-verified 614 MB
 /// `.litertlm`).
 const GenerationModel qwen3_0_6b = GenerationModel(
   id: 'qwen3-0.6b',
@@ -97,7 +100,7 @@ const GenerationModel qwen3_0_6b = GenerationModel(
   modelUrl:
       'https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm',
   modelTypeId: 'qwen3',
-  approxDownloadMb: 586,
+  approxDownloadMb: 614,
   maxTokens: 2048,
   license: 'Apache-2.0',
   modelClass: GenerationModelClass.balanced,
@@ -107,14 +110,14 @@ const GenerationModel qwen3_0_6b = GenerationModel(
 /// **Large** — Qwen2.5-1.5B (Apache-2.0, ungated): stronger, notably better at
 /// structured output than similar-size alternatives (matters for later
 /// structured/tagging features). High-tier; bigger download + RAM.
-/// `litert-community/Qwen2.5-1.5B-Instruct` (verified 1.6 GB q8 `.litertlm`).
+/// `litert-community/Qwen2.5-1.5B-Instruct` (HEAD-verified 1.6 GB q8 `.litertlm`).
 const GenerationModel qwen2_5_1_5b = GenerationModel(
   id: 'qwen2.5-1.5b-instruct',
   displayName: 'Qwen2.5 1.5B',
   modelUrl:
       'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm',
   modelTypeId: 'qwen',
-  approxDownloadMb: 1638,
+  approxDownloadMb: 1598,
   maxTokens: 2048,
   license: 'Apache-2.0',
   modelClass: GenerationModelClass.large,
@@ -123,7 +126,7 @@ const GenerationModel qwen2_5_1_5b = GenerationModel(
 
 /// **Flagship** — Gemma-4 E2B (**Apache-2.0**, ungated — not the gated Gemma-3
 /// license): the strongest on-device option, high-end devices only.
-/// `litert-community/gemma-4-E2B-it-litert-lm` (verified 2.59 GB `.litertlm`,
+/// `litert-community/gemma-4-E2B-it-litert-lm` (HEAD-verified 2.59 GB `.litertlm`,
 /// unauthenticated download confirmed). *(Qwen3-4B has no LiteRT build, so the
 /// flagship is Gemma-4 E2B; see docs/BACKLOG.md.)*
 const GenerationModel gemma4E2b = GenerationModel(
@@ -132,7 +135,7 @@ const GenerationModel gemma4E2b = GenerationModel(
   modelUrl:
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
   modelTypeId: 'gemma4',
-  approxDownloadMb: 2468,
+  approxDownloadMb: 2588,
   maxTokens: 4096,
   license: 'Apache-2.0',
   modelClass: GenerationModelClass.flagship,

@@ -459,7 +459,7 @@ class _MultilingualModelTileState
           body:
               'Switches the embedding model to a 50-language one so search and '
               '“related” work well on non-English content. One-time '
-              '~120 MB download, then your library is re-indexed on-device. '
+              '~127 MB download, then your library is re-indexed on-device. '
               'Turn off to go back to the default English model.',
         ),
       ),

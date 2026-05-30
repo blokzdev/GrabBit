@@ -98,7 +98,8 @@ const EmbedderModel paraphraseMultilingualMiniLmL12V2 = EmbedderModel(
   tokenizerUrl:
       'https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/tokenizer.json',
   dimension: 384,
-  approxDownloadMb: 121,
+  // Combined download (decimal MB): model.onnx 118 MB + tokenizer.json 9 MB.
+  approxDownloadMb: 127,
   maxTokens: 128,
   runtime: EmbedderRuntime.onnx,
   files: [
