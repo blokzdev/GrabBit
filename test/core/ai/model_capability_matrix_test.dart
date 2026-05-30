@@ -37,4 +37,45 @@ void main() {
       expect(matrix.embedderFor(DeviceTier.mid), geckoEmbedder);
     });
   });
+
+  group('ModelCapabilityMatrix.eligibleEmbedders (P12c-3)', () {
+    const matrix = ModelCapabilityMatrix();
+
+    test('low tier offers only Gecko', () {
+      expect(matrix.eligibleEmbedders(DeviceTier.low), [geckoEmbedder]);
+    });
+
+    test('mid/high tiers also offer the multilingual MiniLM', () {
+      for (final tier in [DeviceTier.mid, DeviceTier.high]) {
+        final eligible = matrix.eligibleEmbedders(tier);
+        expect(eligible, contains(geckoEmbedder));
+        expect(eligible, contains(paraphraseMultilingualMiniLmL12V2));
+      }
+    });
+
+    test('the default is still Gecko at every tier (opt-in, never forced)', () {
+      for (final tier in DeviceTier.values) {
+        expect(matrix.embedderFor(tier), geckoEmbedder);
+      }
+    });
+  });
+
+  group('embedderById (P12c-3)', () {
+    test('resolves the known catalog ids', () {
+      expect(embedderById(geckoEmbedder.id), geckoEmbedder);
+      expect(
+        embedderById(paraphraseMultilingualMiniLmL12V2.id),
+        paraphraseMultilingualMiniLmL12V2,
+      );
+    });
+
+    test('returns null for an unknown id', () {
+      expect(embedderById('nope'), isNull);
+    });
+
+    test('allEmbedders contains both shipped models', () {
+      expect(allEmbedders, contains(geckoEmbedder));
+      expect(allEmbedders, contains(paraphraseMultilingualMiniLmL12V2));
+    });
+  });
 }
