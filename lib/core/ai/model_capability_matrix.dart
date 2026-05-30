@@ -1,3 +1,4 @@
+import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/device/device_profile.dart';
 
@@ -30,6 +31,25 @@ class ModelCapabilityMatrix {
     DeviceTier.mid ||
     DeviceTier.high => const [geckoEmbedder, paraphraseMultilingualMiniLmL12V2],
   };
+
+  /// Generation models a device of [tier] may select (P12d) — the picker's offer
+  /// set and the eligibility guard `activeGenerationModelProvider` enforces.
+  /// **Low tier gets none** (generation is gated off with a friendly reason);
+  /// the ladder reaches the flagship rung only on high-tier hardware.
+  List<GenerationModel> eligibleGenerationModels(DeviceTier tier) =>
+      switch (tier) {
+        DeviceTier.low => const [],
+        DeviceTier.mid => const [smolLm2_135mInstruct, qwen3_0_6b],
+        DeviceTier.high => const [qwen3_0_6b, qwen2_5_1_5b, qwen3_4b],
+      };
+
+  /// The default generation model offered at [tier] — the balanced pick, badged
+  /// **Recommended** in the picker. Null on low tier (generation unavailable).
+  GenerationModel? recommendedGenerationModel(DeviceTier tier) =>
+      switch (tier) {
+        DeviceTier.low => null,
+        DeviceTier.mid || DeviceTier.high => qwen3_0_6b,
+      };
 
   // Every tier runs Gecko by default (Apache-2.0, ~114 MB) — the universal floor.
   static const Map<DeviceTier, EmbedderModel> _defaultEmbedders = {

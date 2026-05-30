@@ -85,6 +85,12 @@ abstract class SettingsModel with _$SettingsModel {
     // to override it. Resolved + eligibility-guarded by activeEmbedderModelProvider,
     // which falls back to Gecko for an unknown/ineligible id. Switching re-embeds.
     @Default('') String selectedEmbedderModelId,
+    // On-device text generation (P12d). Opt-in (defaults off); the LLM is
+    // downloaded only when the user enables it + picks a model.
+    // `selectedGenerationModelId` empty = the device-tier recommendation;
+    // eligibility-guarded by activeGenerationModelProvider.
+    @Default(false) bool generationEnabled,
+    @Default('') String selectedGenerationModelId,
     // Activity inbox (P11). Retention 0 = keep forever; otherwise entries are
     // swept lazily once older than this many days. The per-category notify
     // toggles gate whether that category is recorded at all (errors and system
