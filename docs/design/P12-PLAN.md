@@ -123,10 +123,19 @@ GPU); split risk-first into:
   on-device APK spot-check** (cross-lingual similarity + 16KB device + int8 quality; fp16 235 MB is the
   fallback if quality is poor).
 
-#### `[ ]` P12c-3 — Selection + re-embed + Gecko fallback + minimal UX *(native; APK)*
+#### `[~]` P12c-3 — Selection + re-embed + Gecko fallback + minimal UX *(native; APK)*
 - Register MiniLM in the matrix (tier-gated) + persisted install-global override; switch drives re-embed;
   Gecko fallback when onnx unavailable. Exit: non-English search visibly improves; re-embed completes;
   revert works; low-end stays Gecko.
+- **Status:** implemented (CI-green). `SettingsModel.selectedEmbedderModelId` (`''`=tier default) + setter;
+  catalog `embedderById`/`allEmbedders`; matrix `eligibleEmbedders(tier)` (Gecko universal, MiniLM on
+  mid/high — **default stays Gecko, opt-in not forced**); `activeEmbedderModelProvider` honors the override
+  when it resolves + is tier-eligible + its runtime runs here (onnx⇒Android), **else Gecko fallback**; a
+  `_MultilingualModelTile` (shown only when eligible) that switches + drives download→`backfillEmbeddings`→
+  invalidate (reusing the existing re-embed machinery — no new re-embed code; the 128-tok cap already lives
+  in the onnx tokenizer, so **no `embedding_doc` change**). Unit-tested: matrix eligibility, `embedderById`,
+  provider override/fallback (incl. low-tier + non-Android fallback paths). **Pending on-device APK
+  spot-check** (switch→re-embed→improved non-English; revert; low-tier gating; persistence).
 
 ### `[ ]` P12d — Edge LLM generation (`flutter_gemma`) *(native — the big lift; needs an APK build)*
 - **Reconcile the contract:** add `generate(...)` to `InferenceEngine` (streaming chunks) and **update

@@ -852,6 +852,12 @@ entries, or verify after P11c lands.)*
       behaves as before.
 - [ ] **(P12c-2)** The app installs + runs (and the self-test works) on a **16 KB-page** Android 15
       device; the per-ABI APK is larger (onnxruntime native libs) but installs fine.
+- [ ] **(P12c-3)** On a **mid/high-tier** device with semantic search on, AI settings shows the
+      **Multilingual semantic search** switch → enable → MiniLM downloads + the library **re-indexes** →
+      non-English search / "related" visibly improves. Toggle off → re-indexes back to Gecko (English).
+      The choice **persists** across restart.
+- [ ] **(P12c-3)** On a **low-tier** device the multilingual switch is **hidden**; the embedder stays
+      Gecko (semantic search still works).
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.

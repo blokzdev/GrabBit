@@ -92,7 +92,10 @@ abstract interface class InferenceEngine {
   `UnavailableInferenceEngine`) + an `activeEmbedderModelProvider` seam (returns `defaultEmbedder`; the P12
   override point). A **multilingual** second engine (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0,
   onnxruntime — **P12**, as a capability-matrix embedder option) plugs into that factory, with Gecko as the
-  universal fallback. Its **XLM-RoBERTa SentencePiece (Unigram) tokenizer is hand-rolled in pure Dart**
+  universal fallback. P12c-3 makes it **user-selectable** (a persisted `selectedEmbedderModelId` override,
+  gated to mid/high-tier Android via `eligibleEmbedders`; opt-in, default stays Gecko); selecting it
+  re-embeds the library, and an unknown/ineligible id or non-Android host **falls back to Gecko** so search
+  never breaks. Its **XLM-RoBERTa SentencePiece (Unigram) tokenizer is hand-rolled in pure Dart**
   (`MultilingualEmbedderTokenizer`, P12c-1) — NFKC (verified equivalent to XLM-R's `Precompiled` charsmap)
   + metaspace + Unigram Viterbi, loaded from the model's HF `tokenizer.json` and **golden-fixture-tested
   to reproduce HuggingFace ids exactly** (the `dart_*` SentencePiece packages don't handle XLM-R faithfully). **Known limitation (until P12):** the active model is `Gecko-110m-**en**` (English) —

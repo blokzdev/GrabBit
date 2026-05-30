@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/inference_engine_factory.dart';
 import 'package:grabbit/core/ai/inference_engine_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/model_download_service.dart';
+import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
@@ -50,6 +52,7 @@ class AiSettingsScreen extends ConsumerWidget {
               onTap: () => _rebuildGraph(context, ref),
             ),
             const _SemanticSearchTile(),
+            const _MultilingualModelTile(),
             const _EmbedderSelfTestTile(),
             const _MultilingualSelfTestTile(),
           ],
@@ -354,6 +357,116 @@ class _MultilingualSelfTestTileState
             )
           : const Icon(Icons.play_arrow_outlined),
       onTap: _busy ? null : _run,
+    );
+  }
+}
+
+/// Install-global switch to the multilingual embedder (P12c-3). Shown only on
+/// eligible (mid/high-tier Android) devices — low-end stays on Gecko. Toggling
+/// persists the selection; if semantic search is on, it immediately downloads
+/// the model (if needed) and **re-embeds the whole library** so non-English
+/// search/related improve right away (otherwise the re-embed happens on next
+/// launch). Toggling off reverts to Gecko and re-embeds back.
+class _MultilingualModelTile extends ConsumerStatefulWidget {
+  const _MultilingualModelTile();
+
+  @override
+  ConsumerState<_MultilingualModelTile> createState() =>
+      _MultilingualModelTileState();
+}
+
+class _MultilingualModelTileState
+    extends ConsumerState<_MultilingualModelTile> {
+  bool _busy = false;
+
+  static const _miniLm = paraphraseMultilingualMiniLmL12V2;
+
+  Future<void> _toggle(bool value) async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    final enabled = ref.read(
+      settingsControllerProvider.select(
+        (s) => s.value?.semanticSearchEnabled ?? false,
+      ),
+    );
+    await controller.setSelectedEmbedderModelId(value ? _miniLm.id : '');
+    // Only re-embed now if semantic search is active; otherwise the switch is
+    // recorded and applied on the next launch sync.
+    if (enabled) await _reindex();
+  }
+
+  /// Downloads the now-active embedder (if needed) and re-embeds the library.
+  Future<void> _reindex() async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Switching model — re-indexing your library…'),
+        ),
+      );
+    try {
+      await ref.read(inferenceEngineProvider).downloadModel();
+      final stats = await ref
+          .read(graphSyncServiceProvider)
+          .backfillEmbeddings();
+      ref.invalidate(semanticSearchReadyProvider);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Re-indexed — ${stats.total} embedded')),
+        );
+    } on InferenceException catch (e) {
+      // Revert the selection so the active model matches what's actually usable.
+      await controller.setSelectedEmbedderModelId('');
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              e.code == InferenceErrorCode.unavailable
+                  ? 'Multilingual model isn\'t available on this device'
+                  : 'Couldn\'t switch the model — try again later',
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tier = ref.watch(activeDeviceTierProvider);
+    final eligible = const ModelCapabilityMatrix()
+        .eligibleEmbedders(tier)
+        .contains(_miniLm);
+    // Low-end / ineligible devices stay on Gecko — hide the option entirely.
+    if (!eligible) return const SizedBox.shrink();
+    final selectedId = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.selectedEmbedderModelId ?? '',
+      ),
+    );
+    return SwitchListTile(
+      secondary: const InfoHintButton(
+        InfoHint(
+          title: 'Multilingual semantic search',
+          body:
+              'Switches the embedding model to a 50-language one so search and '
+              '“related” work well on non-English content. One-time '
+              '~120 MB download, then your library is re-indexed on-device. '
+              'Turn off to go back to the default English model.',
+        ),
+      ),
+      title: const Text('Multilingual semantic search'),
+      subtitle: Text(
+        'Better non-English results. Downloads ~${_miniLm.approxDownloadMb} MB '
+        'and re-indexes your library.',
+      ),
+      value: selectedId == _miniLm.id,
+      onChanged: _busy ? null : _toggle,
     );
   }
 }
