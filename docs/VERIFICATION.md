@@ -861,6 +861,14 @@ entries, or verify after P11c lands.)*
 - _(P12d-1) The generation engine + tier-gated model ladder are pure-Dart and have **no live consumer** —
   exercised by unit tests, **no on-device row**. On-device generation (picker + Labs self-test) lands with
   P12d-2._
+- [ ] **(P12d-2)** On a **mid/high-tier** device, AI settings shows a **text-generation card** with the
+      tier's models (Recommended/size-band badges + size). Pick the recommended → it downloads (progress;
+      a near-full device shows a **friendly "not enough storage"** instead of a doomed multi-GB fetch) →
+      **Test text generation** streams a sentence **offline**.
+- [ ] **(P12d-2)** On a **low-tier** device the generation card is **hidden** (no generation offered) — no
+      crash, no empty section.
+- [ ] **(P12d-2)** Embedder + LLM **coexist**: run a semantic search, then a generation self-test, in the
+      same session without the plugin conflicting (close-before-swap if needed).
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.

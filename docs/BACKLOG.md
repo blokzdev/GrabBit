@@ -25,6 +25,12 @@ _(nothing active — pick the next batch from below)_
 - [ ] **Flagship device tier.** The 3-tier `low/mid/high` lumps 6 GB midrangers with 12–16 GB flagships;
       generation could offer even larger models on a true flagship tier. Add once on-device telemetry from
       testers justifies the threshold split. *(From P12d-1.)*
+- [ ] **GraphRAG LLM + HNSW co-residency (P13).** "Ask your library" runs the generation LLM and the Cozo
+      HNSW vector index in RAM *together*; P12d only proves generation in isolation (Labs self-test). Validate
+      combined memory headroom on real devices when P13 wires GraphRAG. *(From P12d-2.)*
+- [ ] **Revisit the generation flagship rung.** Shipped Gemma-4 E2B (2.5 GB) as the flagship because Qwen3-4B
+      has no LiteRT build. If a >1.5B **Qwen/SmolLM-family Apache** LiteRT build appears, consider it
+      (Gemma-4 is Apache-2.0 + ungated, so this is preference, not a posture fix). *(From P12d-2.)*
 - [ ] **P11d — dedicated notification status-bar icon.** OS notifications use
       `@mipmap/ic_launcher` as the small icon, which Android renders as a solid square in the status
       bar. Ship a monochrome white/transparent small icon (e.g. `@drawable/ic_stat_grabbit`) for the

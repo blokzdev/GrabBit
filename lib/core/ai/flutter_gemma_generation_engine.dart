@@ -66,8 +66,10 @@ class FlutterGemmaGenerationEngine implements GenerationEngine {
     void Function(double progress)? onProgress,
   }) async {
     try {
-      await _ensureInit();
+      // Guard storage first — cheap, and avoids touching the plugin when the
+      // multi-GB download obviously won't fit.
       await _guardStorage();
+      await _ensureInit();
       await FlutterGemma.installModel(
         modelType: _modelType,
         fileType: ModelFileType.litertlm,

@@ -57,19 +57,19 @@ void main() {
   test('an eligible selection wins over the recommendation', () async {
     final container = _container(
       tier: DeviceTier.high,
-      selectedId: qwen3_4b.id,
+      selectedId: gemma4E2b.id,
     );
     await container.read(settingsControllerProvider.future);
-    expect(container.read(activeGenerationModelProvider), qwen3_4b);
+    expect(container.read(activeGenerationModelProvider), gemma4E2b);
   });
 
   test(
     'an ineligible-for-tier selection falls back to the recommendation',
     () async {
-      // The 4B flagship isn't offered on mid tier → fall back to the mid rec.
+      // The flagship isn't offered on mid tier → fall back to the mid rec.
       final container = _container(
         tier: DeviceTier.mid,
-        selectedId: qwen3_4b.id,
+        selectedId: gemma4E2b.id,
       );
       await container.read(settingsControllerProvider.future);
       expect(container.read(activeGenerationModelProvider), qwen3_0_6b);

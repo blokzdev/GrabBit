@@ -158,13 +158,21 @@ Split risk-first:
   Unit-tested (catalog/posture, matrix tiers, provider override/fallback, settings round-trip). **No live
   generation until d-2** — no on-device row.
 
-#### `[ ]` P12d-2 — `FlutterGemmaGenerationEngine` + picker UI + Labs self-test *(native; APK)*
+#### `[~]` P12d-2 — `FlutterGemmaGenerationEngine` + picker UI + Labs self-test *(native; APK)*
 - Native engine: `installModel(modelType).fromNetwork(url).withProgress(..).install()` → `getActiveModel`
   → `createChat` → `generateChatResponseAsync()` as `Stream<String>`; map `modelTypeId`→`ModelType`; wire
-  the factory (Android → this, else Unavailable). **Pin exact LiteRT/`.task` URLs + quant at build** (gate
-  each rung on a flutter_gemma-loadable build; prefer Qwen3.5-0.8B/2B if LiteRT builds exist). Opt-in
-  model-**picker** tile (tier-eligible list + Recommended badge + size) + **Labs self-test** (prompt →
-  streamed completion). Confirm embedder+LLM coexistence on-device.
+  the factory (Android → this, else Unavailable). Opt-in model-**picker** tile + **Labs self-test**.
+- **Status:** implemented (CI-green). `FlutterGemmaGenerationEngine` (mirrors the embedder idiom;
+  `installModel(.., fileType: litertlm).fromNetwork().withProgress().install()` with a **pre-download
+  `DiskSpaceService` free-storage guard**; `getActiveModel` gpu→cpu fallback; `createChat(systemInstruction)`
+  → streamed `TextResponse.token`); `modelTypeForId` map; factory routes Android+diskSpace → real engine.
+  **Real models pinned** (ungated Apache-2.0 `litert-community` `.litertlm`, verified via unauthenticated
+  HEAD): SmolLM2-135M **143 MB** / Qwen3-0.6B **586 MB** (rec) / Qwen2.5-1.5B q8 **1.6 GB** / **Gemma-4 E2B
+  2.5 GB flagship**. **As-built deviation:** flagship Qwen3-4B → **Gemma-4 E2B** (Qwen3-4B has no LiteRT
+  build; Gemma 4 is Apache-2.0 + ungated, unlike gated Gemma-3). UI: a tier-gated generation card (picker
+  with Recommended/size-band badges + a Labs self-test); hidden on low tier. Unit-tested (modelType map,
+  storage guard, factory fallback, catalog URLs/flagship). **Pending APK spot-check** (pick → download →
+  streamed completion offline; low-tier gated; embedder+LLM coexistence).
 - **Exit / review:** capable device → pick → download → streamed multi-turn completion **offline**; low-end
   cleanly gated with a reason. APK spot-check (low + high).
 
