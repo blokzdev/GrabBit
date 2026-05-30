@@ -28,19 +28,32 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 
 ---
 
-## 2. `InferenceEngine` abstraction & device tiering
+## 2. On-device inference engines & device tiering
 
-`lib/core/ai/` (mirrors `lib/core/engine/` and `lib/core/graph/`):
+`lib/core/ai/` (mirrors `lib/core/engine/` and `lib/core/graph/`). **As-built reconciliation:** rather than
+one mega-interface, each capability has its **own engine** bound to its own model + lifecycle — because the
+models differ wildly (a 384-d embedder vs a multi-GB LLM) and a device's *active* embedder may be a runtime
+(onnx) that can't generate. Each is capability-gated by the device tier; an ineligible device gets a
+graceful `Unavailable…Engine` no-op (§1).
 
 ```dart
+// Embeddings (P10; the embedder engine — "InferenceEngine" in code today).
 abstract interface class InferenceEngine {
-  Future<bool> canRun(ModelSpec m, DeviceProfile d);
-  Future<List<double>> embed(String text);            // P10 (embeddings)
-  Stream<InferenceChunk> generate(InferenceRequest r); // P12+ (LLM)
-  Stream<TranscriptChunk> transcribe(AudioRef a);      // P12+ (whisper)
-  Future<StructuredResult> generateStructured(         // P12+ forward seam (ADR-0002)
-      List<ToolDef> toolDefs, String prompt);
+  EmbedderModel get model;
+  Future<List<double>> embed(String text);
+  Future<List<List<double>>> embedBatch(List<String> texts);
+  // + isAvailable / dimension / downloadModel / ensureReady / close
 }
+
+// Generation (P12d; separate, streaming).
+abstract interface class GenerationEngine {
+  GenerationModel get model;
+  Stream<String> generate(String prompt, {String? systemPrompt});
+  // + isAvailable / downloadModel / ensureReady / close
+}
+
+// Later: a TranscriptionEngine (P12e, whisper) and a generateStructured seam
+// (P12f forward seam, ADR-0002) follow the same per-capability shape.
 ```
 
 - **`generateStructured(toolDefs, prompt)`** is a **function-calling / typed-tool-fill** seam: given a
@@ -134,6 +147,7 @@ abstract interface class InferenceEngine {
 | **Mid (~1–3B)** | **Phi-4-Mini** | **MIT** | Clean. |
 | **Mid (capable)** | **Gemma 3 1B / 3n E2B** | **Gemma** (custom use-policy) | Usable + strong, **but vet Gemma's use policy before bundling** — it carries prohibited-use terms. |
 | **Embedder** | **Gecko 256** (110M, 768-d, 256-tok, ~114 MB) · multilingual: **MiniLM-L12-v2** (P12c-2: onnxruntime, int8 ~118 MB, 384-d, 128-tok) | **Apache-2.0**, ungated | Universal tier; embeddings only. Pinned P10g-1; pluggable P10g-2; MiniLM shipped P12c-2 (self-test-gated until P12c-3). |
+| **Generation (P12d)** — user-choosable, tier-eligible ladder | small **SmolLM2-135M** (~100 MB) · balanced **Qwen3-0.6B** *(recommended)* (~400 MB) · large **Qwen2.5-1.5B** (~1 GB) · flagship **Qwen3-4B** (~2.6 GB) | **Apache-2.0**, ungated | All via flutter_gemma (plugin-managed, no app-side hash). low=[] (gated); mid=[small, balanced]; high=[balanced, large, flagship]. **No Gemma** (custom use-policy/token-gated) and **no Gemini Nano** (AICore-managed, non-redistributable, flagship-only — unusable for a sideloaded app). Exact LiteRT/`.task` ids/quant pinned at P12d-2 build (prefer Qwen3.5-0.8B/2B if loadable builds exist). |
 | **Transcription** | whisper.cpp (tiny→large-v3-turbo) | MIT | Size-gated by tier. |
 | **Function-calling** (`structured_extraction`) | **Qwen3-0.6B** · **FunctionGemma 270M** | **Apache-2.0** · **Gemma** (custom) | Backs `generateStructured` (§2). Qwen3-0.6B is clean; FunctionGemma carries Gemma's use-policy. **License fork deferred to P12 start** (architecture locked, model not). *(forward seam — ADR-0002.)* |
 

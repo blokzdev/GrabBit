@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/device/device_profile.dart';
@@ -76,6 +77,35 @@ void main() {
     test('allEmbedders contains both shipped models', () {
       expect(allEmbedders, contains(geckoEmbedder));
       expect(allEmbedders, contains(paraphraseMultilingualMiniLmL12V2));
+    });
+  });
+
+  group('ModelCapabilityMatrix generation row (P12d)', () {
+    const matrix = ModelCapabilityMatrix();
+
+    test('low tier offers no generation models (gated off)', () {
+      expect(matrix.eligibleGenerationModels(DeviceTier.low), isEmpty);
+      expect(matrix.recommendedGenerationModel(DeviceTier.low), isNull);
+    });
+
+    test('mid tier offers the small + balanced rungs', () {
+      final mid = matrix.eligibleGenerationModels(DeviceTier.mid);
+      expect(mid, contains(smolLm2_135mInstruct));
+      expect(mid, contains(qwen3_0_6b));
+    });
+
+    test('high tier reaches the flagship rung', () {
+      final high = matrix.eligibleGenerationModels(DeviceTier.high);
+      expect(high, contains(qwen3_4b));
+      expect(high, contains(qwen2_5_1_5b));
+    });
+
+    test('the recommendation is the balanced model on capable tiers', () {
+      for (final tier in [DeviceTier.mid, DeviceTier.high]) {
+        final rec = matrix.recommendedGenerationModel(tier);
+        expect(rec, qwen3_0_6b);
+        expect(matrix.eligibleGenerationModels(tier), contains(rec));
+      }
     });
   });
 }

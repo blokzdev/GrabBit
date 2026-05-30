@@ -9,6 +9,7 @@ enum InferenceErrorCode {
   downloadFailed,
   loadFailed,
   embedFailed,
+  generateFailed,
   unknown,
 }
 

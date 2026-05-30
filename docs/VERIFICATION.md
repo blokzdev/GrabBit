@@ -858,6 +858,9 @@ entries, or verify after P11c lands.)*
       The choice **persists** across restart.
 - [ ] **(P12c-3)** On a **low-tier** device the multilingual switch is **hidden**; the embedder stays
       Gecko (semantic search still works).
+- _(P12d-1) The generation engine + tier-gated model ladder are pure-Dart and have **no live consumer** —
+  exercised by unit tests, **no on-device row**. On-device generation (picker + Labs self-test) lands with
+  P12d-2._
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.

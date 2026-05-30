@@ -137,16 +137,34 @@ GPU); split risk-first into:
   provider override/fallback (incl. low-tier + non-Android fallback paths). **Pending on-device APK
   spot-check** (switch→re-embed→improved non-English; revert; low-tier gating; persistence).
 
-### `[ ]` P12d — Edge LLM generation (`flutter_gemma`) *(native — the big lift; needs an APK build)*
-- **Reconcile the contract:** add `generate(...)` to `InferenceEngine` (streaming chunks) and **update
-  AI-SPEC §2** to the real signature; implement generation in `FlutterGemmaInferenceEngine` (today
-  embedder-only) wrapping MediaPipe LLM Inference / LiteRT-LM.
-- **Tier-selected Apache/MIT model** (candidates: SmolLM-135M / Qwen3-0.6B / Phi-4-Mini — confirm best at
-  build time per AI-SPEC §4); opt-in + capability-gated; graceful no-op when ineligible.
-- **No feature surface** — only a **Labs self-test tile** (prompt → streamed completion) proves it works;
-  real generation features are P13.
-- **Exit / review:** on a capable device, opt in → download → generate a multi-turn completion **offline**;
-  a low-end device shows the capability cleanly gated with a reason.
+### P12d — Edge LLM generation (`flutter_gemma`) *(native — the big lift; split into 2 PRs)*
+Ships the **generation engine + tier-gated model picker + Labs self-test** — **no user-facing feature**
+(those are P13). **Decision:** a **separate `GenerationEngine`** (not bolted onto the embedder-bound
+`InferenceEngine` — the active embedder may be the onnx MiniLM, which can't generate); AI-SPEC §2 reframed
+to **per-capability engines**. **Decision:** an **all-Apache-2.0, user-choosable, tier-eligible model
+ladder** with badges (no Gemma use-policy, no token-gated, no AICore Gemini Nano) — `eligibleGenerationModels`
+low=[]/mid/high, `recommendedGenerationModel`; the 3 device tiers stay, the ladder carries the range
+(small SmolLM2-135M → balanced Qwen3-0.6B *(recommended)* → large Qwen2.5-1.5B → flagship Qwen3-4B).
+Split risk-first:
+
+#### `[~]` P12d-1 — GenerationEngine contract + catalog + matrix + providers + settings *(pure-Dart, CI)*
+- **Status:** implemented (CI-green). `GenerationModel` catalog (4-rung Apache ladder, `GenerationModelClass`
+  badges, plugin-managed → no SHA); `GenerationEngine` interface (streaming `generate`);
+  `UnavailableGenerationEngine` + `generationEngineFor` stub (Unavailable until d-2); matrix generation row;
+  `activeGenerationModel`/`generationEngine` providers (eligible override → tier recommendation → null/
+  Unavailable); settings `generationEnabled` + `selectedGenerationModelId` + setters; `generateFailed` code.
+  Unit-tested (catalog/posture, matrix tiers, provider override/fallback, settings round-trip). **No live
+  generation until d-2** — no on-device row.
+
+#### `[ ]` P12d-2 — `FlutterGemmaGenerationEngine` + picker UI + Labs self-test *(native; APK)*
+- Native engine: `installModel(modelType).fromNetwork(url).withProgress(..).install()` → `getActiveModel`
+  → `createChat` → `generateChatResponseAsync()` as `Stream<String>`; map `modelTypeId`→`ModelType`; wire
+  the factory (Android → this, else Unavailable). **Pin exact LiteRT/`.task` URLs + quant at build** (gate
+  each rung on a flutter_gemma-loadable build; prefer Qwen3.5-0.8B/2B if LiteRT builds exist). Opt-in
+  model-**picker** tile (tier-eligible list + Recommended badge + size) + **Labs self-test** (prompt →
+  streamed completion). Confirm embedder+LLM coexistence on-device.
+- **Exit / review:** capable device → pick → download → streamed multi-turn completion **offline**; low-end
+  cleanly gated with a reason. APK spot-check (low + high).
 
 ### `[ ]` P12e — Whisper transcription (whisper.cpp) *(native — needs an APK build)*
 - Add the dep (**decide `whisper_ggml_plus` vs `whisper_kit`** here); add `transcribe(...)` to the

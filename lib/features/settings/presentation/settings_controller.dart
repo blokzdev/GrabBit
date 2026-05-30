@@ -135,6 +135,14 @@ class SettingsController extends _$SettingsController {
   Future<void> setSelectedEmbedderModelId(String id) async =>
       _update((await future).copyWith(selectedEmbedderModelId: id));
 
+  /// On-device text generation opt-in (P12d).
+  Future<void> setGenerationEnabled(bool value) async =>
+      _update((await future).copyWith(generationEnabled: value));
+
+  /// The generation-model selection (P12d); '' = the device-tier recommendation.
+  Future<void> setSelectedGenerationModelId(String id) async =>
+      _update((await future).copyWith(selectedGenerationModelId: id));
+
   Future<void> markAiSetupSeen() async =>
       _update((await future).copyWith(aiSetupSeen: true));
 
