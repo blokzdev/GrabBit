@@ -846,6 +846,12 @@ entries, or verify after P11c lands.)*
   with P12c (multilingual embedder)._
 - _(P12c-1) The XLM-R multilingual tokenizer is pure-Dart, **fidelity-tested in CI** against HuggingFace
   golden vectors — **no on-device row**. On-device multilingual embedding is verified at P12c-2/c-3._
+- [ ] **(P12c-2)** AI settings → **Test multilingual embedder** → downloads MiniLM (~118 MB, progress +
+      SHA-256 verified) → reports cross-lingual similarity where the en/es translation pair scores **far
+      higher** than the unrelated sentence. The active embedder is **unchanged** (Gecko); semantic search
+      behaves as before.
+- [ ] **(P12c-2)** The app installs + runs (and the self-test works) on a **16 KB-page** Android 15
+      device; the per-ABI APK is larger (onnxruntime native libs) but installs fine.
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.

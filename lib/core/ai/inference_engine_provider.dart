@@ -2,6 +2,7 @@ import 'package:grabbit/core/ai/inference_engine.dart';
 import 'package:grabbit/core/ai/inference_engine_factory.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
+import 'package:grabbit/core/ai/model_download_service.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -24,5 +25,7 @@ EmbedderModel activeEmbedderModel(Ref ref) => const ModelCapabilityMatrix()
 /// semantic features simply stay off. The engine is inert until the user opts in
 /// and downloads the model.
 @Riverpod(keepAlive: true)
-InferenceEngine inferenceEngine(Ref ref) =>
-    inferenceEngineFor(ref.watch(activeEmbedderModelProvider));
+InferenceEngine inferenceEngine(Ref ref) => inferenceEngineFor(
+  ref.watch(activeEmbedderModelProvider),
+  downloads: ref.watch(modelDownloadServiceProvider),
+);

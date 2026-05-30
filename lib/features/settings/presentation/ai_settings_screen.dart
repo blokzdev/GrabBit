@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/ai/inference_engine_factory.dart';
 import 'package:grabbit/core/ai/inference_engine_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/ai/model_catalog.dart';
+import 'package:grabbit/core/ai/model_download_service.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
@@ -48,6 +51,7 @@ class AiSettingsScreen extends ConsumerWidget {
             ),
             const _SemanticSearchTile(),
             const _EmbedderSelfTestTile(),
+            const _MultilingualSelfTestTile(),
           ],
         ),
       ],
@@ -255,5 +259,101 @@ class _EmbedderSelfTestTile extends ConsumerWidget {
       message = 'Embedder test failed: ${e.message}';
     }
     messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// On-device check for the multilingual embedder (P12c-2): downloads MiniLM (if
+/// needed) and embeds a translated pair + an unrelated sentence, reporting their
+/// cosine similarities — the en/es pair should score far higher. Proves the onnx
+/// engine end-to-end **without** changing the active embedder. Android-only; it
+/// no-ops gracefully elsewhere (the engine reports unavailable).
+class _MultilingualSelfTestTile extends ConsumerStatefulWidget {
+  const _MultilingualSelfTestTile();
+
+  @override
+  ConsumerState<_MultilingualSelfTestTile> createState() =>
+      _MultilingualSelfTestTileState();
+}
+
+class _MultilingualSelfTestTileState
+    extends ConsumerState<_MultilingualSelfTestTile> {
+  bool _busy = false;
+
+  Future<void> _run() async {
+    final messenger = ScaffoldMessenger.of(context);
+    const model = paraphraseMultilingualMiniLmL12V2;
+    final engine = inferenceEngineFor(
+      model,
+      downloads: ref.read(modelDownloadServiceProvider),
+    );
+    setState(() => _busy = true);
+    String message;
+    try {
+      if (!await engine.ensureReady()) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                'Downloading multilingual model (~${model.approxDownloadMb} MB)…',
+              ),
+            ),
+          );
+        await engine.downloadModel();
+        await engine.ensureReady();
+      }
+      if (!engine.isAvailable) {
+        message = 'Multilingual embedder unavailable on this device';
+      } else {
+        final vecs = await engine.embedBatch(const [
+          'A cat sits on the mat',
+          'Un gato se sienta en la alfombra',
+          'Quarterly tax revenue increased sharply',
+        ]);
+        final translation = _cosine(vecs[0], vecs[1]);
+        final unrelated = _cosine(vecs[0], vecs[2]);
+        message =
+            'Multilingual OK — en/es ${translation.toStringAsFixed(2)} ≫ '
+            'unrelated ${unrelated.toStringAsFixed(2)}';
+      }
+    } on InferenceException catch (e) {
+      message = 'Multilingual test failed: ${e.message}';
+    } finally {
+      await engine.close();
+      if (mounted) setState(() => _busy = false);
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // Vectors are L2-normalized by the engine, so cosine == dot product.
+  double _cosine(List<double> a, List<double> b) {
+    var sum = 0.0;
+    for (var i = 0; i < a.length; i++) {
+      sum += a[i] * b[i];
+    }
+    return sum;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const model = paraphraseMultilingualMiniLmL12V2;
+    return ListTile(
+      leading: const Icon(Icons.translate_outlined),
+      title: const Text('Test multilingual embedder'),
+      subtitle: Text(
+        'Downloads MiniLM (~${model.approxDownloadMb} MB) and checks '
+        'cross-lingual similarity',
+      ),
+      trailing: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.play_arrow_outlined),
+      onTap: _busy ? null : _run,
+    );
   }
 }
