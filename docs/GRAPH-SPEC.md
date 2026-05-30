@@ -160,7 +160,7 @@ abstract interface class GraphStore {
 - `pigeons/cozo.dart` → `CozoHostApi` + Kotlin host glue, mirroring `pigeons/engine.dart` /
   `YtDlpHost.kt`.
 
-**Separation from `InferenceEngine` (`lib/core/ai/`, see `AI-SPEC.md`):** `InferenceEngine.embed(text)
+**Separation from `EmbedderEngine` (`lib/core/ai/`, see `AI-SPEC.md`):** `EmbedderEngine.embed(text)
 → vector` **produces** vectors; `GraphStore` **stores/searches** them. `GraphStore` must not import
 the AI layer (and vice versa). Only `GraphSyncService` touches both — this is what lets P10's
 deterministic + similarity graph ship independent of the LLM stack, and keeps both engines swappable.
@@ -244,7 +244,7 @@ gracefully when `GraphStore.isAvailable` is false.
 - **P10b-2b (done):** `backfillEmbeddings()` maintains the HNSW `embedding` relation **incrementally
   and cached** — it diffs the desired `id → textHash` (from `buildEmbeddingDocs`) against the stored
   cache, `:put`s only new/changed items (in chunks), and `:rm`s ids no longer in the library. It's
-  gated on `InferenceEngine.ensureReady()` (a cheap no-op when semantic search is off / the model
+  gated on `EmbedderEngine.ensureReady()` (a cheap no-op when semantic search is off / the model
   isn't downloaded / a non-arm64 host), so it never `:replace`s the relation wholesale and never
   re-embeds unchanged items. Triggered after the deterministic rebuild (live listener), at startup
   (`app.dart`), and on opt-in (Settings toggle / AI-setup). The self-test reports the embedding count.

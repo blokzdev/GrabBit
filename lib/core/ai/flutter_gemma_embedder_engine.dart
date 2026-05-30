@@ -1,16 +1,16 @@
 import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:grabbit/core/ai/inference_engine.dart';
+import 'package:grabbit/core/ai/embedder_engine.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 
-/// `flutter_gemma` (embedder-only) [InferenceEngine] for Android. Never loads an
+/// `flutter_gemma` (embedder-only) [EmbedderEngine] for Android. Never loads an
 /// LLM — only the [EmbedderModel] it's constructed with (chosen by
-/// `inferenceEngineFor`). The model download is opt-in (gated by the
+/// `embedderEngineFor`). The model download is opt-in (gated by the
 /// `semanticSearchEnabled` setting); construction is cheap and side-effect free,
 /// so the keepAlive provider can build it eagerly while staying inert until the
 /// user enables semantic search.
-class FlutterGemmaInferenceEngine implements InferenceEngine {
-  FlutterGemmaInferenceEngine(this._model);
+class FlutterGemmaEmbedderEngine implements EmbedderEngine {
+  FlutterGemmaEmbedderEngine(this._model);
 
   final EmbedderModel _model;
 

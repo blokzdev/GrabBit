@@ -1,6 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:grabbit/core/ai/inference_engine.dart';
+import 'package:grabbit/core/ai/embedder_engine.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
@@ -35,7 +35,7 @@ class _FakeGraphStore implements GraphStore {
 
 /// Embedder that's always ready and returns fixed-length zero vectors. Counts
 /// how many items were embedded and how many batch round-trips it took.
-class _FakeInferenceEngine implements InferenceEngine {
+class _FakeEmbedderEngine implements EmbedderEngine {
   int embedded = 0;
   int batchCalls = 0;
 
@@ -226,7 +226,7 @@ void main() {
       addTearDown(db.close);
       await seedItem(db, 'a');
       await seedItem(db, 'b');
-      final engine = _FakeInferenceEngine();
+      final engine = _FakeEmbedderEngine();
       final fake = _FakeGraphStore(); // ::relations + pairs both empty
 
       final stats = await GraphSyncService(
@@ -262,7 +262,7 @@ void main() {
       await GraphSyncService(
         fake,
         db,
-        engine: _FakeInferenceEngine(),
+        engine: _FakeEmbedderEngine(),
       ).backfillEmbeddings();
 
       expect(
@@ -305,7 +305,7 @@ void main() {
         await GraphSyncService(
           fake,
           db,
-          engine: _FakeInferenceEngine(),
+          engine: _FakeEmbedderEngine(),
         ).backfillEmbeddings();
 
         expect(fake.calls.any((c) => c.script == '::remove embedding'), isTrue);
@@ -339,7 +339,7 @@ void main() {
       final stats = await GraphSyncService(
         fake,
         db,
-        engine: _FakeInferenceEngine(),
+        engine: _FakeEmbedderEngine(),
       ).backfillEmbeddings();
 
       expect(stats.pruned, 1);

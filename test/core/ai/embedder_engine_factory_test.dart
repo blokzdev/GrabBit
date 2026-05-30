@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:grabbit/core/ai/inference_engine_factory.dart';
+import 'package:grabbit/core/ai/embedder_engine_factory.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 
 void main() {
-  group('inferenceEngineFor', () {
+  group('embedderEngineFor', () {
     test('propagates the selected model (id + dimension)', () {
-      final engine = inferenceEngineFor(geckoEmbedder);
+      final engine = embedderEngineFor(geckoEmbedder);
       expect(engine.model.id, geckoEmbedder.id);
       expect(engine.dimension, geckoEmbedder.dimension);
     });
@@ -18,14 +18,14 @@ void main() {
         dimension: 384,
         approxDownloadMb: 50,
       );
-      final engine = inferenceEngineFor(other);
+      final engine = embedderEngineFor(other);
       expect(engine.model.id, 'mini');
       expect(engine.dimension, 384);
     });
 
     test('is unavailable on a non-Android test host (graceful fallback)', () {
       // CI/desktop hosts have no flutter_gemma runtime → Unavailable, never crash.
-      expect(inferenceEngineFor(geckoEmbedder).isAvailable, isFalse);
+      expect(embedderEngineFor(geckoEmbedder).isAvailable, isFalse);
     });
 
     test('onnx runtime is stubbed to unavailable until P12c', () {
@@ -37,7 +37,7 @@ void main() {
         approxDownloadMb: 120,
         runtime: EmbedderRuntime.onnx,
       );
-      final engine = inferenceEngineFor(onnx);
+      final engine = embedderEngineFor(onnx);
       expect(engine.isAvailable, isFalse);
       expect(engine.model.id, 'mini-multilingual');
       expect(engine.dimension, 384);

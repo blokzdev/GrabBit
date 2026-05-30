@@ -1,4 +1,4 @@
-import 'package:grabbit/core/ai/inference_engine.dart';
+import 'package:grabbit/core/ai/embedder_engine.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
 
@@ -33,10 +33,10 @@ class FakeGraphStore implements GraphStore {
   }
 }
 
-/// A no-network [InferenceEngine] for tests. [ready] gates availability;
+/// A no-network [EmbedderEngine] for tests. [ready] gates availability;
 /// [embed] returns a constant zero vector of the right dimension.
-class FakeInferenceEngine implements InferenceEngine {
-  FakeInferenceEngine({this.ready = true});
+class FakeEmbedderEngine implements EmbedderEngine {
+  FakeEmbedderEngine({this.ready = true});
 
   bool ready;
   int embedded = 0;

@@ -18,9 +18,10 @@ _(nothing active — pick the next batch from below)_
       download is interrupted (the `.part` is overwritten next run; verify-then-rename means no
       corruption risk). Add `Range`/resume if large-model re-downloads prove costly on flaky networks.
       *(From P12b.)*
-- [ ] **Rename `InferenceEngine` → `EmbedderEngine`.** Now that generation has its own `GenerationEngine`
-      (P12d), the embedder-bound `InferenceEngine` name is misleading. A pure rename (engine + factory +
-      providers + tests); deferred to avoid churn mid-P12. *(From P12d-1.)*
+- [x] **Rename `InferenceEngine` → `EmbedderEngine`.** Done — pure mechanical rename (engine + factory +
+      providers + tests + `OnnxEmbedderEngine`/`FlutterGemmaEmbedderEngine`/`UnavailableEmbedderEngine`);
+      the shared `InferenceException`/`InferenceErrorCode` taxonomy kept (used by both AI engines).
+      *(From P12d-1; done off-phase before P12d-2.)*
 - [ ] **Flagship device tier.** The 3-tier `low/mid/high` lumps 6 GB midrangers with 12–16 GB flagships;
       generation could offer even larger models on a true flagship tier. Add once on-device telemetry from
       testers justifies the threshold split. *(From P12d-1.)*

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:grabbit/core/ai/inference_engine_factory.dart';
+import 'package:grabbit/core/ai/embedder_engine_factory.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
-import 'package:grabbit/core/ai/onnx_embedder_inference_engine.dart';
+import 'package:grabbit/core/ai/onnx_embedder_engine.dart';
 
 void main() {
   group('meanPool', () {
@@ -67,7 +67,7 @@ void main() {
   test('factory falls back to unavailable for onnx on a non-Android host', () {
     // CI/desktop have no onnxruntime plugin → graceful fallback, never a crash;
     // the engine still reports the selected model + dimension.
-    final engine = inferenceEngineFor(paraphraseMultilingualMiniLmL12V2);
+    final engine = embedderEngineFor(paraphraseMultilingualMiniLmL12V2);
     expect(engine.isAvailable, isFalse);
     expect(engine.model.id, paraphraseMultilingualMiniLmL12V2.id);
     expect(engine.dimension, 384);

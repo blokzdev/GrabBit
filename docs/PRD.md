@@ -183,7 +183,7 @@ demand** (not bundled) to keep the install lean. Runtime: **`flutter_gemma`** (M
   scheduled.
 
 *(The former **v3** cloud-AI + credit band — Supabase accounts, Gemini, Stripe/PayPal — is
-**dropped**. The `InferenceEngine` interface keeps a theoretical cloud seam, but it is unplanned.)*
+**dropped**. The AI engine interfaces keep a theoretical cloud seam, but it is unplanned.)*
 
 ## 10. Monetization Model
 

@@ -302,7 +302,7 @@ Budget rules per CLAUDE.md §6: ubuntu only, cache, manual APKs, no push-builds.
 
 ### 9.1–9.2 Cloud backend (Supabase / Gemini / Stripe-PayPal) — DROPPED
 The former v3 cloud contracts (Postgres credit ledger, Edge Functions → Genkit/Gemini, payment
-webhooks) are **removed** — no backend, no accounts, no credits. The `InferenceEngine` keeps a
+webhooks) are **removed** — no backend, no accounts, no credits. The AI engine interfaces keep a
 theoretical-only cloud seam (`docs/AI-SPEC.md` §1), but it is unplanned.
 
 ### 9.3 On-device AI (v1, P10, P12–P13)

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
-import 'package:grabbit/core/ai/unavailable_inference_engine.dart';
+import 'package:grabbit/core/ai/unavailable_embedder_engine.dart';
 
 void main() {
   group('geckoEmbedder catalog', () {
@@ -25,8 +25,8 @@ void main() {
     });
   });
 
-  group('UnavailableInferenceEngine', () {
-    const engine = UnavailableInferenceEngine();
+  group('UnavailableEmbedderEngine', () {
+    const engine = UnavailableEmbedderEngine();
 
     test('is never available and reports the pinned dimension', () {
       expect(engine.isAvailable, isFalse);
@@ -42,7 +42,7 @@ void main() {
         dimension: 384,
         approxDownloadMb: 50,
       );
-      const e = UnavailableInferenceEngine(other);
+      const e = UnavailableEmbedderEngine(other);
       expect(e.model, other);
       expect(e.dimension, 384);
     });

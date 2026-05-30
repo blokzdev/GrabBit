@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grabbit/core/ai/inference_engine_provider.dart';
+import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/graph/graph_query_provider.dart';
@@ -15,7 +15,7 @@ import 'package:grabbit/features/settings/presentation/settings_controller.dart'
 final semanticSearchReadyProvider = FutureProvider<bool>((ref) async {
   final settings = await ref.watch(settingsControllerProvider.future);
   if (!settings.semanticSearchEnabled) return false;
-  return ref.watch(inferenceEngineProvider).ensureReady();
+  return ref.watch(embedderEngineProvider).ensureReady();
 });
 
 /// Library items most semantically similar to [query], ranked nearest-first.
@@ -30,7 +30,7 @@ final semanticResultsProvider = FutureProvider.family<List<MediaItem>, String>((
   if (trimmed.isEmpty) return const [];
   if (!await ref.watch(semanticSearchReadyProvider.future)) return const [];
 
-  final vector = await ref.watch(inferenceEngineProvider).embed(trimmed);
+  final vector = await ref.watch(embedderEngineProvider).embed(trimmed);
   final hits = await ref.watch(graphQueryServiceProvider).vectorSearch(vector);
   if (hits.isEmpty) return const [];
 

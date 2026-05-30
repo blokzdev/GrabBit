@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grabbit/core/ai/inference_engine.dart';
-import 'package:grabbit/core/ai/inference_engine_factory.dart';
+import 'package:grabbit/core/ai/embedder_engine.dart';
+import 'package:grabbit/core/ai/embedder_engine_factory.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/model_download_service.dart';
@@ -11,7 +11,7 @@ import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'inference_engine_provider.g.dart';
+part 'embedder_engine_provider.g.dart';
 
 /// The embedder model in use. Defaults to the device tier's model (Gecko, the
 /// universal floor) and honors a persisted **install-global override**
@@ -43,16 +43,16 @@ EmbedderModel activeEmbedderModel(Ref ref) {
 bool _runtimeRunsHere(EmbedderModel model) =>
     model.runtime != EmbedderRuntime.onnx || Platform.isAndroid;
 
-/// Selects the [InferenceEngine] for the active model + host platform. UI and
+/// Selects the [EmbedderEngine] for the active model + host platform. UI and
 /// feature code depend on this provider, never a concrete runtime (mirrors
 /// `graph_store_provider.dart` / `engine_provider.dart`).
 ///
-/// Routing lives in `inferenceEngineFor`: an unsupported runtime/platform yields
-/// [UnavailableInferenceEngine] (graceful degradation, per docs/AI-SPEC.md) —
+/// Routing lives in `embedderEngineFor`: an unsupported runtime/platform yields
+/// [UnavailableEmbedderEngine] (graceful degradation, per docs/AI-SPEC.md) —
 /// semantic features simply stay off. The engine is inert until the user opts in
 /// and downloads the model.
 @Riverpod(keepAlive: true)
-InferenceEngine inferenceEngine(Ref ref) => inferenceEngineFor(
+EmbedderEngine embedderEngine(Ref ref) => embedderEngineFor(
   ref.watch(activeEmbedderModelProvider),
   downloads: ref.watch(modelDownloadServiceProvider),
 );
