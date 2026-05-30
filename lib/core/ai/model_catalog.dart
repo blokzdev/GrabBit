@@ -120,3 +120,19 @@ const EmbedderModel paraphraseMultilingualMiniLmL12V2 = EmbedderModel(
     ),
   ],
 );
+
+/// Every embedder GrabBit knows about — the lookup set for a persisted model
+/// selection (P12c-3).
+const List<EmbedderModel> allEmbedders = [
+  geckoEmbedder,
+  paraphraseMultilingualMiniLmL12V2,
+];
+
+/// Resolves a persisted embedder [id] to its catalog entry, or null if unknown
+/// (e.g. a removed model) — callers fall back to the tier default.
+EmbedderModel? embedderById(String id) {
+  for (final m in allEmbedders) {
+    if (m.id == id) return m;
+  }
+  return null;
+}

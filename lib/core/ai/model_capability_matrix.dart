@@ -15,12 +15,23 @@ class ModelCapabilityMatrix {
 
   final Map<DeviceTier, EmbedderModel> _embedders;
 
-  /// The embedder eligible at [tier], falling back to the universal floor
-  /// ([geckoEmbedder]) if a tier has no explicit entry.
+  /// The **default** embedder at [tier] — Gecko everywhere (the universal floor).
+  /// A heavier model is never forced; it's an opt-in override (P12c-3), so this
+  /// stays Gecko at every tier.
   EmbedderModel embedderFor(DeviceTier tier) =>
       _embedders[tier] ?? geckoEmbedder;
 
-  // Every tier runs Gecko today (Apache-2.0, ~114 MB) — the universal floor.
+  /// Embedders a device of [tier] may select (P12c-3) — the offer set the UI
+  /// shows and the eligibility guard `activeEmbedderModelProvider` enforces.
+  /// Gecko is universal; the multilingual MiniLM is offered on capable tiers
+  /// (mid/high) — low-end stays on Gecko.
+  List<EmbedderModel> eligibleEmbedders(DeviceTier tier) => switch (tier) {
+    DeviceTier.low => const [geckoEmbedder],
+    DeviceTier.mid ||
+    DeviceTier.high => const [geckoEmbedder, paraphraseMultilingualMiniLmL12V2],
+  };
+
+  // Every tier runs Gecko by default (Apache-2.0, ~114 MB) — the universal floor.
   static const Map<DeviceTier, EmbedderModel> _defaultEmbedders = {
     DeviceTier.low: geckoEmbedder,
     DeviceTier.mid: geckoEmbedder,

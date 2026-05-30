@@ -131,6 +131,10 @@ class SettingsController extends _$SettingsController {
   Future<void> setSemanticSearchEnabled(bool value) async =>
       _update((await future).copyWith(semanticSearchEnabled: value));
 
+  /// The install-global embedder override (P12c-3); '' = the device-tier default.
+  Future<void> setSelectedEmbedderModelId(String id) async =>
+      _update((await future).copyWith(selectedEmbedderModelId: id));
+
   Future<void> markAiSetupSeen() async =>
       _update((await future).copyWith(aiSetupSeen: true));
 
