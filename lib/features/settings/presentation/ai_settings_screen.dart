@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/embedder_engine_factory.dart';
 import 'package:grabbit/core/ai/embedder_engine_provider.dart';
+import 'package:grabbit/core/ai/generation_model.dart';
+import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
@@ -57,6 +59,7 @@ class AiSettingsScreen extends ConsumerWidget {
             const _MultilingualSelfTestTile(),
           ],
         ),
+        const _GenerationCard(),
       ],
     );
   }
@@ -456,7 +459,7 @@ class _MultilingualModelTileState
           body:
               'Switches the embedding model to a 50-language one so search and '
               '“related” work well on non-English content. One-time '
-              '~120 MB download, then your library is re-indexed on-device. '
+              '~127 MB download, then your library is re-indexed on-device. '
               'Turn off to go back to the default English model.',
         ),
       ),
@@ -467,6 +470,217 @@ class _MultilingualModelTileState
       ),
       value: selectedId == _miniLm.id,
       onChanged: _busy ? null : _toggle,
+    );
+  }
+}
+
+/// On-device text generation (P12d) — a tier-gated, opt-in model picker + a Labs
+/// self-test. Hidden entirely on devices that can't run any generation model
+/// (low tier) so the AI screen stays clean. The picker + self-test are the only
+/// generation surface in v1; real features (summaries, "Ask your library") are P13.
+class _GenerationCard extends ConsumerWidget {
+  const _GenerationCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tier = ref.watch(activeDeviceTierProvider);
+    final eligible = const ModelCapabilityMatrix().eligibleGenerationModels(
+      tier,
+    );
+    // Low-end / ineligible devices: no generation at all — omit the section.
+    if (eligible.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: SettingsCard(
+        children: [
+          for (final m in eligible) _GenerationModelTile(model: m),
+          const _GenerationSelfTestTile(),
+        ],
+      ),
+    );
+  }
+}
+
+/// One selectable generation model row: badge (Recommended / size band) + size,
+/// a radio-like check for the active selection. Selecting it opts in + downloads
+/// (storage-guarded); selecting the active one again turns generation off.
+class _GenerationModelTile extends ConsumerStatefulWidget {
+  const _GenerationModelTile({required this.model});
+
+  final GenerationModel model;
+
+  @override
+  ConsumerState<_GenerationModelTile> createState() =>
+      _GenerationModelTileState();
+}
+
+class _GenerationModelTileState extends ConsumerState<_GenerationModelTile> {
+  bool _busy = false;
+
+  GenerationModel get _model => widget.model;
+
+  Future<void> _select(bool selected) async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    if (!selected) {
+      // Toggling off the active model disables generation (keeps the download).
+      await controller.setGenerationEnabled(false);
+      await controller.setSelectedGenerationModelId('');
+      return;
+    }
+    await controller.setGenerationEnabled(true);
+    await controller.setSelectedGenerationModelId(_model.id);
+    await _download();
+  }
+
+  Future<void> _download() async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Downloading ${_model.displayName} (~${_model.approxDownloadMb} MB)…',
+          ),
+        ),
+      );
+    try {
+      await ref.read(generationEngineProvider).downloadModel();
+      await ref.read(generationEngineProvider).ensureReady();
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('${_model.displayName} ready')));
+    } on InferenceException catch (e) {
+      await controller.setGenerationEnabled(false);
+      await controller.setSelectedGenerationModelId('');
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              e.code == InferenceErrorCode.unavailable
+                  ? 'Text generation isn\'t available on this device'
+                  : 'Couldn\'t download ${_model.displayName} — ${e.message}',
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String get _bandLabel => switch (_model.modelClass) {
+    GenerationModelClass.small => 'Smaller · faster',
+    GenerationModelClass.balanced => 'Recommended',
+    GenerationModelClass.large => 'Larger · better',
+    GenerationModelClass.flagship => 'Flagship',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final active = ref.watch(activeGenerationModelProvider);
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.generationEnabled ?? false,
+      ),
+    );
+    final isSelected = enabled && active?.id == _model.id;
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(
+        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+        color: isSelected ? theme.colorScheme.primary : null,
+      ),
+      title: Row(
+        children: [
+          Text(_model.displayName),
+          const SizedBox(width: 8),
+          Chip(
+            label: Text(_bandLabel),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
+      ),
+      subtitle: Text('${_model.blurb}  ·  ~${_model.approxDownloadMb} MB'),
+      trailing: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
+      onTap: _busy ? null : () => _select(!isSelected),
+    );
+  }
+}
+
+/// Labs self-test: runs a fixed prompt through the active generation model and
+/// streams the completion into a snackbar — proves generation works offline,
+/// without any real feature. Visible only when generation is enabled + ready.
+class _GenerationSelfTestTile extends ConsumerStatefulWidget {
+  const _GenerationSelfTestTile();
+
+  @override
+  ConsumerState<_GenerationSelfTestTile> createState() =>
+      _GenerationSelfTestTileState();
+}
+
+class _GenerationSelfTestTileState
+    extends ConsumerState<_GenerationSelfTestTile> {
+  bool _busy = false;
+  String? _output;
+
+  Future<void> _run() async {
+    final engine = ref.read(generationEngineProvider);
+    setState(() {
+      _busy = true;
+      _output = '';
+    });
+    try {
+      if (!await engine.ensureReady()) {
+        setState(() => _output = 'Enable a model above first');
+        return;
+      }
+      final buffer = StringBuffer();
+      await for (final token in engine.generate(
+        'In one short sentence, what is a knowledge graph?',
+      )) {
+        buffer.write(token);
+        if (mounted) setState(() => _output = buffer.toString());
+      }
+    } on InferenceException catch (e) {
+      if (mounted) setState(() => _output = 'Generation failed: ${e.message}');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.generationEnabled ?? false,
+      ),
+    );
+    if (!enabled) return const SizedBox.shrink();
+    return ListTile(
+      leading: const Icon(Icons.science_outlined),
+      title: const Text('Test text generation'),
+      subtitle: Text(
+        _output?.isNotEmpty == true
+            ? _output!
+            : 'Run a sample prompt through the on-device model',
+      ),
+      trailing: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.play_arrow_outlined),
+      onTap: _busy ? null : _run,
     );
   }
 }

@@ -96,7 +96,7 @@ void main() {
 
     test('high tier reaches the flagship rung', () {
       final high = matrix.eligibleGenerationModels(DeviceTier.high);
-      expect(high, contains(qwen3_4b));
+      expect(high, contains(gemma4E2b));
       expect(high, contains(qwen2_5_1_5b));
     });
 
