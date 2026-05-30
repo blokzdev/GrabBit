@@ -22,9 +22,9 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 - **Always-available floor.** Where possible a zero-dependency, pure-Dart baseline (e.g. extractive
   TextRank summaries, deterministic + vector graph features) runs on *any* device; heavier
   model-backed tiers layer on top for capable hardware.
-- **Swappable.** Everything sits behind the `InferenceEngine` interface (mirrors `DownloadEngine` /
-  `GraphStore`). The interface leaves a *theoretical* seam for a future cloud impl, but that is
-  **unplanned**.
+- **Swappable.** Everything sits behind per-capability engine interfaces (`EmbedderEngine`,
+  `GenerationEngine`; mirror `DownloadEngine` / `GraphStore`). They leave a *theoretical* seam for a
+  future cloud impl, but that is **unplanned**.
 
 ---
 
@@ -37,8 +37,8 @@ models differ wildly (a 384-d embedder vs a multi-GB LLM) and a device's *active
 graceful `Unavailable…Engine` no-op (§1).
 
 ```dart
-// Embeddings (P10; the embedder engine — "InferenceEngine" in code today).
-abstract interface class InferenceEngine {
+// Embeddings (P10) — EmbedderEngine (renamed from InferenceEngine in P12d).
+abstract interface class EmbedderEngine {
   EmbedderModel get model;
   Future<List<double>> embed(String text);
   Future<List<List<double>>> embedBatch(List<String> texts);
@@ -80,7 +80,7 @@ abstract interface class GenerationEngine {
   is already gated *(forward seam for the v2 Things Engine — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 - **Separation from `GraphStore`:** `embed()` *produces* vectors; `GraphStore` *stores/searches*
   them (see `GRAPH-SPEC.md`). Only `GraphSyncService` calls both.
-- **Engine selection (P10g-2):** `inferenceEngineFor(EmbedderModel)` maps a model to its runtime engine
+- **Engine selection (P10g-2):** `embedderEngineFor(EmbedderModel)` maps a model to its runtime engine
   (routing on `EmbedderModel.runtime`); `activeEmbedderModelProvider` is the single seam choosing *which*
   model — it returns `defaultEmbedder` today and is the override point for `ModelCapabilityMatrix` (P12).
 
@@ -101,8 +101,8 @@ abstract interface class GenerationEngine {
   **transcript** slice; the seq512/1024 variants share the tokenizer + dimension. The pinned id + dim
   live in `lib/core/ai/model_catalog.dart`; P10b-2b keys the Cozo HNSW schema + graph fingerprint off
   them so a model change → re-embed. **P10g-2** made selection pluggable: an `EmbedderRuntime` discriminator
-  + an `inferenceEngineFor(model)` factory (routes a model to its runtime engine; unsupported →
-  `UnavailableInferenceEngine`) + an `activeEmbedderModelProvider` seam (returns `defaultEmbedder`; the P12
+  + an `embedderEngineFor(model)` factory (routes a model to its runtime engine; unsupported →
+  `UnavailableEmbedderEngine`) + an `activeEmbedderModelProvider` seam (returns `defaultEmbedder`; the P12
   override point). A **multilingual** second engine (`paraphrase-multilingual-MiniLM-L12-v2`, Apache-2.0,
   onnxruntime — **P12**, as a capability-matrix embedder option) plugs into that factory, with Gecko as the
   universal fallback. P12c-3 makes it **user-selectable** (a persisted `selectedEmbedderModelId` override,
@@ -124,7 +124,7 @@ abstract interface class GenerationEngine {
   consistent with the gated yt-dlp auto-update and the no-surprise-data principle. A first-run
   **"Set up AI features (or skip)"** screen (`/ai-setup`), sequenced after the disclaimer, offers the
   opt-in to genuinely new users only (`aiSetupSeen` defaults true on existing installs;
-  `acceptDisclaimer()` clears it). On unsupported devices the `UnavailableInferenceEngine` no-ops and
+  `acceptDisclaimer()` clears it). On unsupported devices the `UnavailableEmbedderEngine` no-ops and
   everything else keeps working — embeddings are an enhancement, not a dependency.
 - **Transcription (P13): whisper.cpp** via a maintained Flutter package —
   [`whisper_ggml_plus`](https://pub.dev/packages/whisper_ggml_plus) (cross-platform incl. Windows) or
@@ -196,7 +196,7 @@ Fully on-device natural-language Q&A over the private library:
 
 1. **Retrieve** via `GraphStore` (`GRAPH-SPEC.md`): hybrid **vector search + graph re-rank** (built
    and tested in P10) selects the most relevant nodes + their graph neighborhood.
-2. **Generate** via `InferenceEngine` (`flutter_gemma`): the retrieved context + question feed a
+2. **Generate** via `GenerationEngine` (`flutter_gemma`): the retrieved context + question feed a
    small local LLM, which answers grounded in (and citing) the user's nodes.
 
 The harness operates over **generic typed nodes**, not a media-only collection: the v1 graph's media +

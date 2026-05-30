@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart' show TableUpdateQuery, countAll;
-import 'package:grabbit/core/ai/inference_engine.dart';
-import 'package:grabbit/core/ai/unavailable_inference_engine.dart';
+import 'package:grabbit/core/ai/embedder_engine.dart';
+import 'package:grabbit/core/ai/unavailable_embedder_engine.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/graph/cozo_schema.dart';
 import 'package:grabbit/core/graph/embedding_doc.dart';
@@ -56,13 +56,13 @@ class GraphSyncService {
   GraphSyncService(
     this._store,
     this._db, {
-    this._engine = const UnavailableInferenceEngine(),
+    this._engine = const UnavailableEmbedderEngine(),
     this._debounce = const Duration(seconds: 2),
   });
 
   final GraphStore _store;
   final AppDatabase _db;
-  final InferenceEngine _engine;
+  final EmbedderEngine _engine;
   final Duration _debounce;
 
   /// How many embeddings to `:put` per script (bounds the JSON param size).

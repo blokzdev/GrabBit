@@ -2,8 +2,8 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:grabbit/core/ai/inference_engine.dart';
-import 'package:grabbit/core/ai/inference_engine_provider.dart';
+import 'package:grabbit/core/ai/embedder_engine.dart';
+import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/db/database.dart';
@@ -13,11 +13,11 @@ import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/data/settings_repository.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
-/// In-memory [InferenceEngine] for widget tests: records the download call and
+/// In-memory [EmbedderEngine] for widget tests: records the download call and
 /// optionally fails, so the screen's set-up vs. skip flows are exercised without
 /// the native runtime.
-class _FakeInferenceEngine implements InferenceEngine {
-  _FakeInferenceEngine({this.failDownload = false});
+class _FakeEmbedderEngine implements EmbedderEngine {
+  _FakeEmbedderEngine({this.failDownload = false});
 
   final bool failDownload;
   bool downloadCalled = false;
@@ -60,7 +60,7 @@ class _FakeInferenceEngine implements InferenceEngine {
 }
 
 Future<(ProviderContainer, AppDatabase)> _harness(
-  InferenceEngine engine, {
+  EmbedderEngine engine, {
   SettingsModel? initial,
 }) async {
   final db = AppDatabase(NativeDatabase.memory());
@@ -68,7 +68,7 @@ Future<(ProviderContainer, AppDatabase)> _harness(
   final container = ProviderContainer(
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
-      inferenceEngineProvider.overrideWithValue(engine),
+      embedderEngineProvider.overrideWithValue(engine),
     ],
   );
   await container.read(settingsControllerProvider.future);
@@ -77,7 +77,7 @@ Future<(ProviderContainer, AppDatabase)> _harness(
 
 void main() {
   testWidgets('Skip marks ai-setup seen without downloading', (tester) async {
-    final engine = _FakeInferenceEngine();
+    final engine = _FakeEmbedderEngine();
     final (container, db) = await _harness(engine);
     addTearDown(container.dispose);
     addTearDown(db.close);
@@ -101,7 +101,7 @@ void main() {
   testWidgets('Set up enables semantic search and downloads the model', (
     tester,
   ) async {
-    final engine = _FakeInferenceEngine();
+    final engine = _FakeEmbedderEngine();
     final (container, db) = await _harness(engine);
     addTearDown(container.dispose);
     addTearDown(db.close);
@@ -125,7 +125,7 @@ void main() {
   testWidgets('Set up reverts and surfaces an error on download failure', (
     tester,
   ) async {
-    final engine = _FakeInferenceEngine(failDownload: true);
+    final engine = _FakeEmbedderEngine(failDownload: true);
     // Simulate a new user fresh off the disclaimer (aiSetupSeen still false).
     final (container, db) = await _harness(
       engine,

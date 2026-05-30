@@ -2,7 +2,7 @@
 /// HTTPS file that `ModelDownloadService` fetches, SHA-256-verifies, and caches
 /// under app-private storage. File-based runtimes (onnxruntime, whisper) own
 /// their files this way; the flutter_gemma embedder does **not** — the plugin
-/// fetches and manages its files opaquely (see `flutter_gemma_inference_engine.dart`),
+/// fetches and manages its files opaquely (see `flutter_gemma_embedder_engine.dart`),
 /// so its `EmbedderModel.files` stays empty.
 class ModelFile {
   const ModelFile({

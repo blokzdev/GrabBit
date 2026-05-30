@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grabbit/core/ai/inference_engine_factory.dart';
-import 'package:grabbit/core/ai/inference_engine_provider.dart';
+import 'package:grabbit/core/ai/embedder_engine_factory.dart';
+import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
@@ -150,7 +150,7 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
         const SnackBar(content: Text('Downloading semantic-search model…')),
       );
     try {
-      await ref.read(inferenceEngineProvider).downloadModel();
+      await ref.read(embedderEngineProvider).downloadModel();
       // Build the vector index now that the model is ready.
       final stats = await ref
           .read(graphSyncServiceProvider)
@@ -189,7 +189,7 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
       ),
     );
     final ready = ref.watch(semanticSearchReadyProvider).asData?.value ?? false;
-    final model = ref.read(inferenceEngineProvider).model;
+    final model = ref.read(embedderEngineProvider).model;
     return Column(
       children: [
         SwitchListTile(
@@ -246,7 +246,7 @@ class _EmbedderSelfTestTile extends ConsumerWidget {
 
   Future<void> _run(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
-    final engine = ref.read(inferenceEngineProvider);
+    final engine = ref.read(embedderEngineProvider);
     String message;
     try {
       final ready = await engine.ensureReady();
@@ -285,7 +285,7 @@ class _MultilingualSelfTestTileState
   Future<void> _run() async {
     final messenger = ScaffoldMessenger.of(context);
     const model = paraphraseMultilingualMiniLmL12V2;
-    final engine = inferenceEngineFor(
+    final engine = embedderEngineFor(
       model,
       downloads: ref.read(modelDownloadServiceProvider),
     );
@@ -407,7 +407,7 @@ class _MultilingualModelTileState
         ),
       );
     try {
-      await ref.read(inferenceEngineProvider).downloadModel();
+      await ref.read(embedderEngineProvider).downloadModel();
       final stats = await ref
           .read(graphSyncServiceProvider)
           .backfillEmbeddings();

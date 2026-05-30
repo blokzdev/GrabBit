@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:grabbit/core/ai/inference_engine_provider.dart';
+import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';

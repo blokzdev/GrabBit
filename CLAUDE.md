@@ -28,7 +28,7 @@ ships only **after** the on-device AI + graph work (P10, P12–P13).
 > everything runs on the user's own device, costs us nothing, and is **free forever**.
 > GrabBit is sustained by an **optional donations link** (P14). **No ads, no telemetry,
 > no accounts, no cloud.** (The former cloud/credits "v3" band is **dropped**; the
-> `InferenceEngine` interface leaves a *theoretical* cloud seam, but it is unplanned.)
+> AI engine interfaces leave a *theoretical* cloud seam, but it is unplanned.)
 > Always bias a feature toward an on-device implementation.
 
 ### Version strategy (two bands — v3/cloud dropped)
@@ -64,7 +64,7 @@ no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* 
 | Secure storage | **flutter_secure_storage** | PIN hash, future tokens. |
 | App lock | **local_auth** + PIN | Biometric + fallback. |
 | Graph + vector DB (v1, P10) | **CozoDB** — relational+graph+vector + HNSW (Android via `io.github.cozodb:cozo_android` Maven AAR + Pigeon; `dart:ffi`/`ffigen` on Windows). MPL-2.0. | One embeddable engine serves both the relationship graph and the AI vector index; derived index beside the canonical Drift DB. See `docs/GRAPH-SPEC.md`. |
-| On-device AI runtime (v1, P12–P13) | **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) for embeddings + generation + RAG; **whisper.cpp** (`whisper_ggml_plus`/`whisper_kit`); **ML Kit** (OCR/translate) — all behind an `InferenceEngine` abstraction | Free, on-device, swappable; capability-gated. Prefer Apache-2.0/MIT models (vet Gemma). See `docs/AI-SPEC.md`. |
+| On-device AI runtime (v1, P12–P13) | **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) for embeddings + generation + RAG; **whisper.cpp** (`whisper_ggml_plus`/`whisper_kit`); **ML Kit** (OCR/translate) — all behind per-capability AI engine abstractions (`EmbedderEngine`/`GenerationEngine`) | Free, on-device, swappable; capability-gated. Prefer Apache-2.0/MIT models (vet Gemma). See `docs/AI-SPEC.md`. |
 | Graph visualization (v1, P10) | **`graphview`** (force-directed, expand/collapse) | Interactive library relationship explorer. |
 | UI | **Material 3**, dynamic color, light/dark | Modern, themeable; Simple/Advanced modes. |
 
@@ -87,7 +87,7 @@ no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* 
     core/               theming, routing, db (Drift), logging, di, utils
     core/engine/        DownloadEngine interface + platform impls
     core/graph/         (P10) GraphStore interface + Cozo impl + GraphSyncService
-    core/ai/            (P10, P12–P13) InferenceEngine + DeviceCapability diagnostics
+    core/ai/            (P10, P12–P13) EmbedderEngine/GenerationEngine + DeviceCapability diagnostics
     features/
       downloader/       paste-url, format select, progress
       library/          private media list + in-app player
@@ -106,7 +106,7 @@ no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* 
   interfaces. Presentation depends on domain via Riverpod providers.
 - Never call a platform plugin directly from UI — go through a provider/repository.
 - The engine is **always** accessed through the `DownloadEngine` interface so
-  Android/Windows stay swappable. Same rule for `InferenceEngine` (P12) and `GraphStore`
+  Android/Windows stay swappable. Same rule for the AI engines (`EmbedderEngine`/`GenerationEngine`, P12) and `GraphStore`
   (P10) — never reference a concrete engine/store from UI.
 
 ---
@@ -130,13 +130,15 @@ stays canonical; Cozo is a derived, rebuildable index** keyed by `MediaItems.id`
 not import the AI layer — only `GraphSyncService` bridges Drift → Cozo (and consumes embeddings).
 Full design in **`docs/GRAPH-SPEC.md`**.
 
-### `InferenceEngine` (P10, P12–P13, pure-Dart interface in `core/ai/`)
-Mirrors `DownloadEngine`. On-device implementations back local AI: **`flutter_gemma`**
-(embeddings + LLM generation + RAG via MediaPipe/LiteRT-LM), **whisper.cpp**, **ML Kit**. A
-`DeviceCapability` probe (RAM/CPU/accelerator) feature-flags each AI feature and **gracefully
-disables** ones the device can't run (with a clear, user-friendly reason). `embed()` *produces*
-vectors; `GraphStore` *stores/searches* them. The interface leaves a *theoretical* cloud seam, but
-cloud inference is **unplanned** (v3 dropped). Full design in **`docs/AI-SPEC.md`**.
+### Per-capability AI engines (P10, P12–P13, pure-Dart interfaces in `core/ai/`)
+Each capability has its own engine (renamed from a single `InferenceEngine` in P12d, once generation
+got its own): **`EmbedderEngine`** (embeddings — `flutter_gemma` Gecko + onnxruntime MiniLM) and
+**`GenerationEngine`** (text generation — `flutter_gemma`, P12d); transcription (whisper.cpp) + ML Kit
+follow. They mirror `DownloadEngine`/`GraphStore`. A `DeviceCapability` probe (RAM/CPU) feature-flags
+each AI feature and **gracefully disables** ones the device can't run (clear, user-friendly reason).
+`EmbedderEngine.embed()` *produces* vectors; `GraphStore` *stores/searches* them. The interfaces leave a
+*theoretical* cloud seam, but cloud inference is **unplanned** (v3 dropped). Full design in
+**`docs/AI-SPEC.md`**.
 
 ---
 
@@ -289,7 +291,7 @@ follow these rules in code and docs:
 - `docs/SPEC.md` — implementation-level technical spec.
 - `docs/GRAPH-SPEC.md` — (P10) on-device graph + vector DB spec: CozoDB engine, integration,
   schema, sync, algorithm→feature map. Source of truth for the graph pillar.
-- `docs/AI-SPEC.md` — (P10, P12–P13) on-device edge-AI spec: `InferenceEngine`, device tiers,
+- `docs/AI-SPEC.md` — (P10, P12–P13) on-device edge-AI spec: per-capability AI engines, device tiers,
   runtime/models + licensing, local GraphRAG. Source of truth for AI.
 - `docs/ROADMAP.md` — multi-phase delivery plan (P0–P16, two bands v1/v2; v3 dropped).
 - `docs/VERIFICATION.md` — per-phase on-device manual test checklist (what CI can't

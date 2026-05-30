@@ -17,7 +17,7 @@ structured so any agent can implement a feature without re-deriving the design.
 ├──────────────────────────────────────────────────────────────┤
 │ Domain (pure Dart)                                             │
 │  entities · repository interfaces · use cases                  │
-│  DownloadEngine · GraphStore (P10) · InferenceEngine (P12)     │
+│  DownloadEngine · GraphStore (P10) · EmbedderEngine/GenerationEngine (P12) │
 ├──────────────────────────────────────────────────────────────┤
 │ Data                                                           │
 │  Drift (SQLite) repos [canonical] · file storage · settings    │
@@ -172,8 +172,10 @@ Two pure-Dart seams mirror the `DownloadEngine` pattern; deep design in `docs/AI
 - **`GraphStore`** (`core/graph/`, P10) — the on-device relationship graph + vector index, backed by
   **CozoDB** (Android `cozo_android` AAR via a `CozoHostApi` Pigeon bridge; Windows via `dart:ffi` in
   P15). Platform-branched provider, like `downloadEngineProvider`.
-- **`InferenceEngine`** (`core/ai/`, P12) — local AI runtime via **`flutter_gemma`** (embeddings +
-  generation + RAG; MediaPipe/LiteRT-LM), **whisper.cpp**, **ML Kit**.
+- **Per-capability AI engines** (`core/ai/`, P12) — each capability has its own engine bound to its own
+  model + lifecycle: **`EmbedderEngine`** (embeddings; `flutter_gemma` Gecko + onnxruntime MiniLM),
+  **`GenerationEngine`** (text generation; `flutter_gemma`, P12d), and later a transcription engine
+  (whisper.cpp) + ML Kit. Renamed from a single `InferenceEngine` once generation got its own engine.
 - **`GraphQueryService`** (`core/graph/`, P10c) — read-side orchestration over `GraphStore.runScript`
   (vector nearest-neighbour, deterministic neighbour traversals, tag co-occurrence), mirroring how
   `GraphSyncService` owns write/sync — so the store stays a thin `runScript` bridge. Pure CozoScript
@@ -182,15 +184,22 @@ Two pure-Dart seams mirror the `DownloadEngine` pattern; deep design in `docs/AI
 - `embed()` *produces* vectors; `GraphStore` *stores/searches* them; only `GraphSyncService` bridges
   both. This lets the deterministic + similarity graph (P10) ship independent of the LLM stack (P12).
 
-The `InferenceEngine` contract:
+The per-capability engine contracts (each bound to its own model; see `docs/AI-SPEC.md` §2):
 
 ```dart
-abstract interface class InferenceEngine {
-  Future<bool> canRun(ModelSpec m, DeviceProfile d);
-  Stream<InferenceChunk> run(InferenceRequest r);
-  Future<StructuredResult> generateStructured(         // P12+ forward seam (v2 Things Engine)
-      List<ToolDef> toolDefs, String prompt);          // gated by `structured_extraction`
+// Embeddings (P10) — "EmbedderEngine" (renamed from InferenceEngine in P12d).
+abstract interface class EmbedderEngine {
+  EmbedderModel get model;
+  Future<List<double>> embed(String text);
+  Future<List<List<double>>> embedBatch(List<String> texts);
 }
+
+// Generation (P12d) — separate, streaming.
+abstract interface class GenerationEngine {
+  GenerationModel get model;
+  Stream<String> generate(String prompt, {String? systemPrompt});
+}
+// A generateStructured seam (P12f forward seam, v2 Things Engine) follows the same shape.
 ```
 *(full method set in `docs/AI-SPEC.md` §2.)*
 
@@ -214,7 +223,7 @@ abstract interface class InferenceEngine {
 
 The former v3 cloud band (Supabase Auth + Postgres credit ledger + Edge Functions → Genkit/Gemini,
 with Stripe/PayPal webhooks) is **removed**. GrabBit is **free forever and fully offline**,
-donation-supported. The `InferenceEngine` interface still leaves a *theoretical* seam where a cloud
+donation-supported. The AI engine interfaces still leave a *theoretical* seam where a cloud
 implementation could one day slot behind the same contract (optionally letting incapable devices
 fall back), but it is **not a planned phase** and nothing in the app depends on it.
 

@@ -1,4 +1,4 @@
-import 'package:grabbit/core/ai/inference_engine_provider.dart';
+import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_service.dart';
@@ -15,7 +15,7 @@ GraphSyncService graphSyncService(Ref ref) {
   final service = GraphSyncService(
     ref.watch(graphStoreProvider),
     ref.watch(appDatabaseProvider),
-    engine: ref.watch(inferenceEngineProvider),
+    engine: ref.watch(embedderEngineProvider),
   );
   service.start();
   ref.onDispose(service.dispose);

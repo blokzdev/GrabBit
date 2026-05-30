@@ -1,8 +1,8 @@
 import 'package:grabbit/core/ai/model_file.dart';
 
-/// The on-device runtime that backs an [EmbedderModel]. `inferenceEngineFor`
-/// (see `inference_engine_factory.dart`) maps each value to a concrete
-/// [InferenceEngine].
+/// The on-device runtime that backs an [EmbedderModel]. `embedderEngineFor`
+/// (see `embedder_engine_factory.dart`) maps each value to a concrete
+/// [EmbedderEngine].
 enum EmbedderRuntime {
   /// MediaPipe / LiteRT via the flutter_gemma plugin (Gecko). The plugin fetches
   /// and manages its files opaquely, so these entries carry no [EmbedderModel.files].

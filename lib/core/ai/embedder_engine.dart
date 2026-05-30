@@ -11,7 +11,7 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 /// them, so every method degrades gracefully — [isAvailable] gates use, and
 /// [embed] throws [InferenceErrorCode.unavailable] only when called while the
 /// model isn't ready.
-abstract interface class InferenceEngine {
+abstract interface class EmbedderEngine {
   /// The pinned embedder model (id, download URLs, dimension) this engine uses.
   EmbedderModel get model;
 

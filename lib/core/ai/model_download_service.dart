@@ -70,7 +70,7 @@ class HttpClientModelByteSource implements ModelByteSource {
 /// app-private `<appSupport>/models/<modelId>/`. Idempotent (a present,
 /// hash-matching file is never refetched), atomic (verify-then-rename), and
 /// space-guarded. The flutter_gemma embedder does **not** use this — its files
-/// are plugin-managed (see `flutter_gemma_inference_engine.dart`).
+/// are plugin-managed (see `flutter_gemma_embedder_engine.dart`).
 class ModelDownloadService {
   ModelDownloadService({
     required this.byteSource,

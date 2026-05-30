@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:grabbit/core/ai/inference_engine.dart';
+import 'package:grabbit/core/ai/embedder_engine.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/model_download_service.dart';
@@ -10,14 +10,14 @@ import 'package:grabbit/core/ai/multilingual_tokenizer.dart';
 import 'package:onnxruntime_v2/onnxruntime_v2.dart';
 
 /// On-device multilingual embedder (P12c-2): runs `paraphrase-multilingual-
-/// MiniLM-L12-v2` on **onnxruntime**. Mirrors `FlutterGemmaInferenceEngine`'s
+/// MiniLM-L12-v2` on **onnxruntime**. Mirrors `FlutterGemmaEmbedderEngine`'s
 /// lazy-load + error shape. The model + tokenizer are app-managed (downloaded +
 /// SHA-256-verified by [ModelDownloadService]); the XLM-R tokenizer is the
 /// pure-Dart [MultilingualEmbedderTokenizer] (P12c-1). Embeddings are the
 /// mean-pooled (attention-masked) `last_hidden_state`, **L2-normalized** (the
 /// Cozo HNSW metric is cosine).
-class OnnxEmbedderInferenceEngine implements InferenceEngine {
-  OnnxEmbedderInferenceEngine(this._model, this._downloads);
+class OnnxEmbedderEngine implements EmbedderEngine {
+  OnnxEmbedderEngine(this._model, this._downloads);
 
   final EmbedderModel _model;
   final ModelDownloadService _downloads;

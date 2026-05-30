@@ -1,7 +1,7 @@
 import 'package:grabbit/core/ai/generation_model.dart';
 
 /// On-device **text generation** abstraction (P12d) — the sibling of the
-/// embedder-bound `InferenceEngine`. Kept separate because generation uses its
+/// embedder-bound `EmbedderEngine`. Kept separate because generation uses its
 /// own (much larger) model with its own lifecycle, and the active embedder may
 /// be a runtime (onnx) that can't generate at all. Implementations are
 /// capability-gated; an ineligible device gets the [UnavailableGenerationEngine]
