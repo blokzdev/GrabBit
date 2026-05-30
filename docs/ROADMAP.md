@@ -17,7 +17,7 @@ Legend (two version bands — the former **v3 cloud/credits band is dropped**):
 
 The app is **free forever and fully offline** — sustained by an **optional donations link**, with
 **no ads and no telemetry**. (The previous **v3** Supabase/Gemini/credit phases are **deleted**; the
-`InferenceEngine` interface leaves a *theoretical* cloud seam, but it is **unplanned**.) Deep design
+AI engine interfaces leave a *theoretical* cloud seam, but it is **unplanned**.) Deep design
 for the AI/graph phases lives in `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`, and
 `docs/design/P-AI-PLAN.md`.
 
@@ -245,7 +245,7 @@ no-LLM-required feature floor. Everything here runs on *any* device. Ships as su
   `io.github.cozodb:cozo_android:0.7.2` (mirrors the youtubedl-android wiring); a pure-Dart
   `GraphStore` interface (`lib/core/graph/`) + Android Cozo impl; SQLite backend persisted at
   `<support>/graph/cozo.db`; the Cozo schema + a `GraphStore` conformance-test suite.
-- **Lightweight universal embedder + index + sync**: a minimal `InferenceEngine.embed()` slice via
+- **Lightweight universal embedder + index + sync**: a minimal `EmbedderEngine.embed()` slice via
   `flutter_gemma` (Gecko, embedder-only — stays device-universal); an HNSW vector relation; a
   `GraphSyncService` (bulk build + incremental hooks + a "Rebuild index" action) with a
   schema-fingerprint self-heal. Drift stays canonical; **Cozo is a derived, rebuildable index**.
@@ -366,9 +366,9 @@ to the relevant screen; items auto-clear per the retention setting; everything s
 **Goals:** enable on-device generation + transcription with **graceful capability-gating**. No
 cloud, no account, no credits.
 **Deliverables:** `DeviceCapabilityService` + device tiers + `ModelCapabilityMatrix`; on-demand
-**model catalog + download + integrity check + caching** (install stays lean); `InferenceEngine`
-impls via **`flutter_gemma`** (generation; wraps MediaPipe LLM Inference / LiteRT-LM) and
-**whisper.cpp** (`whisper_ggml_plus` / `whisper_kit`) for transcription; ML Kit (OCR/translate)
+**model catalog + download + integrity check + caching** (install stays lean); per-capability AI engine
+impls (`GenerationEngine`, transcription) via **`flutter_gemma`** (generation; wraps MediaPipe LLM
+Inference / LiteRT-LM) and **whisper.cpp** (`whisper_ggml_plus` / `whisper_kit`); ML Kit (OCR/translate)
 where it fits; a **multilingual embedder option** (`paraphrase-multilingual-MiniLM-L12-v2`,
 Apache-2.0, onnxruntime) selected via the capability matrix — install-global, re-embeds on switch,
 plugged into the P10g-2 registry seam; capability-gating so unsupported features are clearly disabled
@@ -438,7 +438,7 @@ distribution. **→ v2 complete.**
 The former v3 band (Supabase backend + accounts, Genkit→Gemini cloud AI, Stripe/PayPal credit
 monetization, public cloud launch) is **removed**. GrabBit is **free forever and fully offline**,
 sustained by an **optional donations link** (P14) — no ads, no telemetry, no accounts, no cloud. The
-`InferenceEngine` interface still leaves a *theoretical* seam for a future cloud implementation, but
+AI engine interfaces still leave a *theoretical* seam for a future cloud implementation, but
 it is **not a planned phase**. (The corresponding cloud contracts in `docs/SPEC.md` §9.1–9.2 and
 `docs/ARCHITECTURE.md` §9 are retained only as a historical/optional reference, marked dropped.)
 

@@ -19,23 +19,25 @@
 - **On-device review:** APK builds are **manual / user-triggered** (CLAUDE.md §6). **P12a, P12b, P12f, P12g**
   are pure-Dart/UI and ship as standalone green-CI PRs; the native subphases — **P12c** (onnxruntime
   embedder), **P12d** (LLM generation), **P12e** (whisper) — need APK spot-checks and are batched.
-- **Build on the existing seams**, don't fork them: `InferenceEngine` (`lib/core/ai/inference_engine.dart`),
-  the runtime switch in `inference_engine_factory.dart`, the `activeEmbedderModelProvider` selection seam
-  (`inference_engine_provider.dart`, the P10g-2 override point), the `flutter_gemma` download-with-progress
-  pattern, `UnavailableInferenceEngine`, `model_catalog.dart`/`EmbedderRuntime`, and the
-  `semanticSearchEnabled`/first-run opt-in pattern (`lib/features/settings/`).
+- **Build on the existing seams**, don't fork them: `EmbedderEngine` (`lib/core/ai/embedder_engine.dart`;
+  renamed from `InferenceEngine` in P12d), the runtime switch in `embedder_engine_factory.dart`, the
+  `activeEmbedderModelProvider` selection seam (`embedder_engine_provider.dart`, the P10g-2 override point),
+  the `flutter_gemma` download-with-progress pattern, `UnavailableEmbedderEngine`,
+  `model_catalog.dart`/`EmbedderRuntime`, and the `semanticSearchEnabled`/first-run opt-in pattern
+  (`lib/features/settings/`).
 - **PR cadence:** open the PR into `main` at each subphase boundary (per CLAUDE.md §7).
 
 ## Design decisions (set at planning time)
 - **Capability-gating, never a crash.** Every P12 capability is gated on the measured device tier; an
   ineligible device sees the feature **disabled with a friendly reason**, and the engine no-ops via
-  `UnavailableInferenceEngine` (AI-SPEC §1).
+  the matching `Unavailable…Engine` (AI-SPEC §1).
 - **Opt-in + on-demand models.** Generation, transcription, and the multilingual embedder are each
   **opt-in** (mirroring `semanticSearchEnabled`); models are **downloaded on demand**, integrity-checked
   (SHA-256), and cached in app-private storage — the install stays lean, no model is bundled.
-- **`InferenceEngine` contract reconciliation.** The real interface is embeddings-only and its shape
-  differs from AI-SPEC §2's documented signatures. P12d/P12e **evolve the real interface** (add
-  `generate`/`transcribe`) and **update AI-SPEC §2** to match — one source of truth.
+- **Per-capability engines (contract reconciliation).** The embeddings engine (`EmbedderEngine`, renamed
+  from `InferenceEngine` in P12d) is embeddings-only. Rather than overload one mega-interface, each
+  capability gets its **own** engine bound to its own model: P12d adds `GenerationEngine` (`generate`),
+  P12e a transcription engine (`transcribe`) — AI-SPEC §2 is updated to match (one source of truth).
 - **Model licensing (AI-SPEC §4).** Prefer **Apache-2.0/MIT**; the plain generation model (P12d) is
   Apache/MIT (SmolLM-135M / Qwen3-0.6B / Phi-4-Mini). The **FunctionGemma-vs-Qwen3 license fork** for
   function-calling is resolved at **P12f** (the seam can land with a gated/no-op impl if the model pick
@@ -62,7 +64,7 @@ The gating brain every later subphase plugs into.
 - **`ModelCapabilityMatrix`** — `feature → eligibleModels[byTier]`, seeded with the existing `embeddings`
   row; later subphases add `generation`, `transcription`, `multilingual-embeddings`, and (P12f)
   `structured_extraction` rows. Drives gating + the model-selector UI (AI-SPEC §2).
-- Make `activeEmbedderModelProvider` (`inference_engine_provider.dart`) **tier-aware** — consult the
+- Make `activeEmbedderModelProvider` (`embedder_engine_provider.dart`) **tier-aware** — consult the
   matrix instead of always returning `defaultEmbedder` — a real, testable behaviour change now.
 - **Exit / review:** tier scoring reflects actual hardware (verified on ≥2 real devices — one low, one
   mid); embedder selection respects the tier; ineligible features report a clear reason.
@@ -81,7 +83,7 @@ Generalize the embedder-only asset plumbing into shared infra.
   enum.
 - A catalog-driven **`ModelDownloadService`**: on-demand fetch with progress, **SHA-256 integrity check**,
   app-private cache, idempotent re-install — generalizing the `flutter_gemma` builder/progress flow.
-- Extend the `inference_engine_factory.dart` switch for the new runtimes (stubbed until P12c–P12e).
+- Extend the `embedder_engine_factory.dart` switch for the new runtimes (stubbed until P12c–P12e).
 - **Exit / review:** a catalog entry downloads, verifies, and caches; a corrupted/!matching-hash file is
   rejected with `InferenceErrorCode.downloadFailed`; re-install is a no-op.
 - **Status:** implemented (CI-green) — `ModelFile{url,sha256,sizeBytes,filename}`; generic
@@ -110,12 +112,12 @@ GPU); split risk-first into:
   `tokenizers` oracle) committed as fixtures — proven HF-byte-exact in CI, offline.
 - **Status:** implemented (CI-green). Dep: `unorm_dart` (pure-Dart NFKC). No live consumer until c-2.
 
-#### `[~]` P12c-2 — onnx runtime + `OnnxEmbedderInferenceEngine` *(native; APK)*
+#### `[~]` P12c-2 — onnx runtime + `OnnxEmbedderEngine` *(native; APK)*
 - Add `onnxruntime_v2`; MiniLM catalog entry (`model.onnx` + `tokenizer.json` as P12b `ModelFile`s w/
   real URL/SHA-256/size; `runtime: onnx`, `dim 384`, 128-tok window). Engine: download → `createSession`
   → tokenize → run → mean-pool (masked) → L2-normalize → 384-d. Gated behind a **self-test tile** (no
   active-model change). Exit: on-device multilingual embed + sane cross-lingual similarity; 16KB device OK.
-- **Status:** implemented (CI-green). `OnnxEmbedderInferenceEngine` (`OrtSession.fromFile`; int64
+- **Status:** implemented (CI-green). `OnnxEmbedderEngine` (`OrtSession.fromFile`; int64
   `input_ids`/`attention_mask`/`token_type_ids`=zeros, fed adaptively per `session.inputNames`; pools
   `last_hidden_state`); pinned `model_quantized.onnx` (118 MB int8) + the `tokenizer.json` c-1 was tested
   against; `EmbedderModel.maxTokens` (Gecko 256 / MiniLM 128); factory takes `{downloads}`; multilingual
@@ -140,7 +142,7 @@ GPU); split risk-first into:
 ### P12d — Edge LLM generation (`flutter_gemma`) *(native — the big lift; split into 2 PRs)*
 Ships the **generation engine + tier-gated model picker + Labs self-test** — **no user-facing feature**
 (those are P13). **Decision:** a **separate `GenerationEngine`** (not bolted onto the embedder-bound
-`InferenceEngine` — the active embedder may be the onnx MiniLM, which can't generate); AI-SPEC §2 reframed
+`EmbedderEngine` — the active embedder may be the onnx MiniLM, which can't generate); AI-SPEC §2 reframed
 to **per-capability engines**. **Decision:** an **all-Apache-2.0, user-choosable, tier-eligible model
 ladder** with badges (no Gemma use-policy, no token-gated, no AICore Gemini Nano) — `eligibleGenerationModels`
 low=[]/mid/high, `recommendedGenerationModel`; the 3 device tiers stay, the ladder carries the range
@@ -178,8 +180,9 @@ Split risk-first:
 
 ### `[ ]` P12f — Things-Engine forward seams + empty `things` table *(pure Dart + the one Drift migration)*
 Thin, inert scaffolding so the v2 Things Engine slots in cheaply — no v1 behaviour change.
-- Add **`generateStructured(toolDefs, prompt)`** to `InferenceEngine` (scaffold/minimal impl gated by the
-  new **`structured_extraction`** matrix row); resolve the **function-calling model license fork** here
+- Add **`generateStructured(toolDefs, prompt)`** to the generation layer (`GenerationEngine` or a sibling
+  structured seam; scaffold/minimal impl gated by the new **`structured_extraction`** matrix row); resolve
+  the **function-calling model license fork** here
   (or land the seam with a gated/no-op impl and log the deferred model pick).
 - Create the **empty `things` Drift table (DDL only)** — **schemaVersion 9→10**, `id` alignable to
   `media_items.id`, JSON-LD + promoted columns per ADR-0001 — with an upgrade-path migration + schema
@@ -203,5 +206,5 @@ Thin, inert scaffolding so the v2 Things Engine slots in cheaply — no v1 behav
 - **ML Kit OCR / translate features** → **P13** (listed there as gated features; P12 wires no OCR/translate).
 - **Real AI feature surface** (summaries, "Ask your library" GraphRAG, auto-tagging, transcription UX,
   model tone/style prefs) → **P13**.
-- **Cloud inference** — out of scope permanently (the `InferenceEngine` cloud seam is theoretical/unplanned;
+- **Cloud inference** — out of scope permanently (the AI engines' cloud seam is theoretical/unplanned;
   CLAUDE.md §1).

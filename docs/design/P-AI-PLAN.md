@@ -5,7 +5,7 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 > The **lean** delivery plan (subphases, deliverables, exit criteria) for GrabBit's on-device AI and
 > graph pillar. **Deep design lives elsewhere** — this doc references, it does not restate:
 > - `docs/GRAPH-SPEC.md` — CozoDB engine, integration, schema, sync, algorithm→feature map.
-> - `docs/AI-SPEC.md` — `InferenceEngine`, device tiers, runtime/models + licensing, GraphRAG.
+> - `docs/AI-SPEC.md` — per-capability AI engines, device tiers, runtime/models + licensing, GraphRAG.
 >
 > Banding context (see `docs/ROADMAP.md`): AI is **core to v1**. v1 ships *after* this work (P14).
 > v3/cloud is **dropped** — everything here is on-device and **free forever**.
@@ -27,7 +27,9 @@ floor. Everything runs on *any* device. Ships as sub-PRs.
   manual "Rebuild graph index" action. Pure-Dart, no new native dep, CI-testable via a fake store.
   *(GRAPH-SPEC §3, §6)*
 - **P10b-2 — Embedder + vectors** *(split: the embedder is the heaviest, riskiest piece — a new
-  native runtime + a model download)*:
+  native runtime + a model download)* *(naming note: the `InferenceEngine`/`inferenceEngineFor`/
+  `UnavailableInferenceEngine` symbols below were renamed to `EmbedderEngine`/`embedderEngineFor`/
+  `UnavailableEmbedderEngine` in P12d — these entries record the original ship)*:
   - **P10b-2a — Embedder foundation + opt-in setup** *(done, #74)*: minimal `InferenceEngine.embed()`
     slice via `flutter_gemma` (Gecko 64, embedder-only, 768-d, ungated ~110 MB — superseded by Gecko 256
     in P10g-1) behind a swappable
@@ -196,8 +198,8 @@ suggestions work — all with the small embedder, no LLM.
 
 - `DeviceCapabilityService` + device tiers + `ModelCapabilityMatrix`.
 - On-demand **model catalog + download + integrity check + caching** (install stays lean).
-- `InferenceEngine` impls: **`flutter_gemma`** (generation; wraps MediaPipe LLM Inference / LiteRT-LM)
-  + **whisper.cpp** (`whisper_ggml_plus` / `whisper_kit`); ML Kit (OCR/translate) where it fits.
+- Per-capability AI engine impls: **`flutter_gemma`** (`GenerationEngine`; wraps MediaPipe LLM Inference /
+  LiteRT-LM) + **whisper.cpp** (transcription; `whisper_ggml_plus` / `whisper_kit`); ML Kit (OCR/translate).
 - **Multilingual embedder option** (moved from P10g-3): an **onnxruntime** runtime +
   **`paraphrase-multilingual-MiniLM-L12-v2`** (Apache-2.0, 50-lang, 384-d) + on-device tokenizer, registered
   in `ModelCapabilityMatrix` and plugged into the **P10g-2** registry seam (`inferenceEngineFor` + a new
@@ -205,8 +207,9 @@ suggestions work — all with the small embedder, no LLM.
 - **Capability-gating**: unsupported features clearly disabled with a friendly reason.
 - **Model/licensing**: confirm current best models at phase start; **prefer Apache-2.0/MIT**
   (SmolLM-135M, Qwen3-0.6B, Phi-4-Mini); Gemma usable but **vet its use policy**. *(AI-SPEC §4)*
-- **Things-Engine forward seams (inert in v1):** shape the **`generateStructured`** method on
-  `InferenceEngine` + the **`structured_extraction`** capability row (AI-SPEC §2–§4), and create the
+- **Things-Engine forward seams (inert in v1):** shape the **`generateStructured`** method on the
+  generation layer (`GenerationEngine` or a sibling structured seam) + the **`structured_extraction`**
+  capability row (AI-SPEC §2–§4), and create the
   **(planned) empty `things` table** (generic JSON-LD store; Drift stays canonical). No v1 feature uses
   them; they exist so the v2 Things Engine slots in cheaply. *(ADR-0001, ADR-0002, ADR-0003;
   `docs/things-engine.md`)*

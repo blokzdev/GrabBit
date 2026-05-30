@@ -73,7 +73,7 @@ shortlist.
 
 The fill step uses a **function-calling small model** — candidates **FunctionGemma 270M** (Gemma
 license — vetting deferred to P12 start per `docs/AI-SPEC.md` §4) and **Qwen3-0.6B** (Apache-2.0).
-It is invoked through a new `InferenceEngine.generateStructured(toolDefs, prompt)` seam
+It is invoked through a new `generateStructured(toolDefs, prompt)` seam on the generation layer
 (`docs/AI-SPEC.md` §2) and gated by a `structured_extraction` capability row in `ModelCapabilityMatrix`
 (`docs/AI-SPEC.md` §3). Branch (a) requires no model; branches (b)/(c) are **AI-tier-gated** — on a
 device that can't run the fill model, the Curator still serves branch (a) and degrades (b)/(c) to a
@@ -120,7 +120,7 @@ These three drive the design and are the acceptance lens for the curator when it
 - Cleanly **AI-tier-gated**: branch (a) is device-universal; (b)/(c) layer on for capable devices,
   with a defined degraded path — matching GrabBit's "graceful gating, never a crash" rule.
 - The seam (`generateStructured`) is **small and shaped during v1** (P12/P13), so v2 slots in without
-  reworking the InferenceEngine contract.
+  reworking the AI engine contracts.
 - Reuses signals GrabBit already builds (embedder, OCR, probe, capability matrix) rather than adding a
   parallel ML stack.
 
