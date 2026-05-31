@@ -143,6 +143,14 @@ class SettingsController extends _$SettingsController {
   Future<void> setSelectedGenerationModelId(String id) async =>
       _update((await future).copyWith(selectedGenerationModelId: id));
 
+  /// On-device transcription opt-in (P12e).
+  Future<void> setTranscriptionEnabled(bool value) async =>
+      _update((await future).copyWith(transcriptionEnabled: value));
+
+  /// The transcription-model selection (P12e); '' = the device-tier recommendation.
+  Future<void> setSelectedTranscriptionModelId(String id) async =>
+      _update((await future).copyWith(selectedTranscriptionModelId: id));
+
   Future<void> markAiSetupSeen() async =>
       _update((await future).copyWith(aiSetupSeen: true));
 

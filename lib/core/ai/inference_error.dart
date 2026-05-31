@@ -10,6 +10,7 @@ enum InferenceErrorCode {
   loadFailed,
   embedFailed,
   generateFailed,
+  transcribeFailed,
   unknown,
 }
 

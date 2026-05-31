@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
+import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/device/device_profile.dart';
 
 void main() {
@@ -107,5 +108,49 @@ void main() {
         expect(matrix.eligibleGenerationModels(tier), contains(rec));
       }
     });
+  });
+
+  group('ModelCapabilityMatrix transcription row (P12e)', () {
+    const matrix = ModelCapabilityMatrix();
+
+    test('every tier offers at least whisper-tiny (never gated off)', () {
+      for (final tier in DeviceTier.values) {
+        expect(matrix.eligibleTranscriptionModels(tier), contains(whisperTiny));
+      }
+    });
+
+    test('low tier offers only tiny', () {
+      expect(matrix.eligibleTranscriptionModels(DeviceTier.low), [whisperTiny]);
+    });
+
+    test('mid tier adds the base rung', () {
+      final mid = matrix.eligibleTranscriptionModels(DeviceTier.mid);
+      expect(mid, contains(whisperTiny));
+      expect(mid, contains(whisperBase));
+    });
+
+    test('high tier reaches small + the flagship turbo', () {
+      final high = matrix.eligibleTranscriptionModels(DeviceTier.high);
+      expect(high, contains(whisperBase));
+      expect(high, contains(whisperSmall));
+      expect(high, contains(whisperLargeV3Turbo));
+    });
+
+    test(
+      'the recommendation is tier-eligible (tiny on low, base on mid/high)',
+      () {
+        expect(
+          matrix.recommendedTranscriptionModel(DeviceTier.low),
+          whisperTiny,
+        );
+        for (final tier in DeviceTier.values) {
+          final rec = matrix.recommendedTranscriptionModel(tier);
+          expect(matrix.eligibleTranscriptionModels(tier), contains(rec));
+        }
+        for (final tier in [DeviceTier.mid, DeviceTier.high]) {
+          expect(matrix.recommendedTranscriptionModel(tier), whisperBase);
+        }
+      },
+    );
   });
 }

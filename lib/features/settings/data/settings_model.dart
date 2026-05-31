@@ -91,6 +91,13 @@ abstract class SettingsModel with _$SettingsModel {
     // eligibility-guarded by activeGenerationModelProvider.
     @Default(false) bool generationEnabled,
     @Default('') String selectedGenerationModelId,
+    // On-device speech transcription (P12e). Opt-in (defaults off); the whisper
+    // model is downloaded only when the user enables it + picks a model.
+    // `selectedTranscriptionModelId` empty = the device-tier recommendation;
+    // eligibility-guarded by activeTranscriptionModelProvider. Whisper is a
+    // fallback for media without caption sidecars (P12e-3).
+    @Default(false) bool transcriptionEnabled,
+    @Default('') String selectedTranscriptionModelId,
     // Activity inbox (P11). Retention 0 = keep forever; otherwise entries are
     // swept lazily once older than this many days. The per-category notify
     // toggles gate whether that category is recorded at all (errors and system
