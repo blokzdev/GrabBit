@@ -113,9 +113,10 @@ void main() {
   group('ModelCapabilityMatrix transcription row (P12e)', () {
     const matrix = ModelCapabilityMatrix();
 
-    test('every tier offers at least whisper-tiny (never gated off)', () {
+    test('every tier offers at least one model (never gated off)', () {
+      // Unlike generation (low = empty), transcription is never fully gated off.
       for (final tier in DeviceTier.values) {
-        expect(matrix.eligibleTranscriptionModels(tier), contains(whisperTiny));
+        expect(matrix.eligibleTranscriptionModels(tier), isNotEmpty);
       }
     });
 

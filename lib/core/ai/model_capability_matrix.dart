@@ -54,9 +54,10 @@ class ModelCapabilityMatrix {
 
   /// Transcription models a device of [tier] may select (P12e) — the picker's
   /// offer set and the eligibility guard `activeTranscriptionModelProvider`
-  /// enforces. **Every tier gets at least whisper-tiny** (a light, one-shot batch
-  /// job runs even on low-end — a deliberate divergence from generation, which
-  /// gates low off); the heavier rungs reach capable hardware only.
+  /// enforces. **No tier is gated off entirely** (a deliberate divergence from
+  /// generation, where low = empty): low runs only whisper-tiny (a light,
+  /// one-shot batch job), and the ladder climbs to the flagship on capable
+  /// hardware (tiny drops off once base is the floor).
   List<TranscriptionModel> eligibleTranscriptionModels(DeviceTier tier) =>
       switch (tier) {
         DeviceTier.low => const [whisperTiny],
