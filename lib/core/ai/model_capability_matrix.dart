@@ -1,5 +1,6 @@
 import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
+import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/device/device_profile.dart';
 
 /// Maps an on-device AI capability to the model(s) eligible at each [DeviceTier]
@@ -49,6 +50,32 @@ class ModelCapabilityMatrix {
       switch (tier) {
         DeviceTier.low => null,
         DeviceTier.mid || DeviceTier.high => qwen3_0_6b,
+      };
+
+  /// Transcription models a device of [tier] may select (P12e) — the picker's
+  /// offer set and the eligibility guard `activeTranscriptionModelProvider`
+  /// enforces. **No tier is gated off entirely** (a deliberate divergence from
+  /// generation, where low = empty): low runs only whisper-tiny (a light,
+  /// one-shot batch job), and the ladder climbs to the flagship on capable
+  /// hardware (tiny drops off once base is the floor).
+  List<TranscriptionModel> eligibleTranscriptionModels(DeviceTier tier) =>
+      switch (tier) {
+        DeviceTier.low => const [whisperTiny],
+        DeviceTier.mid => const [whisperTiny, whisperBase],
+        DeviceTier.high => const [
+          whisperBase,
+          whisperSmall,
+          whisperLargeV3Turbo,
+        ],
+      };
+
+  /// The default transcription model offered at [tier] — the balanced pick,
+  /// badged **Recommended** in the picker. Whisper-tiny on low (its only option);
+  /// whisper-base on mid/high.
+  TranscriptionModel recommendedTranscriptionModel(DeviceTier tier) =>
+      switch (tier) {
+        DeviceTier.low => whisperTiny,
+        DeviceTier.mid || DeviceTier.high => whisperBase,
       };
 
   // Every tier runs Gecko by default (Apache-2.0, ~114 MB) — the universal floor.

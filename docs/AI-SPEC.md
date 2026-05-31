@@ -126,9 +126,13 @@ abstract interface class GenerationEngine {
   opt-in to genuinely new users only (`aiSetupSeen` defaults true on existing installs;
   `acceptDisclaimer()` clears it). On unsupported devices the `UnavailableEmbedderEngine` no-ops and
   everything else keeps working — embeddings are an enhancement, not a dependency.
-- **Transcription (P13): whisper.cpp** via a maintained Flutter package —
-  [`whisper_ggml_plus`](https://pub.dev/packages/whisper_ggml_plus) (cross-platform incl. Windows) or
-  [`whisper_kit`](https://pub.dev/packages/whisper_kit) (99 languages, SRT/VTT export).
+- **Transcription (engine P12e; richer UX P13): whisper.cpp** via
+  [`whisper_ggml_plus`](https://pub.dev/packages/whisper_ggml_plus) (chosen at P12e — FFI to
+  whisper.cpp, MIT, cross-platform incl. Windows; accepts a `modelPath` so models are app-managed via
+  `ModelDownloadService`, and emits `fromTs/toTs/text` segments mapped to `TranscriptCue`), over
+  [`whisper_kit`](https://pub.dev/packages/whisper_kit) (Android-only, younger). Multilingual ggml
+  ladder tier-gated (tiny→large-v3-turbo q5_0). Output feeds the existing P10f transcript pipeline as
+  the **fallback when a source ships no caption sidecars**.
 - **OCR / translation:** ML Kit where it fits.
 - **On-demand model download** + integrity check + caching keeps the install lean (models are **not**
   bundled).
