@@ -5,6 +5,9 @@ import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/ai/transcription_engine.dart';
+import 'package:grabbit/core/ai/transcription_model.dart';
+import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
@@ -15,6 +18,7 @@ import 'package:grabbit/core/lifecycle/app_lifecycle_provider.dart';
 import 'package:grabbit/core/network/network_monitor.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:grabbit/core/storage/media_storage.dart';
+import 'package:grabbit/core/text/transcript_dedup.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/system_notification_service.dart';
 import 'package:grabbit/features/queue/data/foreground_service.dart';
@@ -188,6 +192,47 @@ class FakeMediaStorage extends MediaStorage {
   Future<Directory> mediaDirectory() async => _dir;
 }
 
+/// In-memory transcription engine (no native whisper) for the auto-fallback
+/// tests (P12e-3). [ready] simulates whether the model is downloaded; records
+/// the paths it was asked to transcribe.
+class FakeTranscriptionEngine implements TranscriptionEngine {
+  FakeTranscriptionEngine({this.ready = true, this.result = 'fake transcript'});
+
+  bool ready;
+  String result;
+  final List<String> transcribed = [];
+
+  @override
+  TranscriptionModel get model => whisperTiny;
+  @override
+  bool get isAvailable => ready;
+  @override
+  Future<bool> ensureReady() async => ready;
+  @override
+  Future<void> downloadModel({void Function(double)? onProgress}) async {
+    ready = true;
+  }
+
+  @override
+  Future<TranscriptResult> transcribe(
+    String audioPath, {
+    String? language,
+  }) async {
+    transcribed.add(audioPath);
+    return (
+      flat: result,
+      cuesJson: encodeCues(
+        result.isEmpty
+            ? const []
+            : [TranscriptCue(start: Duration.zero, text: result)],
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() async {}
+}
+
 QueuedDownload _qd(
   String id, {
   String outputDir = '/tmp',
@@ -234,6 +279,7 @@ void main() {
   late FakeDiskSpaceService fakeDisk;
   late FakeBatteryService fakeBattery;
   late FakeSystemNotificationService fakeOsNotifier;
+  late FakeTranscriptionEngine fakeTranscriber;
   late Directory mediaDir;
 
   ProviderContainer makeContainer() => ProviderContainer(
@@ -246,6 +292,7 @@ void main() {
       batteryServiceProvider.overrideWithValue(fakeBattery),
       systemNotificationServiceProvider.overrideWithValue(fakeOsNotifier),
       mediaStorageProvider.overrideWithValue(FakeMediaStorage(mediaDir)),
+      transcriptionEngineProvider.overrideWithValue(fakeTranscriber),
       queueConfigProvider.overrideWithValue(
         const QueueConfig(baseRetryDelay: Duration(milliseconds: 5)),
       ),
@@ -260,6 +307,7 @@ void main() {
     fakeDisk = FakeDiskSpaceService();
     fakeBattery = FakeBatteryService();
     fakeOsNotifier = FakeSystemNotificationService();
+    fakeTranscriber = FakeTranscriptionEngine();
     mediaDir = Directory.systemTemp.createTempSync('grabbit_qmedia_');
     container = makeContainer();
     repo = container.read(queueRepositoryProvider);
@@ -356,6 +404,92 @@ void main() {
     expect(item, isNotNull);
     expect(item!.title, 'Title vid1');
     expect(item.type, 'video');
+  });
+
+  // --- P12e-3: caption-less whisper fallback on auto-transcribe ---
+
+  Future<Directory> captionlessDownload(String id) async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_wfb_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/$id').create();
+    // A media file with NO .vtt/.srt sidecar beside it.
+    await File('${dir.path}/$id/Clip.mp4').writeAsString('data');
+    return dir;
+  }
+
+  Future<String?> transcriptOf(String id) async => (await (db.select(
+    db.mediaMetadata,
+  )..where((m) => m.itemId.equals(id))).getSingleOrNull())?.transcript;
+
+  test(
+    'auto: caption-less + enabled + model ready → whisper transcribes',
+    () async {
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setAutoTranscribe(true);
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setTranscriptionEnabled(true);
+      fakeTranscriber.ready = true;
+      final dir = await captionlessDownload('vid1');
+
+      await controller.enqueue(_qd('vid1', outputDir: dir.path));
+      await waitFor(() async => engine.running.contains('vid1'));
+      engine.complete('vid1');
+      await waitFor(
+        () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+      );
+
+      expect(fakeTranscriber.transcribed, hasLength(1));
+      expect(await transcriptOf('vid1'), 'fake transcript');
+    },
+  );
+
+  test('auto: caption-less + enabled + NO model → skip + nudge once', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setAutoTranscribe(true);
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setTranscriptionEnabled(true);
+    fakeTranscriber.ready = false; // model not downloaded
+    final dir = await captionlessDownload('vid1');
+
+    await controller.enqueue(_qd('vid1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('vid1'));
+    engine.complete('vid1');
+    await waitFor(
+      () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+    );
+
+    expect(fakeTranscriber.transcribed, isEmpty);
+    expect(await transcriptOf('vid1'), isNull);
+    final notices = await (db.select(
+      db.notifications,
+    )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+    expect(notices, hasLength(1));
+    expect(notices.single.targetRoute, '/settings/ai');
+  });
+
+  test('auto: transcription disabled → no whisper, no nudge', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setAutoTranscribe(true);
+    // transcriptionEnabled stays false.
+    final dir = await captionlessDownload('vid1');
+
+    await controller.enqueue(_qd('vid1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('vid1'));
+    engine.complete('vid1');
+    await waitFor(
+      () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+    );
+
+    expect(fakeTranscriber.transcribed, isEmpty);
+    final aiNotices = await (db.select(
+      db.notifications,
+    )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+    expect(aiNotices, isEmpty);
   });
 
   test('a completed download posts a success activity entry (P11c)', () async {
