@@ -2,6 +2,7 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:grabbit/core/ai/generation_engine.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/ai/structured_generation.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -171,6 +172,23 @@ class FlutterGemmaGenerationEngine implements GenerationEngine {
         cause: e,
       );
     }
+  }
+
+  @override
+  Future<StructuredResult> generateStructured(
+    List<StructuredToolDef> toolDefs,
+    String prompt, {
+    String? systemPrompt,
+  }) async {
+    // P12f forward seam: defined + gated, but not yet implemented. The
+    // flutter_gemma Chat API exposes only TextResponse (no tool/function-calling
+    // pathway), and the function-calling model is undecided (FunctionGemma's
+    // Gemma license vs Qwen3 — deferred to P13). The v2 Things Engine curator
+    // (ADR-0002) lands the real impl. Inert in v1.
+    throw const InferenceException(
+      InferenceErrorCode.unsupported,
+      'Structured (function-calling) generation is not yet available',
+    );
   }
 
   @override

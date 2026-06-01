@@ -11,6 +11,13 @@ enum InferenceErrorCode {
   embedFailed,
   generateFailed,
   transcribeFailed,
+
+  /// A capability seam exists but has no working implementation on this build —
+  /// e.g. `generateStructured` (P12f forward seam): the method is defined and
+  /// gated, but no shipped model implements function-calling yet (v2 Things
+  /// Engine; see docs/AI-SPEC.md §2). Distinct from [unavailable] (a device/model
+  /// limitation) — this is "not built yet", by design.
+  unsupported,
   unknown,
 }
 

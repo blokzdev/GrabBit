@@ -122,15 +122,14 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 //   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
 ```
 
-> **Forward seam (v2 Things Engine, no schema bump here).** A generic **`things`** table (schema.org
-> Things as JSON-LD + promoted columns) is planned to be introduced **empty** during P12–P13; existing
-> media then projects into `Audio`/`Image`/`VideoObject` Things by a field-by-field mapping (no
-> re-download, files don't move). **Drift stays canonical**, Cozo stays the derived index, and
-> `things.id` is kept alignable to `media_items.id`. The migration lands with that implementation — this
-> spec does not bump the version for it. See ADR-0001 (schema-as-data) and ADR-0003 (MediaObject bridge);
-> overview in `docs/things-engine.md`.
+> **Forward seam (v2 Things Engine).** A generic **`things`** table (schema.org Things as JSON-LD +
+> promoted `name`/`url`/timestamp columns) is **introduced empty in v10 (P12f)**; existing media then
+> projects into `Audio`/`Image`/`VideoObject` Things by a field-by-field mapping (no re-download, files
+> don't move) **in v2** — nothing reads or writes the table in v1. **Drift stays canonical**, Cozo stays
+> the derived index, and `things.id` is kept alignable to `media_items.id` (no FK). See ADR-0001
+> (schema-as-data) and ADR-0003 (MediaObject bridge); overview in `docs/things-engine.md`.
 
-Migration strategy: Drift `schemaVersion` (currently **9**); write `MigrationStrategy`
+Migration strategy: Drift `schemaVersion` (currently **10**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
@@ -157,6 +156,9 @@ only when `PRAGMA table_info` shows it absent (`addColumnIfMissing`) — a no-op
 have it. Width/height are captured at download (video from the `.info.json` sidecar, images by a header-only
 decode via the `image` package) and best-effort backfilled for legacy items by `MediaDimensionService`.
 **v9 (P11)** adds the `notifications` table backing the Activity Inbox (shipped).
+**v10 (P12f)** adds the empty **`things`** table (schema.org Things as JSON-LD + promoted
+`name`/`url`/`created_at`/`updated_at`; `id` alignable to `media_items.id`, **no FK**) — the v2
+Things-Engine forward seam, created empty and **unused in v1** (Drift canonical).
 
 ---
 

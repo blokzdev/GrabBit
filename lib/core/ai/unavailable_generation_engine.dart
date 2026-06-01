@@ -1,6 +1,7 @@
 import 'package:grabbit/core/ai/generation_engine.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/ai/structured_generation.dart';
 
 /// Graceful no-op [GenerationEngine] for devices/platforms that can't run
 /// generation (low tier, non-Android, or before the native engine lands in
@@ -32,6 +33,13 @@ class UnavailableGenerationEngine implements GenerationEngine {
   @override
   Stream<String> generate(String prompt, {String? systemPrompt}) =>
       Stream<String>.error(_ex);
+
+  @override
+  Future<StructuredResult> generateStructured(
+    List<StructuredToolDef> toolDefs,
+    String prompt, {
+    String? systemPrompt,
+  }) async => throw _ex;
 
   @override
   Future<void> close() async {}

@@ -152,6 +152,33 @@ class Notifications extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// **P12f forward seam — the v2 Things Engine corpus (empty in v1).** A generic,
+/// typed graph of schema.org Things stored as **JSON-LD** ([jsonld] is the single
+/// canonical payload). The other columns are a **denormalized cache** promoted out
+/// of the JSON-LD for query/sort — never a second source of truth: on conflict the
+/// JSON-LD wins and the columns are re-derived (ADR-0001). Created empty by the
+/// v9→v10 migration; **nothing reads or writes it in v1** — the v2 Things Engine
+/// projects `media_items` into MediaObject Things and fills richer types later.
+///
+/// [id] is a plain TEXT primary key kept **alignable to `media_items.id`**
+/// (ADR-0003) but **intentionally without a foreign key**: a Thing may precede or
+/// outlive a media row, and a full physical merge of the media tables is a
+/// deferred, open question. **Drift stays canonical**; Cozo stays the derived index.
+class Things extends Table {
+  TextColumn get id => text()(); // alignable to MediaItems.id, no FK (ADR-0003)
+  TextColumn get type =>
+      text()(); // schema.org @type, e.g. Recipe | VideoObject
+  TextColumn get jsonld => text()(); // canonical JSON-LD document (ADR-0001)
+  TextColumn get name =>
+      text().nullable()(); // promoted cache of jsonld['name']
+  TextColumn get url => text().nullable()(); // promoted cache of jsonld['url']
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 /// Single-row settings blob (JSON), keyed on a fixed id (see SPEC §4).
 class AppSettings extends Table {
   IntColumn get id => integer().withDefault(const Constant(0))();
@@ -173,6 +200,7 @@ class AppSettings extends Table {
     DownloadTasks,
     AppSettings,
     Notifications,
+    Things,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -180,7 +208,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -221,6 +249,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 9) {
         await m.createTable(notifications);
+      }
+      if (from < 10) {
+        // P12f forward seam: the empty `things` table (v2 Things Engine). No
+        // data migration — created empty; nothing reads/writes it in v1.
+        await m.createTable(things);
       }
       await _createIndices();
       await _createFtsObjects();

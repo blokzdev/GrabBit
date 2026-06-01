@@ -194,7 +194,7 @@ Split into three PRs (risk-first), mirroring P12c's cadence:
 - **Exit / review:** transcribe a caption-less clip **offline** → transcript + tap-to-seek cues saved to
   the item; a captioned item still prefers its sidecar.
 
-### `[ ]` P12f — Things-Engine forward seams + empty `things` table *(pure Dart + the one Drift migration)*
+### `[x]` P12f — Things-Engine forward seams + empty `things` table *(pure Dart + the one Drift migration)*
 Thin, inert scaffolding so the v2 Things Engine slots in cheaply — no v1 behaviour change.
 - Add **`generateStructured(toolDefs, prompt)`** to the generation layer (`GenerationEngine` or a sibling
   structured seam; scaffold/minimal impl gated by the new **`structured_extraction`** matrix row); resolve
