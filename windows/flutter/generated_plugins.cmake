@@ -18,6 +18,7 @@ list(APPEND FLUTTER_FFI_PLUGIN_LIST
   flutter_local_notifications_windows
   jni
   onnxruntime_v2
+  whisper_ggml_plus
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

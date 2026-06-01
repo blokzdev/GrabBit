@@ -69,6 +69,12 @@ dependencies:
   fl_chart: ^1.0.0
   onnxruntime_v2: ^1.23.2+2
 
+  # On-device AI (P12e): whisper.cpp speech-to-text (FFI), MIT. Powers the
+  # caption-less transcript fallback. We feed it our own app-managed ggml model
+  # file + a 16 kHz mono WAV (made with our existing ffmpeg), so the ffmpeg
+  # companion is intentionally omitted (it would clash with ffmpeg_kit_flutter_new).
+  whisper_ggml_plus: ^1.5.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -96,6 +102,9 @@ flutter:
     # runtime by the app-bar BrandBadge; it lives in the generated/ subfolder,
     # which `assets/brand/` does not include.
     - assets/brand/generated/icon_foreground.png
+    # P12e: a short synthetic (TTS) speech clip — 16 kHz mono WAV — used by the
+    # AI-settings transcription self-test. License-clean, no copyrighted media.
+    - assets/audio/transcription_sample.wav
   # Bundled (offline, no runtime fetch) brand type. Variable fonts — weights are
   # selected via fontWeight against the wght axis.
   fonts:

@@ -869,6 +869,16 @@ entries, or verify after P11c lands.)*
       crash, no empty section.
 - [ ] **(P12d-2)** Embedder + LLM **coexist**: run a semantic search, then a generation self-test, in the
       same session without the plugin conflicting (close-before-swap if needed).
+- _(P12e-1) The transcription engine contract + whisper catalog/matrix/providers are pure-Dart, exercised
+  by unit tests — **no on-device row**. On-device transcription (picker + Labs self-test) lands with P12e-2._
+- [ ] **(P12e-2)** On any tier, AI settings shows a **speech-transcription card** with the tier's whisper
+      models (Recommended/size-band badges + size). Pick one → it downloads (progress; a near-full device
+      shows a **friendly "not enough storage"**) → **Test transcription** transcribes the bundled sample
+      clip **offline** and shows the recognized text.
+- [ ] **(P12e-2)** On a **low-tier** device the transcription card is **still shown** (offers whisper-tiny)
+      and the self-test works — transcription is never gated off entirely (unlike generation).
+- [ ] **(P12e-2)** Embedder + LLM + **whisper coexist**: run a semantic search, a generation self-test, and
+      a transcription self-test in the same session without a native conflict or crash.
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.
