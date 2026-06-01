@@ -4,6 +4,10 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/ai/transcription_engine.dart';
+import 'package:grabbit/core/ai/transcription_model.dart';
+import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
@@ -28,6 +32,7 @@ import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
+import 'package:grabbit/features/library/presentation/transcribe_fallback.dart';
 import 'package:grabbit/features/library/presentation/related_provider.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -601,13 +606,9 @@ Future<void> _getTranscript(
     preferLang: lang,
   );
   if (fetched == null) {
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          'No captions available in ${_captionLanguageLabel(lang)}',
-        ),
-      ),
-    );
+    // No captions anywhere → offer the on-device whisper fallback (P12e-3).
+    if (!context.mounted) return;
+    await _whisperFallback(context, ref, row, lang);
     return;
   }
   await metadata.updateTranscript(
@@ -616,6 +617,125 @@ Future<void> _getTranscript(
     cuesJson: fetched.cuesJson,
   );
   messenger.showSnackBar(const SnackBar(content: Text('Transcript ready')));
+}
+
+/// The on-device transcription fallback (P12e-3) for the manual "Get transcript"
+/// action, reached only when an item has **no captions** (local or online). A
+/// self-contained 3-state on-ramp: set transcription up (download + enable),
+/// just download the model, or transcribe straight away — see
+/// [transcribeFallbackAction]. The model download is one-time and reusable.
+Future<void> _whisperFallback(
+  BuildContext context,
+  WidgetRef ref,
+  MediaItem row,
+  String lang,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final enabled = ref
+      .read(settingsControllerProvider)
+      .asData
+      ?.value
+      .transcriptionEnabled;
+  final engine = ref.read(transcriptionEngineProvider);
+  final model = ref.read(activeTranscriptionModelProvider);
+  final modelReady = await engine.ensureReady();
+  if (!context.mounted) return;
+
+  final action = transcribeFallbackAction(
+    // Matches the factory gate: a real whisper engine exists only on Android.
+    supported: Platform.isAndroid,
+    enabled: enabled ?? false,
+    modelReady: modelReady,
+  );
+
+  switch (action) {
+    case TranscribeFallbackAction.unavailable:
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'No captions available in ${_captionLanguageLabel(lang)}',
+          ),
+        ),
+      );
+      return;
+    case TranscribeFallbackAction.offerSetup:
+      final ok = await confirm(
+        context,
+        title: 'Transcribe without captions?',
+        message:
+            'On-device transcription is off. Set it up to transcribe this '
+            'video with ${model.displayName} (~${model.approxDownloadMb} MB, '
+            'one-time download). Everything stays on your device.',
+        confirmLabel: 'Set up',
+      );
+      if (!ok || !context.mounted) return;
+      await ref
+          .read(settingsControllerProvider.notifier)
+          .setTranscriptionEnabled(true);
+      if (!await _downloadWhisperModel(messenger, engine, model)) return;
+    case TranscribeFallbackAction.offerDownload:
+      final ok = await confirm(
+        context,
+        title: 'Download transcription model?',
+        message:
+            'Download ${model.displayName} (~${model.approxDownloadMb} MB) to '
+            'transcribe this video on-device? One-time, reusable.',
+        confirmLabel: 'Download',
+      );
+      if (!ok || !context.mounted) return;
+      if (!await _downloadWhisperModel(messenger, engine, model)) return;
+    case TranscribeFallbackAction.transcribeNow:
+      break;
+  }
+
+  if (!context.mounted) return;
+  messenger.showSnackBar(
+    const SnackBar(content: Text('Transcribing on-device…')),
+  );
+  try {
+    final result = await engine.transcribe(row.filePath);
+    if (result.flat.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No speech detected')),
+      );
+      return;
+    }
+    await ref
+        .read(metadataRepositoryProvider)
+        .updateTranscript(row.id, result.flat, cuesJson: result.cuesJson);
+    messenger.showSnackBar(const SnackBar(content: Text('Transcript ready')));
+  } on InferenceException catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text('Could not transcribe — ${e.message}')),
+    );
+  }
+}
+
+/// Downloads the whisper [model] with a progress snackbar; returns whether it
+/// succeeded (a storage/other failure shows a friendly message and returns false).
+Future<bool> _downloadWhisperModel(
+  ScaffoldMessengerState messenger,
+  TranscriptionEngine engine,
+  TranscriptionModel model,
+) async {
+  messenger.showSnackBar(
+    SnackBar(content: Text('Downloading ${model.displayName}…')),
+  );
+  try {
+    await engine.downloadModel();
+    return true;
+  } on InferenceException catch (e) {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          e.code == InferenceErrorCode.downloadFailed
+              ? e.message
+              : "Couldn't download ${model.displayName} — ${e.message}",
+        ),
+      ),
+    );
+    return false;
+  }
 }
 
 /// Bottom-sheet language picker for the on-demand caption fetch. Returns the

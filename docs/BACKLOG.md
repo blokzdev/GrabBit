@@ -8,6 +8,17 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Long-audio transcription — chunking + progress.** P12e transcribes a whole file in one
+      whisper pass (fine for short clips; the queue gates auto-fallback on a downloaded model so it
+      can't stall). Long videos want windowed chunking, a progress indicator, and cancellation.
+      *(From P12e-3.)*
+- [ ] **Word-level transcript cues.** P12e emits segment-level cues (`from_ts`→line). whisper.cpp can
+      do word timings (`splitOnWord`); revisit for karaoke-style highlighting in the synced view.
+      *(From P12e-3.)*
+- [ ] **Queue-decoupled background transcription.** Auto-fallback runs inline in `_persistCompleted`
+      before the next download pumps (gated on "model present" so it can't stall on a fetch). A fuller
+      design would transcribe off the critical path after the queue drains, allowing a mid-queue model
+      fetch without blocking. *(From P12e-3.)*
 - [ ] **Device tier — `hasNpu`/`hasGpu` signals.** `DeviceProfile` tiers on RAM + OS today; reliable
       NPU/GPU/accelerator detection is hard and wasn't needed for the RAM-driven tier. Add it if a later
       model needs accelerator-aware gating. *(From P12a.)*

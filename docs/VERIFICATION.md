@@ -879,6 +879,23 @@ entries, or verify after P11c lands.)*
       and the self-test works — transcription is never gated off entirely (unlike generation).
 - [ ] **(P12e-2)** Embedder + LLM + **whisper coexist**: run a semantic search, a generation self-test, and
       a transcription self-test in the same session without a native conflict or crash.
+- [ ] **(P12e-3) Manual fallback, model ready**: on a **caption-less** item with transcription on + a model
+      downloaded, **More → Get transcript** (after captions come up empty) → "Transcribing on-device…" →
+      transcript + tap-to-seek cues appear in the player, **offline**.
+- [ ] **(P12e-3) Manual on-ramp, disabled**: with transcription **off**, Get transcript on a caption-less
+      item offers **"Set up transcription?"** → confirming downloads the model, **flips the AI-settings
+      toggle on**, and transcribes. Declining leaves a plain "no captions" message.
+- [ ] **(P12e-3) Manual on-ramp, enabled no model**: with transcription on but no model, Get transcript
+      offers a **one-time download** → then transcribes; the model is reused next time (no re-download).
+- [ ] **(P12e-3) Captioned item unaffected**: an item **with** captions still builds its transcript from the
+      sidecar — whisper never runs (no model download prompt, instant).
+- [ ] **(P12e-3) Auto fallback**: with **Auto-transcribe** + transcription on + a model present, downloading
+      a **caption-less** video auto-builds a whisper transcript and posts the usual "Transcript ready".
+- [ ] **(P12e-3) Auto needs-model nudge**: same as above but **no model** → the caption-less item is skipped
+      (no queue stall) and a single **"Finish setting up transcription"** notice appears, deep-linking to
+      **AI settings**; fully-off transcription posts **no** nudge.
+- [ ] **(P12e-3) Search lights up**: after a caption-less item is transcribed, it now surfaces in **keyword
+      search** and (with semantic search on, after the next backfill) **semantic search**.
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.

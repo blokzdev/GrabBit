@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
@@ -41,6 +42,9 @@ typedef _PersistResult = ({
   String? primaryId,
   int itemCount,
   int transcriptCount,
+  // P12e-3: a caption-less item was skipped because transcription is opted in
+  // but no whisper model is downloaded → prompt the user to finish setup.
+  bool transcriptionNeedsModel,
 });
 
 class QueueConfig {
@@ -367,6 +371,20 @@ class QueueController extends _$QueueController {
         dedupeKey: 'transcript_$id',
       );
     }
+    // P12e-3: opted into transcription but the model isn't downloaded — a
+    // caption-less item was skipped. Nudge once (deduped) to finish setup.
+    if (result.transcriptionNeedsModel) {
+      await center.post(
+        category: NotificationCategory.ai,
+        severity: NotificationSeverity.info,
+        title: 'Finish setting up transcription',
+        body:
+            'Download a speech model to transcribe downloads that have no '
+            'captions.',
+        targetRoute: '/settings/ai',
+        dedupeKey: 'transcribe_needs_model',
+      );
+    }
     await _maybeNotifyOs(
       taskId: id,
       title: queued.title,
@@ -520,7 +538,12 @@ class QueueController extends _$QueueController {
     String id,
     QueuedDownload queued,
   ) async {
-    const empty = (primaryId: null, itemCount: 0, transcriptCount: 0);
+    const empty = (
+      primaryId: null,
+      itemCount: 0,
+      transcriptCount: 0,
+      transcriptionNeedsModel: false,
+    );
     // Files land in a per-task subfolder (see YtDlpHost `-o`): the task id names
     // the folder, the user's template names the file inside it.
     final dir = Directory('${queued.request.outputDir}/$id');
@@ -606,8 +629,11 @@ class QueueController extends _$QueueController {
     });
 
     // P10f: build a transcript from the caption sidecars now on disk, if the
-    // user opted into automatic transcription.
+    // user opted into automatic transcription. P12e-3: when an item has no
+    // captions and on-device transcription is opted in, fall back to whisper —
+    // but only if its model is already downloaded (no surprise mid-queue fetch).
     var transcriptCount = 0;
+    var transcriptionNeedsModel = false;
     final settings = await ref.read(settingsControllerProvider.future);
     if (settings.autoTranscribe) {
       final transcripts = ref.read(transcriptServiceProvider);
@@ -616,6 +642,12 @@ class QueueController extends _$QueueController {
       final preferLang = (langs != null && langs.isNotEmpty)
           ? langs.first
           : null;
+      // Resolve the whisper fallback once; `ensureReady` checks for an
+      // already-downloaded model without fetching.
+      final whisper = settings.transcriptionEnabled
+          ? ref.read(transcriptionEngineProvider)
+          : null;
+      final whisperReady = whisper != null && await whisper.ensureReady();
       for (final (i, mediaFile) in outputs.media.indexed) {
         final itemId = single ? id : '${id}__$i';
         final timed = await transcripts.extractTimed(
@@ -629,6 +661,26 @@ class QueueController extends _$QueueController {
             cuesJson: timed.cuesJson,
           );
           transcriptCount++;
+          continue;
+        }
+        // No caption sidecar → whisper fallback when its model is present.
+        if (whisper == null) continue;
+        if (!whisperReady) {
+          transcriptionNeedsModel = true;
+          continue;
+        }
+        try {
+          final r = await whisper.transcribe(mediaFile.path);
+          if (r.flat.isNotEmpty) {
+            await metadata.updateTranscript(
+              itemId,
+              r.flat,
+              cuesJson: r.cuesJson,
+            );
+            transcriptCount++;
+          }
+        } catch (_) {
+          // A per-item transcription failure must not fail the download.
         }
       }
     }
@@ -637,6 +689,7 @@ class QueueController extends _$QueueController {
       primaryId: single ? id : '${id}__0',
       itemCount: outputs.media.length,
       transcriptCount: transcriptCount,
+      transcriptionNeedsModel: transcriptionNeedsModel,
     );
   }
 

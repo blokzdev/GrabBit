@@ -176,17 +176,19 @@ Split risk-first:
 - **Exit / review:** capable device → pick → download → streamed multi-turn completion **offline**; low-end
   cleanly gated with a reason. APK spot-check (low + high).
 
-### `[~]` P12e — Whisper transcription (whisper.cpp) *(native — needs an APK build)*
+### `[x]` P12e — Whisper transcription (whisper.cpp) *(native — needs an APK build)*
 Split into three PRs (risk-first), mirroring P12c's cadence:
 - **`[x]` P12e-1** (PR #130, merged) — pure-Dart seam: `TranscriptionEngine` contract +
   `TranscriptResult`, the whisper ggml catalog (HEAD-verified MIT/ungated URLs + SHA-256), matrix rows
   (low=`[tiny]`, mid=`[tiny, base]`, high=`[base, small, turbo]`), providers, settings, error code.
-- **`[~]` P12e-2** — native `WhisperTranscriptionEngine` (`whisper_ggml_plus`, decided here over
-  `whisper_kit` for Windows/v2 parity), ffmpeg → 16 kHz mono WAV via the existing `MediaToolsEngine`,
-  the app-managed model file fed as whisper's `modelPath`, + a tier-gated opt-in transcription card with
-  a Labs self-test (transcribes a bundled synthetic clip). No pipeline wiring yet.
-- **`[ ]` P12e-3** — wire whisper as the caption-less fallback into the existing transcript flows
-  (manual + auto-on-download), feeding `MediaMetadata.transcript` / `transcriptCues`.
+- **`[x]` P12e-2** (PR #131, merged) — native `WhisperTranscriptionEngine` (`whisper_ggml_plus`, decided
+  here over `whisper_kit` for Windows/v2 parity), ffmpeg → 16 kHz mono WAV via the existing
+  `MediaToolsEngine`, the app-managed model file fed as whisper's `modelPath`, + a tier-gated opt-in
+  transcription card with a Labs self-test (transcribes a bundled synthetic clip).
+- **`[x]` P12e-3** — wire whisper as the caption-less fallback into the existing transcript flows:
+  **manual** "Get transcript" is a 3-state on-ramp (set up / download / transcribe; can enable
+  transcription itself); **auto-on-download** transcribes caption-less items when a model is already
+  present, else posts a one-time "finish setup" nudge. Feeds `MediaMetadata.transcript`/`transcriptCues`.
 - Output (text + timed cues) feeds the **existing** transcript pipeline — **only when caption sidecars
   are absent** (complements P10f; whisper is the fallback when a source ships no captions).
 - **Exit / review:** transcribe a caption-less clip **offline** → transcript + tap-to-seek cues saved to
