@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/embedder_engine_factory.dart';
 import 'package:grabbit/core/ai/embedder_engine_provider.dart';
@@ -8,6 +12,8 @@ import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/model_download_service.dart';
+import 'package:grabbit/core/ai/transcription_model.dart';
+import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
@@ -17,6 +23,7 @@ import 'package:grabbit/features/settings/presentation/settings_controller.dart'
 import 'package:grabbit/features/settings/presentation/widgets/info_hint.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_section.dart';
 import 'package:grabbit/features/settings/presentation/widgets/settings_subscaffold.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// `/settings/ai` — on-device AI + the relationship graph (semantic search,
 /// graph rebuild, embedder diagnostics).
@@ -60,6 +67,7 @@ class AiSettingsScreen extends ConsumerWidget {
           ],
         ),
         const _GenerationCard(),
+        const _TranscriptionCard(),
       ],
     );
   }
@@ -672,6 +680,254 @@ class _GenerationSelfTestTileState
         _output?.isNotEmpty == true
             ? _output!
             : 'Run a sample prompt through the on-device model',
+      ),
+      trailing: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.play_arrow_outlined),
+      onTap: _busy ? null : _run,
+    );
+  }
+}
+
+/// On-device speech transcription (P12e) — a tier-gated, opt-in model picker + a
+/// Labs self-test. Unlike generation, this card is shown on **every** tier (even
+/// low-end runs whisper-tiny). It's the fallback that gives caption-less media a
+/// transcript; the pipeline wiring lands in P12e-3.
+class _TranscriptionCard extends ConsumerWidget {
+  const _TranscriptionCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tier = ref.watch(activeDeviceTierProvider);
+    final eligible = const ModelCapabilityMatrix().eligibleTranscriptionModels(
+      tier,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: SettingsCard(
+        children: [
+          const ListTile(
+            leading: Icon(Icons.mic_none_outlined),
+            title: Text('Speech transcription'),
+            subtitle: Text('Transcribe downloads without captions, on-device'),
+            trailing: InfoHintButton(
+              InfoHint(
+                title: 'Speech transcription',
+                body:
+                    'Turns speech in your downloads into searchable text and '
+                    'tap-to-seek captions — all on-device with Whisper. Used '
+                    'only when a download has no captions of its own. Pick a '
+                    'model to download it once; bigger models are more accurate '
+                    'but slower and larger.',
+              ),
+            ),
+          ),
+          for (final m in eligible) _TranscriptionModelTile(model: m),
+          const _TranscriptionSelfTestTile(),
+        ],
+      ),
+    );
+  }
+}
+
+/// One selectable transcription model row: a Recommended/size-band badge + size,
+/// a radio-like check for the active selection. Selecting it opts in + downloads
+/// (storage-guarded); selecting the active one again turns transcription off.
+class _TranscriptionModelTile extends ConsumerStatefulWidget {
+  const _TranscriptionModelTile({required this.model});
+
+  final TranscriptionModel model;
+
+  @override
+  ConsumerState<_TranscriptionModelTile> createState() =>
+      _TranscriptionModelTileState();
+}
+
+class _TranscriptionModelTileState
+    extends ConsumerState<_TranscriptionModelTile> {
+  bool _busy = false;
+
+  TranscriptionModel get _model => widget.model;
+
+  Future<void> _select(bool selected) async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    if (!selected) {
+      // Toggling off the active model disables transcription (keeps the download).
+      await controller.setTranscriptionEnabled(false);
+      await controller.setSelectedTranscriptionModelId('');
+      return;
+    }
+    await controller.setTranscriptionEnabled(true);
+    await controller.setSelectedTranscriptionModelId(_model.id);
+    await _download();
+  }
+
+  Future<void> _download() async {
+    final controller = ref.read(settingsControllerProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Downloading ${_model.displayName} (~${_model.approxDownloadMb} MB)…',
+          ),
+        ),
+      );
+    try {
+      await ref.read(transcriptionEngineProvider).downloadModel();
+      await ref.read(transcriptionEngineProvider).ensureReady();
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('${_model.displayName} ready')));
+    } on InferenceException catch (e) {
+      await controller.setTranscriptionEnabled(false);
+      await controller.setSelectedTranscriptionModelId('');
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              e.code == InferenceErrorCode.unavailable
+                  ? 'Transcription isn\'t available on this device'
+                  : 'Couldn\'t download ${_model.displayName} — ${e.message}',
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String get _bandLabel => switch (_model.modelClass) {
+    TranscriptionModelClass.tiny => 'Smaller · faster',
+    TranscriptionModelClass.base => 'Recommended',
+    TranscriptionModelClass.small => 'Larger · better',
+    TranscriptionModelClass.turbo => 'Flagship',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final active = ref.watch(activeTranscriptionModelProvider);
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.transcriptionEnabled ?? false,
+      ),
+    );
+    final isSelected = enabled && active.id == _model.id;
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(
+        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+        color: isSelected ? theme.colorScheme.primary : null,
+      ),
+      title: Row(
+        children: [
+          Text(_model.displayName),
+          const SizedBox(width: 8),
+          Chip(
+            label: Text(_bandLabel),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
+      ),
+      subtitle: Text('${_model.blurb}  ·  ~${_model.approxDownloadMb} MB'),
+      trailing: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
+      onTap: _busy ? null : () => _select(!isSelected),
+    );
+  }
+}
+
+/// Labs self-test: transcribes a tiny bundled speech sample and shows the
+/// recognized text — proves the whisper pipeline (ffmpeg → model) works offline.
+/// Visible only when transcription is enabled. The sample is a synthetic,
+/// license-clean clip we ship in `assets/audio/` (CLAUDE.md §10).
+class _TranscriptionSelfTestTile extends ConsumerStatefulWidget {
+  const _TranscriptionSelfTestTile();
+
+  @override
+  ConsumerState<_TranscriptionSelfTestTile> createState() =>
+      _TranscriptionSelfTestTileState();
+}
+
+class _TranscriptionSelfTestTileState
+    extends ConsumerState<_TranscriptionSelfTestTile> {
+  static const _sampleAsset = 'assets/audio/transcription_sample.wav';
+
+  bool _busy = false;
+  String? _output;
+
+  Future<void> _run() async {
+    final engine = ref.read(transcriptionEngineProvider);
+    setState(() {
+      _busy = true;
+      _output = '';
+    });
+    String? tempPath;
+    try {
+      if (!await engine.ensureReady()) {
+        if (mounted) setState(() => _output = 'Download a model above first');
+        return;
+      }
+      tempPath = await _copySampleToTemp();
+      final result = await engine.transcribe(tempPath);
+      if (mounted) {
+        setState(
+          () => _output = result.flat.isEmpty
+              ? 'Ran — no speech detected in the sample'
+              : 'OK — “${result.flat}”',
+        );
+      }
+    } on InferenceException catch (e) {
+      if (mounted) {
+        setState(() => _output = 'Transcription failed: ${e.message}');
+      }
+    } finally {
+      if (tempPath != null) {
+        unawaited(File(tempPath).delete().then((_) {}, onError: (_) {}));
+      }
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Copies the bundled sample WAV to a temp file the engine can read by path.
+  Future<String> _copySampleToTemp() async {
+    final bytes = await rootBundle.load(_sampleAsset);
+    final dir = await getTemporaryDirectory();
+    final path =
+        '${dir.path}/transcription_selftest_'
+        '${DateTime.now().microsecondsSinceEpoch}.wav';
+    await File(path).writeAsBytes(bytes.buffer.asUint8List(), flush: true);
+    return path;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.transcriptionEnabled ?? false,
+      ),
+    );
+    if (!enabled) return const SizedBox.shrink();
+    return ListTile(
+      leading: const Icon(Icons.science_outlined),
+      title: const Text('Test transcription'),
+      subtitle: Text(
+        _output?.isNotEmpty == true
+            ? _output!
+            : 'Transcribe a short sample clip on-device',
       ),
       trailing: _busy
           ? const SizedBox(

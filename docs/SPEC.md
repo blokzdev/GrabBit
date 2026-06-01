@@ -36,6 +36,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | **Graph+vector (P10):** `io.github.cozodb:cozo_android:0.7.2` (Maven Central AAR) via a `CozoHostApi` Pigeon bridge; `ffi`+`ffigen` (dev) for the Windows `dart:ffi` impl (P15). MPL-2.0. | On-device graph + HNSW vector DB. See `docs/GRAPH-SPEC.md`. |
 | **On-device AI (P10b-2+):** `flutter_gemma` (MediaPipe/LiteRT-LM — embeddings + LLM + RAG; added P10b-2 embedder-only), a whisper.cpp pkg (`whisper_ggml_plus`/`whisper_kit`), ML Kit (OCR/translate) | On-device/edge AI. See `docs/AI-SPEC.md`. |
 | **On-device AI (P12c):** `unorm_dart` (pure-Dart Unicode NFKC); `onnxruntime_v2` (P12c-2; 16KB-page + GPU) | NFKC for the hand-rolled XLM-R tokenizer (the multilingual embedder); ONNX runtime for MiniLM. |
+| **On-device AI (P12e):** `whisper_ggml_plus` (whisper.cpp FFI, MIT) | Speech transcription. Chosen over `whisper_kit` for Windows/v2 parity; app-managed ggml model fed as `modelPath`, 16 kHz WAV made with our existing ffmpeg (no ffmpeg companion). |
 | **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
 | **Charts (P10d-2):** `fl_chart` | On-device Dashboard storage donuts + library-activity bars. Pure-Dart (CustomPainter), no native deps, no telemetry. |
 | ~~**v3:** `supabase_flutter`, Stripe/PayPal SDKs~~ | **Dropped** (no cloud/credits). |

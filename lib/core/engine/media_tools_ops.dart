@@ -75,6 +75,26 @@ List<String> extractAudioArgs({
   required String output,
 }) => ['-y', '-i', input, '-vn', output];
 
+/// Decodes any input to the **16 kHz mono PCM WAV** whisper.cpp requires (P12e):
+/// drop video (`-vn`), downmix to mono (`-ac 1`), resample to 16 kHz (`-ar 16000`),
+/// signed-16-bit little-endian PCM. The output extension must be `.wav`.
+List<String> wavForTranscriptionArgs({
+  required String input,
+  required String output,
+}) => [
+  '-y',
+  '-i',
+  input,
+  '-vn',
+  '-ac',
+  '1',
+  '-ar',
+  '16000',
+  '-c:a',
+  'pcm_s16le',
+  output,
+];
+
 /// Re-containers / converts by output extension (no filters).
 List<String> convertArgs({required String input, required String output}) => [
   '-y',
