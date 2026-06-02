@@ -49,4 +49,25 @@ void main() {
       expect(parseTagSuggestions('"rock", \'live\''), ['rock', 'live']);
     });
   });
+
+  group('autoTagDecision (P13c-2)', () {
+    test('no text → skip', () {
+      expect(
+        autoTagDecision(hasText: false, modelReady: true),
+        AutoTagDecision.skip,
+      );
+    });
+    test('text + model not ready → needs model', () {
+      expect(
+        autoTagDecision(hasText: true, modelReady: false),
+        AutoTagDecision.needsModel,
+      );
+    });
+    test('text + model ready → tag', () {
+      expect(
+        autoTagDecision(hasText: true, modelReady: true),
+        AutoTagDecision.tag,
+      );
+    });
+  });
 }

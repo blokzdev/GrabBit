@@ -1646,6 +1646,9 @@ class _TagsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = GrabBitTokens.of(context);
     final tags = ref.watch(tagsForItemProvider(itemId));
+    final aiTags =
+        ref.watch(aiTagNamesForItemProvider(itemId)).asData?.value ??
+        const <String>{};
     return tags.maybeWhen(
       data: (list) => list.isEmpty
           ? const SizedBox.shrink()
@@ -1657,6 +1660,9 @@ class _TagsRow extends ConsumerWidget {
                 children: [
                   for (final t in list)
                     ActionChip(
+                      avatar: aiTags.contains(t.name)
+                          ? const Icon(Icons.auto_awesome_outlined, size: 16)
+                          : null,
                       label: Text(t.name),
                       onPressed: () => _openHub(context, 'tag', t.name, t.name),
                     ),

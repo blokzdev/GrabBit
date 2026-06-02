@@ -718,7 +718,15 @@ class MetadataRepository {
     return [for (final r in rows) r.readTable(_db.tags).name];
   }
 
-  Future<void> addTagToItem(String itemId, String name) async {
+  /// Applies tag [name] to [itemId]. [source] records provenance — `'user'`
+  /// (manual/graph) or `'ai'` (auto-applied, P13c-2). `insertOrIgnore` means an
+  /// existing link keeps its original source, so a user-applied tag is never
+  /// demoted to `'ai'`.
+  Future<void> addTagToItem(
+    String itemId,
+    String name, {
+    String source = 'user',
+  }) async {
     final clean = name.trim();
     if (clean.isEmpty) return;
     await _db
@@ -733,9 +741,29 @@ class MetadataRepository {
     await _db
         .into(_db.mediaTags)
         .insert(
-          MediaTagsCompanion.insert(itemId: itemId, tagId: tag.id),
+          MediaTagsCompanion.insert(
+            itemId: itemId,
+            tagId: tag.id,
+            source: Value(source),
+          ),
           mode: InsertMode.insertOrIgnore,
         );
+  }
+
+  /// The names of an item's **AI-applied** tags (P13c-2) — for marking them
+  /// distinctly in the UI. Reactive.
+  Stream<Set<String>> watchAiTagNamesForItem(String itemId) {
+    final query =
+        _db.select(_db.tags).join([
+          innerJoin(_db.mediaTags, _db.mediaTags.tagId.equalsExp(_db.tags.id)),
+        ])..where(
+          _db.mediaTags.itemId.equals(itemId) &
+              _db.mediaTags.source.equals('ai'),
+        );
+    return query
+        .map((row) => row.readTable(_db.tags).name)
+        .watch()
+        .map((names) => names.toSet());
   }
 
   Future<void> removeTagFromItem(String itemId, int tagId) async {
@@ -820,6 +848,12 @@ final metadataRepositoryProvider = Provider<MetadataRepository>(
 final tagsForItemProvider = StreamProvider.family<List<Tag>, String>(
   (ref, itemId) =>
       ref.watch(metadataRepositoryProvider).watchTagsForItem(itemId),
+);
+
+/// Names of an item's AI-applied tags (P13c-2), for marking them in the UI.
+final aiTagNamesForItemProvider = StreamProvider.family<Set<String>, String>(
+  (ref, itemId) =>
+      ref.watch(metadataRepositoryProvider).watchAiTagNamesForItem(itemId),
 );
 
 final collectionsProvider = StreamProvider<List<Collection>>(

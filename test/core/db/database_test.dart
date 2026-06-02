@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 12 with all tables created', () async {
-    expect(db.schemaVersion, 12);
+  test('opens at schema version 13 with all tables created', () async {
+    expect(db.schemaVersion, 13);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -1032,6 +1032,96 @@ void main() {
           )
           .get();
       expect(hits.map((r) => r.read<String>('item_id')), ['old1']);
+    },
+  );
+
+  test(
+    'upgrades a v12 database to v13, adding media_tags.source (P13c-2)',
+    () async {
+      // Seed a minimal v12 DB with a media_tags row (no `source` column),
+      // user_version=12. Opening at v13 must add `source` defaulting 'user'.
+      final upgraded = AppDatabase(
+        NativeDatabase.memory(
+          setup: (raw) {
+            raw.execute('''
+              CREATE TABLE media_items (
+                id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL,
+                source_url TEXT NOT NULL, site TEXT NOT NULL,
+                file_path TEXT NOT NULL, type TEXT NOT NULL, duration_sec INTEGER,
+                size_bytes INTEGER, width INTEGER, height INTEGER, thumb_path TEXT,
+                created_at INTEGER NOT NULL, storage_state TEXT NOT NULL, notes TEXT,
+                folder_id INTEGER, is_favorite INTEGER NOT NULL DEFAULT 0,
+                content_hash TEXT, last_accessed_at INTEGER
+              )''');
+            raw.execute('''
+              CREATE TABLE media_metadata (
+                item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+                uploader TEXT, upload_date INTEGER, description TEXT,
+                original_url TEXT, uploader_id TEXT, channel_id TEXT, source_id TEXT,
+                playlist_id TEXT, playlist_title TEXT, tags TEXT, transcript TEXT,
+                transcript_cues TEXT, ai_summary TEXT, ai_summary_model_id TEXT,
+                ocr_text TEXT
+              )''');
+            raw.execute(
+              'CREATE TABLE tags (id INTEGER NOT NULL PRIMARY KEY '
+              'AUTOINCREMENT, name TEXT NOT NULL UNIQUE)',
+            );
+            // v12 media_tags — NO `source` column.
+            raw.execute('''
+              CREATE TABLE media_tags (
+                item_id TEXT NOT NULL REFERENCES media_items (id),
+                tag_id INTEGER NOT NULL REFERENCES tags (id),
+                PRIMARY KEY (item_id, tag_id)
+              )''');
+            // Tables the migration tail (_createIndices) touches.
+            raw.execute('''
+              CREATE TABLE notifications (
+                id TEXT NOT NULL PRIMARY KEY, category TEXT NOT NULL,
+                severity TEXT NOT NULL, title TEXT NOT NULL, body TEXT,
+                target_route TEXT, item_id TEXT, task_id TEXT, dedupe_key TEXT,
+                created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+                read_at INTEGER, expires_at INTEGER,
+                coalesce_count INTEGER NOT NULL DEFAULT 1
+              )''');
+            raw.execute(
+              'INSERT INTO media_items (id, title, source_url, site, '
+              'file_path, type, created_at, storage_state) VALUES '
+              "('old1', 'Clip', 'u', 's', '/m/o', 'video', 0, 'private')",
+            );
+            raw.execute("INSERT INTO tags (id, name) VALUES (1, 'legacy')");
+            raw.execute(
+              "INSERT INTO media_tags (item_id, tag_id) VALUES ('old1', 1)",
+            );
+            raw.execute('PRAGMA user_version = 12');
+          },
+        ),
+      );
+      addTearDown(upgraded.close);
+
+      // The pre-existing media_tag row defaults to 'user'.
+      final rows = await upgraded.select(upgraded.mediaTags).get();
+      expect(rows.single.source, 'user');
+
+      // A new AI-sourced link round-trips.
+      await upgraded
+          .into(upgraded.tags)
+          .insert(TagsCompanion.insert(name: 'rock'));
+      final rock = await (upgraded.select(
+        upgraded.tags,
+      )..where((t) => t.name.equals('rock'))).getSingle();
+      await upgraded
+          .into(upgraded.mediaTags)
+          .insert(
+            MediaTagsCompanion.insert(
+              itemId: 'old1',
+              tagId: rock.id,
+              source: const Value('ai'),
+            ),
+          );
+      final ai = await (upgraded.select(
+        upgraded.mediaTags,
+      )..where((t) => t.source.equals('ai'))).get();
+      expect(ai.single.tagId, rock.id);
     },
   );
 

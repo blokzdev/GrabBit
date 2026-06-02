@@ -56,3 +56,28 @@ List<String> parseTagSuggestions(
   }
   return out;
 }
+
+/// What auto-tag-on-download (P13c-2) should do for a freshly downloaded item,
+/// assuming the feature + generation are opted in. A pure decision so the queue
+/// path is testable (mirrors `autoSummaryDecision`).
+enum AutoTagDecision {
+  /// Nothing to tag (no source text).
+  skip,
+
+  /// Would tag, but the generation model isn't downloaded — nudge once.
+  needsModel,
+
+  /// Generate + apply tags now (model ready).
+  tag,
+}
+
+/// [hasText] is whether the item has title/description/transcript/OCR to tag;
+/// [modelReady] is whether the generation model is downloaded (`ensureReady` —
+/// no fetch).
+AutoTagDecision autoTagDecision({
+  required bool hasText,
+  required bool modelReady,
+}) {
+  if (!hasText) return AutoTagDecision.skip;
+  return modelReady ? AutoTagDecision.tag : AutoTagDecision.needsModel;
+}

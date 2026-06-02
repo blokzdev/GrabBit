@@ -275,7 +275,7 @@ void main() {
     });
 
     test(
-      'auto-process setters default off and persist (P13a-2/P13b-3)',
+      'auto-process setters default off and persist (P13a-2/P13b-3/P13c-2)',
       () async {
         final db = AppDatabase(NativeDatabase.memory());
         addTearDown(db.close);
@@ -287,14 +287,17 @@ void main() {
         final loaded = await container.read(settingsControllerProvider.future);
         expect(loaded.autoSummarizeOnDownload, isFalse);
         expect(loaded.autoOcrOnDownload, isFalse);
+        expect(loaded.autoTagOnDownload, isFalse);
 
         final notifier = container.read(settingsControllerProvider.notifier);
         await notifier.setAutoSummarizeOnDownload(true);
         await notifier.setAutoOcrOnDownload(true);
+        await notifier.setAutoTagOnDownload(true);
 
         final saved = await SettingsRepository(db).read();
         expect(saved.autoSummarizeOnDownload, isTrue);
         expect(saved.autoOcrOnDownload, isTrue);
+        expect(saved.autoTagOnDownload, isTrue);
       },
     );
 

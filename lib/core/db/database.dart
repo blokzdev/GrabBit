@@ -93,6 +93,9 @@ class MediaTags extends Table {
       text().references(MediaItems, #id, onDelete: KeyAction.cascade)();
   IntColumn get tagId =>
       integer().references(Tags, #id, onDelete: KeyAction.cascade)();
+  // P13c-2: provenance of this tag link — 'user' (manual/graph) or 'ai'
+  // (auto-applied on download). Lets AI tags be marked + managed distinctly.
+  TextColumn get source => text().withDefault(const Constant('user'))();
 
   @override
   Set<Column<Object>> get primaryKey => {itemId, tagId};
@@ -217,7 +220,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -285,6 +288,16 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('DROP TRIGGER IF EXISTS $t');
         }
         await customStatement('DROP TABLE IF EXISTS media_fts');
+      }
+      if (from < 13) {
+        // P13c-2: tag provenance ('user' default; 'ai' for auto-applied tags).
+        // Defensive table guard (mirrors the v8 guard-add spirit): a no-op if
+        // media_tags somehow isn't present yet.
+        final hasMediaTags = (await customSelect(
+          "SELECT 1 FROM sqlite_master WHERE type='table' "
+          "AND name='media_tags'",
+        ).get()).isNotEmpty;
+        if (hasMediaTags) await m.addColumn(mediaTags, mediaTags.source);
       }
       await _createIndices();
       await _createFtsObjects();

@@ -47,6 +47,9 @@ void main() {
             'x',
           ).overrideWith((ref) => Stream.value(metadata)),
           tagsForItemProvider('x').overrideWith((ref) => Stream.value(<Tag>[])),
+          aiTagNamesForItemProvider(
+            'x',
+          ).overrideWith((ref) => Stream.value(<String>{})),
           collectionsForItemProvider(
             'x',
           ).overrideWith((ref) => Stream.value(<Collection>[])),
@@ -116,6 +119,9 @@ void main() {
             tagsForItemProvider(
               'x',
             ).overrideWith((ref) => Stream.value(<Tag>[])),
+            aiTagNamesForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<String>{})),
             collectionsForItemProvider(
               'x',
             ).overrideWith((ref) => Stream.value(<Collection>[])),
@@ -152,6 +158,9 @@ void main() {
             tagsForItemProvider('x').overrideWith(
               (ref) => Stream.value([const Tag(id: 1, name: 'funny')]),
             ),
+            aiTagNamesForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<String>{})),
             collectionsForItemProvider(
               'x',
             ).overrideWith((ref) => Stream.value(<Collection>[])),
@@ -183,6 +192,9 @@ void main() {
             tagsForItemProvider(
               'x',
             ).overrideWith((ref) => Stream.value(<Tag>[])),
+            aiTagNamesForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<String>{})),
             collectionsForItemProvider('x').overrideWith(
               (ref) => Stream.value([
                 Collection(id: 7, name: 'Faves', createdAt: DateTime.utc(2026)),

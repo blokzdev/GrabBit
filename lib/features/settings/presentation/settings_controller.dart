@@ -151,6 +151,10 @@ class SettingsController extends _$SettingsController {
   Future<void> setAutoOcrOnDownload(bool value) async =>
       _update((await future).copyWith(autoOcrOnDownload: value));
 
+  /// Auto-apply LLM tags to newly downloaded items in the background (P13c-2).
+  Future<void> setAutoTagOnDownload(bool value) async =>
+      _update((await future).copyWith(autoTagOnDownload: value));
+
   /// On-device transcription opt-in (P12e).
   Future<void> setTranscriptionEnabled(bool value) async =>
       _update((await future).copyWith(transcriptionEnabled: value));

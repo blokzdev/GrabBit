@@ -30,6 +30,7 @@ import 'package:grabbit/features/notifications/data/system_notification_service.
 import 'package:grabbit/features/queue/data/foreground_service.dart';
 import 'package:grabbit/features/queue/data/queue_repository.dart';
 import 'package:grabbit/features/queue/data/queued_download.dart';
+import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/queue/presentation/queue_controller.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
@@ -804,6 +805,71 @@ void main() {
     );
 
     expect(fakeTranscriber.transcribed, isEmpty); // no whisper on a photo
+  });
+
+  // --- P13c-2: auto-tag on download ---
+
+  test(
+    'auto-tag: enabled + model ready → AI tags applied + ai entry (P13c-2)',
+    () async {
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setGenerationEnabled(true);
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setAutoTagOnDownload(true);
+      fakeGenerator.ready = true;
+      fakeGenerator.output = 'rock, live';
+      final dir = await describedDownload('vid1');
+
+      await controller.enqueue(
+        _qd('vid1', outputDir: dir.path, description: 'A live rock set'),
+      );
+      await waitFor(() async => engine.running.contains('vid1'));
+      engine.complete('vid1');
+      await waitFor(
+        () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+      );
+
+      // Tags applied and marked 'ai'.
+      final aiTags = await MetadataRepository(
+        db,
+      ).watchAiTagNamesForItem('vid1').first;
+      expect(aiTags, {'rock', 'live'});
+      final ai = await (db.select(
+        db.notifications,
+      )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+      expect(ai, hasLength(1));
+      expect(ai.single.severity, NotificationSeverity.success);
+    },
+  );
+
+  test('auto-tag: default off → no tags, no entry (P13c-2)', () async {
+    // generationEnabled on, but autoTagOnDownload stays false.
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setGenerationEnabled(true);
+    fakeGenerator.ready = true;
+    fakeGenerator.output = 'rock, live';
+    final dir = await describedDownload('vid1');
+
+    await controller.enqueue(
+      _qd('vid1', outputDir: dir.path, description: 'A live rock set'),
+    );
+    await waitFor(() async => engine.running.contains('vid1'));
+    engine.complete('vid1');
+    await waitFor(
+      () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+    );
+
+    final aiTags = await MetadataRepository(
+      db,
+    ).watchAiTagNamesForItem('vid1').first;
+    expect(aiTags, isEmpty);
+    final ai = await (db.select(
+      db.notifications,
+    )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+    expect(ai, isEmpty);
   });
 
   test('a completed download posts a success activity entry (P11c)', () async {

@@ -635,6 +635,7 @@ class _GenerationCard extends ConsumerWidget {
         children: [
           for (final m in eligible) _GenerationModelTile(model: m),
           const _AutoSummarizeTile(),
+          const _AutoTagTile(),
           const _GenerationSelfTestTile(),
         ],
       ),
@@ -679,6 +680,46 @@ class _AutoSummarizeTile extends ConsumerWidget {
       onChanged: (v) => ref
           .read(settingsControllerProvider.notifier)
           .setAutoSummarizeOnDownload(v),
+    );
+  }
+}
+
+/// Opt-in (P13c-2): auto-apply LLM tags to new downloads in the background.
+/// Shown only when text generation is enabled; runs only when a model is
+/// downloaded. Auto-applied tags are marked as AI and can be deleted; the
+/// on-demand "Suggest tags with AI" in the editor works regardless.
+class _AutoTagTile extends ConsumerWidget {
+  const _AutoTagTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.generationEnabled ?? false,
+      ),
+    );
+    if (!enabled) return const SizedBox.shrink();
+    final auto = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.autoTagOnDownload ?? false,
+      ),
+    );
+    return SwitchListTile(
+      secondary: const InfoHintButton(
+        InfoHint(
+          title: 'Auto-tag new downloads',
+          body:
+              'Add AI-suggested tags to each new download automatically, in the '
+              'background — all on-device. Runs only when a text-generation '
+              'model is downloaded. AI tags are marked with a ✦ and can be '
+              'deleted; you can always tag an item by hand.',
+        ),
+      ),
+      title: const Text('Auto-tag new downloads'),
+      subtitle: const Text('Tag each download in the background'),
+      value: auto,
+      onChanged: (v) =>
+          ref.read(settingsControllerProvider.notifier).setAutoTagOnDownload(v),
     );
   }
 }

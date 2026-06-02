@@ -44,6 +44,9 @@ void main() {
           mediaItemByIdProvider('x').overrideWith((ref) => _item()),
           // Finite stubs so the live Drift watch streams don't stall the test.
           tagsForItemProvider('x').overrideWith((ref) => Stream.value(<Tag>[])),
+          aiTagNamesForItemProvider(
+            'x',
+          ).overrideWith((ref) => Stream.value(<String>{})),
           collectionsProvider.overrideWith(
             (ref) => Stream.value(<Collection>[]),
           ),
@@ -85,6 +88,9 @@ void main() {
             tagsForItemProvider(
               'x',
             ).overrideWith((ref) => Stream.value(<Tag>[])),
+            aiTagNamesForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<String>{})),
             collectionsProvider.overrideWith(
               (ref) => Stream.value(<Collection>[]),
             ),
@@ -123,6 +129,9 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
           mediaItemByIdProvider('x').overrideWith((ref) => _item()),
           tagsForItemProvider('x').overrideWith((ref) => Stream.value(<Tag>[])),
+          aiTagNamesForItemProvider(
+            'x',
+          ).overrideWith((ref) => Stream.value(<String>{})),
           collectionsProvider.overrideWith(
             (ref) => Stream.value(<Collection>[]),
           ),
