@@ -56,7 +56,7 @@
 
 ---
 
-### `[~]` P12a — Device capability, tiers & `ModelCapabilityMatrix` *(mostly pure Dart + thin native probe)*
+### `[x]` P12a — Device capability, tiers & `ModelCapabilityMatrix` *(mostly pure Dart + thin native probe)*
 The gating brain every later subphase plugs into.
 - **`DeviceCapabilityService`** → a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion, freeStorageMB }`
   → a **device tier** (low / mid / high). Thin native probe (RAM/SoC/free-storage) via a small platform
@@ -76,7 +76,7 @@ The gating brain every later subphase plugs into.
   embedder dimension (the `AiFeature` rows land with their subphases — no dead code). **Pending
   on-device spot-check** of the tier probe on two phones.
 
-### `[~]` P12b — Model catalog + download / integrity / caching *(pure Dart; reuses the flutter_gemma pattern)*
+### `[x]` P12b — Model catalog + download / integrity / caching *(pure Dart; reuses the flutter_gemma pattern)*
 Generalize the embedder-only asset plumbing into shared infra.
 - Extend `model_catalog.dart` beyond `EmbedderModel` to model **kinds** (embedder / LLM / transcription),
   each carrying id, file URLs, **SHA-256**, approx size, and runtime; grow the `EmbedderRuntime`/runtime
@@ -105,14 +105,14 @@ stays the universal fallback**. **Decisions:** tokenizer **hand-rolled** in pure
 SentencePiece packages don't faithfully tokenize XLM-R); ONNX plugin **`onnxruntime_v2`** (16KB-page +
 GPU); split risk-first into:
 
-#### `[~]` P12c-1 — XLM-R Unigram tokenizer *(pure-Dart, CI; no native, no behaviour change)*
+#### `[x]` P12c-1 — XLM-R Unigram tokenizer *(pure-Dart, CI; no native, no behaviour change)*
 - `MultilingualEmbedderTokenizer` (`lib/core/ai/multilingual_tokenizer.dart`): NFKC (verified
   XLM-R-charsmap-equivalent) + whitespace/metaspace + Unigram Viterbi + `<unk>`-merge + `<s>`/`</s>` +
   truncation; loads the model's HF `tokenizer.json`. **Fidelity-gated** by golden vectors (the HF
   `tokenizers` oracle) committed as fixtures — proven HF-byte-exact in CI, offline.
 - **Status:** implemented (CI-green). Dep: `unorm_dart` (pure-Dart NFKC). No live consumer until c-2.
 
-#### `[~]` P12c-2 — onnx runtime + `OnnxEmbedderEngine` *(native; APK)*
+#### `[x]` P12c-2 — onnx runtime + `OnnxEmbedderEngine` *(native; APK)*
 - Add `onnxruntime_v2`; MiniLM catalog entry (`model.onnx` + `tokenizer.json` as P12b `ModelFile`s w/
   real URL/SHA-256/size; `runtime: onnx`, `dim 384`, 128-tok window). Engine: download → `createSession`
   → tokenize → run → mean-pool (masked) → L2-normalize → 384-d. Gated behind a **self-test tile** (no
@@ -125,7 +125,7 @@ GPU); split risk-first into:
   on-device APK spot-check** (cross-lingual similarity + 16KB device + int8 quality; fp16 235 MB is the
   fallback if quality is poor).
 
-#### `[~]` P12c-3 — Selection + re-embed + Gecko fallback + minimal UX *(native; APK)*
+#### `[x]` P12c-3 — Selection + re-embed + Gecko fallback + minimal UX *(native; APK)*
 - Register MiniLM in the matrix (tier-gated) + persisted install-global override; switch drives re-embed;
   Gecko fallback when onnx unavailable. Exit: non-English search visibly improves; re-embed completes;
   revert works; low-end stays Gecko.
@@ -149,7 +149,7 @@ low=[]/mid/high, `recommendedGenerationModel`; the 3 device tiers stay, the ladd
 (small SmolLM2-135M → balanced Qwen3-0.6B *(recommended)* → large Qwen2.5-1.5B → flagship Qwen3-4B).
 Split risk-first:
 
-#### `[~]` P12d-1 — GenerationEngine contract + catalog + matrix + providers + settings *(pure-Dart, CI)*
+#### `[x]` P12d-1 — GenerationEngine contract + catalog + matrix + providers + settings *(pure-Dart, CI)*
 - **Status:** implemented (CI-green). `GenerationModel` catalog (4-rung Apache ladder, `GenerationModelClass`
   badges, plugin-managed → no SHA); `GenerationEngine` interface (streaming `generate`);
   `UnavailableGenerationEngine` + `generationEngineFor` stub (Unavailable until d-2); matrix generation row;
@@ -158,7 +158,7 @@ Split risk-first:
   Unit-tested (catalog/posture, matrix tiers, provider override/fallback, settings round-trip). **No live
   generation until d-2** — no on-device row.
 
-#### `[~]` P12d-2 — `FlutterGemmaGenerationEngine` + picker UI + Labs self-test *(native; APK)*
+#### `[x]` P12d-2 — `FlutterGemmaGenerationEngine` + picker UI + Labs self-test *(native; APK)*
 - Native engine: `installModel(modelType).fromNetwork(url).withProgress(..).install()` → `getActiveModel`
   → `createChat` → `generateChatResponseAsync()` as `Stream<String>`; map `modelTypeId`→`ModelType`; wire
   the factory (Android → this, else Unavailable). Opt-in model-**picker** tile + **Labs self-test**.
@@ -206,7 +206,7 @@ Thin, inert scaffolding so the v2 Things Engine slots in cheaply — no v1 behav
 - **Exit / review:** a v9 install upgrades to v10 with no data loss (migration test); `generateStructured`
   + the capability row exist but are **unused**; no user-visible change. *(ADR-0001/0002/0003.)*
 
-### `[ ]` P12g — Capability-gating UX, AI settings & phase close *(pure Dart/UI; minimal)*
+### `[x]` P12g — Capability-gating UX, AI settings & phase close *(pure Dart/UI; minimal)*
 - AI-settings opt-in tiles for **generation**, **transcription**, and the **multilingual embedder**
   (mirroring the `semanticSearchEnabled` tile), each with an `InfoHint`; a **basic model selector**;
   per-capability **"disabled — <reason>"** state from the matrix; self-test tiles; first-run/Labs surface
@@ -215,6 +215,16 @@ Thin, inert scaffolding so the v2 Things Engine slots in cheaply — no v1 behav
   done.
 - **Exit / review:** each capability shows enabled/gated state with a reason; opt-ins persist across
   restart; the model selector switches the active model; **P12 complete.**
+- **Status:** implemented (CI-green) — `DeviceTierCopy` extension (`label`/`blurb`, the single source of
+  tier wording); a device-tier banner atop AI settings ("Your device: \<Basic|Standard|Advanced\>" +
+  blurb + InfoHint); the generation card now renders a muted "needs more memory" disabled-reason tile on
+  low tier instead of vanishing; the tier line is surfaced in first-run onboarding. (The opt-in tiles,
+  model pickers, and self-tests shipped earlier in P12c–P12e.) **All P12 subphases done.**
+
+> **✅ P12 complete.** The device-tiered on-device AI engine ships: tiers + capability matrix
+> (P12a), model catalog/download (P12b), multilingual embedder (P12c), LLM generation (P12d), whisper
+> transcription (P12e), inert Things-Engine seams (P12f), and capability-gating UX + phase close (P12g).
+> The user-facing AI features (summaries, "Ask your library", auto-tagging, OCR/translate) are **P13**.
 
 ---
 

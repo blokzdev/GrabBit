@@ -14,6 +14,7 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/model_download_service.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
+import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
@@ -35,6 +36,7 @@ class AiSettingsScreen extends ConsumerWidget {
     return SettingsSubScaffold(
       title: 'AI & graph',
       children: (context, ref, settings) => [
+        const _DeviceTierBanner(),
         SettingsCard(
           children: [
             ListTile(
@@ -68,6 +70,38 @@ class AiSettingsScreen extends ConsumerWidget {
         ),
         const _GenerationCard(),
         const _TranscriptionCard(),
+      ],
+    );
+  }
+}
+
+/// Compact banner framing the AI screen with the device's capability tier (P12g)
+/// — so a user understands *why* some AI options are offered or gated. Reads the
+/// live tier (probed at startup); the InfoHint explains on-device scaling.
+class _DeviceTierBanner extends ConsumerWidget {
+  const _DeviceTierBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tier = ref.watch(activeDeviceTierProvider);
+    return SettingsCard(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.memory_outlined),
+          title: Text('Your device: ${tier.label}'),
+          subtitle: Text(tier.blurb),
+          trailing: const InfoHintButton(
+            InfoHint(
+              title: 'On-device AI & your device',
+              body:
+                  'GrabBit runs all AI on your device, so what it can do scales '
+                  'with your device. More capable devices unlock larger, faster '
+                  'models and more features; every device runs at least semantic '
+                  'search and speech transcription. Everything is optional and '
+                  'private — nothing leaves your device.',
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -495,8 +529,38 @@ class _GenerationCard extends ConsumerWidget {
     final eligible = const ModelCapabilityMatrix().eligibleGenerationModels(
       tier,
     );
-    // Low-end / ineligible devices: no generation at all — omit the section.
-    if (eligible.isEmpty) return const SizedBox.shrink();
+    // Low-end / ineligible devices: no generation model fits. Rather than hide
+    // the section silently, show a muted disabled-reason tile so the gating is
+    // legible (P12g) — the device-tier banner explains the bigger picture.
+    if (eligible.isEmpty) {
+      final theme = Theme.of(context);
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: SettingsCard(
+          children: [
+            ListTile(
+              leading: Icon(
+                Icons.auto_awesome_outlined,
+                color: theme.disabledColor,
+              ),
+              title: const Text('On-device text generation'),
+              subtitle: const Text('Needs more memory than this device has.'),
+              trailing: const InfoHintButton(
+                InfoHint(
+                  title: 'On-device text generation',
+                  body:
+                      'Text generation runs a larger language model on your '
+                      'device, which needs more memory than this device has. '
+                      'Semantic search and speech transcription still work here. '
+                      'Nothing leaves your device.',
+                ),
+              ),
+              enabled: false,
+            ),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: SettingsCard(

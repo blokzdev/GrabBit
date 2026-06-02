@@ -865,8 +865,9 @@ entries, or verify after P11c lands.)*
       tier's models (Recommended/size-band badges + size). Pick the recommended → it downloads (progress;
       a near-full device shows a **friendly "not enough storage"** instead of a doomed multi-GB fetch) →
       **Test text generation** streams a sentence **offline**.
-- [ ] **(P12d-2)** On a **low-tier** device the generation card is **hidden** (no generation offered) — no
-      crash, no empty section.
+- [ ] **(P12d-2 → updated P12g)** On a **low-tier** device the generation card shows a muted
+      **"On-device text generation — needs more memory than this device has"** tile (no longer hidden;
+      see P12g) — no crash, no empty section.
 - [ ] **(P12d-2)** Embedder + LLM **coexist**: run a semantic search, then a generation self-test, in the
       same session without the plugin conflicting (close-before-swap if needed).
 - _(P12e-1) The transcription engine contract + whisper catalog/matrix/providers are pure-Dart, exercised
@@ -896,6 +897,16 @@ entries, or verify after P11c lands.)*
       **AI settings**; fully-off transcription posts **no** nudge.
 - [ ] **(P12e-3) Search lights up**: after a caption-less item is transcribed, it now surfaces in **keyword
       search** and (with semantic search on, after the next backfill) **semantic search**.
+- [ ] **(P12g) Device-tier banner**: AI settings shows a **"Your device: \<Basic|Standard|Advanced\>"**
+      banner with a one-line blurb + an InfoHint explaining on-device scaling; the label matches the
+      device (a high-RAM phone → Advanced, an old/low-RAM one → Basic).
+- [ ] **(P12g) Gating is legible**: on a **Basic (low)** device, generation shows the "needs more memory"
+      reason while **semantic search + transcription still work**; on **Standard/Advanced** the generation
+      **model picker** is shown instead.
+- [ ] **(P12g) Onboarding tier**: the first-run AI setup screen surfaces **"Your device: \<tier\>"** before
+      the user opts in.
+- [ ] **(P12g) Opt-ins persist**: enabling a capability + picking a model survives an app restart; the
+      model selector switches the active model.
 - [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
 - [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
       stays lean until then.

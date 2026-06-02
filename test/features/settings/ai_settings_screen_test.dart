@@ -4,11 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/device/device_profile.dart';
+import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_service.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/settings/presentation/ai_settings_screen.dart';
+
+class _FixedTier extends ActiveDeviceTier {
+  _FixedTier(this._tier);
+  final DeviceTier _tier;
+  @override
+  DeviceTier build() => _tier;
+}
 
 void main() {
   testWidgets('renders the AI & graph controls', (tester) async {
@@ -30,6 +39,93 @@ void main() {
     expect(find.text('Rebuild graph index'), findsOneWidget);
     expect(find.text('Semantic search'), findsOneWidget);
     expect(find.text('Test embedder'), findsOneWidget);
+  });
+
+  testWidgets('shows the device-tier banner (P12g)', (tester) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          activeDeviceTierProvider.overrideWith(
+            () => _FixedTier(DeviceTier.high),
+          ),
+        ],
+        child: const MaterialApp(home: AiSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your device: ${DeviceTier.high.label}'), findsOneWidget);
+    expect(find.text(DeviceTier.high.blurb), findsOneWidget);
+  });
+
+  testWidgets('low tier shows the generation disabled-reason tile (P12g)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          activeDeviceTierProvider.overrideWith(
+            () => _FixedTier(DeviceTier.low),
+          ),
+        ],
+        child: const MaterialApp(home: AiSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Generation is gated off on low tier → a legible reason, not a silent gap.
+    expect(find.text('On-device text generation'), findsOneWidget);
+    expect(
+      find.text('Needs more memory than this device has.'),
+      findsOneWidget,
+    );
+    // The model picker / self-test are absent on low tier.
+    expect(find.text('Test text generation'), findsNothing);
+  });
+
+  testWidgets('high tier shows the generation model picker, not the reason', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          activeDeviceTierProvider.overrideWith(
+            () => _FixedTier(DeviceTier.high),
+          ),
+        ],
+        child: const MaterialApp(home: AiSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // High tier offers the model picker (the recommended Qwen3 rung), not the
+    // "needs more memory" reason. (The self-test tile only appears once enabled.)
+    expect(find.text('Needs more memory than this device has.'), findsNothing);
+    expect(find.text('Qwen3 0.6B'), findsOneWidget);
   });
 
   testWidgets('rebuilding the graph posts an activity entry (P11c)', (

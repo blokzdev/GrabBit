@@ -33,4 +33,24 @@ void main() {
       expect(tierFor(const DeviceProfile(ramMb: 0, sdkInt: 0)), DeviceTier.low);
     });
   });
+
+  group('DeviceTierCopy (P12g)', () {
+    test('every tier has a non-empty label and blurb', () {
+      for (final tier in DeviceTier.values) {
+        expect(tier.label, isNotEmpty);
+        expect(tier.blurb, isNotEmpty);
+      }
+    });
+
+    test('labels are distinct + non-judgmental (no "low/weak")', () {
+      final labels = DeviceTier.values.map((t) => t.label).toList();
+      expect(labels.toSet(), hasLength(DeviceTier.values.length));
+      for (final l in labels) {
+        expect(
+          l.toLowerCase(),
+          isNot(anyOf(contains('low'), contains('weak'))),
+        );
+      }
+    });
+  });
 }

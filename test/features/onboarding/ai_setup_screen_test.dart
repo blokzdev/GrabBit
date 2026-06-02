@@ -8,6 +8,7 @@ import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/features/onboarding/presentation/ai_setup_screen.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/data/settings_repository.dart';
@@ -96,6 +97,27 @@ void main() {
     expect(settings.aiSetupSeen, isTrue);
     expect(settings.semanticSearchEnabled, isFalse);
     expect(engine.downloadCalled, isFalse);
+  });
+
+  testWidgets('surfaces the device tier (P12g)', (tester) async {
+    final engine = _FakeEmbedderEngine();
+    final (container, db) = await _harness(engine);
+    addTearDown(container.dispose);
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: AiSetupScreen()),
+      ),
+    );
+    await tester.pump();
+
+    // The tier probe defaults to `low` synchronously in tests.
+    expect(
+      find.textContaining('Your device: ${DeviceTier.low.label}'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Set up enables semantic search and downloads the model', (

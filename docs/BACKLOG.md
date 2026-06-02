@@ -8,6 +8,11 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Richer per-capability tier explainers.** P12g surfaces the device tier (banner + onboarding line)
+      and a single generation "needs more memory" reason. A fuller treatment could show, per capability,
+      exactly which models a device can/can't run and why — deferred as noise vs. value for v1; revisit if
+      users ask "why can't I run X". (Also considered + dropped: surfacing raw `soc`/RAM in the UI —
+      privacy/noise.) *(From P12g.)*
 - [ ] **Structured-extraction model pick + real `generateStructured` impl.** P12f shapes the
       `generateStructured` seam (on `GenerationEngine`) and the `structured_extraction` matrix row, but
       both are **inert**: concrete engines throw `unsupported` and the row is empty on every tier. Resolve
