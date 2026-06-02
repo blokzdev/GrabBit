@@ -128,6 +128,64 @@ void main() {
     expect(find.text('Qwen3 0.6B'), findsOneWidget);
   });
 
+  testWidgets('low tier shows the multilingual disabled tile (P12 sweep)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          activeDeviceTierProvider.overrideWith(
+            () => _FixedTier(DeviceTier.low),
+          ),
+        ],
+        child: const MaterialApp(home: AiSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Multilingual is an upgrade over the always-present Gecko floor; on a low
+    // device it's shown as a muted disabled tile (not hidden), like generation.
+    expect(find.text('Multilingual semantic search'), findsOneWidget);
+    expect(find.text('Available on more capable devices.'), findsOneWidget);
+  });
+
+  testWidgets(
+    'high tier shows the multilingual switch, not the disabled tile',
+    (tester) async {
+      tester.view.physicalSize = const Size(1000, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            activeDeviceTierProvider.overrideWith(
+              () => _FixedTier(DeviceTier.high),
+            ),
+          ],
+          child: const MaterialApp(home: AiSettingsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Available on more capable devices.'), findsNothing);
+      // The real opt-in switch is present (a SwitchListTile titled the same).
+      expect(find.byType(SwitchListTile), findsWidgets);
+    },
+  );
+
   testWidgets('rebuilding the graph posts an activity entry (P11c)', (
     tester,
   ) async {

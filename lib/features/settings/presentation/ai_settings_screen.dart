@@ -125,7 +125,7 @@ Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
           content: Text(
             stats.available
                 ? 'Graph rebuilt — ${stats.mediaNodes} media · ${stats.edges} edges'
-                : 'Graph engine unavailable on this device',
+                : "Graph engine isn't available on this device",
           ),
         ),
       );
@@ -351,7 +351,7 @@ class _MultilingualSelfTestTileState
         await engine.ensureReady();
       }
       if (!engine.isAvailable) {
-        message = 'Multilingual embedder unavailable on this device';
+        message = "Multilingual embedder isn't available on this device";
       } else {
         final vecs = await engine.embedBatch(const [
           'A cat sits on the mat',
@@ -487,8 +487,29 @@ class _MultilingualModelTileState
     final eligible = const ModelCapabilityMatrix()
         .eligibleEmbedders(tier)
         .contains(_miniLm);
-    // Low-end / ineligible devices stay on Gecko — hide the option entirely.
-    if (!eligible) return const SizedBox.shrink();
+    // Ineligible devices stay on the always-present Gecko embedder (semantic
+    // search still works). Show a muted disabled tile rather than hiding, so
+    // gating reads consistently with the generation card (P12g) — the
+    // device-tier banner explains the bigger picture.
+    if (!eligible) {
+      final theme = Theme.of(context);
+      return ListTile(
+        leading: Icon(Icons.translate_outlined, color: theme.disabledColor),
+        title: const Text('Multilingual semantic search'),
+        subtitle: const Text('Available on more capable devices.'),
+        trailing: const InfoHintButton(
+          InfoHint(
+            title: 'Multilingual semantic search',
+            body:
+                'A 50-language embedding model that improves search and '
+                '“related” on non-English content. It needs more memory than '
+                'this device has, so semantic search uses the default English '
+                'model here — everything still works on-device.',
+          ),
+        ),
+        enabled: false,
+      );
+    }
     final selectedId = ref.watch(
       settingsControllerProvider.select(
         (s) => s.value?.selectedEmbedderModelId ?? '',
