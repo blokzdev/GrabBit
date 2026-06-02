@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 10 with all tables created', () async {
-    expect(db.schemaVersion, 10);
+  test('opens at schema version 11 with all tables created', () async {
+    expect(db.schemaVersion, 11);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -780,6 +780,124 @@ void main() {
     expect(things.single.name, 'Demo');
     expect(things.single.url, isNull);
   });
+
+  test(
+    'upgrades a v10 database to v11, adding the aiSummary columns (P13a)',
+    () async {
+      // Seed a v10-schema media_metadata (no aiSummary / aiSummaryModelId) at
+      // user_version=10 so opening AppDatabase (v11) runs the from<11 branch.
+      final upgraded = AppDatabase(
+        NativeDatabase.memory(
+          setup: (raw) {
+            raw.execute('''
+              CREATE TABLE media_items (
+                id TEXT NOT NULL PRIMARY KEY,
+                title TEXT NOT NULL,
+                source_url TEXT NOT NULL,
+                site TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                type TEXT NOT NULL,
+                duration_sec INTEGER,
+                size_bytes INTEGER,
+                width INTEGER,
+                height INTEGER,
+                thumb_path TEXT,
+                created_at INTEGER NOT NULL,
+                storage_state TEXT NOT NULL,
+                notes TEXT,
+                folder_id INTEGER,
+                is_favorite INTEGER NOT NULL DEFAULT 0,
+                content_hash TEXT,
+                last_accessed_at INTEGER
+              )''');
+            raw.execute('''
+              CREATE TABLE media_metadata (
+                item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+                uploader TEXT,
+                upload_date INTEGER,
+                description TEXT,
+                original_url TEXT,
+                uploader_id TEXT,
+                channel_id TEXT,
+                source_id TEXT,
+                playlist_id TEXT,
+                playlist_title TEXT,
+                tags TEXT,
+                transcript TEXT,
+                transcript_cues TEXT
+              )''');
+            raw.execute('''
+              CREATE TABLE download_tasks (
+                id TEXT NOT NULL PRIMARY KEY,
+                url TEXT NOT NULL,
+                request_json TEXT NOT NULL,
+                status TEXT NOT NULL,
+                progress REAL NOT NULL DEFAULT 0,
+                error_code TEXT,
+                retries INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL,
+                order_index INTEGER NOT NULL DEFAULT 0
+              )''');
+            raw.execute('''
+              CREATE TABLE app_settings (
+                id INTEGER NOT NULL PRIMARY KEY DEFAULT 0,
+                data TEXT NOT NULL
+              )''');
+            raw.execute('''
+              CREATE TABLE notifications (
+                id TEXT NOT NULL PRIMARY KEY,
+                category TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT,
+                target_route TEXT,
+                item_id TEXT,
+                task_id TEXT,
+                dedupe_key TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                read_at INTEGER,
+                expires_at INTEGER,
+                coalesce_count INTEGER NOT NULL DEFAULT 1
+              )''');
+            raw.execute(
+              'INSERT INTO media_items (id, title, source_url, site, '
+              'file_path, type, created_at, storage_state) VALUES '
+              "('old1', 'Old clip', 'https://x/v', 'youtube', '/m/old1.mp4', "
+              "'video', 0, 'private')",
+            );
+            raw.execute(
+              'INSERT INTO media_metadata (item_id, description) VALUES '
+              "('old1', 'A description that predates the AI summary columns')",
+            );
+            raw.execute('PRAGMA user_version = 10');
+          },
+        ),
+      );
+      addTearDown(upgraded.close);
+
+      // Pre-existing metadata survives the upgrade (no data loss).
+      final meta = await upgraded.select(upgraded.mediaMetadata).getSingle();
+      expect(meta.itemId, 'old1');
+      expect(meta.description, contains('predates the AI summary'));
+      // The new columns exist and default to null.
+      expect(meta.aiSummary, isNull);
+      expect(meta.aiSummaryModelId, isNull);
+
+      // The new columns round-trip a write.
+      await (upgraded.update(
+        upgraded.mediaMetadata,
+      )..where((t) => t.itemId.equals('old1'))).write(
+        const MediaMetadataCompanion(
+          aiSummary: Value('A two-sentence on-device summary.'),
+          aiSummaryModelId: Value('qwen3-0.6b'),
+        ),
+      );
+      final updated = await upgraded.select(upgraded.mediaMetadata).getSingle();
+      expect(updated.aiSummary, 'A two-sentence on-device summary.');
+      expect(updated.aiSummaryModelId, 'qwen3-0.6b');
+    },
+  );
 
   test(
     'addColumnIfMissing is idempotent and adds only absent columns',

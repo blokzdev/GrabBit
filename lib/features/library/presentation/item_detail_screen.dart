@@ -4,6 +4,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/transcription_engine.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
@@ -31,6 +32,7 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
+import 'package:grabbit/features/library/presentation/ai_summary.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/library/presentation/transcribe_fallback.dart';
 import 'package:grabbit/features/library/presentation/related_provider.dart';
@@ -270,6 +272,7 @@ class _ItemBodyState extends State<_ItemBody> {
                 ],
               ),
               _DetailChips(item: item),
+              _AiSummarySection(itemId: item.id),
               _SummarySection(itemId: item.id),
               _MetadataSection(itemId: item.id),
               _TranscriptSection(
@@ -503,6 +506,180 @@ class _SummarySection extends ConsumerWidget {
                   Text('•  ', style: theme.textTheme.bodyMedium),
                   Expanded(child: Text(s, style: theme.textTheme.bodyMedium)),
                 ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// On-device abstractive (LLM) summary (P13a) — the first real generation
+/// feature, layered **above** the extractive TextRank floor. User-initiated and
+/// cached (`MediaMetadata.aiSummary`); streamed live while generating. Gated on
+/// the generation tier: ineligible devices never see it and keep the extractive
+/// summary. When the device can generate but the user hasn't enabled it, the
+/// action routes to AI settings (the on-ramp idiom from `transcribe_fallback`).
+class _AiSummarySection extends ConsumerStatefulWidget {
+  const _AiSummarySection({required this.itemId});
+  final String itemId;
+
+  @override
+  ConsumerState<_AiSummarySection> createState() => _AiSummarySectionState();
+}
+
+class _AiSummarySectionState extends ConsumerState<_AiSummarySection> {
+  bool _busy = false;
+  String? _streaming; // live partial text while generating
+  String? _error;
+
+  String? _sourceText() {
+    final meta = ref.read(metadataForItemProvider(widget.itemId)).asData?.value;
+    final text = meta?.transcript ?? meta?.description;
+    return (text == null || text.trim().isEmpty) ? null : text;
+  }
+
+  Future<void> _onAction() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    final engine = ref.read(generationEngineProvider);
+    final enabled =
+        ref.read(settingsControllerProvider).value?.generationEnabled ?? false;
+    // Only probe the model when enabled — never load a model the user hasn't
+    // opted into. `ensureReady` does not download.
+    final modelReady = enabled && await engine.ensureReady();
+    final action = aiSummaryAction(
+      eligible: ref.read(activeGenerationModelProvider) != null,
+      enabled: enabled,
+      modelReady: modelReady,
+    );
+    switch (action) {
+      case AiSummaryAction.unavailable:
+        return;
+      case AiSummaryAction.offerSetup:
+      case AiSummaryAction.offerDownload:
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Set up on-device text generation to summarize'),
+            ),
+          );
+        await router.push('/settings/ai');
+      case AiSummaryAction.summarizeNow:
+        await _summarize();
+    }
+  }
+
+  Future<void> _summarize() async {
+    final text = _sourceText();
+    if (text == null) return;
+    final engine = ref.read(generationEngineProvider);
+    final model = ref.read(activeGenerationModelProvider);
+    final repo = ref.read(metadataRepositoryProvider);
+    setState(() {
+      _busy = true;
+      _streaming = '';
+      _error = null;
+    });
+    try {
+      final p = buildSummaryPrompt(text);
+      final buffer = StringBuffer();
+      await for (final token in engine.generate(
+        p.prompt,
+        systemPrompt: p.systemPrompt,
+      )) {
+        buffer.write(token);
+        if (mounted) setState(() => _streaming = buffer.toString());
+      }
+      final summary = buffer.toString().trim();
+      if (summary.isNotEmpty) {
+        await repo.updateAiSummary(widget.itemId, summary, modelId: model?.id);
+      }
+    } on InferenceException catch (e) {
+      if (mounted) setState(() => _error = "Couldn't summarize — ${e.message}");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _streaming = null;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    // No generation model fits this device → render nothing; the extractive
+    // summary below remains the floor.
+    if (ref.watch(activeGenerationModelProvider) == null) {
+      return const SizedBox.shrink();
+    }
+    if (_sourceText() == null) return const SizedBox.shrink();
+
+    final meta = ref
+        .watch(metadataForItemProvider(widget.itemId))
+        .asData
+        ?.value;
+    final cached = meta?.aiSummary;
+    final body = _busy ? (_streaming ?? '') : (cached ?? '');
+    final hasBody = body.trim().isNotEmpty;
+
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_outlined,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              SizedBox(width: tokens.spaceXs),
+              Text('AI summary', style: theme.textTheme.titleSmall),
+              const Spacer(),
+              if (_busy)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                TextButton(
+                  onPressed: _onAction,
+                  child: Text(hasBody ? 'Regenerate' : 'Summarize with AI'),
+                ),
+            ],
+          ),
+          if (hasBody) ...[
+            SizedBox(height: tokens.spaceXs),
+            Text(body, style: theme.textTheme.bodyMedium),
+            if (!_busy)
+              Text(
+                'Generated on-device',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ] else if (!_busy)
+            Text(
+              'Condense this item into a couple of sentences, on-device.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          if (_error != null)
+            Padding(
+              padding: EdgeInsets.only(top: tokens.spaceXs),
+              child: Text(
+                _error!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
               ),
             ),
         ],

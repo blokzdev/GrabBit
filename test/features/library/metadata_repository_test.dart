@@ -420,6 +420,46 @@ void main() {
     expect(recent.map((r) => r.id), ['a']);
   });
 
+  test(
+    'updateAiSummary upserts the summary + model id, clears on null (P13a)',
+    () async {
+      await seed('a', 'A', 'video');
+      // Upsert onto an item with no metadata row yet (predates the columns).
+      await repo.updateAiSummary(
+        'a',
+        'On-device TL;DR.',
+        modelId: 'qwen3-0.6b',
+      );
+      var meta = await (db.select(
+        db.mediaMetadata,
+      )..where((t) => t.itemId.equals('a'))).getSingle();
+      expect(meta.aiSummary, 'On-device TL;DR.');
+      expect(meta.aiSummaryModelId, 'qwen3-0.6b');
+
+      // Re-running (Regenerate) overwrites only the summary columns.
+      await seed('b', 'B', 'video');
+      await seedMeta('b', description: 'desc');
+      await repo.updateAiSummary(
+        'b',
+        'Another summary.',
+        modelId: 'smollm2-135m',
+      );
+      meta = await (db.select(
+        db.mediaMetadata,
+      )..where((t) => t.itemId.equals('b'))).getSingle();
+      expect(meta.aiSummary, 'Another summary.');
+      expect(meta.description, 'desc'); // untouched
+
+      // Passing null clears it.
+      await repo.updateAiSummary('a', null);
+      meta = await (db.select(
+        db.mediaMetadata,
+      )..where((t) => t.itemId.equals('a'))).getSingle();
+      expect(meta.aiSummary, isNull);
+      expect(meta.aiSummaryModelId, isNull);
+    },
+  );
+
   test('findItemByUrl matches with tracking params stripped (P9b-4)', () async {
     await db
         .into(db.mediaItems)

@@ -655,6 +655,25 @@ class MetadataRepository {
         );
   }
 
+  /// Stores the on-device abstractive (LLM) [summary] for an item plus the
+  /// [modelId] that produced it (P13a). Upserts (only these columns) so it works
+  /// for items whose metadata row predates the columns; passing `null` clears it.
+  Future<void> updateAiSummary(
+    String itemId,
+    String? summary, {
+    String? modelId,
+  }) async {
+    await _db
+        .into(_db.mediaMetadata)
+        .insertOnConflictUpdate(
+          MediaMetadataCompanion.insert(
+            itemId: itemId,
+            aiSummary: Value(summary),
+            aiSummaryModelId: Value(modelId),
+          ),
+        );
+  }
+
   // --- Tags ---
 
   Stream<List<Tag>> watchTagsForItem(String itemId) {
