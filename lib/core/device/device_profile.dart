@@ -34,6 +34,29 @@ class DeviceProfile {
 /// (P12). Ordered low → high.
 enum DeviceTier { low, mid, high }
 
+/// User-facing copy for a [DeviceTier] (P12g) — the single source of tier wording,
+/// shown in the AI-settings banner and first-run onboarding so capability-gating
+/// is legible (a user on a basic device sees *why* fewer AI options appear).
+/// Deliberately non-judgmental (no "low/weak"); never names the RAM threshold.
+extension DeviceTierCopy on DeviceTier {
+  /// Short, friendly band name.
+  String get label => switch (this) {
+    DeviceTier.low => 'Basic',
+    DeviceTier.mid => 'Standard',
+    DeviceTier.high => 'Advanced',
+  };
+
+  /// One line describing what on-device AI this tier runs.
+  String get blurb => switch (this) {
+    DeviceTier.low =>
+      'Runs on-device semantic search and speech transcription.',
+    DeviceTier.mid =>
+      'Runs semantic search, transcription, and on-device text generation.',
+    DeviceTier.high =>
+      'Runs every on-device AI feature, including the largest, fastest models.',
+  };
+}
+
 /// Derives the [DeviceTier] from a [DeviceProfile]. **RAM-primary**, with a hard
 /// floor on very old OS versions. Thresholds are deliberately conservative and
 /// tunable (validated on-device).
