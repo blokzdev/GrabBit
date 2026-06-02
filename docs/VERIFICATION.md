@@ -945,6 +945,15 @@ entries, or verify after P11c lands.)*
 - [ ] An image with no readable text shows a "No readable text found" note (no crash). A **video/audio**
       item shows **no** OCR section.
 
+### P13b-2 — Translation  *(install `app-arm64-v8a-debug.apk`; foreign-language item)*
+- [ ] Open an item whose **description/transcript is in another language** → overflow **Translate…** → pick
+      your language → confirm the **~30 MB pack download** (Wi-Fi) → the description + transcript render
+      **translated**; toggling **Show original** flips back. After the pack is present, re-translating is
+      instant and works **offline** (airplane mode).
+- [ ] An item already in your language → "Already in <language>" notice (no-op). Undetectable text →
+      "Couldn't detect the language".
+- [ ] On a host without ML Kit, the **Translate…** action is absent (graceful).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

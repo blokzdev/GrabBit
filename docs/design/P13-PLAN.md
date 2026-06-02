@@ -133,14 +133,22 @@ target-language UX + GMS nuance). Measure APK-size impact in the first ML Kit bu
   migration (incl. FTS `ocr`), embed-doc inclusion, engine availability. **Pending APK spot-check** (scan a
   real image → text appears + becomes searchable, offline). The widget + native ML Kit call are APK-verified.
 
-#### `[ ]` P13b-2 — Translation *(native; new dep; APK)*
-- Translate an item's **description / transcript / summary** into the app's language (default) with a
-  target-language picker (reuse the curated `_captionLanguages` list), via `google_mlkit_translation` +
-  language-id; on-demand language-pack download (managed, Wi-Fi-aware). Ephemeral (no cache/schema). Surface
-  on item detail next to the original text. **Note the GMS nuance** (translation downloads models from a
-  Google endpoint) and document it.
+#### `[~]` P13b-2 — Translation *(native; new deps; APK)*
+- Translate an item's **description + transcript** into the app's language (default) with a target-language
+  picker (reuses `_captionLanguages`), via `google_mlkit_translation` + `google_mlkit_language_id`; on-demand
+  language-pack download (Wi-Fi-aware). Ephemeral (no cache/schema). Surfaced inline with a "Show original"
+  toggle. (Derived AI/TextRank summaries stay original → BACKLOG.)
 - **Exit / review:** translate a non-English item's text offline after the pack downloads; no pack ⇒ a clear
   one-time setup prompt; nothing leaves the device.
+- **Status:** implemented (CI-green) — `google_mlkit_translation`/`google_mlkit_language_id` (MIT; **no Google
+  Play Services** — models download over HTTPS, run offline); `TranslationEngine` seam + `MlKitTranslationEngine`/
+  `UnavailableTranslationEngine` + factory/provider (mirrors `OcrEngine`); pure `translateReadiness` decision +
+  `translateLanguageForCode` mapping; an autoDispose `itemTranslation(itemId)` controller (screen-scoped, no
+  cache); a `Translate…` overflow action → target picker → source detect → ~30 MB pack-download confirm →
+  translate; description + transcript render translated with a "Translated from <src> · Show original" toggle.
+  Added a one-shot `MetadataRepository.metadataForItem`. **No schema change.** Tests: engine availability +
+  BCP mapping, `translateReadiness` truth table, controller with a fake engine. **Pending APK spot-check**
+  (the native ML Kit translate/language-id + the pack download); the widget flow is APK-verified.
 
 #### `[ ]` P13b-3 — Auto-OCR on download *(follow-up; native; APK)*
 - Opt-in (default off) auto-scan of **image** downloads, mirroring P13a-2 auto-summarize: a settings toggle +

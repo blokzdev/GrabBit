@@ -12,6 +12,7 @@ enum InferenceErrorCode {
   generateFailed,
   transcribeFailed,
   ocrFailed,
+  translateFailed,
 
   /// A capability seam exists but has no working implementation on this build —
   /// e.g. `generateStructured` (P12f forward seam): the method is defined and

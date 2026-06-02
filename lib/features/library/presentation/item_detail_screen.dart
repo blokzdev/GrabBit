@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/ocr_provider.dart';
+import 'package:grabbit/core/ai/translation_provider.dart';
 import 'package:grabbit/core/ai/transcription_engine.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
@@ -34,8 +35,10 @@ import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/ai_summary.dart';
+import 'package:grabbit/features/library/presentation/item_translation_provider.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/library/presentation/transcribe_fallback.dart';
+import 'package:grabbit/features/library/presentation/translation.dart';
 import 'package:grabbit/features/library/presentation/related_provider.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -89,6 +92,8 @@ class ItemDetailScreen extends ConsumerWidget {
                     await context.push('/item/$itemId/edit');
                   case 'transcript':
                     await _getTranscript(context, ref, row);
+                  case 'translate':
+                    await _translateItem(context, ref, row);
                   case 'share':
                     await shareItems(ref, [row]);
                   case 'copy':
@@ -124,6 +129,11 @@ class ItemDetailScreen extends ConsumerWidget {
                   value: 'transcript',
                   child: Text('Get transcript'),
                 ),
+                if (ref.watch(translationEngineProvider).isAvailable)
+                  const PopupMenuItem(
+                    value: 'translate',
+                    child: Text('Translate…'),
+                  ),
                 const PopupMenuItem(value: 'share', child: Text('Share file')),
                 const PopupMenuItem(
                   value: 'copy',
@@ -1033,9 +1043,121 @@ Future<bool> _downloadWhisperModel(
   }
 }
 
+/// On-device translation (P13b-2). Picks a target language (default = the app
+/// language), detects the source, downloads the ~30 MB pack(s) on first use,
+/// then translates the description + transcript via `itemTranslationProvider`.
+/// All on-device; nothing leaves the phone.
+Future<void> _translateItem(
+  BuildContext context,
+  WidgetRef ref,
+  MediaItem row,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final engine = ref.read(translationEngineProvider);
+  final meta = ref.read(metadataForItemProvider(row.id)).asData?.value;
+  final desc = meta?.description;
+  final tr = meta?.transcript;
+  final text = (desc != null && desc.trim().isNotEmpty)
+      ? desc
+      : (tr != null && tr.trim().isNotEmpty ? tr : null);
+  if (text == null) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Nothing to translate')),
+    );
+    return;
+  }
+  final defaultLang =
+      ref.read(settingsControllerProvider).asData?.value.captionLanguage ??
+      'en';
+  final target = await _pickCaptionLanguage(
+    context,
+    defaultLang,
+    title: 'Translate to…',
+  );
+  if (target == null) return;
+
+  final source = await engine.identifyLanguage(text);
+  final downloaded =
+      await engine.isModelDownloaded(source) &&
+      await engine.isModelDownloaded(target);
+  final readiness = translateReadiness(
+    engineAvailable: engine.isAvailable,
+    source: source,
+    target: target,
+    modelsDownloaded: downloaded,
+  );
+
+  if (readiness == TranslateReadiness.unavailable) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text("Translation isn't available here")),
+    );
+    return;
+  }
+  if (readiness == TranslateReadiness.notDetected) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text("Couldn't detect the language")),
+    );
+    return;
+  }
+  if (readiness == TranslateReadiness.alreadyInTarget) {
+    messenger.showSnackBar(
+      SnackBar(content: Text('Already in ${_captionLanguageLabel(target)}')),
+    );
+    return;
+  }
+  if (readiness == TranslateReadiness.needsDownload) {
+    if (!context.mounted) return;
+    final ok = await confirm(
+      context,
+      title: 'Download language pack?',
+      message:
+          'Translating needs a one-time download (~30 MB per language) over '
+          'Wi-Fi. It then works offline.',
+      confirmLabel: 'Download',
+    );
+    if (!ok) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('Downloading language pack…')),
+      );
+    try {
+      await engine.downloadModel(source);
+      await engine.downloadModel(target);
+    } on InferenceException catch (e) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text("Couldn't download — ${e.message}")),
+        );
+      return;
+    }
+  }
+
+  // Ready (or just-downloaded): translate.
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(const SnackBar(content: Text('Translating…')));
+  await ref
+      .read(itemTranslationProvider(row.id).notifier)
+      .translate(source: source, target: target);
+  final err = ref.read(itemTranslationProvider(row.id)).error;
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(err ?? 'Translated to ${_captionLanguageLabel(target)}'),
+      ),
+    );
+}
+
 /// Bottom-sheet language picker for the on-demand caption fetch. Returns the
 /// chosen language code, or null if dismissed.
-Future<String?> _pickCaptionLanguage(BuildContext context, String defaultLang) {
+Future<String?> _pickCaptionLanguage(
+  BuildContext context,
+  String defaultLang, {
+  String title = 'Fetch captions in…',
+}) {
   final langs = [..._captionLanguages];
   if (!langs.any((l) => l.code == defaultLang)) {
     langs.insert(0, (code: defaultLang, name: defaultLang.toUpperCase()));
@@ -1046,11 +1168,7 @@ Future<String?> _pickCaptionLanguage(BuildContext context, String defaultLang) {
       child: ListView(
         shrinkWrap: true,
         children: [
-          const ListTile(
-            dense: true,
-            enabled: false,
-            title: Text('Fetch captions in…'),
-          ),
+          ListTile(dense: true, enabled: false, title: Text(title)),
           for (final l in langs)
             ListTile(
               title: Text(l.name),
@@ -1158,6 +1276,9 @@ class _TranscriptSectionState extends ConsumerState<_TranscriptSection> {
         ? const <TranscriptCue>[]
         : decodeCues(meta!.transcriptCues!);
 
+    final tr = ref.watch(itemTranslationProvider(widget.itemId));
+    final showTranslated = tr.hasTranslation && tr.transcript != null;
+
     return Padding(
       padding: EdgeInsets.only(top: tokens.spaceMd),
       child: Column(
@@ -1165,13 +1286,20 @@ class _TranscriptSectionState extends ConsumerState<_TranscriptSection> {
         children: [
           Text('Transcript', style: theme.textTheme.titleSmall),
           SizedBox(height: tokens.spaceXs),
-          ValueListenableBuilder<VideoPlayerController?>(
-            valueListenable: widget.player,
-            builder: (context, controller, _) =>
-                (controller != null && cues.isNotEmpty)
-                ? _SyncedTranscript(cues: cues, controller: controller)
-                : _ExpandableText(text: transcript),
-          ),
+          // A translation replaces the synced view with a flat translated block
+          // (the timed cues stay tied to the original text).
+          if (showTranslated)
+            _ExpandableText(text: tr.transcript!)
+          else
+            ValueListenableBuilder<VideoPlayerController?>(
+              valueListenable: widget.player,
+              builder: (context, controller, _) =>
+                  (controller != null && cues.isNotEmpty)
+                  ? _SyncedTranscript(cues: cues, controller: controller)
+                  : _ExpandableText(text: transcript),
+            ),
+          if (tr.targetLang != null && tr.transcript != null)
+            _TranslationToggle(itemId: widget.itemId),
         ],
       ),
     );
@@ -1186,6 +1314,32 @@ class _TranscriptSectionState extends ConsumerState<_TranscriptSection> {
     await ref
         .read(metadataRepositoryProvider)
         .updateTranscript(widget.itemId, timed.flat, cuesJson: timed.cuesJson);
+  }
+}
+
+/// A compact toggle for a translated section (P13b-2): flips between the
+/// translated text and the original. Hidden until a translation is active.
+class _TranslationToggle extends ConsumerWidget {
+  const _TranslationToggle({required this.itemId});
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tr = ref.watch(itemTranslationProvider(itemId));
+    if (tr.targetLang == null) return const SizedBox.shrink();
+    final src = _captionLanguageLabel(tr.sourceLang ?? '');
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton(
+        onPressed: () =>
+            ref.read(itemTranslationProvider(itemId).notifier).toggleOriginal(),
+        child: Text(
+          tr.showingOriginal
+              ? 'Show translation'
+              : 'Translated from $src · Show original',
+        ),
+      ),
+    );
   }
 }
 
@@ -1334,6 +1488,7 @@ class _MetadataSection extends ConsumerWidget {
     final tokens = GrabBitTokens.of(context);
     final meta = ref.watch(metadataForItemProvider(itemId)).asData?.value;
     if (meta == null) return const SizedBox.shrink();
+    final tr = ref.watch(itemTranslationProvider(itemId));
 
     String? clean(String? v) => (v != null && v.trim().isNotEmpty) ? v : null;
     final date = meta.uploadDate;
@@ -1376,7 +1531,13 @@ class _MetadataSection extends ConsumerWidget {
             SizedBox(height: tokens.spaceMd),
             Text('Description', style: theme.textTheme.titleSmall),
             SizedBox(height: tokens.spaceXs),
-            _ExpandableText(text: description),
+            _ExpandableText(
+              text: (tr.hasTranslation && tr.description != null)
+                  ? tr.description!
+                  : description,
+            ),
+            if (tr.targetLang != null && tr.description != null)
+              _TranslationToggle(itemId: itemId),
           ],
         ],
       ),

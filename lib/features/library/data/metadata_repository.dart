@@ -624,6 +624,12 @@ class MetadataRepository {
     _db.mediaMetadata,
   )..where((t) => t.itemId.equals(itemId))).watchSingleOrNull();
 
+  /// One-shot read of an item's metadata row (P13b-2) — for commands that need
+  /// the current value once (e.g. translation) rather than a reactive stream.
+  Future<MediaMetadataData?> metadataForItem(String itemId) => (_db.select(
+    _db.mediaMetadata,
+  )..where((t) => t.itemId.equals(itemId))).getSingleOrNull();
+
   Future<void> updateTitle(String itemId, String title) async {
     await (_db.update(_db.mediaItems)..where((t) => t.id.equals(itemId))).write(
       MediaItemsCompanion(title: Value(title.trim())),

@@ -80,6 +80,12 @@ dependencies:
   # and runs fully offline — fits the sideloaded/de-Googled posture.
   google_mlkit_text_recognition: ^0.15.1
 
+  # On-device AI (P13b-2): ML Kit on-device translation + language id. MIT
+  # plugins; models download over HTTPS (~30 MB/language, English pivot) and run
+  # offline after — no Google Play Services required.
+  google_mlkit_translation: ^0.13.1
+  google_mlkit_language_id: ^0.13.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

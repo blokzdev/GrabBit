@@ -8,6 +8,11 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Translation — translate the summaries + cache + pack management.** P13b-2 translates the
+      **description + transcript** only (the derived AI/TextRank summaries stay in the source language) and
+      is **ephemeral** (re-translates each time; no DB cache). Future: also offer translated summaries, cache
+      translations per target language, and a Settings screen to view/delete downloaded language packs (each
+      ~30 MB). Also: surface a clear message for languages ML Kit can't translate. *(From P13b-2.)*
 - [ ] **OCR — non-Latin scripts.** P13b-1 ships the **bundled Latin** ML Kit recognizer (no Google Play
       Services, offline). Chinese/Japanese/Korean/Devanagari need their own ML Kit script models (extra APK
       size or a download). Add a script choice if users want non-Latin OCR. *(From P13b-1.)*
