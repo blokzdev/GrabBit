@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/ai/generation_engine.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/generation_provider.dart';
+import 'package:grabbit/core/ai/ocr_engine.dart';
+import 'package:grabbit/core/ai/ocr_provider.dart';
 import 'package:grabbit/core/ai/structured_generation.dart';
 import 'package:grabbit/core/ai/transcription_engine.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
@@ -275,6 +277,27 @@ class FakeGenerationEngine implements GenerationEngine {
   Future<void> close() async {}
 }
 
+/// In-memory OCR engine (no native ML Kit) for the auto-OCR tests (P13b-3).
+/// [available] simulates whether OCR can run; records the paths it scanned.
+class FakeOcrEngine implements OcrEngine {
+  FakeOcrEngine({this.available = true, this.result = 'fake ocr text'});
+
+  bool available;
+  String result;
+  final List<String> scanned = [];
+
+  @override
+  bool get isAvailable => available;
+  @override
+  Future<String> recognizeText(String imagePath) async {
+    scanned.add(imagePath);
+    return result;
+  }
+
+  @override
+  Future<void> close() async {}
+}
+
 QueuedDownload _qd(
   String id, {
   String outputDir = '/tmp',
@@ -323,6 +346,7 @@ void main() {
   late FakeSystemNotificationService fakeOsNotifier;
   late FakeTranscriptionEngine fakeTranscriber;
   late FakeGenerationEngine fakeGenerator;
+  late FakeOcrEngine fakeOcr;
   late Directory mediaDir;
 
   ProviderContainer makeContainer() => ProviderContainer(
@@ -337,6 +361,7 @@ void main() {
       mediaStorageProvider.overrideWithValue(FakeMediaStorage(mediaDir)),
       transcriptionEngineProvider.overrideWithValue(fakeTranscriber),
       generationEngineProvider.overrideWithValue(fakeGenerator),
+      ocrEngineProvider.overrideWithValue(fakeOcr),
       queueConfigProvider.overrideWithValue(
         const QueueConfig(baseRetryDelay: Duration(milliseconds: 5)),
       ),
@@ -353,6 +378,7 @@ void main() {
     fakeOsNotifier = FakeSystemNotificationService();
     fakeTranscriber = FakeTranscriptionEngine();
     fakeGenerator = FakeGenerationEngine();
+    fakeOcr = FakeOcrEngine();
     mediaDir = Directory.systemTemp.createTempSync('grabbit_qmedia_');
     container = makeContainer();
     repo = container.read(queueRepositoryProvider);
@@ -469,6 +495,20 @@ void main() {
   Future<String?> summaryOf(String id) async => (await (db.select(
     db.mediaMetadata,
   )..where((m) => m.itemId.equals(id))).getSingleOrNull())?.aiSummary;
+
+  Future<String?> ocrOf(String id) async => (await (db.select(
+    db.mediaMetadata,
+  )..where((m) => m.itemId.equals(id))).getSingleOrNull())?.ocrText;
+
+  /// An image-only download (no video/audio) — after the P13b-3 classifier fix
+  /// this becomes an `image` library item.
+  Future<Directory> imageDownload(String id) async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_img_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/$id').create();
+    await File('${dir.path}/$id/Photo.jpg').writeAsString('imgdata');
+    return dir;
+  }
 
   /// A normal completed download with a description (so the auto-summary source
   /// — `transcript ?? description` — is non-empty), no caption sidecar.
@@ -641,6 +681,75 @@ void main() {
       expect(ai, isEmpty);
     },
   );
+
+  // --- P13b-3: auto-OCR on image download ---
+
+  test(
+    'auto-OCR: enabled + image + text → ocrText + ai entry (P13b-3)',
+    () async {
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setAutoOcrOnDownload(true);
+      fakeOcr.available = true;
+      final dir = await imageDownload('img1');
+
+      await controller.enqueue(_qd('img1', outputDir: dir.path));
+      await waitFor(() async => engine.running.contains('img1'));
+      engine.complete('img1');
+      await waitFor(
+        () async => (await repo.byId('img1'))?.status == TaskStatus.done,
+      );
+
+      // The classifier fix makes the image the media item; auto-OCR scans it.
+      final item = await (db.select(
+        db.mediaItems,
+      )..where((t) => t.id.equals('img1'))).getSingle();
+      expect(item.type, 'image');
+      expect(fakeOcr.scanned, hasLength(1));
+      expect(await ocrOf('img1'), 'fake ocr text');
+      final ai = await (db.select(
+        db.notifications,
+      )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+      expect(ai, hasLength(1));
+      expect(ai.single.severity, NotificationSeverity.success);
+    },
+  );
+
+  test('auto-OCR: default off → no scan, no entry (P13b-3)', () async {
+    fakeOcr.available = true; // engine present, but the toggle is off
+    final dir = await imageDownload('img1');
+
+    await controller.enqueue(_qd('img1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('img1'));
+    engine.complete('img1');
+    await waitFor(
+      () async => (await repo.byId('img1'))?.status == TaskStatus.done,
+    );
+
+    expect(fakeOcr.scanned, isEmpty);
+    expect(await ocrOf('img1'), isNull);
+    final ai = await (db.select(
+      db.notifications,
+    )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+    expect(ai, isEmpty);
+  });
+
+  test('auto-OCR: enabled but item is a video → skipped (P13b-3)', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setAutoOcrOnDownload(true);
+    final dir = await captionlessDownload('vid1'); // a .mp4
+
+    await controller.enqueue(_qd('vid1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('vid1'));
+    engine.complete('vid1');
+    await waitFor(
+      () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+    );
+
+    expect(fakeOcr.scanned, isEmpty);
+    expect(await ocrOf('vid1'), isNull);
+  });
 
   test('a completed download posts a success activity entry (P11c)', () async {
     final dir = await Directory.systemTemp.createTemp('grabbit_ntf_done_');

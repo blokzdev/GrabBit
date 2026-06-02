@@ -97,6 +97,11 @@ abstract class SettingsModel with _$SettingsModel {
     // fetch — mirrors `autoTranscribe`). The on-demand summary on item detail
     // (P13a) works regardless.
     @Default(false) bool autoSummarizeOnDownload,
+    // P13b-3: auto-extract text (OCR) from a newly downloaded image in the
+    // background, so it becomes searchable. Opt-in (defaults off); runs only on
+    // images, on-device + offline (bundled ML Kit, no download). The on-demand
+    // "Scan text" on item detail (P13b-1) works regardless.
+    @Default(false) bool autoOcrOnDownload,
     // On-device speech transcription (P12e). Opt-in (defaults off); the whisper
     // model is downloaded only when the user enables it + picks a model.
     // `selectedTranscriptionModelId` empty = the device-tier recommendation;

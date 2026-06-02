@@ -147,6 +147,10 @@ class SettingsController extends _$SettingsController {
   Future<void> setAutoSummarizeOnDownload(bool value) async =>
       _update((await future).copyWith(autoSummarizeOnDownload: value));
 
+  /// Auto-scan newly downloaded images for text (OCR) in the background (P13b-3).
+  Future<void> setAutoOcrOnDownload(bool value) async =>
+      _update((await future).copyWith(autoOcrOnDownload: value));
+
   /// On-device transcription opt-in (P12e).
   Future<void> setTranscriptionEnabled(bool value) async =>
       _update((await future).copyWith(transcriptionEnabled: value));
