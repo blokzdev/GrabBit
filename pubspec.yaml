@@ -75,6 +75,11 @@ dependencies:
   # companion is intentionally omitted (it would clash with ffmpeg_kit_flutter_new).
   whisper_ggml_plus: ^1.5.2
 
+  # On-device AI (P13b-1): ML Kit on-device text recognition (OCR) for image
+  # downloads. MIT plugin; the bundled Latin model needs no Google Play Services
+  # and runs fully offline — fits the sideloaded/de-Googled posture.
+  google_mlkit_text_recognition: ^0.15.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

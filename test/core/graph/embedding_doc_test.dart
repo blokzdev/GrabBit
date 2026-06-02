@@ -44,6 +44,19 @@ void main() {
       expect(docs.single.text, contains('How to cook pasta well'));
     });
 
+    test('includes the OCR text so semantic search covers it (P13b-1)', () {
+      final docs = buildEmbeddingDocs(
+        LibrarySnapshot(
+          media: [item('a', title: 'Poster')],
+          metadata: [
+            const MediaMetadataData(itemId: 'a', ocrText: 'GRAND OPENING'),
+          ],
+        ),
+        modelId: 'm1',
+      );
+      expect(docs.single.text, contains('GRAND OPENING'));
+    });
+
     test('includes the transcript, capped to the window (P10g-1)', () {
       final long = List.filled(2000, 'word').join(' '); // ~10k chars
       final docs = buildEmbeddingDocs(

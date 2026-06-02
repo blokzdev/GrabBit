@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 11 with all tables created', () async {
-    expect(db.schemaVersion, 11);
+  test('opens at schema version 12 with all tables created', () async {
+    expect(db.schemaVersion, 12);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -896,6 +896,142 @@ void main() {
       final updated = await upgraded.select(upgraded.mediaMetadata).getSingle();
       expect(updated.aiSummary, 'A two-sentence on-device summary.');
       expect(updated.aiSummaryModelId, 'qwen3-0.6b');
+    },
+  );
+
+  test(
+    'upgrades a v11 database to v12, adding ocrText + the FTS ocr column (P13b-1)',
+    () async {
+      // Seed a v11-schema DB: media_metadata has the ai_summary columns but no
+      // ocr_text, and an old 4-column media_fts. Opening at v12 must add the
+      // column and rebuild media_fts WITH `ocr`.
+      final upgraded = AppDatabase(
+        NativeDatabase.memory(
+          setup: (raw) {
+            raw.execute('''
+              CREATE TABLE media_items (
+                id TEXT NOT NULL PRIMARY KEY,
+                title TEXT NOT NULL,
+                source_url TEXT NOT NULL,
+                site TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                type TEXT NOT NULL,
+                duration_sec INTEGER,
+                size_bytes INTEGER,
+                width INTEGER,
+                height INTEGER,
+                thumb_path TEXT,
+                created_at INTEGER NOT NULL,
+                storage_state TEXT NOT NULL,
+                notes TEXT,
+                folder_id INTEGER,
+                is_favorite INTEGER NOT NULL DEFAULT 0,
+                content_hash TEXT,
+                last_accessed_at INTEGER
+              )''');
+            raw.execute('''
+              CREATE TABLE media_metadata (
+                item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+                uploader TEXT,
+                upload_date INTEGER,
+                description TEXT,
+                original_url TEXT,
+                uploader_id TEXT,
+                channel_id TEXT,
+                source_id TEXT,
+                playlist_id TEXT,
+                playlist_title TEXT,
+                tags TEXT,
+                transcript TEXT,
+                transcript_cues TEXT,
+                ai_summary TEXT,
+                ai_summary_model_id TEXT
+              )''');
+            // The v11 FTS table — note: NO `ocr` column.
+            raw.execute(
+              'CREATE VIRTUAL TABLE media_fts USING fts5('
+              'item_id UNINDEXED, title, description, transcript, '
+              "tokenize = 'unicode61 remove_diacritics 2')",
+            );
+            raw.execute('''
+              CREATE TABLE download_tasks (
+                id TEXT NOT NULL PRIMARY KEY,
+                url TEXT NOT NULL,
+                request_json TEXT NOT NULL,
+                status TEXT NOT NULL,
+                progress REAL NOT NULL DEFAULT 0,
+                error_code TEXT,
+                retries INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL,
+                order_index INTEGER NOT NULL DEFAULT 0
+              )''');
+            raw.execute('''
+              CREATE TABLE app_settings (
+                id INTEGER NOT NULL PRIMARY KEY DEFAULT 0,
+                data TEXT NOT NULL
+              )''');
+            raw.execute('''
+              CREATE TABLE notifications (
+                id TEXT NOT NULL PRIMARY KEY,
+                category TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT,
+                target_route TEXT,
+                item_id TEXT,
+                task_id TEXT,
+                dedupe_key TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                read_at INTEGER,
+                expires_at INTEGER,
+                coalesce_count INTEGER NOT NULL DEFAULT 1
+              )''');
+            raw.execute('''
+              CREATE TABLE things (
+                id TEXT NOT NULL PRIMARY KEY,
+                type TEXT NOT NULL,
+                jsonld TEXT NOT NULL,
+                name TEXT,
+                url TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+              )''');
+            raw.execute(
+              'INSERT INTO media_items (id, title, source_url, site, '
+              'file_path, type, created_at, storage_state) VALUES '
+              "('old1', 'Poster', 'https://x/p', 'web', '/m/old1.jpg', "
+              "'image', 0, 'private')",
+            );
+            raw.execute(
+              'INSERT INTO media_metadata (item_id, description) VALUES '
+              "('old1', 'a description')",
+            );
+            raw.execute('PRAGMA user_version = 11');
+          },
+        ),
+      );
+      addTearDown(upgraded.close);
+
+      // The new column exists, defaults null, and prior data survives.
+      final meta = await upgraded.select(upgraded.mediaMetadata).getSingle();
+      expect(meta.itemId, 'old1');
+      expect(meta.ocrText, isNull);
+      expect(meta.description, 'a description');
+
+      // media_fts now has `ocr`: writing ocr_text makes the item findable by a
+      // word that appears only in the OCR text.
+      await (upgraded.update(
+        upgraded.mediaMetadata,
+      )..where((t) => t.itemId.equals('old1'))).write(
+        const MediaMetadataCompanion(ocrText: Value('GRAND OPENING saturday')),
+      );
+      final hits = await upgraded
+          .customSelect(
+            "SELECT item_id FROM media_fts WHERE media_fts MATCH 'saturday'",
+          )
+          .get();
+      expect(hits.map((r) => r.read<String>('item_id')), ['old1']);
     },
   );
 

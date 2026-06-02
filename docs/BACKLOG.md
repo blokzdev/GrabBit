@@ -8,6 +8,9 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **OCR — non-Latin scripts.** P13b-1 ships the **bundled Latin** ML Kit recognizer (no Google Play
+      Services, offline). Chinese/Japanese/Korean/Devanagari need their own ML Kit script models (extra APK
+      size or a download). Add a script choice if users want non-Latin OCR. *(From P13b-1.)*
 - [ ] **Auto-summarize — queue-decoupled background run.** P13a-2 generates the auto-summary **inline** in
       `_persistCompleted` before the next download pumps (gated on "model present" so it can't stall on a
       fetch), exactly like `autoTranscribe`. Generation is heavier than whisper-tiny, so a fuller design
