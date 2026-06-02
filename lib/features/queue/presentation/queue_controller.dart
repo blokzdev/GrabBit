@@ -653,7 +653,9 @@ class QueueController extends _$QueueController {
                 type: type,
                 createdAt: DateTime.now(),
                 storageState: 'private',
-                durationSec: Value(single ? queued.durationSec : null),
+                durationSec: Value(
+                  single && type != 'image' ? queued.durationSec : null,
+                ),
                 sizeBytes: Value(await mediaFile.length()),
                 thumbPath: Value(outputs.thumb?.path),
                 width: Value(width),
@@ -703,6 +705,10 @@ class QueueController extends _$QueueController {
           : null;
       final whisperReady = whisper != null && await whisper.ensureReady();
       for (final (i, mediaFile) in outputs.media.indexed) {
+        // Images have no audio to transcribe — skip (avoids a wasted whisper
+        // transcode of a photo).
+        final ext = mediaFile.path.split('.').last.toLowerCase();
+        if (mediaTypeForExt(ext) == 'image') continue;
         final itemId = single ? id : '${id}__$i';
         final timed = await transcripts.extractTimed(
           mediaFile.path,

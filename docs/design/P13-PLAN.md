@@ -167,6 +167,12 @@ target-language UX + GMS nuance). Measure APK-size impact in the first ML Kit bu
   Kit runs). Tests: classifier image cases, `shouldAutoOcr` truth table, settings round-trip, and queue cases
   (image+text → `ocrText` + entry; default-off no-op; video skipped). **No schema/deps change.** **Pending
   APK spot-check** (real image download → image item + searchable text + inbox entry, offline).
+- **Pre-merge sweep refinements (same PR):** (a) `MediaThumb` now falls back to the image **file** for
+  `image` items with a null thumbnail (they were showing a movie-icon placeholder in grid/dashboard/
+  collections/hero/related); (b) the classifier collapses an image + its yt-dlp `--write-thumbnail` sidecar
+  to **one** item (largest = photo, smaller = thumbnail) so a single image download isn't double-counted;
+  (c) quick wins — auto-transcribe skips image items, and `durationSec` is gated to non-image. The
+  unconditional `--write-thumbnail` and non-`mediaTypeForExt` image formats are logged in `BACKLOG.md`.
 
 ### `[ ]` P13c — Smart auto-tagging *(generation; APK)*
 LLM-suggested tags feeding the **existing** tag system — builds directly on the P13a generation patterns.

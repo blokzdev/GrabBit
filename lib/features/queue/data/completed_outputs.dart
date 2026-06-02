@@ -36,15 +36,32 @@ DownloadOutputs classifyDownloadOutputs(Iterable<File> files) {
     }
   }
   media.sort((a, b) => a.path.compareTo(b.path));
-  images.sort((a, b) => a.path.compareTo(b.path));
   // Video/audio present → images are thumbnail sidecars (keep the first).
-  // Otherwise it's an image download → the images are the media.
   if (media.isNotEmpty) {
+    images.sort((a, b) => a.path.compareTo(b.path));
     return (
       media: media,
       thumb: images.isEmpty ? null : images.first,
       info: info,
     );
   }
-  return (media: images, thumb: null, info: info);
+  // Image download → the image is the media. A carousel expands to one task
+  // (folder) per photo, so multiple images here means the photo PLUS yt-dlp's
+  // `--write-thumbnail` sidecar — keep the largest as the photo and the next as
+  // its thumbnail (rather than minting a duplicate item).
+  if (images.length <= 1) {
+    return (media: images, thumb: null, info: info);
+  }
+  images.sort((a, b) => _sizeOf(b).compareTo(_sizeOf(a)));
+  return (media: [images.first], thumb: images[1], info: info);
+}
+
+/// File size in bytes, or 0 when it can't be read (e.g. a missing path in a
+/// unit test) — used only to pick the largest image as the media.
+int _sizeOf(File f) {
+  try {
+    return f.lengthSync();
+  } on FileSystemException {
+    return 0;
+  }
 }

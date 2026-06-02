@@ -956,8 +956,12 @@ entries, or verify after P11c lands.)*
 
 ### P13b-3 — Auto-OCR on download (+ image-download fix)  *(install `app-arm64-v8a-debug.apk`)*
 - [ ] **Image download fix:** download a single image (e.g. an Instagram/X photo, or a photo carousel) →
-      it now appears in the library as an **image item** (previously it produced nothing). The video case is
-      unchanged (the video is the item; its thumbnail is still a thumbnail).
+      it now appears in the library as an **image item** (previously it produced nothing), shows **its own
+      picture as the thumbnail** in the grid/dashboard/collections (not a movie-icon placeholder), and is
+      exactly **one** item even though yt-dlp also writes a thumbnail sidecar. The video case is unchanged
+      (the video is the item; its thumbnail is still a thumbnail).
+- [ ] **Export:** export a downloaded image item to the gallery → it lands in the **Images** collection
+      and opens in the device gallery.
 - [ ] AI & graph settings → enable **Image text (OCR) · Auto-scan new image downloads**. Download an image
       with legible text → its text becomes **searchable** + a "Text found in image" Activity Inbox entry,
       **fully offline**.

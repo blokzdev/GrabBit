@@ -60,17 +60,26 @@ void main() {
       expect(out.info?.path, '/d/photo.info.json');
     });
 
-    test('photo carousel → every image is media (sorted) (P13b-3)', () {
-      final out = classifyDownloadOutputs(
-        _files(['/d/post 2.jpg', '/d/post 1.png', '/d/post 3.webp']),
-      );
-      expect(out.media.map((f) => f.path), [
-        '/d/post 1.png',
-        '/d/post 2.jpg',
-        '/d/post 3.webp',
-      ]);
-      expect(out.thumb, isNull);
-    });
+    test(
+      'image + its written thumbnail → largest is media, smaller is thumb (P13b-3)',
+      () async {
+        // yt-dlp `--write-thumbnail` lands a second image beside the photo;
+        // the larger file is the real photo, the smaller is its thumbnail.
+        final dir = await Directory.systemTemp.createTemp('grabbit_cls_');
+        addTearDown(() => dir.delete(recursive: true));
+        final photo = File('${dir.path}/post.webp')
+          ..writeAsBytesSync(List.filled(5000, 0));
+        final thumb = File('${dir.path}/post.jpg')
+          ..writeAsBytesSync(List.filled(300, 0));
+
+        final out = classifyDownloadOutputs([
+          thumb,
+          photo,
+        ]); // order shouldn't matter
+        expect(out.media.map((f) => f.path), [photo.path]);
+        expect(out.thumb?.path, thumb.path);
+      },
+    );
 
     test('video + image keeps the image as the thumbnail (unchanged)', () {
       final out = classifyDownloadOutputs(

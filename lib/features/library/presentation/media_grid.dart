@@ -241,12 +241,20 @@ class MediaThumb extends StatelessWidget {
     final fallback = ColoredBox(
       color: scheme.surfaceContainerHighest,
       child: Icon(
-        item.type == 'audio' ? Icons.music_note : Icons.movie_outlined,
+        switch (item.type) {
+          'audio' => Icons.music_note,
+          'image' => Icons.image_outlined,
+          _ => Icons.movie_outlined,
+        },
         color: scheme.onSurfaceVariant,
         size: 40,
       ),
     );
-    final thumbPath = item.thumbPath;
+    // Image items often have no separate thumbnail (the photo is its own
+    // thumbnail) — render the image file directly. Everything else needs a
+    // generated thumbnail.
+    final thumbPath =
+        item.thumbPath ?? (item.type == 'image' ? item.filePath : null);
     if (thumbPath == null) return fallback;
     return Image.file(
       File(thumbPath),

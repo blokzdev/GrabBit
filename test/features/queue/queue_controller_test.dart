@@ -510,6 +510,21 @@ void main() {
     return dir;
   }
 
+  /// An image download plus yt-dlp's `--write-thumbnail` sidecar (a smaller
+  /// second image) — should still yield exactly one image item.
+  Future<Directory> imageWithThumbDownload(String id) async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_imgt_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/$id').create();
+    await File(
+      '${dir.path}/$id/Photo.webp',
+    ).writeAsBytes(List.filled(5000, 0)); // the real photo (larger)
+    await File(
+      '${dir.path}/$id/Photo.jpg',
+    ).writeAsBytes(List.filled(300, 0)); // the written thumbnail (smaller)
+    return dir;
+  }
+
   /// A normal completed download with a description (so the auto-summary source
   /// — `transcript ?? description` — is non-empty), no caption sidecar.
   Future<Directory> describedDownload(String id) async {
@@ -749,6 +764,46 @@ void main() {
 
     expect(fakeOcr.scanned, isEmpty);
     expect(await ocrOf('vid1'), isNull);
+  });
+
+  test('image + written thumbnail → exactly one image item (P13b-3)', () async {
+    final dir = await imageWithThumbDownload('img1');
+
+    await controller.enqueue(_qd('img1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('img1'));
+    engine.complete('img1');
+    await waitFor(
+      () async => (await repo.byId('img1'))?.status == TaskStatus.done,
+    );
+
+    final items = await (db.select(
+      db.mediaItems,
+    )..where((t) => t.id.equals('img1'))).get();
+    expect(items, hasLength(1)); // not two (the thumbnail isn't its own item)
+    expect(items.single.type, 'image');
+    // The smaller image became the thumbnail.
+    expect(items.single.thumbPath, endsWith('Photo.jpg'));
+    expect(items.single.filePath, endsWith('Photo.webp'));
+  });
+
+  test('auto-transcribe skips image downloads (P13b-3)', () async {
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setAutoTranscribe(true);
+    await container
+        .read(settingsControllerProvider.notifier)
+        .setTranscriptionEnabled(true);
+    fakeTranscriber.ready = true;
+    final dir = await imageDownload('img1');
+
+    await controller.enqueue(_qd('img1', outputDir: dir.path));
+    await waitFor(() async => engine.running.contains('img1'));
+    engine.complete('img1');
+    await waitFor(
+      () async => (await repo.byId('img1'))?.status == TaskStatus.done,
+    );
+
+    expect(fakeTranscriber.transcribed, isEmpty); // no whisper on a photo
   });
 
   test('a completed download posts a success activity entry (P11c)', () async {
