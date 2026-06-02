@@ -12,6 +12,7 @@ import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/model_capability_matrix.dart';
 import 'package:grabbit/core/ai/model_catalog.dart';
 import 'package:grabbit/core/ai/model_download_service.dart';
+import 'package:grabbit/core/ai/ocr_provider.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/device/device_profile.dart';
@@ -70,7 +71,53 @@ class AiSettingsScreen extends ConsumerWidget {
         ),
         const _GenerationCard(),
         const _TranscriptionCard(),
+        const _OcrCard(),
       ],
+    );
+  }
+}
+
+/// On-device image OCR (P13b-3). Image text is always scannable by hand from an
+/// image's detail screen (P13b-1); this card just offers the opt-in to do it
+/// automatically on download. Shown only where ML Kit OCR can run (Android).
+class _OcrCard extends ConsumerWidget {
+  const _OcrCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(ocrEngineProvider).isAvailable) {
+      return const SizedBox.shrink();
+    }
+    final auto = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.autoOcrOnDownload ?? false,
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: SettingsCard(
+        children: [
+          SwitchListTile(
+            secondary: const InfoHintButton(
+              InfoHint(
+                title: 'Auto-scan images for text',
+                body:
+                    'Automatically read text inside each downloaded image so '
+                    'you can search for it — all on-device and offline. You can '
+                    'always scan an image by hand from its detail screen.',
+              ),
+            ),
+            title: const Text('Image text (OCR)'),
+            subtitle: const Text(
+              'Scan new image downloads for searchable text',
+            ),
+            value: auto,
+            onChanged: (v) => ref
+                .read(settingsControllerProvider.notifier)
+                .setAutoOcrOnDownload(v),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -46,6 +46,44 @@ void main() {
     );
   });
 
+  testWidgets(
+    'image item with no thumbnail renders the image file, not a movie icon (P13b-3)',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: MediaThumb(
+                item: _item(id: 'i', type: 'image'),
+              ),
+            ),
+          ),
+        ),
+      );
+      // Falls back to Image.file(filePath) — never the video placeholder.
+      expect(find.byType(Image), findsOneWidget);
+      expect(find.byIcon(Icons.movie_outlined), findsNothing);
+    },
+  );
+
+  testWidgets('video item with no thumbnail shows the movie placeholder', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: MediaThumb(
+              item: _item(id: 'v2', type: 'video'),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.movie_outlined), findsOneWidget);
+    expect(find.byType(Image), findsNothing);
+  });
+
   testWidgets('tapping the star favorites the item', (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);

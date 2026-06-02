@@ -150,12 +150,29 @@ target-language UX + GMS nuance). Measure APK-size impact in the first ML Kit bu
   BCP mapping, `translateReadiness` truth table, controller with a fake engine. **Pending APK spot-check**
   (the native ML Kit translate/language-id + the pack download); the widget flow is APK-verified.
 
-#### `[ ]` P13b-3 — Auto-OCR on download *(follow-up; native; APK)*
+#### `[~]` P13b-3 — Auto-OCR on download (+ image-download fix) *(follow-up; native; APK)*
 - Opt-in (default off) auto-scan of **image** downloads, mirroring P13a-2 auto-summarize: a settings toggle +
   a gated block in `queue_controller._persistCompleted` (runs inline; OCR is cheap + offline) → `updateOcrText`
   → an Activity Inbox entry. Grows search coverage automatically.
-- **Exit / review:** with auto-OCR on, a finished image download is scanned + becomes searchable offline;
-  default-off does nothing; the queue still drains.
+- **Precursor fix (maintainer call):** `classifyDownloadOutputs` routed **all** image extensions to `thumb`,
+  so a single-image download (a photo/carousel) produced **no media item** — auto-OCR would never fire.
+  Fixed: image files are tentative thumbnails, but when a download has **no video/audio**, the images **are**
+  the media (→ `image` items). Reuses `mediaTypeForExt` for consistency. This also fixes image downloads
+  generally (they now appear in the library, with dimensions, OCR, etc.).
+- **Exit / review:** an image-only download becomes an `image` item; with auto-OCR on, it's scanned + becomes
+  searchable offline; default-off / video items do nothing; the queue still drains.
+- **Status:** implemented (CI-green) — classifier fix (+ tests); `autoOcrOnDownload` setting + setter; pure
+  `shouldAutoOcr`; gated auto-OCR block in `_persistCompleted` (`ocrCount` in `_PersistResult`) + an `ai`
+  success inbox entry when text is found; an "Image text (OCR)" auto-scan card in AI settings (shown where ML
+  Kit runs). Tests: classifier image cases, `shouldAutoOcr` truth table, settings round-trip, and queue cases
+  (image+text → `ocrText` + entry; default-off no-op; video skipped). **No schema/deps change.** **Pending
+  APK spot-check** (real image download → image item + searchable text + inbox entry, offline).
+- **Pre-merge sweep refinements (same PR):** (a) `MediaThumb` now falls back to the image **file** for
+  `image` items with a null thumbnail (they were showing a movie-icon placeholder in grid/dashboard/
+  collections/hero/related); (b) the classifier collapses an image + its yt-dlp `--write-thumbnail` sidecar
+  to **one** item (largest = photo, smaller = thumbnail) so a single image download isn't double-counted;
+  (c) quick wins — auto-transcribe skips image items, and `durationSec` is gated to non-image. The
+  unconditional `--write-thumbnail` and non-`mediaTypeForExt` image formats are logged in `BACKLOG.md`.
 
 ### `[ ]` P13c — Smart auto-tagging *(generation; APK)*
 LLM-suggested tags feeding the **existing** tag system — builds directly on the P13a generation patterns.

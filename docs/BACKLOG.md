@@ -16,6 +16,15 @@ _(nothing active — pick the next batch from below)_
 - [ ] **OCR — non-Latin scripts.** P13b-1 ships the **bundled Latin** ML Kit recognizer (no Google Play
       Services, offline). Chinese/Japanese/Korean/Devanagari need their own ML Kit script models (extra APK
       size or a download). Add a script choice if users want non-Latin OCR. *(From P13b-1.)*
+- [ ] **Unconditional `--write-thumbnail` for image downloads.** `YtDlpHost.kt` passes
+      `--write-thumbnail --convert-thumbnails jpg` for every download, so an image download wastes a fetch
+      writing a thumbnail of the photo. P13b-3 handles this defensively in Dart (the classifier keeps the
+      largest image as the photo and the smaller as its thumbnail), but a cleaner fix would gate the flag off
+      at request time for image downloads (needs an `isImage`/`writeThumbnail` hint through the Pigeon
+      `DownloadRequest`). *(From P13b-3 sweep.)*
+- [ ] **Image formats outside `mediaTypeForExt`.** `.heic`/`.heif`/`.avif`/`.tiff` aren't in the image set,
+      so such a download is classified as a `video` item. Add them (+ confirm the player/thumbnail handle
+      them) if real downloads produce them. *(From P13b-3 sweep.)*
 - [ ] **Auto-summarize — queue-decoupled background run.** P13a-2 generates the auto-summary **inline** in
       `_persistCompleted` before the next download pumps (gated on "model present" so it can't stall on a
       fetch), exactly like `autoTranscribe`. Generation is heavier than whisper-tiny, so a fuller design

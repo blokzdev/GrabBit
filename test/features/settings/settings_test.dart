@@ -275,6 +275,30 @@ void main() {
     });
 
     test(
+      'auto-process setters default off and persist (P13a-2/P13b-3)',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [appDatabaseProvider.overrideWithValue(db)],
+        );
+        addTearDown(container.dispose);
+
+        final loaded = await container.read(settingsControllerProvider.future);
+        expect(loaded.autoSummarizeOnDownload, isFalse);
+        expect(loaded.autoOcrOnDownload, isFalse);
+
+        final notifier = container.read(settingsControllerProvider.notifier);
+        await notifier.setAutoSummarizeOnDownload(true);
+        await notifier.setAutoOcrOnDownload(true);
+
+        final saved = await SettingsRepository(db).read();
+        expect(saved.autoSummarizeOnDownload, isTrue);
+        expect(saved.autoOcrOnDownload, isTrue);
+      },
+    );
+
+    test(
       'autoCheckEngineUpdate defaults on and persists when toggled',
       () async {
         final db = AppDatabase(NativeDatabase.memory());

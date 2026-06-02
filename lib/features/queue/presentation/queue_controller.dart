@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/generation_provider.dart';
+import 'package:grabbit/core/ai/ocr_provider.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
@@ -26,6 +27,7 @@ import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/ai_summary.dart';
+import 'package:grabbit/features/library/presentation/ocr.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/notifications/data/system_notification_service.dart';
@@ -51,6 +53,8 @@ typedef _PersistResult = ({
   // in but the generation model isn't downloaded → prompt to finish setup.
   int summaryCount,
   bool summaryNeedsModel,
+  // P13b-3: count of image items auto-scanned for text (OCR).
+  int ocrCount,
 });
 
 class QueueConfig {
@@ -418,6 +422,20 @@ class QueueController extends _$QueueController {
         dedupeKey: 'summary_needs_model',
       );
     }
+    // P13b-3: auto-OCR found text in a downloaded image (now searchable).
+    if (result.ocrCount > 0) {
+      await center.post(
+        category: NotificationCategory.ai,
+        severity: NotificationSeverity.success,
+        title: queued.title,
+        body: result.ocrCount > 1
+            ? 'Text found in ${result.ocrCount} images'
+            : 'Text found in image',
+        targetRoute: route,
+        itemId: single ? result.primaryId : null,
+        dedupeKey: 'ocr_$id',
+      );
+    }
     await _maybeNotifyOs(
       taskId: id,
       title: queued.title,
@@ -578,6 +596,7 @@ class QueueController extends _$QueueController {
       transcriptionNeedsModel: false,
       summaryCount: 0,
       summaryNeedsModel: false,
+      ocrCount: 0,
     );
     // Files land in a per-task subfolder (see YtDlpHost `-o`): the task id names
     // the folder, the user's template names the file inside it.
@@ -634,7 +653,9 @@ class QueueController extends _$QueueController {
                 type: type,
                 createdAt: DateTime.now(),
                 storageState: 'private',
-                durationSec: Value(single ? queued.durationSec : null),
+                durationSec: Value(
+                  single && type != 'image' ? queued.durationSec : null,
+                ),
                 sizeBytes: Value(await mediaFile.length()),
                 thumbPath: Value(outputs.thumb?.path),
                 width: Value(width),
@@ -684,6 +705,10 @@ class QueueController extends _$QueueController {
           : null;
       final whisperReady = whisper != null && await whisper.ensureReady();
       for (final (i, mediaFile) in outputs.media.indexed) {
+        // Images have no audio to transcribe — skip (avoids a wasted whisper
+        // transcode of a photo).
+        final ext = mediaFile.path.split('.').last.toLowerCase();
+        if (mediaTypeForExt(ext) == 'image') continue;
         final itemId = single ? id : '${id}__$i';
         final timed = await transcripts.extractTimed(
           mediaFile.path,
@@ -773,6 +798,41 @@ class QueueController extends _$QueueController {
       }
     }
 
+    // P13b-3: auto-scan freshly downloaded images for text (OCR) when opted in,
+    // so they become searchable. On-device + offline (bundled ML Kit, no
+    // download); images only; skips ones already scanned.
+    var ocrCount = 0;
+    if (settings.autoOcrOnDownload) {
+      final ocr = ref.read(ocrEngineProvider);
+      final metadata = ref.read(metadataRepositoryProvider);
+      for (final (i, mediaFile) in outputs.media.indexed) {
+        final itemId = single ? id : '${id}__$i';
+        final ext = mediaFile.path.split('.').last.toLowerCase();
+        final isImage =
+            !queued.request.audioOnly && mediaTypeForExt(ext) == 'image';
+        final meta = await (db.select(
+          db.mediaMetadata,
+        )..where((m) => m.itemId.equals(itemId))).getSingleOrNull();
+        if (!shouldAutoOcr(
+          enabled: settings.autoOcrOnDownload,
+          engineAvailable: ocr.isAvailable,
+          isImage: isImage,
+          alreadyScanned: meta?.ocrText?.trim().isNotEmpty ?? false,
+        )) {
+          continue;
+        }
+        try {
+          final text = (await ocr.recognizeText(mediaFile.path)).trim();
+          if (text.isNotEmpty) {
+            await metadata.updateOcrText(itemId, text);
+            ocrCount++;
+          }
+        } catch (_) {
+          // A per-item OCR failure must not fail the download.
+        }
+      }
+    }
+
     return (
       primaryId: single ? id : '${id}__0',
       itemCount: outputs.media.length,
@@ -780,6 +840,7 @@ class QueueController extends _$QueueController {
       transcriptionNeedsModel: transcriptionNeedsModel,
       summaryCount: summaryCount,
       summaryNeedsModel: summaryNeedsModel,
+      ocrCount: ocrCount,
     );
   }
 
