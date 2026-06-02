@@ -200,7 +200,7 @@ lean for speed, not for a minutes budget:
   whole-phase map: the goal, a **granular subphase breakdown** (each with scope + exit criteria), and the
   **phase-level decisions** — and get it **approved before** the first subphase is planned or built. The
   map is its own small docs PR; it locks the decomposition (and keeps it phone-reviewable) before any
-  code. Then plan and execute each subphase as its own PR per the rules below. (P7/P8/P9/P10j/P11/P12
+  code. Then plan and execute each subphase as its own PR per the rules below. (P7/P8/P9/P10j/P11/P12/P13
   each have such a plan doc.)
 - **`main`** is the default, integration branch — **never commit directly to it.**
 - **Branches are single-use per PR.** Each PR gets its own **fresh** branch, **cut from the latest
@@ -313,6 +313,9 @@ follow these rules in code and docs:
 - `docs/design/P12-PLAN.md` — (P12) device-tiered edge-LLM engine sub-roadmap (P12a–P12g: device
   tiers/capability matrix, model catalog + download, multilingual embedder, LLM generation, whisper
   transcription, Things-Engine seams, capability-gating UX).
+- `docs/design/P13-PLAN.md` — (P13) LLM feature surface & polish sub-roadmap (P13a–P13f: abstractive
+  summarization, ML Kit translation/OCR, smart auto-tagging, local GraphRAG "Ask your library", advanced
+  graph analytics, model-selector UX + phase close).
 - `docs/things-engine.md` — (v2 initiative, no P-number) the **Things Engine** vision one-pager: the
   library reframed as a typed, on-device graph of schema.org Things.
 - `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,

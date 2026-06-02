@@ -221,6 +221,9 @@ those are cleanly gated with explanation.
 
 ## P13 — LLM feature surface & polish (incl. local GraphRAG)
 
+> **Detailed sub-roadmap: [`docs/design/P13-PLAN.md`](P13-PLAN.md)** (P13a–P13f subphase breakdown +
+> phase-level decisions). This section is the lean summary.
+
 **Goal:** the differentiating payoff, layered on P10 (graph+vector) + P12 (LLM).
 
 - **Transcription, abstractive summarization** (on the P10 TextRank floor), **translation, OCR** —
