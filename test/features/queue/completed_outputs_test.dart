@@ -50,5 +50,34 @@ void main() {
       final out = classifyDownloadOutputs(_files(['/d/clip.en.srt']));
       expect(out.media, isEmpty);
     });
+
+    test('image-only download → the image is the media, no thumb (P13b-3)', () {
+      final out = classifyDownloadOutputs(
+        _files(['/d/photo.jpg', '/d/photo.info.json']),
+      );
+      expect(out.media.map((f) => f.path), ['/d/photo.jpg']);
+      expect(out.thumb, isNull);
+      expect(out.info?.path, '/d/photo.info.json');
+    });
+
+    test('photo carousel → every image is media (sorted) (P13b-3)', () {
+      final out = classifyDownloadOutputs(
+        _files(['/d/post 2.jpg', '/d/post 1.png', '/d/post 3.webp']),
+      );
+      expect(out.media.map((f) => f.path), [
+        '/d/post 1.png',
+        '/d/post 2.jpg',
+        '/d/post 3.webp',
+      ]);
+      expect(out.thumb, isNull);
+    });
+
+    test('video + image keeps the image as the thumbnail (unchanged)', () {
+      final out = classifyDownloadOutputs(
+        _files(['/d/clip.mp4', '/d/clip.jpg']),
+      );
+      expect(out.media.map((f) => f.path), ['/d/clip.mp4']);
+      expect(out.thumb?.path, '/d/clip.jpg');
+    });
   });
 }
