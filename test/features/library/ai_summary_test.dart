@@ -64,4 +64,50 @@ void main() {
       );
     });
   });
+
+  group('autoSummaryDecision (P13a-2)', () {
+    test('no text → skip', () {
+      expect(
+        autoSummaryDecision(
+          hasText: false,
+          alreadySummarized: false,
+          modelReady: true,
+        ),
+        AutoSummaryDecision.skip,
+      );
+    });
+
+    test('already summarized → skip (no rework)', () {
+      expect(
+        autoSummaryDecision(
+          hasText: true,
+          alreadySummarized: true,
+          modelReady: true,
+        ),
+        AutoSummaryDecision.skip,
+      );
+    });
+
+    test('text + no summary + model not ready → needs model (nudge)', () {
+      expect(
+        autoSummaryDecision(
+          hasText: true,
+          alreadySummarized: false,
+          modelReady: false,
+        ),
+        AutoSummaryDecision.needsModel,
+      );
+    });
+
+    test('text + no summary + model ready → summarize', () {
+      expect(
+        autoSummaryDecision(
+          hasText: true,
+          alreadySummarized: false,
+          modelReady: true,
+        ),
+        AutoSummaryDecision.summarize,
+      );
+    });
+  });
 }

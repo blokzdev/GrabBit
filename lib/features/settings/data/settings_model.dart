@@ -91,6 +91,12 @@ abstract class SettingsModel with _$SettingsModel {
     // eligibility-guarded by activeGenerationModelProvider.
     @Default(false) bool generationEnabled,
     @Default('') String selectedGenerationModelId,
+    // P13a-2: auto-generate the abstractive summary for a newly downloaded item
+    // in the background. Opt-in (defaults off); only runs when text generation
+    // is enabled and its model is already downloaded (no surprise mid-queue
+    // fetch — mirrors `autoTranscribe`). The on-demand summary on item detail
+    // (P13a) works regardless.
+    @Default(false) bool autoSummarizeOnDownload,
     // On-device speech transcription (P12e). Opt-in (defaults off); the whisper
     // model is downloaded only when the user enables it + picks a model.
     // `selectedTranscriptionModelId` empty = the device-tier recommendation;

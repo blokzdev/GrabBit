@@ -62,3 +62,34 @@ AiSummaryAction aiSummaryAction({
   if (!modelReady) return AiSummaryAction.offerDownload;
   return AiSummaryAction.summarizeNow;
 }
+
+/// What auto-summarize-on-download (P13a-2) should do for a freshly downloaded
+/// item, assuming the feature is opted in. A pure decision so the queue path is
+/// testable (mirrors `transcribeFallbackAction`). The caller only enters this
+/// when `autoSummarizeOnDownload` **and** generation are enabled — so this
+/// decides per item, given its content + model readiness.
+enum AutoSummaryDecision {
+  /// Nothing to do — no text to summarize, or a summary already exists.
+  skip,
+
+  /// Would summarize, but the generation model isn't downloaded — nudge once.
+  needsModel,
+
+  /// Summarize this item now (model ready).
+  summarize,
+}
+
+/// [hasText] is whether the item has a `transcript ?? description` to condense;
+/// [alreadySummarized] is whether an `aiSummary` is already stored; [modelReady]
+/// is whether the generation model is downloaded (`engine.ensureReady()` — no
+/// fetch).
+AutoSummaryDecision autoSummaryDecision({
+  required bool hasText,
+  required bool alreadySummarized,
+  required bool modelReady,
+}) {
+  if (!hasText || alreadySummarized) return AutoSummaryDecision.skip;
+  return modelReady
+      ? AutoSummaryDecision.summarize
+      : AutoSummaryDecision.needsModel;
+}

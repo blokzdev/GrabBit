@@ -587,9 +587,51 @@ class _GenerationCard extends ConsumerWidget {
       child: SettingsCard(
         children: [
           for (final m in eligible) _GenerationModelTile(model: m),
+          const _AutoSummarizeTile(),
           const _GenerationSelfTestTile(),
         ],
       ),
+    );
+  }
+}
+
+/// Opt-in (P13a-2): auto-generate the abstractive summary for newly downloaded
+/// items in the background. Shown only when text generation is enabled (a model
+/// is active); it runs only when that model is already downloaded — the
+/// on-demand "Summarize with AI" on item detail works regardless.
+class _AutoSummarizeTile extends ConsumerWidget {
+  const _AutoSummarizeTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.generationEnabled ?? false,
+      ),
+    );
+    if (!enabled) return const SizedBox.shrink();
+    final auto = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.autoSummarizeOnDownload ?? false,
+      ),
+    );
+    return SwitchListTile(
+      secondary: const InfoHintButton(
+        InfoHint(
+          title: 'Auto-summarize new downloads',
+          body:
+              'Generate an AI summary for each new download automatically, in '
+              'the background — all on-device. Runs only when a text-generation '
+              'model is downloaded; you can always summarize an item by hand '
+              'from its detail screen.',
+        ),
+      ),
+      title: const Text('Auto-summarize new downloads'),
+      subtitle: const Text('Summarize each download in the background'),
+      value: auto,
+      onChanged: (v) => ref
+          .read(settingsControllerProvider.notifier)
+          .setAutoSummarizeOnDownload(v),
     );
   }
 }

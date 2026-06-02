@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
@@ -24,6 +25,7 @@ import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
+import 'package:grabbit/features/library/presentation/ai_summary.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/notifications/data/system_notification_service.dart';
@@ -45,6 +47,10 @@ typedef _PersistResult = ({
   // P12e-3: a caption-less item was skipped because transcription is opted in
   // but no whisper model is downloaded → prompt the user to finish setup.
   bool transcriptionNeedsModel,
+  // P13a-2: count of items auto-summarized, and whether auto-summarize is opted
+  // in but the generation model isn't downloaded → prompt to finish setup.
+  int summaryCount,
+  bool summaryNeedsModel,
 });
 
 class QueueConfig {
@@ -385,6 +391,33 @@ class QueueController extends _$QueueController {
         dedupeKey: 'transcribe_needs_model',
       );
     }
+    // P13a-2: an auto-summary was generated for the new download.
+    if (result.summaryCount > 0) {
+      await center.post(
+        category: NotificationCategory.ai,
+        severity: NotificationSeverity.success,
+        title: queued.title,
+        body: result.summaryCount > 1
+            ? '${result.summaryCount} summaries ready'
+            : 'Summary ready',
+        targetRoute: route,
+        itemId: single ? result.primaryId : null,
+        dedupeKey: 'summary_$id',
+      );
+    }
+    // P13a-2: opted into auto-summarize but the generation model isn't
+    // downloaded. Nudge once (deduped) to finish setup.
+    if (result.summaryNeedsModel) {
+      await center.post(
+        category: NotificationCategory.ai,
+        severity: NotificationSeverity.info,
+        title: 'Finish setting up summaries',
+        body:
+            'Download a text-generation model to auto-summarize new downloads.',
+        targetRoute: '/settings/ai',
+        dedupeKey: 'summary_needs_model',
+      );
+    }
     await _maybeNotifyOs(
       taskId: id,
       title: queued.title,
@@ -543,6 +576,8 @@ class QueueController extends _$QueueController {
       itemCount: 0,
       transcriptCount: 0,
       transcriptionNeedsModel: false,
+      summaryCount: 0,
+      summaryNeedsModel: false,
     );
     // Files land in a per-task subfolder (see YtDlpHost `-o`): the task id names
     // the folder, the user's template names the file inside it.
@@ -685,11 +720,66 @@ class QueueController extends _$QueueController {
       }
     }
 
+    // P13a-2: auto-generate an abstractive summary for the freshly downloaded
+    // items when the user opted in and a generation model is already downloaded
+    // (never fetches mid-queue — mirrors auto-transcribe). Runs after the
+    // transcript block so a just-built transcript is the preferred source.
+    var summaryCount = 0;
+    var summaryNeedsModel = false;
+    if (settings.autoSummarizeOnDownload && settings.generationEnabled) {
+      final generation = ref.read(generationEngineProvider);
+      final genReady = await generation.ensureReady();
+      final modelId = ref.read(activeGenerationModelProvider)?.id;
+      final metadata = ref.read(metadataRepositoryProvider);
+      for (final (i, _) in outputs.media.indexed) {
+        final itemId = single ? id : '${id}__$i';
+        final meta = await (db.select(
+          db.mediaMetadata,
+        )..where((m) => m.itemId.equals(itemId))).getSingleOrNull();
+        final text = meta?.transcript ?? meta?.description;
+        switch (autoSummaryDecision(
+          hasText: text != null && text.trim().isNotEmpty,
+          alreadySummarized: meta?.aiSummary?.trim().isNotEmpty ?? false,
+          modelReady: genReady,
+        )) {
+          case AutoSummaryDecision.skip:
+            continue;
+          case AutoSummaryDecision.needsModel:
+            summaryNeedsModel = true;
+            continue;
+          case AutoSummaryDecision.summarize:
+            try {
+              final p = buildSummaryPrompt(text!);
+              final buffer = StringBuffer();
+              await for (final token in generation.generate(
+                p.prompt,
+                systemPrompt: p.systemPrompt,
+              )) {
+                buffer.write(token);
+              }
+              final summary = buffer.toString().trim();
+              if (summary.isNotEmpty) {
+                await metadata.updateAiSummary(
+                  itemId,
+                  summary,
+                  modelId: modelId,
+                );
+                summaryCount++;
+              }
+            } catch (_) {
+              // A per-item summary failure must not fail the download.
+            }
+        }
+      }
+    }
+
     return (
       primaryId: single ? id : '${id}__0',
       itemCount: outputs.media.length,
       transcriptCount: transcriptCount,
       transcriptionNeedsModel: transcriptionNeedsModel,
+      summaryCount: summaryCount,
+      summaryNeedsModel: summaryNeedsModel,
     );
   }
 
