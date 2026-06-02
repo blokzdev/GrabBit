@@ -674,6 +674,18 @@ class MetadataRepository {
         );
   }
 
+  /// Stores the on-device OCR [text] extracted from an image (P13b-1). Upserts
+  /// (only this column) so it works for items whose metadata row predates the
+  /// column; passing `null` clears it. The `media_fts` triggers reindex it for
+  /// full-text search automatically.
+  Future<void> updateOcrText(String itemId, String? text) async {
+    await _db
+        .into(_db.mediaMetadata)
+        .insertOnConflictUpdate(
+          MediaMetadataCompanion.insert(itemId: itemId, ocrText: Value(text)),
+        );
+  }
+
   // --- Tags ---
 
   Stream<List<Tag>> watchTagsForItem(String itemId) {

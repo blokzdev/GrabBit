@@ -936,6 +936,15 @@ entries, or verify after P11c lands.)*
 - [ ] **Default off** (and when generation is disabled): downloads produce **no** auto-summary and no AI
       nudge; the queue still drains normally; the on-demand "Summarize with AI" still works.
 
+### P13b-1 — OCR (on-demand)  *(install `app-arm64-v8a-debug.apk`; image item)*
+- [ ] Open an **image** item that contains legible text → a **"Text in image"** section shows a **Scan
+      text** button; tap it → the recognized text appears, **fully offline** (airplane mode), and persists
+      across an app restart; **Rescan** re-runs it.
+- [ ] After scanning, **search** the library for a word that appears **only in the image text** → the image
+      is returned (OCR feeds full-text search). With semantic search on, "related"/search also benefit.
+- [ ] An image with no readable text shows a "No readable text found" note (no crash). A **video/audio**
+      item shows **no** OCR section.
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

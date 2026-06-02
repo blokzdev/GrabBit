@@ -113,22 +113,41 @@ background, **opt-in (default off)**, mirroring the `autoTranscribe` precedent (
   spot-check.** Shares the queue-decoupled-background-AI deferral (inline-before-next-pump like
   `autoTranscribe`) and the LLM+HNSW RAM co-residency check (P13d) — both in `BACKLOG.md`.
 
-### `[ ]` P13b — Translation & OCR (ML Kit) *(native; new deps; APK; split into 2 PRs)*
+### P13b — OCR & Translation (ML Kit) *(native; new deps; APK)*
 On-device text intelligence that is **device-universal-ish** — gated on ML Kit + opt-in, not the RAM tier.
-Adds `google_mlkit_translation` / `google_mlkit_text_recognition`; measure APK-size impact in the first build.
+**Reordered (maintainer call): OCR leads** — it uses the bundled Latin model (no Google Play Services, fully
+offline) so it de-risks the ML Kit dependency before the more complex translation (language-pack downloads +
+target-language UX + GMS nuance). Measure APK-size impact in the first ML Kit build.
 
-#### `[ ]` P13b-1 — Translation *(native; APK)*
-- Translate an item's **description / transcript / summary** into the user's chosen language on-device, with
-  on-demand ML Kit language-pack download (opt-in, progress, integrity managed by ML Kit). Surface on item
-  detail next to the original text.
+#### `[~]` P13b-1 — OCR (on-demand) *(native; APK)*
+- Extract text from **image** items via ML Kit text recognition (bundled Latin); store it so it is
+  **searchable** — feeding the P10h FTS5 index and the semantic embed doc — and shown on item detail.
+- **Exit / review:** an image with legible text becomes findable by that text in search; the OCR text persists
+  and feeds search/related; gating is graceful where ML Kit is unavailable.
+- **Status:** implemented (CI-green) — `google_mlkit_text_recognition` (bundled Latin, no GMS, offline);
+  `OcrEngine` interface + `MlKitOcrEngine`/`UnavailableOcrEngine` + factory/provider (mirrors the transcription
+  engine seam); `MediaMetadata.ocrText` (**schema v11→v12**) + `media_fts` gains an `ocr` column (table +
+  triggers + backfill rebuilt in the v12 migration) so search covers image text; `ocrText` added (capped) to
+  the embed doc; `MetadataRepository.updateOcrText`; a `_OcrSection` "Scan text"/"Rescan" action on image
+  detail. No opt-in toggle (OCR is free + offline). Tests: OCR FTS search, `updateOcrText` round-trip, v11→v12
+  migration (incl. FTS `ocr`), embed-doc inclusion, engine availability. **Pending APK spot-check** (scan a
+  real image → text appears + becomes searchable, offline). The widget + native ML Kit call are APK-verified.
+
+#### `[ ]` P13b-2 — Translation *(native; new dep; APK)*
+- Translate an item's **description / transcript / summary** into the app's language (default) with a
+  target-language picker (reuse the curated `_captionLanguages` list), via `google_mlkit_translation` +
+  language-id; on-demand language-pack download (managed, Wi-Fi-aware). Ephemeral (no cache/schema). Surface
+  on item detail next to the original text. **Note the GMS nuance** (translation downloads models from a
+  Google endpoint) and document it.
 - **Exit / review:** translate a non-English item's text offline after the pack downloads; no pack ⇒ a clear
   one-time setup prompt; nothing leaves the device.
 
-#### `[ ]` P13b-2 — OCR *(native; APK)*
-- Extract text from **image downloads** via ML Kit text recognition; store it (one schema bump if needed) so
-  it is **searchable** — feeding the P10h FTS5 index and the semantic embed doc — and shown on item detail.
-- **Exit / review:** an image with legible text becomes findable by that text in search; the OCR text persists
-  and feeds search/related; gating is graceful where ML Kit is unavailable.
+#### `[ ]` P13b-3 — Auto-OCR on download *(follow-up; native; APK)*
+- Opt-in (default off) auto-scan of **image** downloads, mirroring P13a-2 auto-summarize: a settings toggle +
+  a gated block in `queue_controller._persistCompleted` (runs inline; OCR is cheap + offline) → `updateOcrText`
+  → an Activity Inbox entry. Grows search coverage automatically.
+- **Exit / review:** with auto-OCR on, a finished image download is scanned + becomes searchable offline;
+  default-off does nothing; the queue still drains.
 
 ### `[ ]` P13c — Smart auto-tagging *(generation; APK)*
 LLM-suggested tags feeding the **existing** tag system — builds directly on the P13a generation patterns.

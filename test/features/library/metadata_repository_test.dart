@@ -460,6 +460,26 @@ void main() {
     },
   );
 
+  test('updateOcrText upserts then clears + feeds FTS (P13b-1)', () async {
+    await seed('a', 'Poster', 'image');
+    await repo.updateOcrText('a', 'some recognized text');
+    var meta = await (db.select(
+      db.mediaMetadata,
+    )..where((m) => m.itemId.equals('a'))).getSingle();
+    expect(meta.ocrText, 'some recognized text');
+    expect(
+      (await repo.watchFiltered(const LibraryQuery(search: 'recognized')).first)
+          .map((r) => r.id),
+      ['a'],
+    );
+
+    await repo.updateOcrText('a', null);
+    meta = await (db.select(
+      db.mediaMetadata,
+    )..where((m) => m.itemId.equals('a'))).getSingle();
+    expect(meta.ocrText, isNull);
+  });
+
   test('findItemByUrl matches with tracking params stripped (P9b-4)', () async {
     await db
         .into(db.mediaItems)
@@ -614,6 +634,17 @@ void main() {
       await seedMeta('b', transcript: 'a cooking lesson');
       final rows = await repo
           .watchFiltered(const LibraryQuery(search: 'photosynthesis'))
+          .first;
+      expect(rows.map((r) => r.id), ['a']);
+    });
+
+    test('search matches a word only in the OCR text (P13b-1)', () async {
+      await seed('a', 'Poster', 'image');
+      await seed('b', 'Flyer', 'image');
+      await repo.updateOcrText('a', 'GRAND OPENING saturday');
+      await repo.updateOcrText('b', 'closed for renovation');
+      final rows = await repo
+          .watchFiltered(const LibraryQuery(search: 'saturday'))
           .first;
       expect(rows.map((r) => r.id), ['a']);
     });

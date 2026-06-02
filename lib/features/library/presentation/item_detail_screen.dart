@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/ai/ocr_provider.dart';
 import 'package:grabbit/core/ai/transcription_engine.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
@@ -274,6 +275,7 @@ class _ItemBodyState extends State<_ItemBody> {
               _DetailChips(item: item),
               _AiSummarySection(itemId: item.id),
               _SummarySection(itemId: item.id),
+              if (item.type == 'image') _OcrSection(item: item),
               _MetadataSection(itemId: item.id),
               _TranscriptSection(
                 itemId: item.id,
@@ -668,6 +670,122 @@ class _AiSummarySectionState extends ConsumerState<_AiSummarySection> {
           ] else if (!_busy)
             Text(
               'Condense this item into a couple of sentences, on-device.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          if (_error != null)
+            Padding(
+              padding: EdgeInsets.only(top: tokens.spaceXs),
+              child: Text(
+                _error!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// On-device OCR (P13b-1) for image items: a "Scan text" action that extracts
+/// text from the image with ML Kit (bundled Latin model, fully offline), caches
+/// it (`MediaMetadata.ocrText`), shows it, and feeds full-text search. Hidden
+/// when the engine can't run on this host (non-Android).
+class _OcrSection extends ConsumerStatefulWidget {
+  const _OcrSection({required this.item});
+  final MediaItem item;
+
+  @override
+  ConsumerState<_OcrSection> createState() => _OcrSectionState();
+}
+
+class _OcrSectionState extends ConsumerState<_OcrSection> {
+  bool _busy = false;
+  String? _error;
+  bool _noText = false; // the last scan found nothing readable
+
+  Future<void> _scan() async {
+    final engine = ref.read(ocrEngineProvider);
+    final repo = ref.read(metadataRepositoryProvider);
+    setState(() {
+      _busy = true;
+      _error = null;
+      _noText = false;
+    });
+    try {
+      final text = (await engine.recognizeText(widget.item.filePath)).trim();
+      if (text.isEmpty) {
+        if (mounted) setState(() => _noText = true);
+      } else {
+        await repo.updateOcrText(widget.item.id, text);
+      }
+    } on InferenceException catch (e) {
+      if (mounted) setState(() => _error = "Couldn't scan text — ${e.message}");
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    // Engine can't run here (non-Android) → nothing to offer.
+    if (!ref.watch(ocrEngineProvider).isAvailable) {
+      return const SizedBox.shrink();
+    }
+    final meta = ref
+        .watch(metadataForItemProvider(widget.item.id))
+        .asData
+        ?.value;
+    final cached = meta?.ocrText;
+    final hasText = cached != null && cached.trim().isNotEmpty;
+
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.document_scanner_outlined,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              SizedBox(width: tokens.spaceXs),
+              Text('Text in image', style: theme.textTheme.titleSmall),
+              const Spacer(),
+              if (_busy)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                TextButton(
+                  onPressed: _scan,
+                  child: Text(hasText ? 'Rescan' : 'Scan text'),
+                ),
+            ],
+          ),
+          if (hasText) ...[
+            SizedBox(height: tokens.spaceXs),
+            Text(cached, style: theme.textTheme.bodyMedium),
+            Text(
+              'Recognized on-device',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ] else if (!_busy)
+            Text(
+              _noText
+                  ? 'No readable text found in this image.'
+                  : 'Find and search text inside this image, on-device.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

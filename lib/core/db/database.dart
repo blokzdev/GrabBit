@@ -75,6 +75,9 @@ class MediaMetadata extends Table {
   // model produced it (attribution + a "Regenerate" prompt when it changes).
   TextColumn get aiSummary => text().nullable()();
   TextColumn get aiSummaryModelId => text().nullable()();
+  // P13b-1: on-device OCR text extracted from an image download. Null until the
+  // user scans the image; feeds full-text search (media_fts) + the embed doc.
+  TextColumn get ocrText => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {itemId};
@@ -214,7 +217,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -265,6 +268,23 @@ class AppDatabase extends _$AppDatabase {
         // P13a: cached on-device LLM summary + the model that produced it.
         await m.addColumn(mediaMetadata, mediaMetadata.aiSummary);
         await m.addColumn(mediaMetadata, mediaMetadata.aiSummaryModelId);
+      }
+      if (from < 12) {
+        // P13b-1: OCR text column + add it to the FTS index. FTS5 can't
+        // ALTER ADD COLUMN, so drop the table + triggers and let
+        // `_createFtsObjects` rebuild them (now with `ocr`) and backfill.
+        await m.addColumn(mediaMetadata, mediaMetadata.ocrText);
+        for (final t in const [
+          'media_fts_ai_items',
+          'media_fts_au_items',
+          'media_fts_ad_items',
+          'media_fts_ai_meta',
+          'media_fts_au_meta',
+          'media_fts_ad_meta',
+        ]) {
+          await customStatement('DROP TRIGGER IF EXISTS $t');
+        }
+        await customStatement('DROP TABLE IF EXISTS media_fts');
       }
       await _createIndices();
       await _createFtsObjects();
@@ -348,64 +368,66 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _createFtsObjects() async {
     await customStatement(
       'CREATE VIRTUAL TABLE IF NOT EXISTS media_fts USING fts5('
-      'item_id UNINDEXED, title, description, transcript, '
+      'item_id UNINDEXED, title, description, transcript, ocr, '
       "tokenize = 'unicode61 remove_diacritics 2')",
     );
-    // media_items → fts (title is here; description/transcript joined in).
+    // media_items → fts (title is here; description/transcript/ocr joined in).
     await customStatement(
       'CREATE TRIGGER IF NOT EXISTS media_fts_ai_items '
       'AFTER INSERT ON media_items BEGIN '
       'DELETE FROM media_fts WHERE item_id = new.id; '
-      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'INSERT INTO media_fts(item_id, title, description, transcript, ocr) '
       'SELECT new.id, new.title, '
       '(SELECT description FROM media_metadata WHERE item_id = new.id), '
-      '(SELECT transcript FROM media_metadata WHERE item_id = new.id); END',
+      '(SELECT transcript FROM media_metadata WHERE item_id = new.id), '
+      '(SELECT ocr_text FROM media_metadata WHERE item_id = new.id); END',
     );
     await customStatement(
       'CREATE TRIGGER IF NOT EXISTS media_fts_au_items '
       'AFTER UPDATE OF title ON media_items BEGIN '
       'DELETE FROM media_fts WHERE item_id = new.id; '
-      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'INSERT INTO media_fts(item_id, title, description, transcript, ocr) '
       'SELECT new.id, new.title, '
       '(SELECT description FROM media_metadata WHERE item_id = new.id), '
-      '(SELECT transcript FROM media_metadata WHERE item_id = new.id); END',
+      '(SELECT transcript FROM media_metadata WHERE item_id = new.id), '
+      '(SELECT ocr_text FROM media_metadata WHERE item_id = new.id); END',
     );
     await customStatement(
       'CREATE TRIGGER IF NOT EXISTS media_fts_ad_items '
       'AFTER DELETE ON media_items BEGIN '
       'DELETE FROM media_fts WHERE item_id = old.id; END',
     );
-    // media_metadata → fts (description/transcript here; title joined in).
+    // media_metadata → fts (description/transcript/ocr here; title joined in).
     await customStatement(
       'CREATE TRIGGER IF NOT EXISTS media_fts_ai_meta '
       'AFTER INSERT ON media_metadata BEGIN '
       'DELETE FROM media_fts WHERE item_id = new.item_id; '
-      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'INSERT INTO media_fts(item_id, title, description, transcript, ocr) '
       'SELECT new.item_id, '
       '(SELECT title FROM media_items WHERE id = new.item_id), '
-      'new.description, new.transcript; END',
+      'new.description, new.transcript, new.ocr_text; END',
     );
     await customStatement(
       'CREATE TRIGGER IF NOT EXISTS media_fts_au_meta '
-      'AFTER UPDATE OF description, transcript ON media_metadata BEGIN '
+      'AFTER UPDATE OF description, transcript, ocr_text ON media_metadata BEGIN '
       'DELETE FROM media_fts WHERE item_id = new.item_id; '
-      'INSERT INTO media_fts(item_id, title, description, transcript) '
+      'INSERT INTO media_fts(item_id, title, description, transcript, ocr) '
       'SELECT new.item_id, '
       '(SELECT title FROM media_items WHERE id = new.item_id), '
-      'new.description, new.transcript; END',
+      'new.description, new.transcript, new.ocr_text; END',
     );
     await customStatement(
       'CREATE TRIGGER IF NOT EXISTS media_fts_ad_meta '
       'AFTER DELETE ON media_metadata BEGIN '
       'DELETE FROM media_fts WHERE item_id = old.item_id; '
-      'INSERT INTO media_fts(item_id, title, description, transcript) '
-      'SELECT old.item_id, title, NULL, NULL FROM media_items '
+      'INSERT INTO media_fts(item_id, title, description, transcript, ocr) '
+      'SELECT old.item_id, title, NULL, NULL, NULL FROM media_items '
       'WHERE id = old.item_id; END',
     );
     // One-time backfill of pre-existing rows (no-op on a fresh, empty DB).
     await customStatement(
-      'INSERT INTO media_fts(item_id, title, description, transcript) '
-      'SELECT mi.id, mi.title, mm.description, mm.transcript '
+      'INSERT INTO media_fts(item_id, title, description, transcript, ocr) '
+      'SELECT mi.id, mi.title, mm.description, mm.transcript, mm.ocr_text '
       'FROM media_items mi '
       'LEFT JOIN media_metadata mm ON mm.item_id = mi.id '
       'WHERE mi.id NOT IN (SELECT item_id FROM media_fts)',
