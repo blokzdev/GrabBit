@@ -57,10 +57,13 @@ abstract interface class GenerationEngine {
 ```
 
 - **`generateStructured(toolDefs, prompt)`** is a **function-calling / typed-tool-fill** seam: given a
-  small set of tool definitions it returns a structured result filling one. It is **inert in v1** (no v1
-  feature calls it) and gated by the `structured_extraction` capability (§3); shaping it on the generation
-  layer now is what lets the **v2 Things Engine** curator's fill step slot in without reworking the AI
-  engine contracts *(forward seam for the v2 Things Engine — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
+  small set of tool definitions it returns a structured result filling one. **Shaped in P12f** (on
+  `GenerationEngine`, with `StructuredToolDef`/`StructuredResult` types) and **inert in v1** — no v1
+  feature calls it and no shipped engine implements it (concrete impls throw
+  `InferenceErrorCode.unsupported`); it is gated by the `structured_extraction` capability (§3). Shaping
+  it on the generation layer now is what lets the **v2 Things Engine** curator's fill step slot in
+  without reworking the AI engine contracts. The real impl + the function-calling **model-license fork**
+  (FunctionGemma 270M vs Qwen3-0.6B) land in **P13** *(forward seam — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 
 - **`DeviceCapabilityService`** computes a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion,
   freeStorageMB }` → a **device tier** (e.g. low / mid / high). *(P12a ships the RAM-primary subset —

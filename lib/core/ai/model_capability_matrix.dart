@@ -78,6 +78,21 @@ class ModelCapabilityMatrix {
         DeviceTier.mid || DeviceTier.high => whisperBase,
       };
 
+  /// **`structured_extraction` capability (P12f forward seam, ADR-0002).**
+  /// Gates the `generateStructured` function-calling step the **v2 Things Engine**
+  /// curator will use. **Empty on every tier for now** — no v1 feature drives it,
+  /// and the function-calling model is undecided (FunctionGemma's Gemma license vs
+  /// Qwen3-0.6B's Apache-2.0 — fork deferred to P13). Defined + gated so the v2
+  /// fill step is already capability-aware; reuses [GenerationModel] once a model
+  /// is chosen (no speculative catalog type while the list is empty).
+  List<GenerationModel> eligibleStructuredExtractionModels(DeviceTier tier) =>
+      const [];
+
+  /// The default structured-extraction model at [tier] — **null everywhere** until
+  /// the P13 function-calling model is vetted (see [eligibleStructuredExtractionModels]).
+  GenerationModel? recommendedStructuredExtractionModel(DeviceTier tier) =>
+      null;
+
   // Every tier runs Gecko by default (Apache-2.0, ~114 MB) — the universal floor.
   static const Map<DeviceTier, EmbedderModel> _defaultEmbedders = {
     DeviceTier.low: geckoEmbedder,

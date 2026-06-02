@@ -8,6 +8,17 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Structured-extraction model pick + real `generateStructured` impl.** P12f shapes the
+      `generateStructured` seam (on `GenerationEngine`) and the `structured_extraction` matrix row, but
+      both are **inert**: concrete engines throw `unsupported` and the row is empty on every tier. Resolve
+      the **function-calling model-license fork** — **FunctionGemma 270M** (Gemma custom use-policy) vs
+      **Qwen3-0.6B** (Apache-2.0, clean) — and wire a real impl (the flutter_gemma Chat API exposes only
+      `TextResponse` today, so this likely needs a runtime/plugin path for tool-calling). → **P13**.
+      *(From P12f.)*
+- [ ] **`media_items` → MediaObject projection into `things`.** The v10 `things` table ships **empty**;
+      the ADR-0003 field-by-field bridge that projects existing media into `Audio`/`Image`/`VideoObject`
+      Things (and Cozo node sync, promoted-column indices/FTS, the bespoke/​generic Thing UI) is the v2
+      Things-Engine build. *(From P12f.)*
 - [ ] **Long-audio transcription — chunking + progress.** P12e transcribes a whole file in one
       whisper pass (fine for short clips; the queue gates auto-fallback on a downloaded model so it
       can't stall). Long videos want windowed chunking, a progress indicator, and cancellation.
