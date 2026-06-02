@@ -67,18 +67,30 @@
 
 ---
 
-### `[ ]` P13a — Abstractive summarization *(generation; APK)*
+### `[~]` P13a — Abstractive summarization *(generation; APK)*
 The first **real** generation feature — an LLM TL;DR layered on the existing extractive floor.
 - Add an **abstractive summary** path that feeds the active model the item's `transcript ?? description`
-  (the same source the TextRank floor uses) and streams a short natural-language summary into the existing
-  **`_SummarySection`** on item detail — alongside / above the extractive sentences, clearly labelled.
-- **Opt-in + generation-tier-gated.** Reuse `generationEngineProvider` + the P12g gating pattern; **low /
-  ineligible tiers keep the extractive TextRank summary** (no regression, no empty state).
-- Decide at subphase-plan time whether to **cache** the generated summary (a small Drift column → one schema
-  bump) or recompute on demand; prefer cache to avoid re-running the model on every detail open.
+  (the same source the TextRank floor uses) and streams a short natural-language summary into a new
+  **`_AiSummarySection`** **above** the extractive `_SummarySection` on item detail, clearly labelled
+  "AI summary · generated on-device".
+- **Opt-in + generation-tier-gated.** Reuse `generationEngineProvider`/`activeGenerationModelProvider` + the
+  P12g gating pattern; **low / ineligible tiers keep the extractive TextRank summary** (no regression, no
+  empty state). When the device *can* generate but generation isn't enabled, a **`aiSummaryAction`** on-ramp
+  (mirroring `transcribe_fallback`) routes to AI settings to enable + download.
+- **Cache** the result: `MediaMetadata.aiSummary` + `aiSummaryModelId` (schema **v10→v11** — the one P13a
+  migration), written via `MetadataRepository.updateAiSummary`. Instant reopen + model attribution + a
+  **Regenerate** action.
 - **Exit / review:** on a capable device, an item with text yields a streamed abstractive summary on-device;
   toggling the model off / on a low-end device cleanly shows the extractive floor; cached summaries survive
-  restart (if cached). APK spot-check (low + high).
+  restart. APK spot-check (low + high).
+- **Status:** implemented (CI-green) — `aiSummary`/`aiSummaryModelId` columns + v11 migration (+ test);
+  `MetadataRepository.updateAiSummary` (upsert/clear, tested); pure `buildSummaryPrompt` (head-truncated to a
+  char budget; long-transcript chunking deferred) + `aiSummaryAction` decision (both unit-tested); the
+  `_AiSummarySection` widget streams `generate()` into a live preview, persists, and offers Regenerate.
+  **Pending on-device APK spot-check** (pick a model → Summarize with AI → streamed summary offline →
+  persists across restart; low-tier shows only the extractive floor; the on-ramp routes to AI settings). The
+  end-to-end widget flow is APK-verified (the item-detail screen's player/related shimmer makes a full
+  `pumpAndSettle` widget test unreliable — same boundary as the P10f-2 transcript flow).
 
 ### `[ ]` P13b — Translation & OCR (ML Kit) *(native; new deps; APK; split into 2 PRs)*
 On-device text intelligence that is **device-universal-ish** — gated on ML Kit + opt-in, not the RAM tier.

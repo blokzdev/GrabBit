@@ -69,6 +69,12 @@ class MediaMetadata extends Table {
   // P10f-4: timestamped transcript lines (JSON) for the synced tap-to-seek
   // transcript view. Derived from the same captions as `transcript`.
   TextColumn get transcriptCues => text().nullable()();
+  // P13a: cached on-device abstractive (LLM) summary of `transcript ?? description`,
+  // generated on demand. Null until the user runs it; the extractive TextRank
+  // summary is always the floor. `aiSummaryModelId` records which generation
+  // model produced it (attribution + a "Regenerate" prompt when it changes).
+  TextColumn get aiSummary => text().nullable()();
+  TextColumn get aiSummaryModelId => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {itemId};
@@ -208,7 +214,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -254,6 +260,11 @@ class AppDatabase extends _$AppDatabase {
         // P12f forward seam: the empty `things` table (v2 Things Engine). No
         // data migration — created empty; nothing reads/writes it in v1.
         await m.createTable(things);
+      }
+      if (from < 11) {
+        // P13a: cached on-device LLM summary + the model that produced it.
+        await m.addColumn(mediaMetadata, mediaMetadata.aiSummary);
+        await m.addColumn(mediaMetadata, mediaMetadata.aiSummaryModelId);
       }
       await _createIndices();
       await _createFtsObjects();

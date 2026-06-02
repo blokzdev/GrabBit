@@ -916,6 +916,18 @@ entries, or verify after P11c lands.)*
       model selector switches the active model (capable device).
 
 ## P13 — LLM features + local GraphRAG  *(v1)*
+
+### P13a — Abstractive summarization  *(install `app-arm64-v8a-debug.apk`; needs a capable device)*
+- [ ] On a capable (mid/high) device with text generation enabled + a model downloaded: open an item
+      that has a transcript or description → an **"AI summary"** block appears above the extractive
+      "Summary"; tap **Summarize with AI** → tokens **stream** in, **fully offline** (airplane mode).
+- [ ] The summary **persists across an app restart** (cached); **Regenerate** re-runs it.
+- [ ] On a **low-end** device (or with generation off): the **"AI summary" affordance is absent** and the
+      extractive TextRank "Summary" still shows — no empty state, no crash.
+- [ ] On a capable device with generation **not yet enabled**: tapping **Summarize with AI** shows a
+      "set up text generation" hint and opens **AI settings** (the on-ramp).
+
+### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.
 - [ ] **"Ask your library"**: a natural-language question returns a grounded answer citing real

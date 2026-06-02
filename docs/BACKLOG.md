@@ -8,6 +8,20 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **AI summary — staleness on later transcript.** The cached `aiSummary` (P13a) is generated from
+      `transcript ?? description` at the moment the user runs it; if a transcript is added *after* a
+      description-based summary, the cache isn't auto-invalidated (the user can hit **Regenerate**). A
+      future pass could flag/refresh it when the source changes. *(From P13a.)*
+- [ ] **AI summary — long-transcript handling.** `buildSummaryPrompt` head-truncates the source to a char
+      budget (small models have a limited context window). Long transcripts get only their head summarized;
+      windowed chunking + a map-reduce summary is the richer path, tracked with the P13/GraphRAG
+      multivector chunking work. *(From P13a.)*
+- [ ] **(testing debt) Widget test for the P13a "Summarize with AI" flow** — the `_AiSummarySection`
+      stream→persist→Regenerate path isn't widget-tested: the item-detail screen's player + perpetual
+      related-items shimmer make `pumpAndSettle` unreliable (same boundary as the P10f-2 transcript flow).
+      The pure pieces (`buildSummaryPrompt`, `aiSummaryAction`, `updateAiSummary`, the v11 migration) are
+      unit-tested; the end-to-end UI is APK-verified. Revisit with `tester.runAsync` + a faked engine.
+      *(From P13a.)*
 - [ ] **Richer per-capability tier explainers.** P12g surfaces the device tier (banner + onboarding line)
       and a single generation "needs more memory" reason. A fuller treatment could show, per capability,
       exactly which models a device can/can't run and why — deferred as noise vs. value for v1; revisit if
