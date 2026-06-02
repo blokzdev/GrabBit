@@ -14,9 +14,12 @@ import 'package:grabbit/core/storage/disk_space_service.dart';
 /// [model].
 GenerationEngine generationEngineFor(
   GenerationModel model, {
+  // Generation takes `diskSpace` (not a `ModelDownloadService` like the
+  // file-based embedder/transcription factories) because flutter_gemma is
+  // plugin-managed — it fetches its own model; we only need the free-space guard.
   DiskSpaceService? diskSpace,
 }) {
-  if (Platform.isAndroid && diskSpace != null) {
+  if (diskSpace != null && Platform.isAndroid) {
     return FlutterGemmaGenerationEngine(model, diskSpace: diskSpace);
   }
   return UnavailableGenerationEngine(model);

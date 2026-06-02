@@ -7,6 +7,8 @@ import 'package:grabbit/core/ai/model_catalog.dart';
 /// callers disable semantic features cleanly; [embed]/[downloadModel] throw
 /// [InferenceErrorCode.unavailable] rather than crash.
 class UnavailableEmbedderEngine implements EmbedderEngine {
+  /// [_model] is only a placeholder so `model`/`dimension` stay valid; the
+  /// factory passes the real selected model, so this default is rarely surfaced.
   const UnavailableEmbedderEngine([this._model = geckoEmbedder]);
 
   final EmbedderModel _model;

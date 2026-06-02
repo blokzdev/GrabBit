@@ -7,6 +7,8 @@ import 'package:grabbit/core/ai/structured_generation.dart';
 /// generation (low tier, non-Android, or before the native engine lands in
 /// P12d-2). Never crashes — generation features simply stay off (AI-SPEC §1).
 class UnavailableGenerationEngine implements GenerationEngine {
+  /// [_model] is only a placeholder so `model` stays non-null; the factory
+  /// passes the real selected model, so this default is rarely surfaced.
   const UnavailableGenerationEngine([this._model = qwen3_0_6b]);
 
   final GenerationModel _model;

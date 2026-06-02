@@ -10,8 +10,9 @@ part 'device_tier_provider.g.dart';
 /// The device's capability [DeviceTier]. Returns a conservative [DeviceTier.low]
 /// synchronously — so embedder/model selection stays sync, with no async ripple
 /// through the engine providers — then probes the hardware once and updates to
-/// the real tier. Today that update is a harmless rebuild (one embedder); it
-/// becomes the real selection point once P12c adds the multilingual model.
+/// the real tier. This tier drives every gated AI capability's model selection:
+/// the embedder (Gecko vs multilingual MiniLM), generation, and transcription
+/// (P12c–P12e), plus the capability-gating UX (P12g).
 @Riverpod(keepAlive: true)
 class ActiveDeviceTier extends _$ActiveDeviceTier {
   @override

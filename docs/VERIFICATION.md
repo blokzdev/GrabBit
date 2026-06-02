@@ -837,6 +837,12 @@ entries, or verify after P11c lands.)*
       the bell badge decrements as entries are read; **Mark all read** clears the badge in one tap.
 
 ## P12 — Device-tiered edge LLM engine  *(v1)*
+> **On-device pass (owed).** P12's native paths (the tier probe, onnxruntime embedder, flutter_gemma
+> generation, whisper transcription) can't be CI-verified — the rows below are the one manual regression
+> pass to run on **two devices: one low-RAM (Basic tier) + one mid/high-RAM (Standard/Advanced)**.
+> Run top-to-bottom on each; the embedder+LLM+whisper "coexist" rows and the "persists across restart"
+> rows only need the capable device. Subphase tags are kept for traceability. *(Pure-Dart subphases
+> (P12b, c-1, d-1, e-1) have no row — they're CI-tested.)*
 - [ ] **(P12a)** On launch, logcat shows `[P12a] device tier: <tier>  (DeviceProfile(ramMb: …))` whose
       RAM/tier match the real device — spot-check on **two** phones (one low-RAM, one high-RAM). The app
       behaves identically (embedder still Gecko; semantic search unaffected). *(No UI in P12a — the tier
@@ -856,8 +862,9 @@ entries, or verify after P11c lands.)*
       **Multilingual semantic search** switch → enable → MiniLM downloads + the library **re-indexes** →
       non-English search / "related" visibly improves. Toggle off → re-indexes back to Gecko (English).
       The choice **persists** across restart.
-- [ ] **(P12c-3)** On a **low-tier** device the multilingual switch is **hidden**; the embedder stays
-      Gecko (semantic search still works).
+- [ ] **(P12c-3 → updated P12-sweep)** On a **low-tier** device the multilingual option shows a muted
+      **"Multilingual semantic search — available on more capable devices"** disabled tile (no longer
+      hidden); the embedder stays Gecko (semantic search still works).
 - _(P12d-1) The generation engine + tier-gated model ladder are pure-Dart and have **no live consumer** —
   exercised by unit tests, **no on-device row**. On-device generation (picker + Labs self-test) lands with
   P12d-2._
@@ -906,13 +913,7 @@ entries, or verify after P11c lands.)*
 - [ ] **(P12g) Onboarding tier**: the first-run AI setup screen surfaces **"Your device: \<tier\>"** before
       the user opts in.
 - [ ] **(P12g) Opt-ins persist**: enabling a capability + picking a model survives an app restart; the
-      model selector switches the active model.
-- [ ] First AI-feature use runs a **device-capability diagnostic** and shows the device tier.
-- [ ] A model **downloads on demand** with progress + integrity check; cached for reuse; install
-      stays lean until then.
-- [ ] On a **capable** device: generate text / transcribe a short clip **offline**.
-- [ ] On a **low-end** device: LLM features are **cleanly disabled with a friendly reason** (no
-      crash, no silent no-op).
+      model selector switches the active model (capable device).
 
 ## P13 — LLM features + local GraphRAG  *(v1)*
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write

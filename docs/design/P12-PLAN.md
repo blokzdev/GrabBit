@@ -225,6 +225,11 @@ Thin, inert scaffolding so the v2 Things Engine slots in cheaply — no v1 behav
 > (P12a), model catalog/download (P12b), multilingual embedder (P12c), LLM generation (P12d), whisper
 > transcription (P12e), inert Things-Engine seams (P12f), and capability-gating UX + phase close (P12g).
 > The user-facing AI features (summaries, "Ask your library", auto-tagging, OCR/translate) are **P13**.
+>
+> **On-device verification pass (owed).** Each native subphase above notes a "Pending on-device/APK
+> spot-check" — these are **consolidated into one runnable manual pass** in `docs/VERIFICATION.md` →
+> "P12 — Device-tiered edge LLM engine" (run on one low + one mid/high device). All P12 code is CI-green
+> and merged; the on-device pass is the maintainer's remaining regression check, not a code gap.
 
 ---
 

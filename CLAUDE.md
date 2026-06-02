@@ -64,7 +64,7 @@ no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* 
 | Secure storage | **flutter_secure_storage** | PIN hash, future tokens. |
 | App lock | **local_auth** + PIN | Biometric + fallback. |
 | Graph + vector DB (v1, P10) | **CozoDB** — relational+graph+vector + HNSW (Android via `io.github.cozodb:cozo_android` Maven AAR + Pigeon; `dart:ffi`/`ffigen` on Windows). MPL-2.0. | One embeddable engine serves both the relationship graph and the AI vector index; derived index beside the canonical Drift DB. See `docs/GRAPH-SPEC.md`. |
-| On-device AI runtime (v1, P12–P13) | **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) for embeddings + generation + RAG; **whisper.cpp** (`whisper_ggml_plus`/`whisper_kit`); **ML Kit** (OCR/translate) — all behind per-capability AI engine abstractions (`EmbedderEngine`/`GenerationEngine`) | Free, on-device, swappable; capability-gated. Prefer Apache-2.0/MIT models (vet Gemma). See `docs/AI-SPEC.md`. |
+| On-device AI runtime (v1, P12–P13) | **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) for embeddings + generation + RAG; **whisper.cpp** via **`whisper_ggml_plus`** (chosen + shipped P12e); **ML Kit** (OCR/translate, P13) — all behind per-capability AI engine abstractions (`EmbedderEngine`/`GenerationEngine`/`TranscriptionEngine`) | Free, on-device, swappable; capability-gated. Prefer Apache-2.0/MIT models (vet Gemma). See `docs/AI-SPEC.md`. |
 | Graph visualization (v1, P10) | **`graphview`** (force-directed, expand/collapse) | Interactive library relationship explorer. |
 | UI | **Material 3**, dynamic color, light/dark | Modern, themeable; Simple/Advanced modes. |
 
@@ -132,9 +132,10 @@ Full design in **`docs/GRAPH-SPEC.md`**.
 
 ### Per-capability AI engines (P10, P12–P13, pure-Dart interfaces in `core/ai/`)
 Each capability has its own engine (renamed from a single `InferenceEngine` in P12d, once generation
-got its own): **`EmbedderEngine`** (embeddings — `flutter_gemma` Gecko + onnxruntime MiniLM) and
-**`GenerationEngine`** (text generation — `flutter_gemma`, P12d); transcription (whisper.cpp) + ML Kit
-follow. They mirror `DownloadEngine`/`GraphStore`. A `DeviceCapability` probe (RAM/CPU) feature-flags
+got its own): **`EmbedderEngine`** (embeddings — `flutter_gemma` Gecko + onnxruntime MiniLM, P12c),
+**`GenerationEngine`** (text generation — `flutter_gemma`, P12d), and **`TranscriptionEngine`**
+(speech-to-text — `whisper_ggml_plus`, P12e); ML Kit (OCR/translate) follows in P13. They mirror
+`DownloadEngine`/`GraphStore`. A `DeviceCapability` probe (RAM/CPU) feature-flags
 each AI feature and **gracefully disables** ones the device can't run (clear, user-friendly reason).
 `EmbedderEngine.embed()` *produces* vectors; `GraphStore` *stores/searches* them. The interfaces leave a
 *theoretical* cloud seam, but cloud inference is **unplanned** (v3 dropped). Full design in

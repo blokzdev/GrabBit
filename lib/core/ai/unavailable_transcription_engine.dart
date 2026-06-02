@@ -7,6 +7,8 @@ import 'package:grabbit/core/ai/transcription_model.dart';
 /// Never crashes — transcription simply stays off (AI-SPEC §1), and a captioned
 /// item still gets its sidecar transcript via the existing P10f pipeline.
 class UnavailableTranscriptionEngine implements TranscriptionEngine {
+  /// [_model] is only a placeholder so `model` stays non-null; the factory
+  /// passes the real selected model, so this default is rarely surfaced.
   const UnavailableTranscriptionEngine([this._model = whisperBase]);
 
   final TranscriptionModel _model;
