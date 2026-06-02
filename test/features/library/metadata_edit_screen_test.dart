@@ -4,11 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/device/device_profile.dart';
+import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/graph_entity_providers.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
+
+class _FixedTier extends ActiveDeviceTier {
+  _FixedTier(this._tier);
+  final DeviceTier _tier;
+  @override
+  DeviceTier build() => _tier;
+}
 
 MediaItem _item() => MediaItem(
   id: 'x',
@@ -99,6 +108,52 @@ void main() {
       expect(music, findsOneWidget);
       expect(find.widgetWithText(ActionChip, 'live'), findsOneWidget);
       expect(tester.widget<ActionChip>(music).onPressed, isNotNull);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  Future<void> pumpAtTier(WidgetTester tester, DeviceTier tier) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          mediaItemByIdProvider('x').overrideWith((ref) => _item()),
+          tagsForItemProvider('x').overrideWith((ref) => Stream.value(<Tag>[])),
+          collectionsProvider.overrideWith(
+            (ref) => Stream.value(<Collection>[]),
+          ),
+          collectionsForItemProvider(
+            'x',
+          ).overrideWith((ref) => Stream.value(<Collection>[])),
+          activeDeviceTierProvider.overrideWith(() => _FixedTier(tier)),
+        ],
+        child: const MaterialApp(home: MetadataEditScreen(itemId: 'x')),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+  }
+
+  testWidgets(
+    'hides the AI tag-suggestion row on a low (ineligible) tier (P13c)',
+    (tester) async {
+      await pumpAtTier(tester, DeviceTier.low);
+      expect(find.text('AI suggestions'), findsNothing);
+      expect(find.text('Suggest tags with AI'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'shows the AI tag-suggestion row on a generation-capable tier (P13c)',
+    (tester) async {
+      await pumpAtTier(tester, DeviceTier.high);
+      expect(find.text('AI suggestions'), findsOneWidget);
+      expect(find.text('Suggest tags with AI'), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );

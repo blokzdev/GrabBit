@@ -8,6 +8,15 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **P13c-2 — opt-in auto-tag-on-download.** The sibling of P13a-2/P13b-3: an opt-in (default-off) setting
+      to suggest tags for new downloads in the background. Unlike the passive summary/OCR enrichments, tags are
+      **user-curated** (they drive facets), so this should likely **suggest + post a "review tags" Activity
+      Inbox nudge** (or write into a marked "ai" namespace) rather than silently auto-apply LLM tags — decide
+      the apply-vs-review behaviour when planning it. *(From P13c.)*
+- [ ] **AI tag casing/normalization.** `addTagToItem` trims but doesn't lowercase, so P13c's AI suggestions
+      are lowercased while manual/graph tags keep their case (e.g. `Live` vs `live` can coexist). Consider a
+      single normalization policy (case-fold on store, or a display-case + fold-key) if duplicate-case tags
+      become noisy. *(From P13c.)*
 - [ ] **Translation — translate the summaries + cache + pack management.** P13b-2 translates the
       **description + transcript** only (the derived AI/TextRank summaries stay in the source language) and
       is **ephemeral** (re-translates each time; no DB cache). Future: also offer translated summaries, cache

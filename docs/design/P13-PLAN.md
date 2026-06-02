@@ -174,7 +174,7 @@ target-language UX + GMS nuance). Measure APK-size impact in the first ML Kit bu
   (c) quick wins — auto-transcribe skips image items, and `durationSec` is gated to non-image. The
   unconditional `--write-thumbnail` and non-`mediaTypeForExt` image formats are logged in `BACKLOG.md`.
 
-### `[ ]` P13c — Smart auto-tagging *(generation; APK)*
+### `[~]` P13c — Smart auto-tagging *(generation; APK)*
 LLM-suggested tags feeding the **existing** tag system — builds directly on the P13a generation patterns.
 - Prompt the active model with the item's text for candidate tags; parse the **free-text** response (no
   structured seam); present them through the **existing P10c-c-2 suggestion chips** in the metadata editor so
@@ -183,6 +183,16 @@ LLM-suggested tags feeding the **existing** tag system — builds directly on th
   graph-co-occurrence tag suggestions remain).
 - **Exit / review:** a capable device suggests sensible tags from an item's content offline; tapping a chip
   persists the tag via the existing repository path; ineligible devices degrade to the co-occurrence chips.
+- **Status:** implemented (CI-green) — **on-demand** (maintainer call): a separate, gated **"AI suggestions"**
+  row in the metadata editor (`_AiTagSuggestions`, below the graph `_Suggestions`), hidden when no generation
+  model fits the device. Pure `buildTagPrompt` + forgiving `parseTagSuggestions` (split/strip/lowercase/dedupe/
+  exclude-applied/cap); an autoDispose `itemAiTags(itemId)` controller (mirrors the P13b-2 translation
+  controller) builds the source from title + description/transcript/`ocrText`, generates, parses excluding
+  current tags; chips reuse `ActionChip` + `addTagToItem` (never auto-written). Reuses `aiSummaryAction` for
+  the on-ramp; one-shot `MetadataRepository.tagNamesForItem`/`mediaItemById`. **No deps/schema.** Tests:
+  prompt/parse units, controller (fake engine — excludes applied, lowercases, error path), editor gating
+  (low hides / high shows). **Pending APK spot-check** (generate + apply on a real item offline). The
+  generate→chips flow is APK-verified. Background **auto-tag-on-download is a deliberate follow-up (P13c-2)**.
 
 ### `[ ]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 3 PRs)*
 The headline differentiator — natural-language Q&A grounded in the private library, fully on-device

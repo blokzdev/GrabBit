@@ -630,6 +630,12 @@ class MetadataRepository {
     _db.mediaMetadata,
   )..where((t) => t.itemId.equals(itemId))).getSingleOrNull();
 
+  /// One-shot read of an item's row (P13c) — e.g. to read its title as a tag
+  /// signal without a reactive stream.
+  Future<MediaItem?> mediaItemById(String itemId) => (_db.select(
+    _db.mediaItems,
+  )..where((t) => t.id.equals(itemId))).getSingleOrNull();
+
   Future<void> updateTitle(String itemId, String title) async {
     await (_db.update(_db.mediaItems)..where((t) => t.id.equals(itemId))).write(
       MediaItemsCompanion(title: Value(title.trim())),
@@ -699,6 +705,17 @@ class MetadataRepository {
       innerJoin(_db.mediaTags, _db.mediaTags.tagId.equalsExp(_db.tags.id)),
     ])..where(_db.mediaTags.itemId.equals(itemId));
     return query.map((row) => row.readTable(_db.tags)).watch();
+  }
+
+  /// One-shot read of an item's current tag names (P13c) — for commands that
+  /// need the set once (e.g. excluding already-applied tags from AI suggestions)
+  /// rather than a reactive stream.
+  Future<List<String>> tagNamesForItem(String itemId) async {
+    final query = _db.select(_db.tags).join([
+      innerJoin(_db.mediaTags, _db.mediaTags.tagId.equalsExp(_db.tags.id)),
+    ])..where(_db.mediaTags.itemId.equals(itemId));
+    final rows = await query.get();
+    return [for (final r in rows) r.readTable(_db.tags).name];
   }
 
   Future<void> addTagToItem(String itemId, String name) async {

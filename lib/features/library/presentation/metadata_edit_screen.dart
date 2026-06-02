@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/async_fade.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
@@ -8,8 +10,11 @@ import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/ai_summary.dart';
 import 'package:grabbit/features/library/presentation/graph_entity_providers.dart';
+import 'package:grabbit/features/library/presentation/item_ai_tags_provider.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 
 class MetadataEditScreen extends ConsumerStatefulWidget {
   const MetadataEditScreen({required this.itemId, super.key});
@@ -165,6 +170,7 @@ class _TagsEditor extends ConsumerWidget {
                 onSubmitted: (_) => _add(repo),
               ),
               _Suggestions(itemId: itemId, repo: repo),
+              _AiTagSuggestions(itemId: itemId, repo: repo),
             ],
           ),
         ),
@@ -217,6 +223,125 @@ class _Suggestions extends ConsumerWidget {
                 ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// On-device LLM tag suggestions (P13c) — a separate, gated "AI suggestions" row
+/// below the graph suggestions. Hidden where no generation model fits the device
+/// (the graph suggestions remain). A "Suggest tags with AI" button generates
+/// chips that apply via the same `addTagToItem` path; tags are never auto-added.
+class _AiTagSuggestions extends ConsumerWidget {
+  const _AiTagSuggestions({required this.itemId, required this.repo});
+  final String itemId;
+  final MetadataRepository repo;
+
+  Future<void> _onSuggest(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    final engine = ref.read(generationEngineProvider);
+    final enabled =
+        ref.read(settingsControllerProvider).asData?.value.generationEnabled ??
+        false;
+    final modelReady = enabled && await engine.ensureReady();
+    switch (aiSummaryAction(
+      eligible: ref.read(activeGenerationModelProvider) != null,
+      enabled: enabled,
+      modelReady: modelReady,
+    )) {
+      case AiSummaryAction.unavailable:
+        return;
+      case AiSummaryAction.offerSetup:
+      case AiSummaryAction.offerDownload:
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Set up on-device text generation to suggest tags'),
+            ),
+          );
+        await router.push('/settings/ai');
+      case AiSummaryAction.summarizeNow:
+        await ref.read(itemAiTagsProvider(itemId).notifier).suggest();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = GrabBitTokens.of(context);
+    // No generation model fits this device → only the graph suggestions show.
+    if (ref.watch(activeGenerationModelProvider) == null) {
+      return const SizedBox.shrink();
+    }
+    final state = ref.watch(itemAiTagsProvider(itemId));
+    return Padding(
+      padding: EdgeInsets.only(top: tokens.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_outlined,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+              SizedBox(width: tokens.spaceXs),
+              Text(
+                'AI suggestions',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const Spacer(),
+              if (state.busy)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                TextButton(
+                  onPressed: () => _onSuggest(context, ref),
+                  child: Text(
+                    state.suggestions.isEmpty
+                        ? 'Suggest tags with AI'
+                        : 'Again',
+                  ),
+                ),
+            ],
+          ),
+          if (state.suggestions.isNotEmpty) ...[
+            SizedBox(height: tokens.spaceXs),
+            Wrap(
+              spacing: tokens.spaceSm,
+              runSpacing: tokens.spaceXs,
+              children: [
+                for (final tag in state.suggestions)
+                  ActionChip(
+                    avatar: const Icon(Icons.add, size: 18),
+                    label: Text(tag),
+                    onPressed: () {
+                      repo.addTagToItem(itemId, tag);
+                      ref.read(itemAiTagsProvider(itemId).notifier).remove(tag);
+                    },
+                  ),
+              ],
+            ),
+          ],
+          if (state.error != null)
+            Padding(
+              padding: EdgeInsets.only(top: tokens.spaceXs),
+              child: Text(
+                state.error!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
         ],
       ),
     );
