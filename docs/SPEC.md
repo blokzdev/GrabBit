@@ -38,6 +38,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | **On-device AI (P12c):** `unorm_dart` (pure-Dart Unicode NFKC); `onnxruntime_v2` (P12c-2; 16KB-page + GPU) | NFKC for the hand-rolled XLM-R tokenizer (the multilingual embedder); ONNX runtime for MiniLM. |
 | **On-device AI (P12e):** `whisper_ggml_plus` (whisper.cpp FFI, MIT) | Speech transcription. Chosen over `whisper_kit` for Windows/v2 parity; app-managed ggml model fed as `modelPath`, 16 kHz WAV made with our existing ffmpeg (no ffmpeg companion). |
 | **On-device AI (P13b-1):** `google_mlkit_text_recognition` (MIT plugin; ML Kit binaries free/proprietary) | OCR for image items. **Bundled Latin model — no Google Play Services, fully offline** (fits the sideloaded/de-Googled posture); behind the `OcrEngine` seam, graceful off-Android. Non-Latin scripts deferred (BACKLOG). |
+| **On-device AI (P13b-2):** `google_mlkit_translation` + `google_mlkit_language_id` (MIT plugins) | On-device translation of item description/transcript. **No Google Play Services** — language models (~30 MB each, English pivot) download over HTTPS and run offline; behind the `TranslationEngine` seam, graceful off-Android. |
 | **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
 | **Charts (P10d-2):** `fl_chart` | On-device Dashboard storage donuts + library-activity bars. Pure-Dart (CustomPainter), no native deps, no telemetry. |
 | ~~**v3:** `supabase_flutter`, Stripe/PayPal SDKs~~ | **Dropped** (no cloud/credits). |
