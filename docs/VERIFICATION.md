@@ -968,6 +968,15 @@ entries, or verify after P11c lands.)*
 - [ ] **Default off:** with the toggle off, image downloads are not auto-scanned (on-demand "Scan text"
       still works). A **video** download is never auto-OCR'd. The queue still drains normally.
 
+### P13c — Smart auto-tagging  *(install `app-arm64-v8a-debug.apk`; needs a capable device)*
+- [ ] On a capable device with text generation enabled: open an item → **Edit info** → Tags → an **AI
+      suggestions** row with a **Suggest tags with AI** button. Tap it → sensible lowercase tag chips appear,
+      **fully offline** (airplane mode); tapping a chip **adds** the tag (it moves into the tag list and feeds
+      facets) and removes it from the suggestions.
+- [ ] AI suggestions **exclude** tags already applied; tags are never added without a tap.
+- [ ] On a **low-end** device the AI row is **absent** (the graph co-occurrence "Suggested" chips still work);
+      with generation **not enabled**, the button routes to **AI settings** (on-ramp).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.
