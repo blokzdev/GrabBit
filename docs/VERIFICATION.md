@@ -927,6 +927,15 @@ entries, or verify after P11c lands.)*
 - [ ] On a capable device with generation **not yet enabled**: tapping **Summarize with AI** shows a
       "set up text generation" hint and opens **AI settings** (the on-ramp).
 
+### P13a-2 — Auto-summarize on download  *(install `app-arm64-v8a-debug.apk`; needs a capable device)*
+- [ ] AI settings → with text generation enabled, the **Auto-summarize new downloads** toggle is visible;
+      enable it. Finish a download (an item with a description/transcript) → an **AI summary** appears on
+      the item **and** an Activity Inbox entry ("Summary ready"), **fully offline**.
+- [ ] With auto-summarize on but **no generation model downloaded**: a download produces a one-time
+      "Finish setting up summaries" inbox nudge that opens **AI settings** (no summary written).
+- [ ] **Default off** (and when generation is disabled): downloads produce **no** auto-summary and no AI
+      nudge; the queue still drains normally; the on-demand "Summarize with AI" still works.
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

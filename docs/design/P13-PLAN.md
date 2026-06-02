@@ -92,6 +92,27 @@ The first **real** generation feature — an LLM TL;DR layered on the existing e
   end-to-end widget flow is APK-verified (the item-detail screen's player/related shimmer makes a full
   `pumpAndSettle` widget test unreliable — same boundary as the P10f-2 transcript flow).
 
+#### `[~]` P13a-2 — Opt-in auto-summarize on download *(generation; APK)*
+A maintainer-requested follow-up: auto-generate the abstractive summary for newly downloaded items in the
+background, **opt-in (default off)**, mirroring the `autoTranscribe` precedent (P12e-3).
+- `SettingsModel.autoSummarizeOnDownload` (+ setter); a toggle in the AI-settings generation card, shown only
+  when generation is enabled.
+- In `queue_controller._persistCompleted` (after the auto-transcribe block, so a just-built transcript is the
+  source): for each completed item, gated by `autoSummarizeOnDownload && generationEnabled` and a pure
+  `autoSummaryDecision` (skip / needsModel / summarize) — **runs only when the model is already downloaded
+  (`ensureReady`, never fetches)**; collects `generate(buildSummaryPrompt(text))` and persists via
+  `updateAiSummary`.
+- Activity Inbox: a `category: ai` success entry (`summary_$id`), or a one-time "finish setting up summaries"
+  nudge (`summary_needs_model`) when opted in but no model is downloaded.
+- **Exit / review:** with auto-summarize on + a downloaded model, a finished download gets a summary + an
+  inbox entry **offline**; no model → one nudge; default-off / generation-off → nothing auto-runs; the queue
+  still drains. APK spot-check.
+- **Status:** implemented (CI-green) — settings field + setter, `autoSummaryDecision` (unit-tested), queue
+  integration + two inbox posts, the AI-settings toggle, and three queue tests (ready → summary + ai entry;
+  no-model → nudge; generation-off → no-op). No schema change (reuses P13a's columns). **Pending APK
+  spot-check.** Shares the queue-decoupled-background-AI deferral (inline-before-next-pump like
+  `autoTranscribe`) and the LLM+HNSW RAM co-residency check (P13d) — both in `BACKLOG.md`.
+
 ### `[ ]` P13b — Translation & OCR (ML Kit) *(native; new deps; APK; split into 2 PRs)*
 On-device text intelligence that is **device-universal-ish** — gated on ML Kit + opt-in, not the RAM tier.
 Adds `google_mlkit_translation` / `google_mlkit_text_recognition`; measure APK-size impact in the first build.

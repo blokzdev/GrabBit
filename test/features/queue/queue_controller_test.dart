@@ -5,6 +5,10 @@ import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grabbit/core/ai/generation_engine.dart';
+import 'package:grabbit/core/ai/generation_model.dart';
+import 'package:grabbit/core/ai/generation_provider.dart';
+import 'package:grabbit/core/ai/structured_generation.dart';
 import 'package:grabbit/core/ai/transcription_engine.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
@@ -233,6 +237,44 @@ class FakeTranscriptionEngine implements TranscriptionEngine {
   Future<void> close() async {}
 }
 
+/// In-memory generation engine (no native LLM) for the auto-summary tests
+/// (P13a-2). [ready] simulates whether the model is downloaded; records the
+/// prompts it was asked to generate from.
+class FakeGenerationEngine implements GenerationEngine {
+  FakeGenerationEngine({this.ready = true, this.output = 'fake summary'});
+
+  bool ready;
+  String output;
+  final List<String> prompts = [];
+
+  @override
+  GenerationModel get model => qwen3_0_6b;
+  @override
+  bool get isAvailable => ready;
+  @override
+  Future<bool> ensureReady() async => ready;
+  @override
+  Future<void> downloadModel({void Function(double)? onProgress}) async {
+    ready = true;
+  }
+
+  @override
+  Stream<String> generate(String prompt, {String? systemPrompt}) async* {
+    prompts.add(prompt);
+    yield output;
+  }
+
+  @override
+  Future<StructuredResult> generateStructured(
+    List<StructuredToolDef> toolDefs,
+    String prompt, {
+    String? systemPrompt,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> close() async {}
+}
+
 QueuedDownload _qd(
   String id, {
   String outputDir = '/tmp',
@@ -280,6 +322,7 @@ void main() {
   late FakeBatteryService fakeBattery;
   late FakeSystemNotificationService fakeOsNotifier;
   late FakeTranscriptionEngine fakeTranscriber;
+  late FakeGenerationEngine fakeGenerator;
   late Directory mediaDir;
 
   ProviderContainer makeContainer() => ProviderContainer(
@@ -293,6 +336,7 @@ void main() {
       systemNotificationServiceProvider.overrideWithValue(fakeOsNotifier),
       mediaStorageProvider.overrideWithValue(FakeMediaStorage(mediaDir)),
       transcriptionEngineProvider.overrideWithValue(fakeTranscriber),
+      generationEngineProvider.overrideWithValue(fakeGenerator),
       queueConfigProvider.overrideWithValue(
         const QueueConfig(baseRetryDelay: Duration(milliseconds: 5)),
       ),
@@ -308,6 +352,7 @@ void main() {
     fakeBattery = FakeBatteryService();
     fakeOsNotifier = FakeSystemNotificationService();
     fakeTranscriber = FakeTranscriptionEngine();
+    fakeGenerator = FakeGenerationEngine();
     mediaDir = Directory.systemTemp.createTempSync('grabbit_qmedia_');
     container = makeContainer();
     repo = container.read(queueRepositoryProvider);
@@ -421,6 +466,20 @@ void main() {
     db.mediaMetadata,
   )..where((m) => m.itemId.equals(id))).getSingleOrNull())?.transcript;
 
+  Future<String?> summaryOf(String id) async => (await (db.select(
+    db.mediaMetadata,
+  )..where((m) => m.itemId.equals(id))).getSingleOrNull())?.aiSummary;
+
+  /// A normal completed download with a description (so the auto-summary source
+  /// — `transcript ?? description` — is non-empty), no caption sidecar.
+  Future<Directory> describedDownload(String id) async {
+    final dir = await Directory.systemTemp.createTemp('grabbit_sum_');
+    addTearDown(() => dir.delete(recursive: true));
+    await Directory('${dir.path}/$id').create();
+    await File('${dir.path}/$id/Clip.mp4').writeAsString('data');
+    return dir;
+  }
+
   test(
     'auto: caption-less + enabled + model ready → whisper transcribes',
     () async {
@@ -491,6 +550,97 @@ void main() {
     )..where((n) => n.category.equals(NotificationCategory.ai))).get();
     expect(aiNotices, isEmpty);
   });
+
+  test(
+    'auto-summary: enabled + model ready → summary written + ai entry (P13a-2)',
+    () async {
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setGenerationEnabled(true);
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setAutoSummarizeOnDownload(true);
+      fakeGenerator.ready = true;
+      final dir = await describedDownload('vid1');
+
+      await controller.enqueue(
+        _qd('vid1', outputDir: dir.path, description: 'A clip about cats'),
+      );
+      await waitFor(() async => engine.running.contains('vid1'));
+      engine.complete('vid1');
+      await waitFor(
+        () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+      );
+
+      expect(fakeGenerator.prompts, hasLength(1));
+      expect(fakeGenerator.prompts.single, contains('A clip about cats'));
+      expect(await summaryOf('vid1'), 'fake summary');
+      final ai = await (db.select(
+        db.notifications,
+      )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+      expect(ai, hasLength(1));
+      expect(ai.single.severity, NotificationSeverity.success);
+    },
+  );
+
+  test(
+    'auto-summary: enabled + NO model → skip + nudge once (P13a-2)',
+    () async {
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setGenerationEnabled(true);
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setAutoSummarizeOnDownload(true);
+      fakeGenerator.ready = false; // model not downloaded
+      final dir = await describedDownload('vid1');
+
+      await controller.enqueue(
+        _qd('vid1', outputDir: dir.path, description: 'A clip about cats'),
+      );
+      await waitFor(() async => engine.running.contains('vid1'));
+      engine.complete('vid1');
+      await waitFor(
+        () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+      );
+
+      expect(fakeGenerator.prompts, isEmpty);
+      expect(await summaryOf('vid1'), isNull);
+      final ai = await (db.select(
+        db.notifications,
+      )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+      expect(ai, hasLength(1));
+      expect(ai.single.targetRoute, '/settings/ai');
+    },
+  );
+
+  test(
+    'auto-summary: opted in but generation disabled → no-op (P13a-2)',
+    () async {
+      // autoSummarizeOnDownload on, but generationEnabled stays false.
+      await container
+          .read(settingsControllerProvider.notifier)
+          .setAutoSummarizeOnDownload(true);
+      fakeGenerator.ready = true;
+      final dir = await describedDownload('vid1');
+
+      await controller.enqueue(
+        _qd('vid1', outputDir: dir.path, description: 'A clip about cats'),
+      );
+      await waitFor(() async => engine.running.contains('vid1'));
+      engine.complete('vid1');
+      await waitFor(
+        () async => (await repo.byId('vid1'))?.status == TaskStatus.done,
+      );
+
+      expect(fakeGenerator.prompts, isEmpty);
+      expect(await summaryOf('vid1'), isNull);
+      final ai = await (db.select(
+        db.notifications,
+      )..where((n) => n.category.equals(NotificationCategory.ai))).get();
+      expect(ai, isEmpty);
+    },
+  );
 
   test('a completed download posts a success activity entry (P11c)', () async {
     final dir = await Directory.systemTemp.createTemp('grabbit_ntf_done_');

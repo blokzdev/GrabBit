@@ -8,6 +8,12 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Auto-summarize — queue-decoupled background run.** P13a-2 generates the auto-summary **inline** in
+      `_persistCompleted` before the next download pumps (gated on "model present" so it can't stall on a
+      fetch), exactly like `autoTranscribe`. Generation is heavier than whisper-tiny, so a fuller design
+      would run it **off the critical path** after the queue drains. Shares the existing "queue-decoupled
+      background transcription" deferral below; the **LLM + Cozo HNSW RAM co-residency** check (P13d) also
+      applies once auto-summary and the graph index can be resident together. *(From P13a-2.)*
 - [ ] **AI summary — staleness on later transcript.** The cached `aiSummary` (P13a) is generated from
       `transcript ?? description` at the moment the user runs it; if a transcript is added *after* a
       description-based summary, the cache isn't auto-invalidated (the user can hit **Regenerate**). A

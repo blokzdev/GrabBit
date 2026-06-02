@@ -143,6 +143,10 @@ class SettingsController extends _$SettingsController {
   Future<void> setSelectedGenerationModelId(String id) async =>
       _update((await future).copyWith(selectedGenerationModelId: id));
 
+  /// Auto-summarize newly downloaded items in the background (P13a-2).
+  Future<void> setAutoSummarizeOnDownload(bool value) async =>
+      _update((await future).copyWith(autoSummarizeOnDownload: value));
+
   /// On-device transcription opt-in (P12e).
   Future<void> setTranscriptionEnabled(bool value) async =>
       _update((await future).copyWith(transcriptionEnabled: value));
