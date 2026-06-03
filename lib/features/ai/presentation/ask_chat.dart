@@ -7,10 +7,21 @@ library;
 import 'dart:convert';
 
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/features/ai/data/rag_context.dart';
 
 const String kRoleUser = 'user';
 const String kRoleAssistant = 'assistant';
+
+/// Character budget for the recent-history window fed back into each turn's
+/// prompt (the d-1 `fitHistory` knob), scaled by device tier (P13d-3): a shallow
+/// window on memory-constrained mid devices (small models + the live HNSW index
+/// share RAM), deeper on high. `low` never reaches generation (retrieval-only),
+/// but is defined for totality.
+int historyBudgetForTier(DeviceTier tier) => switch (tier) {
+  DeviceTier.low || DeviceTier.mid => 1000,
+  DeviceTier.high => 3000,
+};
 
 /// A decoded citation persisted on an assistant message — enough to render and
 /// deep-link the inline `[n]` markers without re-running retrieval.

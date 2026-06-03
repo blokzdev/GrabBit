@@ -8,6 +8,8 @@ import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/structured_generation.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/device/device_profile.dart';
+import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/features/ai/data/chat_repository.dart';
 import 'package:grabbit/features/ai/data/rag_context.dart';
 import 'package:grabbit/features/ai/data/rag_retriever.dart';
@@ -55,6 +57,7 @@ class FakeRagRetriever extends RagRetriever {
   FakeRagRetriever(super.ref, this._ctx);
   final RagContext _ctx;
   List<RagChatTurn> lastHistory = const [];
+  int? lastBudget;
 
   @override
   Future<RagContext> retrieve(
@@ -65,8 +68,18 @@ class FakeRagRetriever extends RagRetriever {
     int k = 30,
   }) async {
     lastHistory = history;
+    lastBudget = historyCharBudget;
     return _ctx;
   }
+}
+
+/// Pins the device tier so the controller's history-budget wiring is testable
+/// (and the async hardware probe never runs).
+class _FixedTier extends ActiveDeviceTier {
+  _FixedTier(this._tier);
+  final DeviceTier _tier;
+  @override
+  DeviceTier build() => _tier;
 }
 
 RagContext _ctxWithSources(String question) => RagContext(
@@ -94,12 +107,14 @@ void main() {
   ProviderContainer makeContainer({
     required RagContext ctx,
     required FakeGenerationEngine engine,
+    DeviceTier tier = DeviceTier.high,
   }) {
     final c = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
         ragRetrieverProvider.overrideWith((ref) => FakeRagRetriever(ref, ctx)),
         generationEngineProvider.overrideWithValue(engine),
+        activeDeviceTierProvider.overrideWith(() => _FixedTier(tier)),
       ],
     );
     addTearDown(c.dispose);
@@ -195,5 +210,31 @@ void main() {
     final retriever = c.read(ragRetrieverProvider) as FakeRagRetriever;
     expect(retriever.lastHistory.map((t) => t.question), ['first?']);
     expect(retriever.lastHistory.map((t) => t.answer), ['first answer']);
+  });
+
+  test('feeds retrieval a tier-scaled history budget', () async {
+    final engine = FakeGenerationEngine();
+    // Mid tier → shallow budget; high tier → deeper.
+    final mid = makeContainer(
+      ctx: _ctxWithSources('q'),
+      engine: engine,
+      tier: DeviceTier.mid,
+    );
+    await mid.read(askControllerProvider(null).notifier).send('q');
+    expect(
+      (mid.read(ragRetrieverProvider) as FakeRagRetriever).lastBudget,
+      historyBudgetForTier(DeviceTier.mid),
+    );
+
+    final high = makeContainer(
+      ctx: _ctxWithSources('q'),
+      engine: engine,
+      tier: DeviceTier.high,
+    );
+    await high.read(askControllerProvider(null).notifier).send('q');
+    expect(
+      (high.read(ragRetrieverProvider) as FakeRagRetriever).lastBudget,
+      historyBudgetForTier(DeviceTier.high),
+    );
   });
 }

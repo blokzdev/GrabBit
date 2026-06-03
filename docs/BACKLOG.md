@@ -29,9 +29,16 @@ _(nothing active — pick the next batch from below)_
       a char budget (`historyCharBudget`, default 1500). The budget should scale with the device tier / model
       context window (flagship → deeper) rather than a single constant; tune against real models at d-3.
       *(From P13d-1.)*
-- [ ] **GraphRAG — LLM + Cozo HNSW RAM co-residency.** "Ask your library" runs the generation model **and**
+- [x] **GraphRAG — LLM + Cozo HNSW RAM co-residency.** "Ask your library" runs the generation model **and**
       the live HNSW vector index in RAM together. Validate co-residency (and tune retrieval `k` / source caps)
-      on real low/mid devices so it doesn't OOM — carried from P12d-2; verified at P13d-3. *(From P13d-1.)*
+      on real low/mid devices so it doesn't OOM — carried from P12d-2. **Addressed at P13d-3:** mid-tier feeds a
+      shallower history budget (`historyBudgetForTier`, the concrete lever); `k`/source caps stay modest;
+      real-hardware co-residency is the P13d-3 VERIFICATION spot-check. *(From P13d-1; resolved P13d-3.)*
+- [ ] **GraphRAG — decouple "Ask" from the Smart-search opt-in.** Both the full chat (`RagRetriever`) and the
+      retrieval-only fallback (`semanticResultsProvider`) gate on `semanticSearchReadyProvider`, which requires
+      the user's separate `semanticSearchEnabled` toggle. So a capable user with Smart search **off** gets
+      "couldn't find anything" (full) or the on-ramp (fallback). Consider letting Ask drive embedder readiness
+      independently of the Smart-search facet toggle. *(Surfaced at P13d-3; pre-existing from P13d-1.)*
 - [ ] **Library "hide / filter AI tags" facet.** P13c-2 marks AI-applied tags (`media_tags.source = 'ai'`)
       and shows a ✦ on their chips, but the library tag facet (`watchDistinctTags`) treats them like any tag.
       Add a "hide AI tags" / "AI-tagged only" filter (and maybe a bulk "remove all AI tags on this item") if
@@ -121,9 +128,10 @@ _(nothing active — pick the next batch from below)_
 - [ ] **Flagship device tier.** The 3-tier `low/mid/high` lumps 6 GB midrangers with 12–16 GB flagships;
       generation could offer even larger models on a true flagship tier. Add once on-device telemetry from
       testers justifies the threshold split. *(From P12d-1.)*
-- [ ] **GraphRAG LLM + HNSW co-residency (P13).** "Ask your library" runs the generation LLM and the Cozo
+- [x] **GraphRAG LLM + HNSW co-residency (P13).** "Ask your library" runs the generation LLM and the Cozo
       HNSW vector index in RAM *together*; P12d only proves generation in isolation (Labs self-test). Validate
-      combined memory headroom on real devices when P13 wires GraphRAG. *(From P12d-2.)*
+      combined memory headroom on real devices when P13 wires GraphRAG. **Addressed at P13d-3** (tier-aware
+      history budget + the P13d-3 VERIFICATION real-hardware spot-check). *(From P12d-2; resolved P13d-3.)*
 - [ ] **Revisit the generation flagship rung.** Shipped Gemma-4 E2B (2.5 GB) as the flagship because Qwen3-4B
       has no LiteRT build. If a >1.5B **Qwen/SmolLM-family Apache** LiteRT build appears, consider it
       (Gemma-4 is Apache-2.0 + ungated, so this is preference, not a posture fix). *(From P12d-2.)*
