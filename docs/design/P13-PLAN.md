@@ -292,15 +292,24 @@ Incapable / low tiers fall back to an ephemeral **retrieval-only** answer (d-3).
   generation + the live HNSW index together within memory budget (verified on real hardware). ✓ (CI parts) ·
   APK owed (RAM co-residency on real low/mid hardware)
 
-### `[ ]` P13e — Advanced graph analytics & viz *(graph; split into 3 PRs)*
+### `[~]` P13e — Advanced graph analytics & viz *(graph; split into 3 PRs)*
 The richer graph payoff beyond P10's Duplicates + Suggested-similarity albums (GRAPH-SPEC §7). Runs via
 `GraphStore.runScript` / `GraphQueryService`; device-universal (deterministic graph algorithms, no LLM).
 
-#### `[ ]` P13e-1 — Community-detection auto-albums *(graph; APK)*
+#### `[~]` P13e-1 — Community-detection auto-albums *(graph; APK)*
 - **Label-propagation / community detection** over the similarity + entity graph → richer auto-albums,
   surfaced in Collections beside the existing auto-albums with one-tap **Save as collection**.
+- **Status:** implemented (CI-green; APK spot-check owed). Runs over the **entity graph** (shared
+  uploader/playlist/tag + co-download) — **every-device, no embedder** (maintainer call; semantic-similarity +
+  tier enhancements → BACKLOG). New `lib/core/graph/community_clustering.dart` (pure **deterministic label
+  propagation**, mirrors `near_duplicate_clustering.dart`; prunes over-generic buckets); `cozo_query.dart`
+  `entityMembershipScript()` + `coDownloadPairsScript()`; `GraphQueryService.communityClusters()`;
+  `clusteredAlbumsProvider` + `clusterLabel` (dominant **tag → uploader → site → title**) reusing the
+  `SuggestedAlbum` model + `/suggested-album` screen; a **"Discovered"** section in Collections → Albums. **No
+  schema, no deps.** Tests: clusterer (determinism, web-merge, bucket pruning, min/max, dominant tag), the two
+  scripts, `communityClusters` decode, the provider (hydrate/label/empty), and the Discovered section.
 - **Exit / review:** clusters are coherent on a real library; degrades to nothing when the graph is
-  unavailable; saving a cluster creates a normal collection.
+  unavailable; saving a cluster creates a normal collection. ✓ (CI parts) · APK owed
 
 #### `[ ]` P13e-2 — Centrality "Rediscover" *(graph; APK)*
 - **PageRank / betweenness × `lastAccessedAt`** to resurface central-but-stale items; surfaced as a

@@ -1025,6 +1025,14 @@ entries, or verify after P11c lands.)*
 - [ ] **RAM co-residency (the P12d-2 carry-over):** on real **low/mid** hardware, a full generated, cited
       answer runs while the Cozo **HNSW index is live** — no OOM, crash, or jank; repeated turns stay stable.
 
+### P13e-1 — Community-detection auto-albums  *(install `app-arm64-v8a-debug.apk`; needs a real library)*
+- [ ] On a library with shared signals (same channels / playlists / tags / co-downloaded batches), Collections
+      → **Albums** shows a **"Discovered"** section of coherent multi-signal groups, each labeled by its
+      dominant shared signal ("Around 'recipes'", "Mostly <channel>", …).
+- [ ] Works on a **low-end device** (no generation model / embedder needed — entity graph only).
+- [ ] Tapping a discovered album opens its items; **Save** creates a normal collection containing them.
+- [ ] The Discovered section is **absent** when the graph index is unavailable (e.g. unsupported ABI).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

@@ -307,4 +307,41 @@ void main() {
       expect(store.calls, isEmpty);
     });
   });
+
+  group('GraphQueryService.communityClusters', () {
+    Map<String, Object?> respond(String script) {
+      if (script.contains('coDownloadedWith')) {
+        return const {
+          'headers': ['a', 'b'],
+          'rows': <List<Object?>>[],
+        };
+      }
+      // entity membership: three items all share one tag.
+      return const {
+        'headers': ['mediaId', 'kind', 'key'],
+        'rows': [
+          ['a', 't', 'rock'],
+          ['b', 't', 'rock'],
+          ['c', 't', 'rock'],
+        ],
+      };
+    }
+
+    test('detects a community from decoded membership rows', () async {
+      final store = FakeGraphStore(responder: respond);
+      final communities = await GraphQueryService(store).communityClusters();
+      expect(communities, hasLength(1));
+      expect(communities.single.items.toSet(), {'a', 'b', 'c'});
+      expect(communities.single.dominantTag, 'rock');
+    });
+
+    test(
+      'returns empty when the store is unavailable (no query run)',
+      () async {
+        final store = FakeGraphStore(available: false);
+        expect(await GraphQueryService(store).communityClusters(), isEmpty);
+        expect(store.calls, isEmpty);
+      },
+    );
+  });
 }

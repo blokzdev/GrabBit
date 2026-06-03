@@ -197,4 +197,26 @@ void main() {
       ]);
     });
   });
+
+  group('entityMembershipScript', () {
+    test('emits [mediaId, kind, key] for uploader/playlist/tag, no site', () {
+      final script = entityMembershipScript();
+      expect(script, contains('?[mediaId, kind, key]'));
+      expect(script, contains('*postedBy{mediaId, uploaderId: key}'));
+      expect(script, contains('*inPlaylist{mediaId, playlistId: key}'));
+      expect(script, contains('*taggedWith{mediaId, tag: key}'));
+      expect(script, contains('kind = "u"'));
+      expect(script, contains('kind = "p"'));
+      expect(script, contains('kind = "t"'));
+      expect(script, isNot(contains('onPlatform'))); // site excluded
+    });
+  });
+
+  group('coDownloadPairsScript', () {
+    test('emits [a, b] co-download pairs', () {
+      final script = coDownloadPairsScript();
+      expect(script, contains('?[a, b]'));
+      expect(script, contains('*coDownloadedWith{mediaId: a, otherId: b}'));
+    });
+  });
 }
