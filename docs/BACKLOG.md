@@ -8,6 +8,15 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Rediscover — betweenness centrality.** P13e-2 ranks by **PageRank** (cheap, deterministic). Betweenness
+      (bridge-ness) is O(V·E) — too costly for a query-time strip; explore it as an alternative/secondary signal,
+      likely alongside e-3's path/bridge work. *(From P13e-2.)*
+- [ ] **Shared entity item-graph builder.** `community_clustering.dart` (e-1, unweighted adjacency + label
+      propagation) and `centrality.dart` (e-2, weighted adjacency + PageRank) both rebuild an item graph from the
+      same membership + co-download pulls. Extract a shared builder once a third consumer appears. *(From P13e-2.)*
+- [ ] **Rediscover — tuning + "See all".** `freshWindow`/`stalenessCapDays`/`limit` are fixed defaults and the
+      scores recompute query-time (like Suggested/Discovered); consider per-tier tuning, a full "See all"
+      Rediscover screen, and caching. *(From P13e-2.)*
 - [ ] **Community albums — semantic-similarity + device-tier enhancements.** P13e-1 detects communities over
       the **entity** graph only (every-device). Fold **semantic-similarity edges** (looser-threshold vector kNN)
       into the same label-propagation graph on capable tiers for richer thematic grouping, gated like the

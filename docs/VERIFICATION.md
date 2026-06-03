@@ -1033,6 +1033,16 @@ entries, or verify after P11c lands.)*
 - [ ] Tapping a discovered album opens its items; **Save** creates a normal collection containing them.
 - [ ] The Discovered section is **absent** when the graph index is unavailable (e.g. unsupported ABI).
 
+### P13e-2 — Centrality "Rediscover" strip  *(install `app-arm64-v8a-debug.apk`; needs an established library)*
+- [ ] On a library with cross-links (shared channels/playlists/tags or co-downloaded batches), a **"Rediscover"**
+      strip appears on the **Dashboard** (below "Recently opened") **and** atop the **Library**, surfacing items
+      that are well-connected but that you **haven't opened in a while**.
+- [ ] Items opened in the **last ~2 weeks do not** appear (no overlap with "Recently opened"); tapping a tile
+      opens the item.
+- [ ] The strip is **absent** on a small/new library, while searching/filtering/selecting in the Library, and
+      when the graph index is unavailable.
+- [ ] Works on a **low-end device** (entity graph only — no embedder/LLM).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

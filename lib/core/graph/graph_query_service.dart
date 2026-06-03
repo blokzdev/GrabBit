@@ -1,3 +1,4 @@
+import 'package:grabbit/core/graph/centrality.dart';
 import 'package:grabbit/core/graph/community_clustering.dart';
 import 'package:grabbit/core/graph/cooccurrence_ranking.dart';
 import 'package:grabbit/core/graph/cozo_query.dart';
@@ -173,6 +174,45 @@ class GraphQueryService {
     int maxGroupSize = 50,
   }) async {
     if (!_store.isAvailable) return const [];
+    final (:memberships, :pairs) = await _entityGraph();
+    if (memberships.isEmpty) return const [];
+    return detectCommunities(
+      memberships: memberships,
+      pairs: pairs,
+      minSize: minSize,
+      maxSize: maxSize,
+      maxGroupSize: maxGroupSize,
+    );
+  }
+
+  /// PageRank **centrality** of every connected item over the entity graph
+  /// (P13e-2) — `id → score`, ranking items by how woven they are into the
+  /// library's web (shared uploader/playlist/tag + co-download). Every-device
+  /// (pure Datalog + Dart; no embedder). `{}` when the store is unavailable.
+  /// Feeds the "Rediscover" strip via `rankRediscover`.
+  Future<Map<String, double>> itemCentrality({int maxGroupSize = 50}) async {
+    if (!_store.isAvailable) return const {};
+    final (:memberships, :pairs) = await _entityGraph();
+    if (memberships.isEmpty && pairs.isEmpty) return const {};
+    return pageRank(
+      buildItemGraph(
+        memberships: memberships,
+        pairs: pairs,
+        maxGroupSize: maxGroupSize,
+      ),
+    );
+  }
+
+  /// Decodes the entity-membership (`item`, type-prefixed `group`) + co-download
+  /// (`a`/`b`) pulls shared by the community (P13e-1) and centrality (P13e-2)
+  /// builders over the deterministic entity graph.
+  Future<
+    ({
+      List<({String item, String group})> memberships,
+      List<({String a, String b})> pairs,
+    })
+  >
+  _entityGraph() async {
     final memberships = [
       for (final r in decodeRows(
         await _store.runScript(entityMembershipScript()),
@@ -182,7 +222,6 @@ class GraphQueryService {
             if (r['key'] case final Object key)
               (item: id.toString(), group: '$kind:$key'),
     ];
-    if (memberships.isEmpty) return const [];
     final pairs = [
       for (final r in decodeRows(
         await _store.runScript(coDownloadPairsScript()),
@@ -190,13 +229,7 @@ class GraphQueryService {
         if (r['a'] case final Object a)
           if (r['b'] case final Object b) (a: a.toString(), b: b.toString()),
     ];
-    return detectCommunities(
-      memberships: memberships,
-      pairs: pairs,
-      minSize: minSize,
-      maxSize: maxSize,
-      maxGroupSize: maxGroupSize,
-    );
+    return (memberships: memberships, pairs: pairs);
   }
 
   /// The immediate graph neighborhood of media item [id] — its connected
