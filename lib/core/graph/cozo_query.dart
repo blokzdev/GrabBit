@@ -62,6 +62,23 @@ String allEmbeddingsScript() => '?[id, v] := *embedding{id, v}';
 String allDuplicatePairsScript() =>
     '?[a, b] := *duplicateOf{mediaId: a, otherId: b}';
 
+/// Global entity-membership for community detection (P13e-1), as `[mediaId,
+/// kind, key]` rows: `kind` ∈ `u | p | t` (uploader / playlist / tag), `key` the
+/// shared entity id/tag. The Dart clusterer composes a `"$kind:$key"` bucket and
+/// connects items sharing one. **Site is excluded** (too coarse — it would merge
+/// everything from a platform). Linear in edges (one row per membership, not per
+/// pair). Pure Datalog — no vector syntax.
+String entityMembershipScript() =>
+    '?[mediaId, kind, key] := *postedBy{mediaId, uploaderId: key}, kind = "u"\n'
+    '?[mediaId, kind, key] := *inPlaylist{mediaId, playlistId: key}, kind = "p"\n'
+    '?[mediaId, kind, key] := *taggedWith{mediaId, tag: key}, kind = "t"';
+
+/// Every co-download pair as `[a, b]` (one direction per stored row). Co-download
+/// is inherently pairwise, so it joins the community graph as a direct item–item
+/// edge rather than an entity bucket.
+String coDownloadPairsScript() =>
+    '?[a, b] := *coDownloadedWith{mediaId: a, otherId: b}';
+
 /// Tags co-occurring with item `$id`: tags on the items that share a
 /// deterministic signal with it (same uploader/playlist/tag/co-download),
 /// excluding the tags `$id` already carries. Emits one `[other, tag]` row per

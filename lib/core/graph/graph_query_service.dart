@@ -1,3 +1,4 @@
+import 'package:grabbit/core/graph/community_clustering.dart';
 import 'package:grabbit/core/graph/cooccurrence_ranking.dart';
 import 'package:grabbit/core/graph/cozo_query.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
@@ -159,6 +160,42 @@ class GraphQueryService {
       maxDistance: maxDistance,
       minSize: minSize,
       excludePairs: exclude,
+    );
+  }
+
+  /// Thematic **communities** over the entity graph (P13e-1) — items linked
+  /// through a web of shared uploader/playlist/tag signals + co-download edges,
+  /// grouped by deterministic label propagation. Every-device (pure Datalog +
+  /// Dart; no embedder, unlike [similarityClusters]). `[]` when unavailable.
+  Future<List<Community>> communityClusters({
+    int minSize = 3,
+    int maxSize = 30,
+    int maxGroupSize = 50,
+  }) async {
+    if (!_store.isAvailable) return const [];
+    final memberships = [
+      for (final r in decodeRows(
+        await _store.runScript(entityMembershipScript()),
+      ))
+        if (r['mediaId'] case final Object id)
+          if (r['kind'] case final Object kind)
+            if (r['key'] case final Object key)
+              (item: id.toString(), group: '$kind:$key'),
+    ];
+    if (memberships.isEmpty) return const [];
+    final pairs = [
+      for (final r in decodeRows(
+        await _store.runScript(coDownloadPairsScript()),
+      ))
+        if (r['a'] case final Object a)
+          if (r['b'] case final Object b) (a: a.toString(), b: b.toString()),
+    ];
+    return detectCommunities(
+      memberships: memberships,
+      pairs: pairs,
+      minSize: minSize,
+      maxSize: maxSize,
+      maxGroupSize: maxGroupSize,
     );
   }
 

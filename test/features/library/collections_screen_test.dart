@@ -7,6 +7,7 @@ import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/presentation/clustered_albums_provider.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
@@ -137,6 +138,74 @@ void main() {
       expect(find.text('Platforms'), findsOneWidget);
       expect(find.text('youtube'), findsOneWidget);
       expect(find.text('2 items'), findsOneWidget);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Albums tab shows the Discovered section for clustered albums',
+    (tester) async {
+      MediaItem item(String id) => MediaItem(
+        id: id,
+        title: 'Clip $id',
+        sourceUrl: 'u',
+        site: 'youtube',
+        filePath: '/m/$id',
+        type: 'video',
+        createdAt: DateTime.utc(2026),
+        storageState: 'private',
+        isFavorite: false,
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            collectionsProvider.overrideWith(
+              (ref) => Stream.value(<Collection>[]),
+            ),
+            collectionItemCountsProvider.overrideWith(
+              (ref) => Stream.value(<int, int>{}),
+            ),
+            distinctSitesProvider.overrideWith(
+              (ref) => Stream.value(['youtube']),
+            ),
+            siteCountsProvider.overrideWith(
+              (ref) => Stream.value(<String, int>{'youtube': 1}),
+            ),
+            distinctUploadersProvider.overrideWith(
+              (ref) => Stream.value(<String>[]),
+            ),
+            uploaderCountsProvider.overrideWith(
+              (ref) => Stream.value(<String, int>{}),
+            ),
+            recentlyPlayedProvider.overrideWith(
+              (ref) => Stream.value(<MediaItem>[]),
+            ),
+            duplicatesProvider.overrideWith(
+              (ref) => Stream.value(<List<MediaItem>>[]),
+            ),
+            suggestedAlbumsProvider.overrideWith(
+              (ref) async => const <SuggestedAlbum>[],
+            ),
+            clusteredAlbumsProvider.overrideWith(
+              (ref) async => [
+                SuggestedAlbum(
+                  label: "Around 'rock'",
+                  items: [item('a'), item('b'), item('c')],
+                ),
+              ],
+            ),
+          ],
+          child: const MaterialApp(home: CollectionsScreen()),
+        ),
+      );
+      await settle(tester);
+
+      await tester.tap(find.text('Albums'));
+      await settle(tester);
+
+      expect(find.text('Discovered'), findsOneWidget);
+      expect(find.text("Around 'rock'"), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );

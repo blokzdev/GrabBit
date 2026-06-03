@@ -8,6 +8,14 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Community albums — semantic-similarity + device-tier enhancements.** P13e-1 detects communities over
+      the **entity** graph only (every-device). Fold **semantic-similarity edges** (looser-threshold vector kNN)
+      into the same label-propagation graph on capable tiers for richer thematic grouping, gated like the
+      Suggested albums; possibly tune cluster bounds (`minSize`/`maxSize`/`maxGroupSize`) per device tier.
+      *(From P13e-1.)*
+- [ ] **Community albums — richer labels + caching.** `clusterLabel` resolves dominant **tag → uploader → site
+      → title**; consider playlist names, LLM-named groups (capable tiers), and caching/persisting discovered
+      albums (today they recompute query-time, like Suggested). *(From P13e-1.)*
 - [ ] **GraphRAG — search/filter conversations.** The chat list (P13d-2b) shows every active chat; once a user
       accumulates many, add a search field (by title/preview) and/or pinning. *(From P13d-2b.)*
 - [ ] **GraphRAG — bulk chat management + swipe gestures.** Multi-select archive/delete and a swipe-to-archive
