@@ -985,11 +985,18 @@ entries, or verify after P11c lands.)*
 - [ ] A **manually-added** tag has no marker. **Default off:** downloads aren't auto-tagged; with generation
       off there's a one-time "finish setting up auto-tagging" nudge; the queue still drains.
 
+### P13d-1 — GraphRAG retrieval engine  *(CI-covered; no APK check)*
+- No on-device check: P13d-1 ships the **pure-Dart retrieval/context engine** only (no UI, schema, or
+      native path). It's exercised by unit tests (fake embedder + graph + seeded in-memory metadata). The
+      end-to-end **"Ask your library"** flow is verified at P13d-2 (chat screen + generation).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.
-- [ ] **"Ask your library"**: a natural-language question returns a grounded answer citing real
-      library items — **fully offline** (airplane mode).
+- [ ] **"Ask your library"**: a multi-turn chat answers natural-language questions with grounded answers
+      citing real library items — **fully offline** (airplane mode); conversations persist (list / continue
+      / rename / archive / delete); low / ineligible tiers fall back to a retrieval-only "most relevant
+      items" answer.
 - [ ] **Graph-clustered auto-albums**, **"Rediscover"** (centrality), and **path/bridge** discovery
       produce sensible results.
 - [ ] All P13 features gate gracefully on incapable devices.

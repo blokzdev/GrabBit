@@ -8,6 +8,17 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **GraphRAG — retrieval-only answer persistence.** On low / ineligible tiers (`ragAvailability ==
+      retrievalOnly`) P13d falls back to an ephemeral "most relevant items" answer that **isn't** saved to the
+      chat history (nothing is generated to revisit). Decide at d-3 whether these should be persisted as a
+      special turn type or kept purely transient. *(From P13d-1.)*
+- [ ] **GraphRAG — per-tier history-budget tuning.** P13d-1's `fitHistory` bounds the fed-back chat history by
+      a char budget (`historyCharBudget`, default 1500). The budget should scale with the device tier / model
+      context window (flagship → deeper) rather than a single constant; tune against real models at d-3.
+      *(From P13d-1.)*
+- [ ] **GraphRAG — LLM + Cozo HNSW RAM co-residency.** "Ask your library" runs the generation model **and**
+      the live HNSW vector index in RAM together. Validate co-residency (and tune retrieval `k` / source caps)
+      on real low/mid devices so it doesn't OOM — carried from P12d-2; verified at P13d-3. *(From P13d-1.)*
 - [ ] **Library "hide / filter AI tags" facet.** P13c-2 marks AI-applied tags (`media_tags.source = 'ai'`)
       and shows a ✦ on their chips, but the library tag facet (`watchDistinctTags`) treats them like any tag.
       Add a "hide AI tags" / "AI-tagged only" filter (and maybe a bulk "remove all AI tags on this item") if
