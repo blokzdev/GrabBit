@@ -12,6 +12,7 @@ import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/entity_hub_screen.dart';
 import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
+import 'package:grabbit/features/ai/presentation/ask_screen.dart';
 import 'package:grabbit/features/ai/presentation/graph_view_screen.dart';
 import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
@@ -253,6 +254,12 @@ GoRouter appRouter(Ref ref) {
         name: 'inbox',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const InboxScreen(),
+      ),
+      GoRoute(
+        path: '/ask',
+        name: 'ask',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AskScreen(),
       ),
     ],
   );

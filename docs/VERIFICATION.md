@@ -990,6 +990,19 @@ entries, or verify after P11c lands.)*
       native path). It's exercised by unit tests (fake embedder + graph + seeded in-memory metadata). The
       end-to-end **"Ask your library"** flow is verified at P13d-2 (chat screen + generation).
 
+### P13d-2a — "Ask your library" chat  *(install `app-arm64-v8a-debug.apk`; needs a capable device + a downloaded generation model)*
+- [ ] On a capable device with a generation model set up, the Dashboard shows an **"Ask"** entry; tapping it
+      opens the chat. (On a low-end device, or with the graph index unavailable, the entry is absent.)
+- [ ] Ask a natural-language question about your library → the answer **streams in**, is **grounded** in your
+      items, and shows inline **`[n]` citations** plus a **Sources** row — **fully offline** (airplane mode).
+- [ ] Tapping a citation (inline `[n]` or a Sources chip) **opens the cited item**.
+- [ ] Ask a follow-up → it still answers (fresh retrieval + prior turns as context); the turns **persist**
+      (the transcript stays on screen for the session).
+- [ ] Ask something your library can't answer → a graceful **"couldn't find anything"** reply (no invented
+      answer).
+- [ ] With generation **not** set up (eligible device, no model), sending shows the **on-ramp** snackbar and
+      routes to AI settings.
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

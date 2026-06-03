@@ -239,13 +239,24 @@ Incapable / low tiers fall back to an ephemeral **retrieval-only** answer (d-3).
   well-formed, size-bounded, history-aware prompt; degrades to empty-sources when retrieval is unavailable;
   covered by unit tests. ✓
 
-#### `[ ]` P13d-2a — Chat schema + Ask screen (single conversation) *(native; APK)*
+#### `[~]` P13d-2a — Chat schema + Ask screen (single conversation) *(native; APK)*
 - Drift **`chats` + `chat_messages`** schema; a dedicated **"Ask your library"** screen from the Dashboard
   that runs P13d-1's per-turn fresh retrieval + bounded history through `GenerationEngine.generate()` and
   **streams** a grounded answer with **tappable citations** deep-linking to the cited items. Generation-gated
   via `aiSummaryAction` (on-ramp when no model).
+- **Status:** implemented (CI-green). **Schema v13→v14** (`Chats`: id/title/createdAt/updatedAt/`archivedAt?`;
+  `ChatMessages`: autoinc id, `chatId`→`Chats` FK cascade, role, content, `citationsJson?`, createdAt —
+  forward-included so d-2b needs no further migration). New `lib/features/ai/data/chat_repository.dart`
+  (`ChatRepository` + `chatRepositoryProvider`/`chatMessagesProvider`); `lib/features/ai/presentation/`
+  `ask_chat.dart` (pure — `messagesToHistory`, `encode`/`decodeCitations`, `parseCitationSpans`),
+  `ask_controller.dart` (`AskController`: create-on-first-send → append user → re-retrieve with bounded history
+  → stream grounded answer → persist with citations; no-sources → graceful reply, no LLM call),
+  `ask_screen.dart` (transcript + streaming bubble + inline `[n]`/Sources citations + gated input);
+  `dashboard/.../widgets/ask_entry_tile.dart` (auto-hides off the full-generation path); `/ask` route.
+  Tests: migration v13→v14 (+ cascade), repo, the pure helpers, the controller (full/no-sources/error), and
+  the entry-tile gating. **No new deps.**
 - **Exit / review:** ask a natural-language question on a capable device → a streamed, grounded, cited answer
-  **offline**; the turn persists; citations navigate. APK spot-check.
+  **offline**; the turn persists; citations navigate. APK spot-check. ✓ (CI parts) · APK owed
 
 #### `[ ]` P13d-2b — Conversation list + manage *(native)*
 - A conversation **list** with **continue / rename / archive / delete**; resuming a chat re-feeds the bounded

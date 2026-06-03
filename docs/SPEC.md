@@ -122,6 +122,9 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 // settings (key/value JSON, single row)
 // notifications (v9, P11): id, createdAt, category, severity, title, body,
 //   targetRoute?, itemId?, taskId?, readAt?, dedupeKey?, expiresAt?  — Activity Inbox
+// chats (v14, P13d-2a): id, title, createdAt, updatedAt, archivedAt?  — "Ask your library"
+// chat_messages (v14, P13d-2a): id(autoinc), chatId→chats(cascade), role, content,
+//   citationsJson?, createdAt
 ```
 
 > **Forward seam (v2 Things Engine).** A generic **`things`** table (schema.org Things as JSON-LD +
@@ -131,7 +134,7 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 > the derived index, and `things.id` is kept alignable to `media_items.id` (no FK). See ADR-0001
 > (schema-as-data) and ADR-0003 (MediaObject bridge); overview in `docs/things-engine.md`.
 
-Migration strategy: Drift `schemaVersion` (currently **10**); write `MigrationStrategy`
+Migration strategy: Drift `schemaVersion` (currently **14**); write `MigrationStrategy`
 steps; never drop user data without migration. Add a schema test on bump (upgrade tests
 live in `test/core/db/database_test.dart`). **v3 (P9a)** adds
 `media_items.{isFavorite,contentHash,lastAccessedAt}` + `download_tasks.orderIndex` and
@@ -161,6 +164,13 @@ decode via the `image` package) and best-effort backfilled for legacy items by `
 **v10 (P12f)** adds the empty **`things`** table (schema.org Things as JSON-LD + promoted
 `name`/`url`/`created_at`/`updated_at`; `id` alignable to `media_items.id`, **no FK**) — the v2
 Things-Engine forward seam, created empty and **unused in v1** (Drift canonical).
+**v11 (P13a)** adds `media_metadata.{aiSummary,aiSummaryModelId}` (cached on-device LLM summary + its
+model). **v12 (P13b-1)** adds `media_metadata.ocrText` and extends `media_fts` with an `ocr` column
+(the FTS5 table is dropped + rebuilt by the migration since FTS5 can't `ALTER ADD COLUMN`). **v13 (P13c-2)**
+adds `media_tags.source` (`'user'` default; `'ai'` for auto-applied tags). **v14 (P13d-2a)** adds the
+**`chats`** + **`chat_messages`** tables backing the "Ask your library" GraphRAG chat — `chats`
+(id/title/createdAt/updatedAt/`archivedAt?`) and `chat_messages` (autoinc id, `chatId`→`chats` **FK
+cascade**, role, content, `citationsJson?`, createdAt); created by `m.createTable` (no data migration).
 
 ---
 
