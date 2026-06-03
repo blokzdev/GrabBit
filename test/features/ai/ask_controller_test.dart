@@ -49,9 +49,12 @@ class FakeGenerationEngine implements GenerationEngine {
 }
 
 /// Retriever returning a canned context (overrides the real embed→search path).
+/// Records the [history] it was last handed so tests can assert prior turns feed
+/// back when continuing a conversation.
 class FakeRagRetriever extends RagRetriever {
   FakeRagRetriever(super.ref, this._ctx);
   final RagContext _ctx;
+  List<RagChatTurn> lastHistory = const [];
 
   @override
   Future<RagContext> retrieve(
@@ -60,7 +63,10 @@ class FakeRagRetriever extends RagRetriever {
     int historyCharBudget = 1500,
     int maxSources = 6,
     int k = 30,
-  }) async => _ctx;
+  }) async {
+    lastHistory = history;
+    return _ctx;
+  }
 }
 
 RagContext _ctxWithSources(String question) => RagContext(
@@ -107,9 +113,9 @@ void main() {
       engine: engine,
     );
 
-    await c.read(askControllerProvider.notifier).send('what concerts?');
+    await c.read(askControllerProvider(null).notifier).send('what concerts?');
 
-    final state = c.read(askControllerProvider);
+    final state = c.read(askControllerProvider(null));
     expect(state.chatId, isNotNull);
     expect(state.busy, isFalse);
     expect(state.streaming, isNull);
@@ -130,9 +136,9 @@ void main() {
     final engine = FakeGenerationEngine();
     final c = makeContainer(ctx: _emptyCtx('huh?'), engine: engine);
 
-    await c.read(askControllerProvider.notifier).send('huh?');
+    await c.read(askControllerProvider(null).notifier).send('huh?');
 
-    final state = c.read(askControllerProvider);
+    final state = c.read(askControllerProvider(null));
     final repo = ChatRepository(db);
     final msgs = await repo.messagesForChat(state.chatId!);
     expect(msgs.map((m) => m.role), [kRoleUser, kRoleAssistant]);
@@ -145,14 +151,49 @@ void main() {
     final engine = FakeGenerationEngine(fail: true);
     final c = makeContainer(ctx: _ctxWithSources('q'), engine: engine);
 
-    await c.read(askControllerProvider.notifier).send('q');
+    await c.read(askControllerProvider(null).notifier).send('q');
 
-    final state = c.read(askControllerProvider);
+    final state = c.read(askControllerProvider(null));
     expect(state.error, contains("Couldn't answer"));
     expect(state.busy, isFalse);
 
     final repo = ChatRepository(db);
     final msgs = await repo.messagesForChat(state.chatId!);
     expect(msgs.map((m) => m.role), [kRoleUser]); // user only; no assistant row
+  });
+
+  test('continues an existing chat, feeding prior turns as history', () async {
+    // Seed a prior, completed turn in an existing conversation.
+    final repo = ChatRepository(db);
+    final chatId = await repo.createChat('Concerts');
+    await repo.appendMessage(chatId, role: kRoleUser, content: 'first?');
+    await repo.appendMessage(
+      chatId,
+      role: kRoleAssistant,
+      content: 'first answer',
+    );
+
+    final engine = FakeGenerationEngine(output: 'follow-up answer [1].');
+    final c = makeContainer(ctx: _ctxWithSources('and then?'), engine: engine);
+
+    // Keyed by the existing id → state is seeded with it (no new chat).
+    expect(c.read(askControllerProvider(chatId)).chatId, chatId);
+
+    await c.read(askControllerProvider(chatId).notifier).send('and then?');
+
+    // Same conversation, now four messages (no new chat created).
+    final all = await repo.messagesForChat(chatId);
+    expect(all.map((m) => m.content), [
+      'first?',
+      'first answer',
+      'and then?',
+      'follow-up answer [1].',
+    ]);
+    expect((await db.select(db.chats).get()).length, 1);
+
+    // The prior turn was fed back as history; the in-flight question is not.
+    final retriever = c.read(ragRetrieverProvider) as FakeRagRetriever;
+    expect(retriever.lastHistory.map((t) => t.question), ['first?']);
+    expect(retriever.lastHistory.map((t) => t.answer), ['first answer']);
   });
 }

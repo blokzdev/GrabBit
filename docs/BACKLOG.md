@@ -8,6 +8,12 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **GraphRAG — search/filter conversations.** The chat list (P13d-2b) shows every active chat; once a user
+      accumulates many, add a search field (by title/preview) and/or pinning. *(From P13d-2b.)*
+- [ ] **GraphRAG — bulk chat management + swipe gestures.** Multi-select archive/delete and a swipe-to-archive
+      gesture on list rows (today each action is a per-row overflow-menu tap + confirm). *(From P13d-2b.)*
+- [ ] **GraphRAG — refresh a chat's title from its content.** The title is derived once from the first question
+      (renamable); consider an LLM/heuristic re-title as a conversation evolves. *(From P13d-2b.)*
 - [ ] **GraphRAG — store only the *cited* sources.** P13d-2a persists **all** retrieved sources as a turn's
       citations (and renders every `[n]` the model emits); it doesn't prune to the subset the answer actually
       cites. If answers reference few sources, post-parse the `[n]` markers and persist only those (smaller

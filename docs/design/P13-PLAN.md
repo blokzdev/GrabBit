@@ -258,11 +258,22 @@ Incapable / low tiers fall back to an ephemeral **retrieval-only** answer (d-3).
 - **Exit / review:** ask a natural-language question on a capable device → a streamed, grounded, cited answer
   **offline**; the turn persists; citations navigate. APK spot-check. ✓ (CI parts) · APK owed
 
-#### `[ ]` P13d-2b — Conversation list + manage *(native)*
+#### `[~]` P13d-2b — Conversation list + manage *(native)*
 - A conversation **list** with **continue / rename / archive / delete**; resuming a chat re-feeds the bounded
   history into each new turn's prompt.
+- **Status:** implemented (CI-green; APK spot-check owed). **List-first** entry — the Dashboard tile (`/ask`)
+  now opens a **`ConversationsScreen`** (most-recent-first, "New chat" FAB, empty-state CTA), with continue
+  (`/ask/chat/:id`), new chat (`/ask/chat`), and an **`ArchivedChatsScreen`** (`/ask/archived`). `ChatRepository`
+  gains `watchChatList({archived})` (one query with a latest-message preview subquery), `renameChat`,
+  `setArchived`, `deleteChat` (messages cascade), `watchChatTitle` + `activeChatsProvider`/`archivedChatsProvider`/
+  `chatTitleProvider`. `AskController` is now a **family keyed by `String? chatId`** — a seeded id continues a
+  thread (history feeds back), `null` creates on first send (the d-2a behaviour); `AskScreen` takes `chatId` and
+  shows the live, renamable title. **No schema change** (v14 already carried `title`/`archivedAt`); no new deps.
+  Tests: repo (recency/preview ordering, active-vs-archived split, archive toggle, rename incl. blank-ignored,
+  cascade delete), the resumable controller (continue feeds prior turns; no new chat), and a `ConversationsScreen`
+  widget test (rows/preview, empty-state CTA, row Rename/Archive/Delete menu).
 - **Exit / review:** prior chats list, reopen and continue with retained context, and archive/delete/rename
-  behave; covered where CI can (provider/repository) + an APK spot-check for the flow.
+  behave; covered where CI can (provider/repository) + an APK spot-check for the flow. ✓ (CI parts) · APK owed
 
 #### `[ ]` P13d-3 — Low-tier fallback + tier-aware depth + RAM co-residency *(native; APK)*
 - On ineligible / low tiers (`ragAvailability == retrievalOnly`), fall back to an ephemeral **retrieval-only**
