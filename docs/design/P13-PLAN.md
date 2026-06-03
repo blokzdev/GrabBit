@@ -213,29 +213,51 @@ user-curated (they drive facets), AI tags are **marked** (provenance) rather tha
   'ai' + entry; default-off no-op). **No deps.** **Pending APK spot-check** (real download → AI-marked tags +
   facets, offline). A library "hide/filter AI tags" facet is deferred (BACKLOG).
 
-### `[ ]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 3 PRs)*
+### `[~]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 4 PRs)*
 The headline differentiator — natural-language Q&A grounded in the private library, fully on-device
 (AI-SPEC §6, GRAPH-SPEC §7). Sequenced **mid-phase** so the generation patterns (P13a/c) are proven first.
+**Revised target (maintainer call): a real multi-turn chat**, not single-shot — persistent conversations
+(list / continue / rename / archive / delete) on capable tiers, each turn re-retrieving **fresh RAG sources**
+plus a **bounded recent-history window** whose depth scales with the device tier; entry from the **Dashboard**.
+Incapable / low tiers fall back to an ephemeral **retrieval-only** answer (d-3).
 
-#### `[ ]` P13d-1 — Retrieval + context & citation assembly *(pure Dart; CI-verifiable)*
-- A pure-Dart **retrieval/context packer** that reuses `GraphQueryService.relatedTo` (vector + graph re-rank)
-  and `neighborhood` to select the most relevant nodes + their graph neighborhood for a query, then assembles
-  a **bounded, cited** context block (node → deep-linkable item) and the generation prompt. No UI, no model —
-  fully unit-testable.
-- **Exit / review:** for a seeded graph, the packer returns the expected relevant nodes + a well-formed,
-  size-bounded prompt with stable citations; covered by unit tests.
+#### `[~]` P13d-1 — Retrieval + context & citation assembly *(pure Dart; CI-verifiable)*
+- A pure-Dart **retrieval/context packer** that reuses the P10 semantic substrate (`embedderEngine.embed` →
+  `GraphQueryService.vectorSearch`) plus a light `relatedTo` graph re-rank to select the most relevant items
+  for a query, then assembles a **bounded, cited** context block (item → deep-linkable source) and a
+  **history-aware** generation prompt. No UI, no model, no schema — fully unit-testable.
+- **History-aware prompt builder** (`fitHistory` char-budget knob) so d-2 multi-turn drops in cleanly and the
+  per-tier history depth is a graceful budget, not a hard mode switch.
+- **Status:** implemented (CI-green). New `lib/features/ai/data/`: `rag_context.dart` (pure — `RagSource`,
+  `RagChatTurn`, `RagContext`, `kRagSystemPrompt`, `buildSourceSnippet`, `selectRagSources`, `fitHistory`,
+  `buildRagPrompt`), `rag_availability.dart` (pure — `RagAvailability {unavailable, retrievalOnly, full}` +
+  `ragAvailability(...)`, the d-3 gate), `rag_retriever.dart` (`RagRetriever` + provider: embed → vectorSearch
+  → `relatedTo` re-rank → hydrate via `MetadataRepository` → cited context; empty-sources when retrieval isn't
+  ready). Tests: prompt/snippet/`fitHistory`/`selectRagSources`, the `ragAvailability` truth table, and the
+  retriever with fake embedder + graph + seeded in-memory metadata. **No deps, no schema, no UI.**
+- **Exit / review:** for seeded sources, the retriever returns the expected ordered, cited items + a
+  well-formed, size-bounded, history-aware prompt; degrades to empty-sources when retrieval is unavailable;
+  covered by unit tests. ✓
 
-#### `[ ]` P13d-2 — Chat UI + streaming grounded answer + citations *(native; APK)*
-- A dedicated **"Ask your library"** screen (reached from Dashboard/Library) that runs P13d-1's context
-  through `GenerationEngine.generate()` and **streams** a grounded answer with **tappable citations** that
-  deep-link to the cited library items.
-- **Exit / review:** ask a natural-language question on a capable device and get a streamed, grounded answer
-  citing real library items **offline**; citations navigate correctly. APK spot-check.
+#### `[ ]` P13d-2a — Chat schema + Ask screen (single conversation) *(native; APK)*
+- Drift **`chats` + `chat_messages`** schema; a dedicated **"Ask your library"** screen from the Dashboard
+  that runs P13d-1's per-turn fresh retrieval + bounded history through `GenerationEngine.generate()` and
+  **streams** a grounded answer with **tappable citations** deep-linking to the cited items. Generation-gated
+  via `aiSummaryAction` (on-ramp when no model).
+- **Exit / review:** ask a natural-language question on a capable device → a streamed, grounded, cited answer
+  **offline**; the turn persists; citations navigate. APK spot-check.
 
-#### `[ ]` P13d-3 — Low-tier fallback + RAM co-residency validation *(native; APK)*
-- On ineligible / low tiers, fall back to **retrieval-only** ("here are the most relevant items") plus the
-  extractive summary — no generation, clearly framed. Validate **LLM + Cozo HNSW RAM co-residency** on real
-  devices (the index lives in RAM with the model — BACKLOG from P12d-2) and tune limits.
+#### `[ ]` P13d-2b — Conversation list + manage *(native)*
+- A conversation **list** with **continue / rename / archive / delete**; resuming a chat re-feeds the bounded
+  history into each new turn's prompt.
+- **Exit / review:** prior chats list, reopen and continue with retained context, and archive/delete/rename
+  behave; covered where CI can (provider/repository) + an APK spot-check for the flow.
+
+#### `[ ]` P13d-3 — Low-tier fallback + tier-aware depth + RAM co-residency *(native; APK)*
+- On ineligible / low tiers (`ragAvailability == retrievalOnly`), fall back to an ephemeral **retrieval-only**
+  answer ("here are the most relevant items") — no generation, clearly framed, nothing persisted. Tune the
+  **tier-aware history-depth** budget. Validate **LLM + Cozo HNSW RAM co-residency** on real devices (the index
+  lives in RAM with the model — BACKLOG from P12d-2) and tune limits.
 - **Exit / review:** a low-end device gives a useful retrieval-only answer without OOM; a capable device runs
   generation + the live HNSW index together within memory budget (verified on real hardware).
 
