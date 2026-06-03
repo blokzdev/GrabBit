@@ -13,6 +13,7 @@ import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/features/dashboard/domain/dashboard_summary.dart';
 import 'package:grabbit/features/dashboard/presentation/dashboard_providers.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/activity_chart_tile.dart';
+import 'package:grabbit/features/dashboard/presentation/widgets/ask_entry_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/duplicates_callout.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/graph_entry_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/recent_activity_tile.dart';
@@ -173,6 +174,7 @@ class _DashboardBody extends ConsumerWidget {
             const RecentActivityTile(),
             const SuggestionsTile(),
             const DuplicatesCallout(),
+            const AskEntryTile(),
             const GraphEntryTile(),
           ],
         ),

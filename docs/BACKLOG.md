@@ -8,6 +8,13 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **GraphRAG — store only the *cited* sources.** P13d-2a persists **all** retrieved sources as a turn's
+      citations (and renders every `[n]` the model emits); it doesn't prune to the subset the answer actually
+      cites. If answers reference few sources, post-parse the `[n]` markers and persist only those (smaller
+      `citationsJson`, tidier Sources row). *(From P13d-2a.)*
+- [ ] **GraphRAG — surface retrieval/generation errors per turn.** An `InferenceException` mid-answer sets a
+      screen-level error banner but persists no assistant row, so the failed question lingers without a reply
+      bubble. Consider a retry affordance or an inline "couldn't answer" turn. *(From P13d-2a.)*
 - [ ] **GraphRAG — retrieval-only answer persistence.** On low / ineligible tiers (`ragAvailability ==
       retrievalOnly`) P13d falls back to an ephemeral "most relevant items" answer that **isn't** saved to the
       chat history (nothing is generated to revisit). Decide at d-3 whether these should be persisted as a

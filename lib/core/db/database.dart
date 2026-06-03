@@ -200,6 +200,36 @@ class AppSettings extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// P13d-2a: a persisted "Ask your library" GraphRAG conversation. Each chat is a
+/// multi-turn thread of [ChatMessages]; every turn re-retrieves fresh sources
+/// and feeds back a bounded slice of this history. `title` is derived from the
+/// first question (renamable in d-2b); `archivedAt` (null = active) backs the
+/// d-2b archive action. Forward-compatible so d-2b needs no further migration.
+class Chats extends Table {
+  TextColumn get id => text()(); // 'chat_<micros>'
+  TextColumn get title => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()(); // bumped each turn → list sort
+  DateTimeColumn get archivedAt => dateTime().nullable()(); // null = active
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// P13d-2a: one message in a [Chats] thread. `id` autoincrements for natural
+/// per-chat ordering; deleting a chat cascades its messages. `citationsJson`
+/// (assistant turns only) stores the cited sources as compact JSON so the inline
+/// `[n]` citations stay tappable after the chat is reloaded.
+class ChatMessages extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get chatId =>
+      text().references(Chats, #id, onDelete: KeyAction.cascade)();
+  TextColumn get role => text()(); // user | assistant
+  TextColumn get content => text()();
+  TextColumn get citationsJson => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
 @DriftDatabase(
   tables: [
     MediaItems,
@@ -213,6 +243,8 @@ class AppSettings extends Table {
     AppSettings,
     Notifications,
     Things,
+    Chats,
+    ChatMessages,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -220,7 +252,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -298,6 +330,12 @@ class AppDatabase extends _$AppDatabase {
           "AND name='media_tags'",
         ).get()).isNotEmpty;
         if (hasMediaTags) await m.addColumn(mediaTags, mediaTags.source);
+      }
+      if (from < 14) {
+        // P13d-2a: persisted "Ask your library" chats. New tables only — no
+        // data migration (mirrors the v8→v9 notifications / v9→v10 things steps).
+        await m.createTable(chats);
+        await m.createTable(chatMessages);
       }
       await _createIndices();
       await _createFtsObjects();
