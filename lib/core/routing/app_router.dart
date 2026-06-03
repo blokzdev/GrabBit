@@ -14,6 +14,7 @@ import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/ai/presentation/ask_screen.dart';
 import 'package:grabbit/features/ai/presentation/conversations_screen.dart';
+import 'package:grabbit/features/ai/presentation/relevant_items_screen.dart';
 import 'package:grabbit/features/ai/presentation/graph_view_screen.dart';
 import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
@@ -282,6 +283,12 @@ GoRouter appRouter(Ref ref) {
         name: 'ask-archived',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ArchivedChatsScreen(),
+      ),
+      GoRoute(
+        path: '/ask/relevant',
+        name: 'ask-relevant',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const RelevantItemsScreen(),
       ),
     ],
   );

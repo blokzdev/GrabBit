@@ -1,5 +1,6 @@
 import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
+import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/features/ai/data/chat_repository.dart';
 import 'package:grabbit/features/ai/data/rag_retriever.dart';
 import 'package:grabbit/features/ai/presentation/ask_chat.dart';
@@ -49,7 +50,13 @@ class AskController extends _$AskController {
       final history = messagesToHistory(await repo.messagesForChat(chatId));
       final ctx = await ref
           .read(ragRetrieverProvider)
-          .retrieve(q, history: history);
+          .retrieve(
+            q,
+            history: history,
+            historyCharBudget: historyBudgetForTier(
+              ref.read(activeDeviceTierProvider),
+            ),
+          );
 
       if (!ctx.hasSources) {
         await repo.appendMessage(

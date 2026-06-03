@@ -213,7 +213,7 @@ user-curated (they drive facets), AI tags are **marked** (provenance) rather tha
   'ai' + entry; default-off no-op). **No deps.** **Pending APK spot-check** (real download → AI-marked tags +
   facets, offline). A library "hide/filter AI tags" facet is deferred (BACKLOG).
 
-### `[~]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 4 PRs)*
+### `[x]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 4 PRs)*
 The headline differentiator — natural-language Q&A grounded in the private library, fully on-device
 (AI-SPEC §6, GRAPH-SPEC §7). Sequenced **mid-phase** so the generation patterns (P13a/c) are proven first.
 **Revised target (maintainer call): a real multi-turn chat**, not single-shot — persistent conversations
@@ -275,13 +275,22 @@ Incapable / low tiers fall back to an ephemeral **retrieval-only** answer (d-3).
 - **Exit / review:** prior chats list, reopen and continue with retained context, and archive/delete/rename
   behave; covered where CI can (provider/repository) + an APK spot-check for the flow. ✓ (CI parts) · APK owed
 
-#### `[ ]` P13d-3 — Low-tier fallback + tier-aware depth + RAM co-residency *(native; APK)*
+#### `[~]` P13d-3 — Low-tier fallback + tier-aware depth + RAM co-residency *(native; APK)*
 - On ineligible / low tiers (`ragAvailability == retrievalOnly`), fall back to an ephemeral **retrieval-only**
   answer ("here are the most relevant items") — no generation, clearly framed, nothing persisted. Tune the
   **tier-aware history-depth** budget. Validate **LLM + Cozo HNSW RAM co-residency** on real devices (the index
   lives in RAM with the model — BACKLOG from P12d-2) and tune limits.
+- **Status:** implemented (CI-green; RAM co-residency + low-tier flow APK-owed). `AskEntryTile` now shows
+  whenever the graph is available + the library is non-empty, routing capable tiers → `/ask` and low/ineligible
+  tiers → a new **`RelevantItemsScreen`** (`/ask/relevant`): a query → `semanticResultsProvider` → the most
+  relevant items in a `MediaGrid` (tap → item), **ephemeral** (no persistence), with an on-ramp when Smart
+  search isn't ready. **Tier-aware depth:** `historyBudgetForTier(DeviceTier)` (`ask_chat.dart`; low/mid 1000,
+  high 3000) feeds `AskController`'s per-turn `retrieve(historyCharBudget:)` — the concrete RAM lever for mid.
+  **No schema, no deps.** Tests: the budget truth table, the controller passing the tier budget, the entry-tile
+  retrieval-only visibility + route, and the `RelevantItemsScreen` (results / empty / not-ready on-ramp).
 - **Exit / review:** a low-end device gives a useful retrieval-only answer without OOM; a capable device runs
-  generation + the live HNSW index together within memory budget (verified on real hardware).
+  generation + the live HNSW index together within memory budget (verified on real hardware). ✓ (CI parts) ·
+  APK owed (RAM co-residency on real low/mid hardware)
 
 ### `[ ]` P13e — Advanced graph analytics & viz *(graph; split into 3 PRs)*
 The richer graph payoff beyond P10's Duplicates + Suggested-similarity albums (GRAPH-SPEC §7). Runs via

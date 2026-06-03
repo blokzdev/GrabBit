@@ -1014,6 +1014,17 @@ entries, or verify after P11c lands.)*
       can be **Unarchived** back; **Delete** removes a chat (and its messages) for good (after a confirm).
 - [ ] With no chats yet, the list shows an **empty state** whose CTA starts a chat.
 
+### P13d-3 — Retrieval-only fallback + tier-aware depth + RAM co-residency  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] On a **low-end device** (no generation model fits) with Smart search on, the Dashboard "Ask" tile is
+      **still shown** (subtitle "Find the most relevant items") and opens the **retrieval-only** screen.
+- [ ] Type a query → the **most relevant items** appear (tappable → item), **fully offline**; nothing is
+      persisted (no conversation list entry is created). With Smart search off / embedder not ready, an
+      **on-ramp** to AI settings is shown instead of empty results.
+- [ ] **Tier-aware depth:** on a capable device, multi-turn answers stay coherent; mid-tier feeds back a
+      shallower history window than high-tier (no over-stuffing / slowdowns).
+- [ ] **RAM co-residency (the P12d-2 carry-over):** on real **low/mid** hardware, a full generated, cited
+      answer runs while the Cozo **HNSW index is live** — no OOM, crash, or jank; repeated turns stay stable.
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

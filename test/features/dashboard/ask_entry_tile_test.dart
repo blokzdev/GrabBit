@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/generation_provider.dart';
 import 'package:grabbit/core/db/database.dart';
@@ -55,16 +56,26 @@ void main() {
       );
       await tester.pump();
       expect(find.text('Ask your library'), findsOneWidget);
+      expect(find.textContaining('Ask a question'), findsOneWidget);
     },
   );
 
-  testWidgets('auto-hides when no generation model fits the device', (
-    tester,
-  ) async {
-    await _pump(tester, model: null, graphAvailable: true, items: [_item('a')]);
-    await tester.pump();
-    expect(find.text('Ask your library'), findsNothing);
-  });
+  testWidgets(
+    'shows the retrieval-only entry when no generation model fits the device',
+    (tester) async {
+      await _pump(
+        tester,
+        model: null,
+        graphAvailable: true,
+        items: [_item('a')],
+      );
+      await tester.pump();
+      // Still visible — low tiers get the retrieval-only fallback (P13d-3) …
+      expect(find.text('Ask your library'), findsOneWidget);
+      // … with a "most relevant items" framing instead of "Ask a question".
+      expect(find.textContaining('most relevant'), findsOneWidget);
+    },
+  );
 
   testWidgets('auto-hides when the graph is unavailable', (tester) async {
     await _pump(
@@ -86,5 +97,40 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Ask your library'), findsNothing);
+  });
+
+  testWidgets('routes to the retrieval-only screen on a low tier', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => const Scaffold(body: AskEntryTile()),
+        ),
+        GoRoute(path: '/ask', builder: (_, _) => const Text('FULL_CHAT')),
+        GoRoute(
+          path: '/ask/relevant',
+          builder: (_, _) => const Text('RETRIEVAL_ONLY'),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          activeGenerationModelProvider.overrideWith((ref) => null),
+          graphStoreProvider.overrideWithValue(FakeGraphStore(available: true)),
+          libraryItemsProvider.overrideWith(
+            (ref) => Stream.value([_item('a')]),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Ask your library'));
+    await tester.pumpAndSettle();
+    expect(find.text('RETRIEVAL_ONLY'), findsOneWidget);
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/features/ai/data/rag_context.dart';
 import 'package:grabbit/features/ai/presentation/ask_chat.dart';
 
@@ -12,6 +13,18 @@ ChatMessage _msg(String role, String content) => ChatMessage(
 );
 
 void main() {
+  group('historyBudgetForTier', () {
+    test('mid is shallower than high; low matches mid', () {
+      expect(historyBudgetForTier(DeviceTier.low), 1000);
+      expect(historyBudgetForTier(DeviceTier.mid), 1000);
+      expect(historyBudgetForTier(DeviceTier.high), 3000);
+      expect(
+        historyBudgetForTier(DeviceTier.high),
+        greaterThan(historyBudgetForTier(DeviceTier.mid)),
+      );
+    });
+  });
+
   group('messagesToHistory', () {
     test('pairs consecutive user→assistant messages into turns', () {
       final turns = messagesToHistory([
