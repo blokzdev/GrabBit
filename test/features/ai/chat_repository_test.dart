@@ -63,4 +63,82 @@ void main() {
     final msgs = await repo.watchMessages(id).first;
     expect(msgs.map((m) => m.content), ['q', 'a']);
   });
+
+  test(
+    'watchChatList orders by recency, carries the latest message as preview',
+    () async {
+      // Two chats; make the second the more-recently-updated one.
+      final a = await repo.createChat('A');
+      await repo.appendMessage(a, role: kRoleUser, content: 'a-q');
+      await repo.appendMessage(a, role: kRoleAssistant, content: 'a-answer');
+      await (db.update(db.chats)..where((t) => t.id.equals(a))).write(
+        ChatsCompanion(updatedAt: Value(DateTime.utc(2001))),
+      );
+
+      final b = await repo.createChat('B');
+      await repo.appendMessage(b, role: kRoleUser, content: 'b-q');
+      await (db.update(db.chats)..where((t) => t.id.equals(b))).write(
+        ChatsCompanion(updatedAt: Value(DateTime.utc(2002))),
+      );
+
+      final list = await repo.watchChatList(archived: false).first;
+      expect(list.map((c) => c.id), [b, a]); // most-recent-first
+      expect(list.first.preview, 'b-q'); // latest message
+      expect(list.last.preview, 'a-answer');
+      expect(list.every((c) => c.archived), isFalse);
+    },
+  );
+
+  test('watchChatList splits active vs archived', () async {
+    final active = await repo.createChat('active');
+    final archived = await repo.createChat('archived');
+    await repo.setArchived(archived, true);
+
+    final activeList = await repo.watchChatList(archived: false).first;
+    final archivedList = await repo.watchChatList(archived: true).first;
+    expect(activeList.map((c) => c.id), [active]);
+    expect(archivedList.map((c) => c.id), [archived]);
+    expect(archivedList.single.archived, isTrue);
+  });
+
+  test('setArchived moves a chat between the two lists and back', () async {
+    final id = await repo.createChat('c');
+    await repo.setArchived(id, true);
+    expect(
+      (await repo.watchChatList(archived: false).first).map((c) => c.id),
+      isEmpty,
+    );
+    expect((await repo.watchChatList(archived: true).first).map((c) => c.id), [
+      id,
+    ]);
+
+    await repo.setArchived(id, false);
+    final chat = await (db.select(
+      db.chats,
+    )..where((t) => t.id.equals(id))).getSingle();
+    expect(chat.archivedAt, isNull);
+    expect((await repo.watchChatList(archived: false).first).map((c) => c.id), [
+      id,
+    ]);
+  });
+
+  test('renameChat updates the title; a blank rename is ignored', () async {
+    final id = await repo.createChat('original');
+    await repo.renameChat(id, '  new title  ');
+    expect(await repo.watchChatTitle(id).first, 'new title');
+
+    await repo.renameChat(id, '   ');
+    expect(await repo.watchChatTitle(id).first, 'new title');
+  });
+
+  test('deleteChat removes the chat and cascades its messages', () async {
+    final id = await repo.createChat('doomed');
+    await repo.appendMessage(id, role: kRoleUser, content: 'q');
+    await repo.appendMessage(id, role: kRoleAssistant, content: 'a');
+
+    await repo.deleteChat(id);
+
+    expect((await db.select(db.chats).get()), isEmpty);
+    expect((await db.select(db.chatMessages).get()), isEmpty);
+  });
 }

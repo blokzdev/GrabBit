@@ -14,9 +14,13 @@ import 'package:grabbit/features/settings/presentation/settings_controller.dart'
 /// The "Ask your library" GraphRAG chat (P13d-2a): ask a natural-language
 /// question and get a grounded, streamed answer that cites library items. Each
 /// turn re-retrieves fresh sources + a bounded slice of history. Reached from the
-/// Dashboard; generation-gated (an on-ramp routes to AI settings when no model).
+/// conversation list; generation-gated (an on-ramp routes to AI settings when no
+/// model). [chatId] continues an existing conversation (P13d-2b); `null` starts a
+/// new one, created on the first send.
 class AskScreen extends ConsumerStatefulWidget {
-  const AskScreen({super.key});
+  const AskScreen({super.key, this.chatId});
+
+  final String? chatId;
 
   @override
   ConsumerState<AskScreen> createState() => _AskScreenState();
@@ -35,7 +39,9 @@ class _AskScreenState extends ConsumerState<AskScreen> {
 
   Future<void> _onSend() async {
     final text = _input.text.trim();
-    if (text.isEmpty || ref.read(askControllerProvider).busy) return;
+    if (text.isEmpty || ref.read(askControllerProvider(widget.chatId)).busy) {
+      return;
+    }
 
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
@@ -65,9 +71,20 @@ class _AskScreenState extends ConsumerState<AskScreen> {
         await router.push('/settings/ai');
       case AiSummaryAction.summarizeNow:
         _input.clear();
-        await ref.read(askControllerProvider.notifier).send(text);
+        await ref
+            .read(askControllerProvider(widget.chatId).notifier)
+            .send(text);
         _scrollToBottom();
     }
+  }
+
+  /// "Ask your library" for a new chat; the (live, renamable) conversation title
+  /// when continuing an existing one.
+  String _appBarTitle(AskState state) {
+    final chatId = state.chatId;
+    if (chatId == null) return 'Ask your library';
+    return ref.watch(chatTitleProvider(chatId)).asData?.value ??
+        'Ask your library';
   }
 
   void _scrollToBottom() {
@@ -85,10 +102,10 @@ class _AskScreenState extends ConsumerState<AskScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = GrabBitTokens.of(context);
-    final state = ref.watch(askControllerProvider);
+    final state = ref.watch(askControllerProvider(widget.chatId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ask your library')),
+      appBar: AppBar(title: Text(_appBarTitle(state))),
       body: SafeArea(
         child: Column(
           children: [

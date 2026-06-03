@@ -1003,6 +1003,17 @@ entries, or verify after P11c lands.)*
 - [ ] With generation **not** set up (eligible device, no model), sending shows the **on-ramp** snackbar and
       routes to AI settings.
 
+### P13d-2b — Conversation list + manage  *(install `app-arm64-v8a-debug.apk`; needs a capable device + a downloaded generation model)*
+- [ ] Ask questions in **two separate chats** (open Ask → New chat each time) → the Dashboard "Ask" entry now
+      opens a **conversation list** showing both, **most-recent-first**, each with a **preview** of its last
+      message and a relative time.
+- [ ] **Reopen** a chat from the list → its prior turns show, and a **new question continues with retained
+      context** (the answer reflects the earlier turns) — **fully offline**.
+- [ ] **Rename** a chat (row menu → Rename) → the new title persists in the list and on the open chat's app bar.
+- [ ] **Archive** a chat → it leaves the main list; it appears under **Archived chats** (app-bar overflow) and
+      can be **Unarchived** back; **Delete** removes a chat (and its messages) for good (after a confirm).
+- [ ] With no chats yet, the list shows an **empty state** whose CTA starts a chat.
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

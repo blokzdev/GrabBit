@@ -25,10 +25,14 @@ class AskState {
 /// grounded answer through the local LLM, and persists the turn with its
 /// citations. No sources → a graceful "couldn't find" reply, no LLM call. The
 /// caller gates on generation readiness (`aiSummaryAction`) before [send].
+///
+/// Keyed by [chatId] (P13d-2b): a non-null id **continues** that conversation —
+/// its persisted history feeds back into the next turn — while `null` starts a
+/// fresh chat, created on the first [send] (the d-2a behaviour).
 @riverpod
 class AskController extends _$AskController {
   @override
-  AskState build() => const AskState();
+  AskState build(String? chatId) => AskState(chatId: chatId);
 
   Future<void> send(String question) async {
     final q = question.trim();

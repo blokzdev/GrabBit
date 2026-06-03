@@ -13,6 +13,7 @@ import 'package:grabbit/features/library/presentation/entity_hub_screen.dart';
 import 'package:grabbit/features/library/presentation/home_screen.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/ai/presentation/ask_screen.dart';
+import 'package:grabbit/features/ai/presentation/conversations_screen.dart';
 import 'package:grabbit/features/ai/presentation/graph_view_screen.dart';
 import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
@@ -259,7 +260,28 @@ GoRouter appRouter(Ref ref) {
         path: '/ask',
         name: 'ask',
         parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ConversationsScreen(),
+      ),
+      // Static `/ask/chat` is registered before the `:id` route so a new chat
+      // never matches as a conversation id.
+      GoRoute(
+        path: '/ask/chat',
+        name: 'ask-new',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AskScreen(),
+      ),
+      GoRoute(
+        path: '/ask/chat/:id',
+        name: 'ask-chat',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            AskScreen(chatId: state.pathParameters['id']),
+      ),
+      GoRoute(
+        path: '/ask/archived',
+        name: 'ask-archived',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ArchivedChatsScreen(),
       ),
     ],
   );
