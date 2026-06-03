@@ -8,11 +8,10 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
-- [ ] **P13c-2 — opt-in auto-tag-on-download.** The sibling of P13a-2/P13b-3: an opt-in (default-off) setting
-      to suggest tags for new downloads in the background. Unlike the passive summary/OCR enrichments, tags are
-      **user-curated** (they drive facets), so this should likely **suggest + post a "review tags" Activity
-      Inbox nudge** (or write into a marked "ai" namespace) rather than silently auto-apply LLM tags — decide
-      the apply-vs-review behaviour when planning it. *(From P13c.)*
+- [ ] **Library "hide / filter AI tags" facet.** P13c-2 marks AI-applied tags (`media_tags.source = 'ai'`)
+      and shows a ✦ on their chips, but the library tag facet (`watchDistinctTags`) treats them like any tag.
+      Add a "hide AI tags" / "AI-tagged only" filter (and maybe a bulk "remove all AI tags on this item") if
+      auto-tagging proves noisy. Also: promote an AI tag to 'user' when the user re-adds/keeps it. *(From P13c-2.)*
 - [ ] **AI tag casing/normalization.** `addTagToItem` trims but doesn't lowercase, so P13c's AI suggestions
       are lowercased while manual/graph tags keep their case (e.g. `Live` vs `live` can coexist). Consider a
       single normalization policy (case-fold on store, or a display-case + fold-key) if duplicate-case tags

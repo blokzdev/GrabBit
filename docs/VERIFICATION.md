@@ -977,6 +977,14 @@ entries, or verify after P11c lands.)*
 - [ ] On a **low-end** device the AI row is **absent** (the graph co-occurrence "Suggested" chips still work);
       with generation **not enabled**, the button routes to **AI settings** (on-ramp).
 
+### P13c-2 — Auto-tag on download  *(install `app-arm64-v8a-debug.apk`; needs a capable device)*
+- [ ] AI & graph settings → with generation enabled, the **Auto-tag new downloads** toggle is visible; enable
+      it. Finish a download (item with description/transcript) → sensible **AI tags are applied** + an
+      Activity Inbox entry ("N tags added"), **fully offline**. The tags show a **✦ marker** in the editor +
+      on item detail, and appear as **search facets**; any AI tag can be **deleted**.
+- [ ] A **manually-added** tag has no marker. **Default off:** downloads aren't auto-tagged; with generation
+      off there's a one-time "finish setting up auto-tagging" nudge; the queue still drains.
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

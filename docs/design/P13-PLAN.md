@@ -194,6 +194,25 @@ LLM-suggested tags feeding the **existing** tag system — builds directly on th
   (low hides / high shows). **Pending APK spot-check** (generate + apply on a real item offline). The
   generate→chips flow is APK-verified. Background **auto-tag-on-download is a deliberate follow-up (P13c-2)**.
 
+#### `[~]` P13c-2 — Opt-in auto-tag on download (marked AI) *(generation; APK)*
+Follow-up: the LLM **applies** tags to new downloads in the background, opt-in (default off). Because tags are
+user-curated (they drive facets), AI tags are **marked** (provenance) rather than silently mixed in.
+- **Schema v12→v13:** `MediaTags.source` (`withDefault('user')`); `addTagToItem(…, {source})` (insertOrIgnore
+  keeps an existing link's source → user tags never demoted); `watchAiTagNamesForItem` + provider.
+- **Settings** `autoTagOnDownload` (default off) + setter; `_AutoTagTile` in the generation card.
+- **Pure** `autoTagDecision` (skip/needsModel/tag). **Queue** (`_persistCompleted`, after auto-OCR): build
+  source from title + description/transcript/`ocrText`, `buildTagPrompt` → `generate` → `parseTagSuggestions`
+  (exclude applied) → `addTagToItem(source: 'ai')`; `tagCount`/`tagNeedsModel` in `_PersistResult`; an `ai`
+  inbox entry ("N tags added") or a "finish setup" nudge.
+- **Marking:** the editor + item-detail tag chips show `auto_awesome_outlined` on AI-sourced tags (via
+  `aiTagNamesForItemProvider`); AI tags appear as normal search facets.
+- **Status:** implemented (CI-green) — schema v13 (+ a defensive table-guard in the migration, mirroring the
+  v8 guard-add spirit, so partial older test DBs don't break); repo provenance + provider; settings + tile;
+  `autoTagDecision`; queue block + two inbox posts; chip marking in both surfaces. Tests: `autoTagDecision`,
+  repo provenance (only-ai set; user not demoted), v12→v13 migration, settings round-trip, queue (applied as
+  'ai' + entry; default-off no-op). **No deps.** **Pending APK spot-check** (real download → AI-marked tags +
+  facets, offline). A library "hide/filter AI tags" facet is deferred (BACKLOG).
+
 ### `[ ]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 3 PRs)*
 The headline differentiator — natural-language Q&A grounded in the private library, fully on-device
 (AI-SPEC §6, GRAPH-SPEC §7). Sequenced **mid-phase** so the generation patterns (P13a/c) are proven first.

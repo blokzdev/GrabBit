@@ -125,6 +125,9 @@ class _TagsEditor extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = GrabBitTokens.of(context);
     final tags = ref.watch(tagsForItemProvider(itemId));
+    final aiTags =
+        ref.watch(aiTagNamesForItemProvider(itemId)).asData?.value ??
+        const <String>{};
     final repo = ref.read(metadataRepositoryProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,6 +151,12 @@ class _TagsEditor extends ConsumerWidget {
                           children: [
                             for (final tag in list)
                               Chip(
+                                avatar: aiTags.contains(tag.name)
+                                    ? const Icon(
+                                        Icons.auto_awesome_outlined,
+                                        size: 16,
+                                      )
+                                    : null,
                                 label: Text(tag.name),
                                 onDeleted: () =>
                                     repo.removeTagFromItem(itemId, tag.id),

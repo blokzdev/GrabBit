@@ -102,6 +102,10 @@ abstract class SettingsModel with _$SettingsModel {
     // images, on-device + offline (bundled ML Kit, no download). The on-demand
     // "Scan text" on item detail (P13b-1) works regardless.
     @Default(false) bool autoOcrOnDownload,
+    // P13c-2: auto-apply LLM-suggested tags to a newly downloaded item in the
+    // background (marked as 'ai', deletable). Opt-in (defaults off); runs only
+    // when text generation is enabled and its model is already downloaded.
+    @Default(false) bool autoTagOnDownload,
     // On-device speech transcription (P12e). Opt-in (defaults off); the whisper
     // model is downloaded only when the user enables it + picks a model.
     // `selectedTranscriptionModelId` empty = the device-tier recommendation;

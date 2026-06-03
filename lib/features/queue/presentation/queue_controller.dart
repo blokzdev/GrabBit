@@ -28,6 +28,7 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/ai_summary.dart';
 import 'package:grabbit/features/library/presentation/ocr.dart';
+import 'package:grabbit/features/library/presentation/tag_suggestions.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/notifications/data/system_notification_service.dart';
@@ -55,6 +56,10 @@ typedef _PersistResult = ({
   bool summaryNeedsModel,
   // P13b-3: count of image items auto-scanned for text (OCR).
   int ocrCount,
+  // P13c-2: count of items auto-tagged, and whether auto-tag is opted in but
+  // the generation model isn't downloaded → prompt to finish setup.
+  int tagCount,
+  bool tagNeedsModel,
 });
 
 class QueueConfig {
@@ -436,6 +441,31 @@ class QueueController extends _$QueueController {
         dedupeKey: 'ocr_$id',
       );
     }
+    // P13c-2: auto-tag applied AI tags to the new download.
+    if (result.tagCount > 0) {
+      await center.post(
+        category: NotificationCategory.ai,
+        severity: NotificationSeverity.success,
+        title: queued.title,
+        body: result.tagCount > 1
+            ? '${result.tagCount} tags added'
+            : 'Tag added',
+        targetRoute: route,
+        itemId: single ? result.primaryId : null,
+        dedupeKey: 'tags_$id',
+      );
+    }
+    // P13c-2: opted into auto-tagging but the generation model isn't downloaded.
+    if (result.tagNeedsModel) {
+      await center.post(
+        category: NotificationCategory.ai,
+        severity: NotificationSeverity.info,
+        title: 'Finish setting up auto-tagging',
+        body: 'Download a text-generation model to auto-tag new downloads.',
+        targetRoute: '/settings/ai',
+        dedupeKey: 'tags_needs_model',
+      );
+    }
     await _maybeNotifyOs(
       taskId: id,
       title: queued.title,
@@ -597,6 +627,8 @@ class QueueController extends _$QueueController {
       summaryCount: 0,
       summaryNeedsModel: false,
       ocrCount: 0,
+      tagCount: 0,
+      tagNeedsModel: false,
     );
     // Files land in a per-task subfolder (see YtDlpHost `-o`): the task id names
     // the folder, the user's template names the file inside it.
@@ -833,6 +865,60 @@ class QueueController extends _$QueueController {
       }
     }
 
+    // P13c-2: auto-apply LLM tags (marked 'ai') to freshly downloaded items
+    // when opted in + a generation model is already downloaded (no surprise
+    // fetch). Mirrors auto-summarize; per-item failures never fail the download.
+    var tagCount = 0;
+    var tagNeedsModel = false;
+    if (settings.autoTagOnDownload && settings.generationEnabled) {
+      final generation = ref.read(generationEngineProvider);
+      final genReady = await generation.ensureReady();
+      final metadata = ref.read(metadataRepositoryProvider);
+      for (final (i, _) in outputs.media.indexed) {
+        final itemId = single ? id : '${id}__$i';
+        final item = await metadata.mediaItemById(itemId);
+        final meta = await metadata.metadataForItem(itemId);
+        final src = [
+          if (item != null) item.title,
+          ?meta?.description,
+          ?meta?.transcript,
+          ?meta?.ocrText,
+        ].where((s) => s.trim().isNotEmpty).join('\n');
+        switch (autoTagDecision(
+          hasText: src.trim().isNotEmpty,
+          modelReady: genReady,
+        )) {
+          case AutoTagDecision.skip:
+            continue;
+          case AutoTagDecision.needsModel:
+            tagNeedsModel = true;
+            continue;
+          case AutoTagDecision.tag:
+            try {
+              final existing = await metadata.tagNamesForItem(itemId);
+              final p = buildTagPrompt(src);
+              final buffer = StringBuffer();
+              await for (final token in generation.generate(
+                p.prompt,
+                systemPrompt: p.systemPrompt,
+              )) {
+                buffer.write(token);
+              }
+              final tags = parseTagSuggestions(
+                buffer.toString(),
+                exclude: existing.toSet(),
+              );
+              for (final t in tags) {
+                await metadata.addTagToItem(itemId, t, source: 'ai');
+              }
+              tagCount += tags.length;
+            } catch (_) {
+              // A per-item tagging failure must not fail the download.
+            }
+        }
+      }
+    }
+
     return (
       primaryId: single ? id : '${id}__0',
       itemCount: outputs.media.length,
@@ -841,6 +927,8 @@ class QueueController extends _$QueueController {
       summaryCount: summaryCount,
       summaryNeedsModel: summaryNeedsModel,
       ocrCount: ocrCount,
+      tagCount: tagCount,
+      tagNeedsModel: tagNeedsModel,
     );
   }
 

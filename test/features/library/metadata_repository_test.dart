@@ -480,6 +480,34 @@ void main() {
     expect(meta.ocrText, isNull);
   });
 
+  test(
+    'tag provenance: watchAiTagNamesForItem returns only ai tags (P13c-2)',
+    () async {
+      await seed('a', 'Clip', 'video');
+      await repo.addTagToItem('a', 'rock', source: 'ai');
+      await repo.addTagToItem('a', 'jazz'); // default 'user'
+
+      final ai = await repo.watchAiTagNamesForItem('a').first;
+      expect(ai, {'rock'});
+    },
+  );
+
+  test(
+    'tag provenance: a user tag is not demoted when AI re-adds it (P13c-2)',
+    () async {
+      await seed('a', 'Clip', 'video');
+      await repo.addTagToItem('a', 'blues'); // user
+      await repo.addTagToItem(
+        'a',
+        'blues',
+        source: 'ai',
+      ); // insertOrIgnore → kept user
+
+      final ai = await repo.watchAiTagNamesForItem('a').first;
+      expect(ai, isEmpty);
+    },
+  );
+
   test('findItemByUrl matches with tracking params stripped (P9b-4)', () async {
     await db
         .into(db.mediaItems)
