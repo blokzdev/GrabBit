@@ -328,11 +328,33 @@ The richer graph payoff beyond P10's Duplicates + Suggested-similarity albums (G
 - **Exit / review:** Rediscover surfaces genuinely central, not-recently-opened items; empty/graceful when
   the graph is unavailable. ✓ (CI parts) · APK owed
 
-#### `[ ]` P13e-3 — Path/bridge discovery + graph-view polish *(graph; APK)*
-- **Shortest-path / connectivity** between two items or entities ("how are these related?"), plus graph-view
-  interaction/visual polish on the existing `graphview` screen.
-- **Exit / review:** a path between two nodes renders and explains the connection; graph-view polish lands
-  without regressing the P10c-e/f interactions.
+#### P13e-3 — Path/bridge discovery + graph-view polish *(graph; APK; split into 2 PRs)*
+Bundled two distinct deliverables, so split for phone-reviewable PRs: **e-3a** path/bridge discovery, **e-3b**
+graph-view polish (which also adds the in-graph path-highlight surface). "Path" surfaces in **both** places —
+the chain screen (e-3a) and the graph view (e-3b), reusing the same engine.
+
+##### `[~]` P13e-3a — Path/bridge discovery (connection engine + chain screen) *(graph; APK)*
+- **Shortest-path / connectivity** between two **items** ("how are these related?"), rendered as a readable
+  connection **chain**.
+- **Status:** implemented (CI-green; APK spot-check owed). **Item↔item** shortest path via pure-Dart **BFS**
+  over the **bipartite** item↔entity graph (shared uploader/playlist/tag + co-download), reusing e-1/e-2's
+  `_entityGraph()` pull — **every-device, no embedder; no new Cozo script, no schema, no deps.** New
+  `lib/core/graph/path_finding.dart` (`findItemPath` → `GraphPath`, oversized buckets pruned, deterministic,
+  entity hops collapsed to connectors: "same channel"/"same playlist"/"shared tag '…'"/"downloaded together");
+  `GraphQueryService.pathBetween()`; `connectionPathProvider` (hydrates to `MediaItem`s); `ConnectionPathScreen`
+  (chain of item cards + connectors, route `/item/:id/path?to=<other>`); a reusable searchable `pickLibraryItem`
+  bottom sheet; an item-detail **"How is this related to…?"** entry (gated on graph availability). Tests: the
+  path engine (direct/multi-hop/co-download/disconnected/same-id/bucket-prune/determinism/labels), `pathBetween`
+  decode, the provider (hydrate/missing-node/unavailable), the screen, and the picker.
+- **Exit / review:** a path between two items renders and explains the connection; "No connection found" for
+  islands; absent when the graph is unavailable. ✓ (CI parts) · APK owed
+
+##### `[ ]` P13e-3b — Graph-view polish + in-graph path highlight *(graph; APK)*
+- Graph-view interaction/visual polish on the existing `graphview` screen (zoom/fit controls, layout
+  stability, relations legend), **plus** the second path surface: highlight the shortest path **inside** the
+  graph view (reusing e-3a's `pathBetween`).
+- **Exit / review:** polish lands without regressing the P10c-e/f interactions; selecting a second node
+  highlights/explains the path.
 
 ### `[ ]` P13f — Capability-gating + model-selector UX polish & phase close *(pure Dart/UI; minimal)*
 - **Model-selector UX polish** across the now-real AI features (the P12g picker was built for the engine

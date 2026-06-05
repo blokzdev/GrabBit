@@ -16,6 +16,7 @@ import 'package:grabbit/features/ai/presentation/ask_screen.dart';
 import 'package:grabbit/features/ai/presentation/conversations_screen.dart';
 import 'package:grabbit/features/ai/presentation/relevant_items_screen.dart';
 import 'package:grabbit/features/ai/presentation/graph_view_screen.dart';
+import 'package:grabbit/features/library/presentation/connection_path_screen.dart';
 import 'package:grabbit/features/library/presentation/media_studio_screen.dart';
 import 'package:grabbit/features/library/presentation/metadata_edit_screen.dart';
 import 'package:grabbit/features/library/presentation/duplicates_screen.dart';
@@ -170,6 +171,15 @@ GoRouter appRouter(Ref ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             GraphViewScreen(itemId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/item/:id/path',
+        name: 'item-path',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ConnectionPathScreen(
+          sourceId: state.pathParameters['id']!,
+          targetId: state.uri.queryParameters['to'] ?? '',
+        ),
       ),
       GoRoute(
         path: '/collection/:id',

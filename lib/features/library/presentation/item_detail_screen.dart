@@ -35,6 +35,7 @@ import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/ai_summary.dart';
+import 'package:grabbit/features/library/presentation/item_picker.dart';
 import 'package:grabbit/features/library/presentation/item_translation_provider.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/library/presentation/transcribe_fallback.dart';
@@ -88,6 +89,8 @@ class ItemDetailScreen extends ConsumerWidget {
                     await context.push('/item/$itemId/studio');
                   case 'graph':
                     await context.push('/item/$itemId/graph');
+                  case 'relate':
+                    await _findRelation(context, ref, itemId);
                   case 'edit':
                     await context.push('/item/$itemId/edit');
                   case 'transcript':
@@ -119,11 +122,16 @@ class ItemDetailScreen extends ConsumerWidget {
                   value: 'studio',
                   child: Text('Edit in Studio'),
                 ),
-                if (ref.watch(graphStoreProvider).isAvailable)
+                if (ref.watch(graphStoreProvider).isAvailable) ...[
                   const PopupMenuItem(
                     value: 'graph',
                     child: Text('View in graph'),
                   ),
+                  const PopupMenuItem(
+                    value: 'relate',
+                    child: Text('How is this related to…?'),
+                  ),
+                ],
                 const PopupMenuItem(value: 'edit', child: Text('Edit info')),
                 const PopupMenuItem(
                   value: 'transcript',
@@ -843,6 +851,22 @@ String _captionLanguageLabel(String code) {
 /// "Get transcript" action (P10f). Uses captions already on disk when present
 /// (instant, offline); otherwise fetches them online in a chosen language
 /// (P10f-2) and stores the result, so the summary + transcript view update.
+// P13e-3a: pick another library item and show the shortest connection between
+// the two ("how are these related?").
+Future<void> _findRelation(
+  BuildContext context,
+  WidgetRef ref,
+  String itemId,
+) async {
+  final otherId = await pickLibraryItem(
+    context,
+    excludeId: itemId,
+    title: 'Related to which item?',
+  );
+  if (otherId == null || !context.mounted) return;
+  await context.push('/item/$itemId/path?to=$otherId');
+}
+
 Future<void> _getTranscript(
   BuildContext context,
   WidgetRef ref,

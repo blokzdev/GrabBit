@@ -381,4 +381,44 @@ void main() {
       },
     );
   });
+
+  group('GraphQueryService.pathBetween', () {
+    Map<String, Object?> respond(String script) {
+      if (script.contains('coDownloadedWith')) {
+        return const {
+          'headers': ['a', 'b'],
+          'rows': <List<Object?>>[],
+        };
+      }
+      // a & b both posted by the same uploader.
+      return const {
+        'headers': ['mediaId', 'kind', 'key'],
+        'rows': [
+          ['a', 'u', 'chan1'],
+          ['b', 'u', 'chan1'],
+        ],
+      };
+    }
+
+    test('decodes a connection between two items', () async {
+      final path = await GraphQueryService(
+        FakeGraphStore(responder: respond),
+      ).pathBetween('a', 'b');
+      expect(path, isNotNull);
+      expect(path!.itemIds, ['a', 'b']);
+      expect(path.connectors, ['same channel']);
+    });
+
+    test('null when the store is unavailable (no query run)', () async {
+      final store = FakeGraphStore(available: false);
+      expect(await GraphQueryService(store).pathBetween('a', 'b'), isNull);
+      expect(store.calls, isEmpty);
+    });
+
+    test('null for the same source and target (no query run)', () async {
+      final store = FakeGraphStore(responder: respond);
+      expect(await GraphQueryService(store).pathBetween('a', 'a'), isNull);
+      expect(store.calls, isEmpty);
+    });
+  });
 }
