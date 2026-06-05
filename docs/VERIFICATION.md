@@ -1076,16 +1076,28 @@ entries, or verify after P11c lands.)*
       downloads and then appears in the list (offline after the fetch).
 - [ ] The whole **Translation card is absent** on a host where ML Kit translation can't run (non-Android).
 
-### P13 (later subphases)
-- [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
-      results back to the item.
-- [ ] **"Ask your library"**: a multi-turn chat answers natural-language questions with grounded answers
-      citing real library items — **fully offline** (airplane mode); conversations persist (list / continue
-      / rename / archive / delete); low / ineligible tiers fall back to a retrieval-only "most relevant
-      items" answer.
-- [ ] **Graph-clustered auto-albums**, **"Rediscover"** (centrality), and **path/bridge** discovery
-      produce sensible results.
-- [ ] All P13 features gate gracefully on incapable devices.
+### P13 — consolidated cross-feature on-device pass  *(the phase-close gate; run on one low-tier + one mid/high device)*
+The single owed verification for the whole phase: it exercises the P13 features **together** (the
+per-subphase rows above stay as the granular per-feature reference). Running this pass is what closes P13.
+- [ ] **Generation stack on one model:** download a generation model once, then on a capable device —
+      an item's **abstractive summary** streams + persists; **auto-summarize-on-download** fills a new
+      download's summary; **auto-tag-on-download** applies AI-marked tags; **"Ask your library"** answers a
+      multi-turn question, **grounded + cited** — all **offline**, on the same resident model, no OOM.
+- [ ] **LLM + Cozo HNSW RAM co-residency** (BACKLOG from P12d-2 / P13d): on a **mid** device, run Ask while
+      semantic search / "related" are active — generation and the live HNSW index stay resident together
+      within the memory budget (no crash, no thrash).
+- [ ] **ML Kit (device-universal):** on-demand **OCR** + **auto-OCR-on-download** make image text
+      searchable; **translation** translates an item and **language-pack management** (Settings → AI) lists /
+      adds / deletes packs — all **offline** after the one-time pack fetch.
+- [ ] **Graph analytics together:** **Discovered** (community) albums, the **Rediscover** strip (Dashboard +
+      Library), **connection path** (chain screen + in-graph highlight), and graph-view polish all read
+      coherently on a **real** library.
+- [ ] **Gating interplay (low / ineligible device):** every LLM feature shows a friendly floor/disabled
+      state — extractive (TextRank) summary, **retrieval-only** Ask, no AI tag suggestions — **never a crash
+      or empty gap**; **OCR/translate still run** (ML Kit-gated, not tier-gated).
+- [ ] **Opt-ins persist across restart** (auto-summarize / auto-OCR / auto-tag toggles, the selected model,
+      downloaded language packs) and everything stays **offline** (airplane mode) bar the one-time model /
+      pack fetches.
 
 ## P14 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the

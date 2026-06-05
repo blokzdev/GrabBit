@@ -8,6 +8,10 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Translation — unify the language name/code sources.** P13f-2 added `kTranslationLanguages` (full ML Kit
+      set, code→name) for the settings card + picker, while item-detail keeps its short curated `_captionLanguages`
+      translate-target list. Fold the two into one source (the curated targets as a subset of the full set) so a
+      language's name lives in exactly one place. *(From P13f-2.)*
 - [ ] **Model management — embedder delete + item-detail transcribe progress.** P13f-1 added Downloaded/Active +
       delete + inline progress for the generation/transcription model pickers. The **embedder** (Gecko floor /
       multilingual) is excluded from delete (deleting the active embedder would break semantic search — needs a

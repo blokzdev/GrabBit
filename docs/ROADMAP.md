@@ -1,6 +1,6 @@
 # GrabBit — Multi-Phase Roadmap
 
-Status: Draft v0.4 · Last updated: 2026-05-24
+Status: Draft v0.4 · Last updated: 2026-06-05
 
 Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 **Deliverables**, **Exit criteria**, and **CI/build notes**. Phases are sequential
@@ -391,6 +391,9 @@ low-end device those features are cleanly disabled with explanation.
 **Exit criteria:** ask a natural-language question and get a grounded answer citing library items
 offline; auto-albums cluster sensibly; rediscover surfaces central-but-stale items; all gated
 gracefully on low-end devices.
+**Status:** implemented across P13a–P13f; CI-green and merged. One **consolidated cross-feature on-device
+verification pass** (`docs/VERIFICATION.md`) is owed before close — running it discharges the batched
+per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 **Refs:** `docs/AI-SPEC.md` §5–6, `docs/GRAPH-SPEC.md` §7.
 
 ## P14 — v1 Beta, Production Readiness & Launch
