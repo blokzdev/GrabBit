@@ -15,9 +15,18 @@ abstract interface class TranslationEngine {
   /// Whether the on-device model for the [code] language is downloaded.
   Future<bool> isModelDownloaded(String code);
 
+  /// The BCP-47 codes whose on-device translation model is currently downloaded
+  /// (P13f-2) — drives the Translation settings card. Empty where translation
+  /// can't run.
+  Future<Set<String>> downloadedLanguageCodes();
+
   /// Downloads the (~30 MB) on-device model for [code]. Throws an
   /// [InferenceException] on failure; a no-op if already present.
   Future<void> downloadModel(String code, {bool requireWifi = true});
+
+  /// Removes the downloaded (~30 MB) model for [code] to free space (P13f-2); a
+  /// no-op if it isn't present. Throws an [InferenceException] on failure.
+  Future<void> deleteModel(String code);
 
   /// Translates [text] from [source] to [target] (BCP-47 codes). Throws an
   /// [InferenceException] (`unavailable`/`translateFailed`) — e.g. when a

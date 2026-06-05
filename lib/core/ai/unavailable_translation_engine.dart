@@ -23,8 +23,14 @@ class UnavailableTranslationEngine implements TranslationEngine {
   Future<bool> isModelDownloaded(String code) async => false;
 
   @override
+  Future<Set<String>> downloadedLanguageCodes() async => const <String>{};
+
+  @override
   Future<void> downloadModel(String code, {bool requireWifi = true}) =>
       throw _ex;
+
+  @override
+  Future<void> deleteModel(String code) => throw _ex;
 
   @override
   Future<String> translate(
