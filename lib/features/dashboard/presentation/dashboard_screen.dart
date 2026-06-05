@@ -18,6 +18,7 @@ import 'package:grabbit/features/dashboard/presentation/widgets/duplicates_callo
 import 'package:grabbit/features/dashboard/presentation/widgets/graph_entry_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/recent_activity_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/recent_media_row.dart';
+import 'package:grabbit/features/dashboard/presentation/widgets/rediscover_row.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/storage_donut_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/suggestions_tile.dart';
@@ -171,6 +172,7 @@ class _DashboardBody extends ConsumerWidget {
               title: 'Recently opened',
               provider: recentlyPlayedProvider,
             ),
+            const RediscoverRow(),
             const RecentActivityTile(),
             const SuggestionsTile(),
             const DuplicatesCallout(),

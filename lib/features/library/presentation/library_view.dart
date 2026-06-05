@@ -8,6 +8,7 @@ import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/skeleton.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/features/dashboard/presentation/widgets/rediscover_row.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/library_filter_sheet.dart';
@@ -123,6 +124,9 @@ class _LibraryViewState extends ConsumerState<LibraryView> {
             },
             onFilters: () => showLibraryFilters(context),
           ),
+          // Resurface central-but-stale items, but only while browsing the full
+          // library (not mid-search/filter or selection) so it never intrudes.
+          if (!filtering && _selected.isEmpty) const RediscoverRow(),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async => refresh(),

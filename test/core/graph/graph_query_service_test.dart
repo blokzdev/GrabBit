@@ -344,4 +344,41 @@ void main() {
       },
     );
   });
+
+  group('GraphQueryService.itemCentrality', () {
+    Map<String, Object?> respond(String script) {
+      if (script.contains('coDownloadedWith')) {
+        return const {
+          'headers': ['a', 'b'],
+          'rows': <List<Object?>>[],
+        };
+      }
+      return const {
+        'headers': ['mediaId', 'kind', 'key'],
+        'rows': [
+          ['a', 't', 'rock'],
+          ['b', 't', 'rock'],
+          ['c', 't', 'rock'],
+        ],
+      };
+    }
+
+    test('scores every connected item (symmetric triangle ties)', () async {
+      final scores = await GraphQueryService(
+        FakeGraphStore(responder: respond),
+      ).itemCentrality();
+      expect(scores.keys.toSet(), {'a', 'b', 'c'});
+      expect(scores.values.every((v) => v > 0), isTrue);
+      expect(scores['a'], closeTo(scores['b']!, 1e-9));
+    });
+
+    test(
+      'returns empty when the store is unavailable (no query run)',
+      () async {
+        final store = FakeGraphStore(available: false);
+        expect(await GraphQueryService(store).itemCentrality(), isEmpty);
+        expect(store.calls, isEmpty);
+      },
+    );
+  });
 }

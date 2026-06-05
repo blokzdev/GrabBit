@@ -311,11 +311,22 @@ The richer graph payoff beyond P10's Duplicates + Suggested-similarity albums (G
 - **Exit / review:** clusters are coherent on a real library; degrades to nothing when the graph is
   unavailable; saving a cluster creates a normal collection. ✓ (CI parts) · APK owed
 
-#### `[ ]` P13e-2 — Centrality "Rediscover" *(graph; APK)*
-- **PageRank / betweenness × `lastAccessedAt`** to resurface central-but-stale items; surfaced as a
-  "Rediscover" strip (Dashboard/Library).
-- **Exit / review:** Rediscover surfaces genuinely central, not-recently-opened items; empty/ graceful when
-  the graph is unavailable.
+#### `[~]` P13e-2 — Centrality "Rediscover" *(graph; APK)*
+- **PageRank × staleness** to resurface central-but-stale items; surfaced as a "Rediscover" strip on the
+  **Dashboard and Library**.
+- **Status:** implemented (CI-green; APK spot-check owed). **PageRank** chosen (deterministic power iteration;
+  betweenness is O(V·E) — too costly for a strip, deferred to BACKLOG/e-3). Runs over the **entity item-graph**
+  (shared uploader/playlist/tag + co-download), reusing e-1's `entityMembershipScript()`/`coDownloadPairsScript()`
+  pulls (decode shared via a private `_entityGraph()` helper) — **every-device, no embedder**. New
+  `lib/core/graph/centrality.dart` (pure `buildItemGraph` weighted adjacency + `pageRank`);
+  `GraphQueryService.itemCentrality()`; pure `rediscover.dart` `rankRediscover` (`score = centrality ×
+  staleness`; staleness = days since `lastAccessedAt ?? createdAt`, capped at 30d; **excludes** items touched
+  within 14d); `rediscoverProvider` + a `RediscoverRow` strip (mirrors `RecentMediaRow`, auto-hides when empty)
+  on the Dashboard and atop the Library (only when not searching/filtering/selecting). **No schema, no deps.**
+  Tests: centrality (weight accumulation, bucket pruning, hub > leaf, determinism, dangling), `itemCentrality`
+  decode, `rankRediscover` (fresh-exclusion, staleness weighting, cap, empty), the provider, and the row.
+- **Exit / review:** Rediscover surfaces genuinely central, not-recently-opened items; empty/graceful when
+  the graph is unavailable. ✓ (CI parts) · APK owed
 
 #### `[ ]` P13e-3 — Path/bridge discovery + graph-view polish *(graph; APK)*
 - **Shortest-path / connectivity** between two items or entities ("how are these related?"), plus graph-view
