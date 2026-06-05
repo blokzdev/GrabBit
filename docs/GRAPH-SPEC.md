@@ -288,3 +288,34 @@ A backend-agnostic test suite (run against the Cozo impl now, any future impl la
 idempotency; upsert node/edge/embedding then read back; `removeItem` cascades edges; `vectorSearch`
 returns nearest by cosine; `relatedTo` blends vector + graph; `rebuildAll` from a fixture Drift set
 reproduces a deterministic node/edge count; replay/idempotency (running sync twice converges).
+
+## 10. Things-readiness (v2 seam map)
+
+The v2 **Things Engine** (`docs/things-engine.md`) reframes the library as a typed graph of schema.org
+**Things**, with MediaObject as one type among many. **ADR-0004** is explicit that this *generalizes the
+existing shape to all Things, it doesn't invent it* — *"one Thing ↔ one node"* is today's `media_items`-row ↔
+Cozo-node duality, extended. This section records why the P10/P13 graph features already carry over, so the v2
+retrofit stays cheap and nothing erodes that property in the meantime. **This is a map, not a v2 work item — do
+not build the generalization in v1 (no `things` table to build against; a generic abstraction with one consumer
+is premature, CLAUDE.md §8).**
+
+**Invariant — the algorithm core is node-type-blind.** The pure engines `core/graph/path_finding.dart`
+(connection paths, P13e-3a), `community_clustering.dart` (Discovered albums, P13e-1) and `centrality.dart`
+(Rediscover, P13e-2) import only `dart:collection`. They operate on opaque `String` node ids, `String` group
+buckets (`"<kind>:<key>"`) and `(a,b)` pairs — they have no notion of "media". So community detection, PageRank
+centrality, shortest-path/"how are these related?", and the graph-view **path mode** are already domain-agnostic
+and will run over a Thing graph **unchanged**. **Keep it that way:** a new graph algorithm takes node ids as
+opaque strings; never import a domain row type (`MediaItem`, Drift) into a `core/graph` engine.
+
+**The media-coupling is concentrated in three deliberate, replaceable seams** — each *extended* in v2, not
+refactored:
+
+| Seam | Today (v1, media) | v2 (all Things) |
+|---|---|---|
+| **1. Edge production** | media-keyed Cozo scripts — `entityMembershipScript`/`coDownloadPairsScript`/`neighborhoodScript`/`relatedNeighborsScript` over the `*postedBy{mediaId,…}`/`*taggedWith`/… relations (`cozo_query.dart`, `cozo_schema.dart`). | also project **vocabulary edges** from object-valued JSON-LD properties + **authored `relatedTo`** edges (ADR-0004's three edge kinds). Node ids are already `String`, so a Thing id slots straight in; scripts gain projections rather than a rewrite. |
+| **2. Hydration** | providers resolve node ids → `db.mediaItems` rows (`connection_path_provider.dart`, `rediscover_provider.dart`, `clustered_albums_provider.dart`). | resolve ids → the `things` table; MediaObject is one type among many. |
+| **3. UI labels/styling** | `neighborhood_graph.dart` `relationColor/Icon/Label` + path connectors ("same channel") are media-vocabulary phrasing — but **already degrade gracefully** for unknown relations (`_ => relation`, `circle_outlined`, grey). | add Thing-type/schema.org-property styling; the existing fallbacks mean an unfamiliar property renders sensibly until then. |
+
+**Guardrail for new graph features.** Route node→display **hydration** and **relation labels** through a
+provider/lookup seam (as the P13e providers do), not a hardcoded `MediaItem` — so the engine stays pure and the
+UI keeps its graceful fallback. That single discipline is what keeps the whole graph stack Thing-ready at near-zero v2 cost.
