@@ -366,16 +366,37 @@ the chain screen (e-3a) and the graph view (e-3b), reusing the same engine.
   highlights/explains the path. ✓ (CI parts) · APK owed — **P13e feature-complete** (all subphases
   implemented; consolidated on-device APK pass owed).
 
-### `[ ]` P13f — Capability-gating + model-selector UX polish & phase close *(pure Dart/UI; minimal)*
-- **Model-selector UX polish** across the now-real AI features (the P12g picker was built for the engine
-  surface); any **manual transcription-trigger UX** gaps (transcription itself shipped in P12e — fold in only
-  what's missing); consistent per-feature gating copy.
-- `docs/VERIFICATION.md` rows for every new user-facing behaviour; consolidate the owed on-device pass; flip
-  P13a–P13f + the P13 summary to done; route deferrals to `docs/BACKLOG.md`.
-- **Exit / review:** every P13 feature shows a clear enabled/gated state; opt-ins persist across restart;
-  **P13 complete** — and with it the v1 AI pillar (next: P14 beta & launch).
+### `[~]` P13f — Capability-gating + model-selector UX polish & phase close *(split into 3 PRs)*
+Exploration found gating already consistent (shared `aiSummaryAction` copy; tier-ineligible features hide; the
+d-3 low-tier path is wired). So the remaining work is **model-download/management UX** + a translation surface +
+the docs close-out. Split for phone-reviewable PRs.
 
-> **✅ P13 complete.** _(Filled in at phase close — what shipped across P13a–P13f + the consolidated
+#### `[~]` P13f-1 — Model download & management UX *(settings UI + service)*
+- Make model state legible in the picker: **Active / Downloaded / ~MB** per tile, a **"Delete download"**
+  affordance for downloaded-but-inactive models (free space, keep the selection), and an **inline determinate
+  download progress** indicator (via the engines' already-exposed `onProgress`) replacing the opaque snackbar.
+- **Status:** implemented (CI-green; APK owed). `ModelDownloadService` gains `installedModelIds()` +
+  `delete(modelId)` (reuses existing `isInstalled`); new `downloadedModelIdsProvider`; the generation +
+  transcription model tiles in `ai_settings_screen.dart` show state + delete + progress. Aligned the one outlier
+  gating string (`'Translation isn't available …'`). Embedder (Gecko floor) intentionally excluded from delete.
+  Tests: service (`installedModelIds`/`delete`), the settings tile state + delete affordance.
+- **Exit / review:** the picker clearly shows what's downloaded/active; delete frees space; progress is visible.
+
+#### `[ ]` P13f-2 — Translation settings surface *(native ML Kit)*
+- A Settings → AI **Translation card** to manage the on-demand ML Kit language models (list downloaded
+  languages + sizes, delete to free space), mirroring the OCR card; Android-only, gated elsewhere.
+
+#### `[ ]` P13f-3 — P13 phase close + phase-close convention *(docs; minimal code)*
+- `docs/VERIFICATION.md`: f-1/f-2 rows + a **"P13 — consolidated on-device pass"** cross-feature checklist (the
+  one owed verification for the phase). Flip **P13a–P13f markers to `[x]`**; fill the P13 summary; mark P13 done
+  in `docs/ROADMAP.md`; route deferrals to `docs/BACKLOG.md`.
+- **`CLAUDE.md` §7 — encode the phase-close convention**: a (sub)phase earns `[x]` when CI is green + exit
+  criteria met + its per-PR APK spot-check is done; a **top-level phase is closed** by one consolidated
+  cross-feature on-device pass recorded in `VERIFICATION.md` (the holistic gate). Mirror the legend wording.
+- **Exit / review:** every P13 feature shows a clear enabled/gated state; opt-ins persist; **P13 complete** —
+  the v1 AI pillar (next: P14 beta & launch), with only the consolidated cross-feature pass owed.
+
+> **✅ P13 complete.** _(Filled in at P13f-3 — what shipped across P13a–P13f + the consolidated
 > on-device verification pass.)_
 
 ---

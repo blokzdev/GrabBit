@@ -268,4 +268,44 @@ void main() {
     expect(identical(a, b), isTrue);
     return Future.wait([a, b]);
   });
+
+  group('installedModelIds + delete (P13f-1)', () {
+    test('lists model dirs that hold files; ignores empties', () async {
+      final bytes = utf8.encode('weights');
+      final file = fileFor(bytes);
+      final svc = service(
+        source: _FakeByteSource({
+          file.url: [bytes],
+        }),
+      );
+      await svc.ensureDownloaded('m1', [file]);
+      // An empty dir (no files) must not count as installed.
+      await Directory('${root.path}/empty').create(recursive: true);
+
+      expect(await svc.installedModelIds(), {'m1'});
+    });
+
+    test('empty when nothing is downloaded', () async {
+      expect(await service().installedModelIds(), isEmpty);
+    });
+
+    test('delete removes the cached model; no-op when absent', () async {
+      final bytes = utf8.encode('weights');
+      final file = fileFor(bytes);
+      final svc = service(
+        source: _FakeByteSource({
+          file.url: [bytes],
+        }),
+      );
+      await svc.ensureDownloaded('m1', [file]);
+      expect(await svc.isInstalled('m1', [file]), isTrue);
+
+      await svc.delete('m1');
+      expect(await Directory('${root.path}/m1').exists(), isFalse);
+      expect(await svc.isInstalled('m1', [file]), isFalse);
+      expect(await svc.installedModelIds(), isEmpty);
+
+      await svc.delete('ghost'); // absent → no throw
+    });
+  });
 }

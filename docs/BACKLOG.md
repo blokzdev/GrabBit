@@ -8,6 +8,11 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Model management — embedder delete + item-detail transcribe progress.** P13f-1 added Downloaded/Active +
+      delete + inline progress for the generation/transcription model pickers. The **embedder** (Gecko floor /
+      multilingual) is excluded from delete (deleting the active embedder would break semantic search — needs a
+      guarded "switch back to Gecko first" flow). The item-detail **transcribe-flow** model download still uses an
+      opaque snackbar (the inline progress landed in the settings picker only). *(From P13f-1.)*
 - [ ] **Graph view — combined neighborhood∪path overlay.** P13e-3b's in-graph path is a dedicated **path mode**
       (the canvas swaps to the path). A richer option draws the path *through* the current neighborhood (adding
       the off-graph path nodes + highlighting the connecting edges in context) — nicer but the force-directed

@@ -1061,6 +1061,12 @@ entries, or verify after P11c lands.)*
 - [ ] An unrelated target shows **"No connection found"**; existing P10c-e/f interactions (expand, legend
       filter, long-press sheet) still work; everything is **absent** when the graph is unavailable.
 
+### P13f-1 — Model download & management UX  *(install `app-arm64-v8a-debug.apk`; needs a capable device)*
+- [ ] In Settings → AI, each generation/transcription model tile reads its state — **Active** / **Downloaded** /
+      **~MB** — and downloading a model shows an **inline progress** indicator (not just a snackbar).
+- [ ] A **downloaded-but-inactive** model offers **"Delete download"**, which frees the space (the model stays
+      selectable and re-downloads on demand); the active model has no delete (avoids breaking the active feature).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

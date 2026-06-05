@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grabbit/core/ai/downloaded_models_provider.dart';
 import 'package:grabbit/core/ai/embedder_engine_factory.dart';
 import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
@@ -739,6 +740,7 @@ class _GenerationModelTile extends ConsumerStatefulWidget {
 
 class _GenerationModelTileState extends ConsumerState<_GenerationModelTile> {
   bool _busy = false;
+  double _progress = 0;
 
   GenerationModel get _model => widget.model;
 
@@ -758,19 +760,20 @@ class _GenerationModelTileState extends ConsumerState<_GenerationModelTile> {
   Future<void> _download() async {
     final controller = ref.read(settingsControllerProvider.notifier);
     final messenger = ScaffoldMessenger.of(context);
-    setState(() => _busy = true);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Downloading ${_model.displayName} (~${_model.approxDownloadMb} MB)…',
-          ),
-        ),
-      );
+    setState(() {
+      _busy = true;
+      _progress = 0;
+    });
     try {
-      await ref.read(generationEngineProvider).downloadModel();
+      await ref
+          .read(generationEngineProvider)
+          .downloadModel(
+            onProgress: (p) {
+              if (mounted) setState(() => _progress = p);
+            },
+          );
       await ref.read(generationEngineProvider).ensureReady();
+      ref.invalidate(downloadedModelIdsProvider);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text('${_model.displayName} ready')));
@@ -793,6 +796,17 @@ class _GenerationModelTileState extends ConsumerState<_GenerationModelTile> {
     }
   }
 
+  Future<void> _delete() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await ref.read(modelDownloadServiceProvider).delete(_model.id);
+    ref.invalidate(downloadedModelIdsProvider);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('Deleted ${_model.displayName} download')),
+      );
+  }
+
   String get _bandLabel => switch (_model.modelClass) {
     GenerationModelClass.small => 'Smaller · faster',
     GenerationModelClass.balanced => 'Recommended',
@@ -809,6 +823,13 @@ class _GenerationModelTileState extends ConsumerState<_GenerationModelTile> {
       ),
     );
     final isSelected = enabled && active?.id == _model.id;
+    final downloaded =
+        ref
+            .watch(downloadedModelIdsProvider)
+            .asData
+            ?.value
+            .contains(_model.id) ??
+        false;
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(
@@ -826,16 +847,42 @@ class _GenerationModelTileState extends ConsumerState<_GenerationModelTile> {
           ),
         ],
       ),
-      subtitle: Text('${_model.blurb}  ·  ~${_model.approxDownloadMb} MB'),
-      trailing: _busy
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : null,
+      subtitle: Text(
+        '${_model.blurb}  ·  ${_stateLabel(isSelected, downloaded)}',
+      ),
+      trailing: _trailing(isSelected, downloaded),
       onTap: _busy ? null : () => _select(!isSelected),
     );
+  }
+
+  String _stateLabel(bool active, bool downloaded) {
+    if (active) return 'Active';
+    if (downloaded) return 'Downloaded';
+    return '~${_model.approxDownloadMb} MB';
+  }
+
+  Widget? _trailing(bool active, bool downloaded) {
+    if (_busy) {
+      return SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: _progress == 0 ? null : _progress,
+        ),
+      );
+    }
+    // Free space by deleting a downloaded model that isn't the active one.
+    if (downloaded && !active) {
+      return PopupMenuButton<void>(
+        tooltip: 'Manage download',
+        onSelected: (_) => _delete(),
+        itemBuilder: (context) => const [
+          PopupMenuItem<void>(value: null, child: Text('Delete download')),
+        ],
+      );
+    }
+    return null;
   }
 }
 
@@ -965,6 +1012,7 @@ class _TranscriptionModelTile extends ConsumerStatefulWidget {
 class _TranscriptionModelTileState
     extends ConsumerState<_TranscriptionModelTile> {
   bool _busy = false;
+  double _progress = 0;
 
   TranscriptionModel get _model => widget.model;
 
@@ -984,19 +1032,20 @@ class _TranscriptionModelTileState
   Future<void> _download() async {
     final controller = ref.read(settingsControllerProvider.notifier);
     final messenger = ScaffoldMessenger.of(context);
-    setState(() => _busy = true);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Downloading ${_model.displayName} (~${_model.approxDownloadMb} MB)…',
-          ),
-        ),
-      );
+    setState(() {
+      _busy = true;
+      _progress = 0;
+    });
     try {
-      await ref.read(transcriptionEngineProvider).downloadModel();
+      await ref
+          .read(transcriptionEngineProvider)
+          .downloadModel(
+            onProgress: (p) {
+              if (mounted) setState(() => _progress = p);
+            },
+          );
       await ref.read(transcriptionEngineProvider).ensureReady();
+      ref.invalidate(downloadedModelIdsProvider);
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text('${_model.displayName} ready')));
@@ -1019,6 +1068,17 @@ class _TranscriptionModelTileState
     }
   }
 
+  Future<void> _delete() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await ref.read(modelDownloadServiceProvider).delete(_model.id);
+    ref.invalidate(downloadedModelIdsProvider);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('Deleted ${_model.displayName} download')),
+      );
+  }
+
   String get _bandLabel => switch (_model.modelClass) {
     TranscriptionModelClass.tiny => 'Smaller · faster',
     TranscriptionModelClass.base => 'Recommended',
@@ -1035,6 +1095,13 @@ class _TranscriptionModelTileState
       ),
     );
     final isSelected = enabled && active.id == _model.id;
+    final downloaded =
+        ref
+            .watch(downloadedModelIdsProvider)
+            .asData
+            ?.value
+            .contains(_model.id) ??
+        false;
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(
@@ -1052,16 +1119,41 @@ class _TranscriptionModelTileState
           ),
         ],
       ),
-      subtitle: Text('${_model.blurb}  ·  ~${_model.approxDownloadMb} MB'),
-      trailing: _busy
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : null,
+      subtitle: Text(
+        '${_model.blurb}  ·  ${_stateLabel(isSelected, downloaded)}',
+      ),
+      trailing: _trailing(isSelected, downloaded),
       onTap: _busy ? null : () => _select(!isSelected),
     );
+  }
+
+  String _stateLabel(bool active, bool downloaded) {
+    if (active) return 'Active';
+    if (downloaded) return 'Downloaded';
+    return '~${_model.approxDownloadMb} MB';
+  }
+
+  Widget? _trailing(bool active, bool downloaded) {
+    if (_busy) {
+      return SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: _progress == 0 ? null : _progress,
+        ),
+      );
+    }
+    if (downloaded && !active) {
+      return PopupMenuButton<void>(
+        tooltip: 'Manage download',
+        onSelected: (_) => _delete(),
+        itemBuilder: (context) => const [
+          PopupMenuItem<void>(value: null, child: Text('Delete download')),
+        ],
+      );
+    }
+    return null;
   }
 }
 

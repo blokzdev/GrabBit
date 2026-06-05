@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/ai/downloaded_models_provider.dart';
+import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
@@ -223,4 +225,38 @@ void main() {
     // On a CI / non-arm64 host the graph engine is unavailable → a warning entry.
     expect(notifs.single.severity, NotificationSeverity.warning);
   });
+
+  testWidgets(
+    'a downloaded model shows its state + delete affordance (P13f-1)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1000, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            activeDeviceTierProvider.overrideWith(
+              () => _FixedTier(DeviceTier.high),
+            ),
+            // The recommended generation model is cached but not active.
+            downloadedModelIdsProvider.overrideWith(
+              (ref) async => {qwen3_0_6b.id},
+            ),
+          ],
+          child: const MaterialApp(home: AiSettingsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Qwen3 0.6B'), findsOneWidget);
+      // Its tile reads "Downloaded" (not "~MB") and offers a delete affordance.
+      expect(find.textContaining('Downloaded'), findsWidgets);
+      expect(find.byType(PopupMenuButton<void>), findsWidgets);
+    },
+  );
 }
