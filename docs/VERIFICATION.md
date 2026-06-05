@@ -1067,6 +1067,15 @@ entries, or verify after P11c lands.)*
 - [ ] A **downloaded-but-inactive** model offers **"Delete download"**, which frees the space (the model stays
       selectable and re-downloads on demand); the active model has no delete (avoids breaking the active feature).
 
+### P13f-2 — Translation language packs  *(install `app-arm64-v8a-debug.apk`)*
+- [ ] In Settings → AI, the **Translation** card lists each **downloaded ML Kit language pack** by name with
+      its size (**~30 MB · Downloaded**); before any translation it shows the **empty-state** line.
+- [ ] **"Delete language pack"** removes a pack and frees the space (offline); it re-downloads on demand the
+      next time you translate that language.
+- [ ] **"Download a language"** → pick a language → confirm the **~30 MB over Wi-Fi** prompt → the pack
+      downloads and then appears in the list (offline after the fetch).
+- [ ] The whole **Translation card is absent** on a host where ML Kit translation can't run (non-Android).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.

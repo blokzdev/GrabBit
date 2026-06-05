@@ -45,4 +45,21 @@ void main() {
       await engine.close();
     });
   });
+
+  group('language-pack management (P13f-2)', () {
+    test('UnavailableTranslationEngine lists no packs and rejects delete', () {
+      const engine = UnavailableTranslationEngine();
+      expect(engine.downloadedLanguageCodes(), completion(isEmpty));
+      expect(
+        () => engine.deleteModel('es'),
+        throwsA(
+          isA<InferenceException>().having(
+            (e) => e.code,
+            'code',
+            InferenceErrorCode.unavailable,
+          ),
+        ),
+      );
+    });
+  });
 }

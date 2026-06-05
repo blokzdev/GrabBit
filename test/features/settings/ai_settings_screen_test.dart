@@ -5,7 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/ai/downloaded_models_provider.dart';
+import 'package:grabbit/core/ai/downloaded_translation_packs_provider.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
+import 'package:grabbit/core/ai/translation_engine.dart';
+import 'package:grabbit/core/ai/translation_provider.dart';
 import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
@@ -19,6 +22,37 @@ class _FixedTier extends ActiveDeviceTier {
   final DeviceTier _tier;
   @override
   DeviceTier build() => _tier;
+}
+
+/// An available [TranslationEngine] with a seeded set of downloaded packs, so the
+/// P13f-2 Translation card renders on the test host (where ML Kit is otherwise
+/// unavailable). Records deletes for assertions.
+class _FakeTranslationEngine implements TranslationEngine {
+  _FakeTranslationEngine(this._downloaded);
+  final Set<String> _downloaded;
+  final List<String> deleted = [];
+
+  @override
+  bool get isAvailable => true;
+  @override
+  Future<Set<String>> downloadedLanguageCodes() async => _downloaded;
+  @override
+  Future<void> deleteModel(String code) async => deleted.add(code);
+  @override
+  Future<void> downloadModel(String code, {bool requireWifi = true}) async {}
+  @override
+  Future<bool> isModelDownloaded(String code) async =>
+      _downloaded.contains(code);
+  @override
+  Future<String> identifyLanguage(String text) async => 'und';
+  @override
+  Future<String> translate(
+    String text, {
+    required String source,
+    required String target,
+  }) async => text;
+  @override
+  Future<void> close() async {}
 }
 
 void main() {
@@ -257,6 +291,94 @@ void main() {
       // Its tile reads "Downloaded" (not "~MB") and offers a delete affordance.
       expect(find.textContaining('Downloaded'), findsWidgets);
       expect(find.byType(PopupMenuButton<void>), findsWidgets);
+    },
+  );
+
+  testWidgets('Translation card lists downloaded packs with delete (P13f-2)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          translationEngineProvider.overrideWithValue(
+            _FakeTranslationEngine({'es', 'ja'}),
+          ),
+          downloadedTranslationPacksProvider.overrideWith(
+            (ref) async => {'es', 'ja'},
+          ),
+        ],
+        child: const MaterialApp(home: AiSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('On-device translation'), findsOneWidget);
+    // Each downloaded pack shows its friendly name + a delete affordance.
+    expect(find.text('Spanish'), findsOneWidget);
+    expect(find.text('Japanese'), findsOneWidget);
+    expect(find.byType(PopupMenuButton<void>), findsWidgets);
+    // And the pre-download entry is present.
+    expect(find.text('Download a language'), findsOneWidget);
+  });
+
+  testWidgets('Translation card shows the empty state with no packs (P13f-2)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          translationEngineProvider.overrideWithValue(
+            _FakeTranslationEngine(const {}),
+          ),
+          downloadedTranslationPacksProvider.overrideWith(
+            (ref) async => const {},
+          ),
+        ],
+        child: const MaterialApp(home: AiSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('No language packs yet'), findsOneWidget);
+    expect(find.text('Download a language'), findsOneWidget);
+  });
+
+  testWidgets(
+    'Translation card hidden when translation is unavailable (P13f-2)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1000, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      // Default engine on the test host is the unavailable no-op.
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [appDatabaseProvider.overrideWithValue(db)],
+          child: const MaterialApp(home: AiSettingsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('On-device translation'), findsNothing);
     },
   );
 }

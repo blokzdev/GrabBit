@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/downloaded_models_provider.dart';
+import 'package:grabbit/core/ai/downloaded_translation_packs_provider.dart';
 import 'package:grabbit/core/ai/embedder_engine_factory.dart';
 import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
@@ -16,10 +17,13 @@ import 'package:grabbit/core/ai/model_download_service.dart';
 import 'package:grabbit/core/ai/ocr_provider.dart';
 import 'package:grabbit/core/ai/transcription_model.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
+import 'package:grabbit/core/ai/translation_provider.dart';
 import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
+import 'package:grabbit/core/widgets/confirm_dialog.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
+import 'package:grabbit/features/library/presentation/translation.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
 import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -73,6 +77,7 @@ class AiSettingsScreen extends ConsumerWidget {
         const _GenerationCard(),
         const _TranscriptionCard(),
         const _OcrCard(),
+        const _TranslationCard(),
       ],
     );
   }
@@ -121,6 +126,259 @@ class _OcrCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// On-device translation language packs (P13f-2). ML Kit downloads a ~30 MB
+/// model per language on demand the first time you translate; this card makes
+/// them visible — list what's downloaded, delete to free space, or pre-download
+/// a language. Shown only where ML Kit translation can run (Android).
+class _TranslationCard extends ConsumerWidget {
+  const _TranslationCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(translationEngineProvider).isAvailable) {
+      return const SizedBox.shrink();
+    }
+    final packs =
+        ref.watch(downloadedTranslationPacksProvider).asData?.value ??
+        const <String>{};
+    final codes = packs.toList()
+      ..sort(
+        (a, b) =>
+            translationLanguageName(a).compareTo(translationLanguageName(b)),
+      );
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: SettingsCard(
+        children: [
+          const ListTile(
+            leading: Icon(Icons.translate_outlined),
+            title: Text('On-device translation'),
+            subtitle: Text('Translate saved items without leaving your device'),
+            trailing: InfoHintButton(
+              InfoHint(
+                title: 'Translation language packs',
+                body:
+                    'Each language uses a ~30 MB model that downloads once over '
+                    'Wi-Fi, then translates offline. Packs download '
+                    'automatically the first time you translate; delete ones '
+                    'you no longer need to free space, or add one ahead of time.',
+              ),
+            ),
+          ),
+          if (codes.isEmpty)
+            const ListTile(
+              dense: true,
+              title: Text(
+                'No language packs yet — they download the first time you '
+                'translate, or add one below.',
+              ),
+            )
+          else
+            for (final code in codes) _TranslationPackTile(code: code),
+          const _AddTranslationLanguageTile(),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single downloaded language pack: its name + size, with a delete affordance
+/// to free space (the pack re-downloads on demand later).
+class _TranslationPackTile extends ConsumerStatefulWidget {
+  const _TranslationPackTile({required this.code});
+
+  final String code;
+
+  @override
+  ConsumerState<_TranslationPackTile> createState() =>
+      _TranslationPackTileState();
+}
+
+class _TranslationPackTileState extends ConsumerState<_TranslationPackTile> {
+  bool _busy = false;
+
+  Future<void> _delete() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final name = translationLanguageName(widget.code);
+    setState(() => _busy = true);
+    try {
+      await ref.read(translationEngineProvider).deleteModel(widget.code);
+      ref.invalidate(downloadedTranslationPacksProvider);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Deleted $name language pack')));
+    } on InferenceException catch (e) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Couldn\'t delete $name — ${e.message}')),
+        );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.language_outlined),
+      title: Text(translationLanguageName(widget.code)),
+      subtitle: Text('${widget.code}  ·  ~30 MB  ·  Downloaded'),
+      trailing: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : PopupMenuButton<void>(
+              tooltip: 'Manage language pack',
+              onSelected: (_) => _delete(),
+              itemBuilder: (context) => const [
+                PopupMenuItem<void>(
+                  value: null,
+                  child: Text('Delete language pack'),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+/// Pre-download a language pack from Settings (rather than waiting for the first
+/// translation). Picks a language, confirms the ~30 MB Wi-Fi download, fetches.
+class _AddTranslationLanguageTile extends ConsumerStatefulWidget {
+  const _AddTranslationLanguageTile();
+
+  @override
+  ConsumerState<_AddTranslationLanguageTile> createState() =>
+      _AddTranslationLanguageTileState();
+}
+
+class _AddTranslationLanguageTileState
+    extends ConsumerState<_AddTranslationLanguageTile> {
+  bool _busy = false;
+
+  Future<void> _add() async {
+    final downloaded =
+        ref.read(downloadedTranslationPacksProvider).asData?.value ??
+        const <String>{};
+    final code = await _pickTranslationLanguage(context, exclude: downloaded);
+    if (code == null || !mounted) return;
+    final name = translationLanguageName(code);
+    final ok = await confirm(
+      context,
+      title: 'Download $name?',
+      message:
+          'Downloads a ~30 MB language pack over Wi-Fi, then translates '
+          'offline.',
+      confirmLabel: 'Download',
+    );
+    if (!ok || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await ref.read(translationEngineProvider).downloadModel(code);
+      ref.invalidate(downloadedTranslationPacksProvider);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('$name language pack ready')));
+    } on InferenceException catch (e) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Couldn\'t download $name — ${e.message}')),
+        );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: _busy
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.add),
+      title: const Text('Download a language'),
+      enabled: !_busy,
+      onTap: _busy ? null : _add,
+    );
+  }
+}
+
+/// Searchable bottom-sheet picker over ML Kit's supported languages, excluding
+/// already-downloaded ones. Returns the chosen BCP-47 code, or null if
+/// dismissed.
+Future<String?> _pickTranslationLanguage(
+  BuildContext context, {
+  required Set<String> exclude,
+}) {
+  final all = [
+    for (final l in kTranslationLanguages)
+      if (!exclude.contains(l.code)) l,
+  ];
+  return showModalBottomSheet<String?>(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) {
+      var query = '';
+      return StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final q = query.trim().toLowerCase();
+          final shown = q.isEmpty
+              ? all
+              : [
+                  for (final l in all)
+                    if (l.name.toLowerCase().contains(q) || l.code.contains(q))
+                      l,
+                ];
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: TextField(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search languages',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (v) => setSheetState(() => query = v),
+                    ),
+                  ),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final l in shown)
+                          ListTile(
+                            title: Text(l.name),
+                            subtitle: Text(l.code),
+                            onTap: () => Navigator.pop(ctx, l.code),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
 }
 
 /// Compact banner framing the AI screen with the device's capability tier (P12g)

@@ -382,9 +382,20 @@ the docs close-out. Split for phone-reviewable PRs.
   Tests: service (`installedModelIds`/`delete`), the settings tile state + delete affordance.
 - **Exit / review:** the picker clearly shows what's downloaded/active; delete frees space; progress is visible.
 
-#### `[ ]` P13f-2 — Translation settings surface *(native ML Kit)*
+#### `[~]` P13f-2 — Translation settings surface *(native ML Kit)*
 - A Settings → AI **Translation card** to manage the on-demand ML Kit language models (list downloaded
   languages + sizes, delete to free space), mirroring the OCR card; Android-only, gated elsewhere.
+- **Status:** implemented (CI-green; APK spot-check owed). ML Kit exposes no "list downloaded" call, so the
+  `TranslationEngine` seam gained `downloadedLanguageCodes()` (probes ML Kit's supported `TranslateLanguage`
+  set concurrently) + `deleteModel(code)`; the `Unavailable` engine returns empty / throws. New
+  `downloadedTranslationPacksProvider` (mirrors `downloadedModelIdsProvider`); a pure `kTranslationLanguages`
+  list + `translationLanguageName(code)` (fallback: upper-cased code) in `translation.dart`. The
+  `_TranslationCard` (after `_OcrCard`, hidden where ML Kit can't run): a header + the downloaded packs
+  (name · ~30 MB · Downloaded, each with a "Delete language pack" affordance), an empty-state line, and —
+  maintainer call — a **"Download a language"** pre-fetch (searchable picker → ~30 MB Wi-Fi confirm →
+  download). **No schema, no deps, no settings field.** Tests: the unavailable engine's new methods, the
+  name helper (known + fallback + unique codes), and the card (lists packs + delete affordance, empty state,
+  hidden when unavailable). **Pending APK spot-check** (real pack download/delete + pre-download, offline).
 
 #### `[ ]` P13f-3 — P13 phase close + phase-close convention *(docs; minimal code)*
 - `docs/VERIFICATION.md`: f-1/f-2 rows + a **"P13 — consolidated on-device pass"** cross-feature checklist (the

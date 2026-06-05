@@ -22,7 +22,12 @@ class FakeTranslationEngine implements TranslationEngine {
   @override
   Future<bool> isModelDownloaded(String code) async => downloaded;
   @override
+  Future<Set<String>> downloadedLanguageCodes() async =>
+      downloaded ? {detected} : const {};
+  @override
   Future<void> downloadModel(String code, {bool requireWifi = true}) async {}
+  @override
+  Future<void> deleteModel(String code) async {}
   @override
   Future<String> translate(
     String text, {

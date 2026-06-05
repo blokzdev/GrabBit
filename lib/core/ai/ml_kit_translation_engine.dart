@@ -41,6 +41,22 @@ class MlKitTranslationEngine implements TranslationEngine {
   }
 
   @override
+  Future<Set<String>> downloadedLanguageCodes() async {
+    // ML Kit exposes no "list downloaded" call, so probe each supported
+    // language. The checks are cheap and run concurrently; the provider caches
+    // the result and only re-runs after a download or delete.
+    final checks = await Future.wait(
+      TranslateLanguage.values.map(
+        (l) async => (l.bcpCode, await _models.isModelDownloaded(l.bcpCode)),
+      ),
+    );
+    return {
+      for (final (code, downloaded) in checks)
+        if (downloaded) code,
+    };
+  }
+
+  @override
   Future<void> downloadModel(String code, {bool requireWifi = true}) async {
     final lang = translateLanguageForCode(code);
     if (lang == null) {
@@ -55,6 +71,26 @@ class MlKitTranslationEngine implements TranslationEngine {
       throw InferenceException(
         InferenceErrorCode.downloadFailed,
         'Could not download the "$code" language pack',
+        cause: e,
+      );
+    }
+  }
+
+  @override
+  Future<void> deleteModel(String code) async {
+    final lang = translateLanguageForCode(code);
+    if (lang == null) {
+      throw InferenceException(
+        InferenceErrorCode.unavailable,
+        'The "$code" language is not supported on this device',
+      );
+    }
+    try {
+      await _models.deleteModel(lang.bcpCode);
+    } on Exception catch (e) {
+      throw InferenceException(
+        InferenceErrorCode.downloadFailed,
+        'Could not remove the "$code" language pack',
         cause: e,
       );
     }

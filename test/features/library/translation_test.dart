@@ -65,4 +65,22 @@ void main() {
       );
     });
   });
+
+  group('translationLanguageName (P13f-2)', () {
+    test('returns the friendly name for a supported code', () {
+      expect(translationLanguageName('es'), 'Spanish');
+      expect(translationLanguageName('ja'), 'Japanese');
+      expect(translationLanguageName('zh'), 'Chinese');
+    });
+
+    test('falls back to the upper-cased code for an unknown one', () {
+      expect(translationLanguageName('xx'), 'XX');
+    });
+
+    test('every supported language has a non-empty unique code', () {
+      final codes = kTranslationLanguages.map((l) => l.code).toList();
+      expect(codes.toSet().length, codes.length);
+      expect(codes.every((c) => c.isNotEmpty), isTrue);
+    });
+  });
 }
