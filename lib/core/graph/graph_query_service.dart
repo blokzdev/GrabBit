@@ -4,6 +4,7 @@ import 'package:grabbit/core/graph/cooccurrence_ranking.dart';
 import 'package:grabbit/core/graph/cozo_query.dart';
 import 'package:grabbit/core/graph/graph_store.dart';
 import 'package:grabbit/core/graph/near_duplicate_clustering.dart';
+import 'package:grabbit/core/graph/path_finding.dart';
 import 'package:grabbit/core/graph/related_ranking.dart';
 
 /// One nearest-neighbour hit from a vector search: a media item id and its
@@ -200,6 +201,22 @@ class GraphQueryService {
         pairs: pairs,
         maxGroupSize: maxGroupSize,
       ),
+    );
+  }
+
+  /// The shortest **connection** between two media items (P13e-3a) — "how are
+  /// these related?" — as an ordered item chain + per-hop connectors over the
+  /// entity graph (shared uploader/playlist/tag + co-download). Every-device
+  /// (pure Datalog + Dart; no embedder). `null` when unavailable, [source] ==
+  /// [target], or the two items are disconnected.
+  Future<GraphPath?> pathBetween(String source, String target) async {
+    if (!_store.isAvailable || source == target) return null;
+    final (:memberships, :pairs) = await _entityGraph();
+    return findItemPath(
+      source: source,
+      target: target,
+      memberships: memberships,
+      pairs: pairs,
     );
   }
 

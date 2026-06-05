@@ -8,6 +8,15 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Path discovery — item↔entity / entity↔entity paths.** P13e-3a finds the shortest connection between two
+      **items**. Extend to "how is this item related to this channel/tag?" (item↔entity) and entity↔entity
+      paths, with entity endpoints in the picker. *(From P13e-3a.)*
+- [ ] **Path discovery — graph-theoretic bridges/articulation points.** e-3a surfaces the *connecting path*
+      (its intermediates are the bridge). True bridge-edge / articulation-point analysis (which links, if cut,
+      fragment the library graph) is a separate, heavier analysis. *(From P13e-3a.)*
+- [ ] **Path discovery — rank by tie strength.** BFS returns *a* shortest path; when several exist, prefer the
+      one through the **narrowest/strongest** connector (a small shared playlist over a broad shared tag) for a
+      more meaningful explanation. *(From P13e-3a.)*
 - [ ] **Rediscover — betweenness centrality.** P13e-2 ranks by **PageRank** (cheap, deterministic). Betweenness
       (bridge-ness) is O(V·E) — too costly for a query-time strip; explore it as an alternative/secondary signal,
       likely alongside e-3's path/bridge work. *(From P13e-2.)*

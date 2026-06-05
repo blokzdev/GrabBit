@@ -1043,6 +1043,15 @@ entries, or verify after P11c lands.)*
       when the graph index is unavailable.
 - [ ] Works on a **low-end device** (entity graph only — no embedder/LLM).
 
+### P13e-3a — "How are these related?" connection path  *(install `app-arm64-v8a-debug.apk`; needs a real library)*
+- [ ] In item detail, the **"How is this related to…?"** action opens a searchable picker (current item
+      excluded); picking a genuinely-related item shows a readable **connection chain** (cards + connectors like
+      "same channel" / "shared tag '…'" / "downloaded together"); tapping a card opens that item.
+- [ ] Two **unrelated** items (no shared channel/playlist/tag, never co-downloaded) show **"No connection
+      found"**.
+- [ ] The action is **absent** when the graph index is unavailable (e.g. unsupported ABI); works on a
+      **low-end device** (entity graph only — no embedder).
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.
