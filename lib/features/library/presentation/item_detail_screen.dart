@@ -1113,7 +1113,9 @@ Future<void> _translateItem(
 
   if (readiness == TranslateReadiness.unavailable) {
     messenger.showSnackBar(
-      const SnackBar(content: Text("Translation isn't available here")),
+      const SnackBar(
+        content: Text("Translation isn't available on this device"),
+      ),
     );
     return;
   }

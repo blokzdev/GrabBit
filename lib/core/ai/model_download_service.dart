@@ -239,6 +239,29 @@ class ModelDownloadService {
     return '${root.path}/$modelId/$filename';
   }
 
+  /// The ids of models with cached files on disk — a model dir that exists and
+  /// holds at least one file. Existence-only (no hashing): cheap, for UI state;
+  /// [isInstalled] is the authoritative hash-checked gate used before inference.
+  Future<Set<String>> installedModelIds() async {
+    final root = await modelsRoot();
+    if (!await root.exists()) return const <String>{};
+    final ids = <String>{};
+    await for (final entry in root.list()) {
+      if (entry is Directory && await entry.list().any((e) => e is File)) {
+        ids.add(entry.path.split('/').last);
+      }
+    }
+    return ids;
+  }
+
+  /// Removes [modelId]'s cached files to free space. No-op if absent. The
+  /// model stays in the catalog and is re-downloadable on demand.
+  Future<void> delete(String modelId) async {
+    final root = await modelsRoot();
+    final dir = Directory('${root.path}/$modelId');
+    if (await dir.exists()) await dir.delete(recursive: true);
+  }
+
   Future<String> _hashOf(File file) async {
     final digestSink = _DigestSink();
     final input = sha256.startChunkedConversion(digestSink);
