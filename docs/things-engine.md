@@ -84,6 +84,7 @@ re-improvable, are first-class — and AI-inferred ones are **proposed, not sile
 - ADRs: `docs/decisions/0001-schema-as-data-not-schema-as-code.md`,
   `0002-narrow-then-fill-curator.md`, `0003-mediaobject-migration-bridge.md`,
   `0004-relationships-provenance-and-the-authored-edge-moat.md`.
-- v1 seams: `docs/AI-SPEC.md` §2–6, `docs/design/P-AI-PLAN.md` (P12/P13), `docs/ARCHITECTURE.md` §8.
+- v1 seams: `docs/AI-SPEC.md` §2–6, `docs/design/P-AI-PLAN.md` (P12/P13), `docs/ARCHITECTURE.md` §8,
+  `docs/GRAPH-SPEC.md` §10 (graph Things-readiness seam map — why the P13 graph features generalize unchanged).
 - Logged in `docs/BACKLOG.md`; acknowledged (no phase number) in `docs/ROADMAP.md`; sibling v2 entry
   in `docs/PRD.md` §9.

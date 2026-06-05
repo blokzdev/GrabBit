@@ -110,13 +110,18 @@ void main() {
     expect(find.byTooltip('Find path…'), findsOneWidget);
   });
 
+  // The path flow is driven from an empty neighborhood (the "Find path" action
+  // is available regardless), so these tests never render the neighborhood
+  // GraphView — keeping them free of graphview's force-directed layout, which is
+  // non-deterministic under pumpAndSettle in a headless test. The path render
+  // itself is a deterministic custom layout, not graphview.
   testWidgets('Find path → pick → path banner, then back restores it', (
     tester,
   ) async {
     await pump(
       tester,
       available: true,
-      neighbors: const [GraphNeighbor(relation: 'tag', id: 't1', label: 'fun')],
+      neighbors: const [],
       extra: [
         libraryItemsProvider.overrideWith((ref) => Stream.value([_item('y')])),
         connectionPathProvider(('x', 'y')).overrideWith(
@@ -127,6 +132,7 @@ void main() {
         ),
       ],
     );
+    expect(find.text('No connections yet'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Find path…'));
     await tester.pumpAndSettle();
@@ -135,10 +141,11 @@ void main() {
     await tester.tap(find.text('Clip y'));
     await tester.pumpAndSettle();
     expect(find.text('Clip x → Clip y'), findsOneWidget); // path banner
+    expect(find.text('same channel'), findsOneWidget); // connector bridge
 
     await tester.tap(find.byTooltip('Back to neighborhood'));
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(FilterChip, 'Tag'), findsOneWidget); // restored
+    expect(find.text('No connections yet'), findsOneWidget); // restored
   });
 
   testWidgets('path mode shows "No connection found" for islands', (
@@ -147,7 +154,7 @@ void main() {
     await pump(
       tester,
       available: true,
-      neighbors: const [GraphNeighbor(relation: 'tag', id: 't1', label: 'fun')],
+      neighbors: const [],
       extra: [
         libraryItemsProvider.overrideWith((ref) => Stream.value([_item('y')])),
         connectionPathProvider(('x', 'y')).overrideWith((ref) async => null),
