@@ -375,16 +375,25 @@ class _GraphViewScreenState extends ConsumerState<GraphViewScreen> {
   }
 
   Widget _pathCanvas(ConnectionPathView view) {
-    final config = BuchheimWalkerConfiguration()
-      ..siblingSeparation = 24
-      ..levelSeparation = 48
-      ..subtreeSeparation = 24
-      ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM;
-    final graph = buildPathGraph(
-      itemIds: [for (final m in view.items) m.id],
-      connectors: view.connectors,
-    );
-    final byId = {for (final m in view.items) m.id: m};
+    final tokens = GrabBitTokens.of(context);
+    // A path is a linear chain, so it's laid out deterministically (item node →
+    // connector bridge → item node …) rather than via graphview's force-directed
+    // engine — tidy, jitter-free, and not subject to graphview's headless-layout
+    // fragility. Still in the pannable/zoomable graph canvas.
+    final chain = <Widget>[];
+    for (var i = 0; i < view.items.length; i++) {
+      final item = view.items[i];
+      chain.add(
+        GestureDetector(
+          onTap: () => context.push('/item/${item.id}'),
+          onLongPress: () => context.push('/item/${item.id}/graph'),
+          child: _PathItemNode(item: item),
+        ),
+      );
+      if (i < view.connectors.length) {
+        chain.add(_PathEdge(label: view.connectors[i]));
+      }
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -398,30 +407,17 @@ class _GraphViewScreenState extends ConsumerState<GraphViewScreen> {
                 boundaryMargin: const EdgeInsets.all(400),
                 minScale: 0.2,
                 maxScale: 3,
-                child: GraphView(
-                  graph: graph,
-                  algorithm: BuchheimWalkerAlgorithm(
-                    config,
-                    TreeEdgeRenderer(config),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    tokens.spaceLg,
+                    72, // clear the banner
+                    tokens.spaceLg,
+                    tokens.spaceLg,
                   ),
-                  paint: Paint()
-                    ..color = kPathHighlight
-                    ..strokeWidth = 2.5
-                    ..style = PaintingStyle.stroke,
-                  builder: (node) {
-                    final key = node.key!.value as String;
-                    if (key.startsWith('pathBridge::')) {
-                      final i = int.parse(key.split('::').last);
-                      return _BridgeNode(label: view.connectors[i]);
-                    }
-                    final id = key.split('::').last;
-                    final item = byId[id];
-                    return GestureDetector(
-                      onTap: () => context.push('/item/$id'),
-                      onLongPress: () => context.push('/item/$id/graph'),
-                      child: _PathItemNode(item: item),
-                    );
-                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: chain,
+                  ),
                 ),
               ),
             ),
@@ -620,11 +616,10 @@ class _PathItemNode extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Fixed-size (not AspectRatio) so graphview's unbounded layout pass
+            // always has a concrete size to measure.
             if (item != null)
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: MediaThumb(item: item!),
-              ),
+              SizedBox(height: 70, child: MediaThumb(item: item!)),
             Padding(
               padding: EdgeInsets.all(tokens.spaceSm),
               child: Text(
@@ -679,6 +674,34 @@ class _BridgeNode extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A connector edge in the linear path render: a highlight line with the
+/// connector bridge chip on it (P13e-3b).
+class _PathEdge extends StatelessWidget {
+  const _PathEdge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _EdgeLine(),
+        _BridgeNode(label: label),
+        const _EdgeLine(),
+      ],
+    );
+  }
+}
+
+class _EdgeLine extends StatelessWidget {
+  const _EdgeLine();
+
+  @override
+  Widget build(BuildContext context) =>
+      Container(width: 2.5, height: 14, color: kPathHighlight);
 }
 
 /// Top banner naming the path's endpoints, with a close-to-neighborhood action.

@@ -50,33 +50,6 @@ void main() {
     });
   });
 
-  group('buildPathGraph (P13e-3b)', () {
-    test('chains items through connector bridge nodes', () {
-      final graph = buildPathGraph(
-        itemIds: ['a', 'b', 'c'],
-        connectors: ['same channel', "shared tag 'x'"],
-      );
-      // 3 items + 2 bridges = 5 nodes; 4 edges (item-bridge-item, item-bridge-item).
-      expect(graph.nodeCount(), 5);
-      expect(graph.edges.length, 4);
-      expect(graph.isTree, isTrue);
-    });
-
-    test('stable, distinct node keys for items and bridges', () {
-      expect(pathItemKey('m1'), 'pathItem::m1');
-      expect(pathBridgeKey(0), 'pathBridge::0');
-    });
-
-    test('a two-item path is a single bridge hop', () {
-      final graph = buildPathGraph(
-        itemIds: ['a', 'b'],
-        connectors: ['downloaded together'],
-      );
-      expect(graph.nodeCount(), 3); // a, bridge0, b
-      expect(graph.edges.length, 2);
-    });
-  });
-
   group('expand + filter', () {
     test('an expanded entity links to its media children', () {
       final uploader = _n('uploader', 'u1');
