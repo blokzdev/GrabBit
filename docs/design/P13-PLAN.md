@@ -349,12 +349,22 @@ the chain screen (e-3a) and the graph view (e-3b), reusing the same engine.
 - **Exit / review:** a path between two items renders and explains the connection; "No connection found" for
   islands; absent when the graph is unavailable. ✓ (CI parts) · APK owed
 
-##### `[ ]` P13e-3b — Graph-view polish + in-graph path highlight *(graph; APK)*
+##### `[~]` P13e-3b — Graph-view polish + in-graph path highlight *(graph; APK)*
 - Graph-view interaction/visual polish on the existing `graphview` screen (zoom/fit controls, layout
   stability, relations legend), **plus** the second path surface: highlight the shortest path **inside** the
   graph view (reusing e-3a's `pathBetween`).
-- **Exit / review:** polish lands without regressing the P10c-e/f interactions; selecting a second node
-  highlights/explains the path.
+- **Status:** implemented (CI-green; APK spot-check owed). Polish: a persistent `TransformationController`
+  (pan/zoom survives rebuilds), a **zoom in/out/fit** control cluster, **graph memoization** by structural
+  signature (the loading-spinner `setState` no longer re-runs the force-directed layout), and `Semantics`
+  node labels. **Path mode** (confirmed shape): a **"Find path…"** app-bar action → `pickLibraryItem` →
+  `connectionPathProvider` → the canvas switches to a highlighted **path graph** (`buildPathGraph`: items +
+  connector bridge nodes, `BuchheimWalker` linear layout) with a top banner (source → target) and a
+  "Back to neighborhood" toggle; path item nodes stay interactive (tap → open, long-press → re-seed the graph).
+  `null` → "No connection found". **No new Cozo script, no schema, no deps.** Tests: `buildPathGraph` shape +
+  the zoom/find-path controls, the full pick→path-mode→back flow, and the no-connection case.
+- **Exit / review:** polish lands without regressing the P10c-e/f interactions; selecting a second item
+  highlights/explains the path. ✓ (CI parts) · APK owed — **P13e feature-complete** (all subphases
+  implemented; consolidated on-device APK pass owed).
 
 ### `[ ]` P13f — Capability-gating + model-selector UX polish & phase close *(pure Dart/UI; minimal)*
 - **Model-selector UX polish** across the now-real AI features (the P12g picker was built for the engine

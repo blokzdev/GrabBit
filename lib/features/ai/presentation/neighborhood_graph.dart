@@ -62,6 +62,9 @@ const Map<String, Color> _relationColors = {
 Color relationColor(String relation) =>
     _relationColors[relation] ?? Colors.grey;
 
+/// Highlight colour for the in-graph path mode (P13e-3b) — its nodes + edges.
+const Color kPathHighlight = Color(0xFF7E57C2); // deep purple
+
 /// Entity relations expand to show their media; media relations navigate to the
 /// item. `item` is a media node pulled by expanding an entity (P10c-f).
 const Set<String> kEntityRelations = {'uploader', 'playlist', 'site', 'tag'};
@@ -115,6 +118,45 @@ Graph buildNeighborhoodGraph({
         nodeFor(key),
         nodeFor(neighborKey(child)),
         paint: edgePaint?.call(child.relation),
+      );
+    }
+  }
+  return graph;
+}
+
+/// Node key for a path item (P13e-3b), distinct from neighborhood keys.
+String pathItemKey(String id) => 'pathItem::$id';
+
+/// Node key for the connector bridge between path items `i` and `i+1`.
+String pathBridgeKey(int index) => 'pathBridge::$index';
+
+/// Builds the `graphview` [Graph] for an in-graph **path** (P13e-3b): the
+/// [itemIds] as nodes linked through connector **bridge** nodes (one per entry
+/// in [connectors], `connectors.length == itemIds.length - 1`) — i.e.
+/// `item0 — bridge0 — item1 — bridge1 — …`. A tidy linear chain for a tree
+/// layout. Edge styling comes from [edgePaint] so this stays theme-agnostic.
+Graph buildPathGraph({
+  required List<String> itemIds,
+  required List<String> connectors,
+  Paint Function()? edgePaint,
+}) {
+  final graph = Graph()..isTree = true;
+  final nodes = <String, Node>{};
+  Node nodeFor(String key) => nodes.putIfAbsent(key, () {
+    final node = Node.Id(key);
+    graph.addNode(node);
+    return node;
+  });
+
+  for (var i = 0; i < itemIds.length; i++) {
+    final item = nodeFor(pathItemKey(itemIds[i]));
+    if (i < connectors.length) {
+      final bridge = nodeFor(pathBridgeKey(i));
+      graph.addEdge(item, bridge, paint: edgePaint?.call());
+      graph.addEdge(
+        bridge,
+        nodeFor(pathItemKey(itemIds[i + 1])),
+        paint: edgePaint?.call(),
       );
     }
   }

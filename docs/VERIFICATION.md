@@ -1052,6 +1052,15 @@ entries, or verify after P11c lands.)*
 - [ ] The action is **absent** when the graph index is unavailable (e.g. unsupported ABI); works on a
       **low-end device** (entity graph only — no embedder).
 
+### P13e-3b — Graph-view polish + in-graph path  *(install `app-arm64-v8a-debug.apk`; needs a real library)*
+- [ ] In the graph view, the **zoom in / out / reset** controls work, and pan/zoom **survives** expanding a
+      node, toggling a legend filter, and the expansion spinner (no layout jump / re-scatter).
+- [ ] The **"Find path…"** app-bar action → pick a target → the canvas switches to a highlighted **path**
+      (items linked by connector bridges) with a banner; path item nodes are tappable (open) and long-pressable
+      (re-seed the graph there); **"Back to neighborhood"** restores the original view.
+- [ ] An unrelated target shows **"No connection found"**; existing P10c-e/f interactions (expand, legend
+      filter, long-press sheet) still work; everything is **absent** when the graph is unavailable.
+
 ### P13 (later subphases)
 - [ ] **Transcription / summarization / translation / OCR** each work (capability-gated) and write
       results back to the item.
