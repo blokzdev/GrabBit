@@ -8,6 +8,10 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Graph view — combined neighborhood∪path overlay.** P13e-3b's in-graph path is a dedicated **path mode**
+      (the canvas swaps to the path). A richer option draws the path *through* the current neighborhood (adding
+      the off-graph path nodes + highlighting the connecting edges in context) — nicer but the force-directed
+      layout of the union tends to tangle; revisit with layout tuning. *(From P13e-3b.)*
 - [ ] **Path discovery — item↔entity / entity↔entity paths.** P13e-3a finds the shortest connection between two
       **items**. Extend to "how is this item related to this channel/tag?" (item↔entity) and entity↔entity
       paths, with entity endpoints in the picker. *(From P13e-3a.)*
