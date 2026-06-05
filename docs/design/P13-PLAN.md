@@ -213,7 +213,7 @@ user-curated (they drive facets), AI tags are **marked** (provenance) rather tha
   'ai' + entry; default-off no-op). **No deps.** **Pending APK spot-check** (real download → AI-marked tags +
   facets, offline). A library "hide/filter AI tags" facet is deferred (BACKLOG).
 
-### `[x]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 4 PRs)*
+### `[~]` P13d — Local GraphRAG "Ask your library" *(flagship; split into 4 PRs)*
 The headline differentiator — natural-language Q&A grounded in the private library, fully on-device
 (AI-SPEC §6, GRAPH-SPEC §7). Sequenced **mid-phase** so the generation patterns (P13a/c) are proven first.
 **Revised target (maintainer call): a real multi-turn chat**, not single-shot — persistent conversations
@@ -221,7 +221,7 @@ The headline differentiator — natural-language Q&A grounded in the private lib
 plus a **bounded recent-history window** whose depth scales with the device tier; entry from the **Dashboard**.
 Incapable / low tiers fall back to an ephemeral **retrieval-only** answer (d-3).
 
-#### `[~]` P13d-1 — Retrieval + context & citation assembly *(pure Dart; CI-verifiable)*
+#### `[x]` P13d-1 — Retrieval + context & citation assembly *(pure Dart; CI-verifiable)*
 - A pure-Dart **retrieval/context packer** that reuses the P10 semantic substrate (`embedderEngine.embed` →
   `GraphQueryService.vectorSearch`) plus a light `relatedTo` graph re-rank to select the most relevant items
   for a query, then assembles a **bounded, cited** context block (item → deep-linkable source) and a
@@ -397,18 +397,36 @@ the docs close-out. Split for phone-reviewable PRs.
   name helper (known + fallback + unique codes), and the card (lists packs + delete affordance, empty state,
   hidden when unavailable). **Pending APK spot-check** (real pack download/delete + pre-download, offline).
 
-#### `[ ]` P13f-3 — P13 phase close + phase-close convention *(docs; minimal code)*
-- `docs/VERIFICATION.md`: f-1/f-2 rows + a **"P13 — consolidated on-device pass"** cross-feature checklist (the
-  one owed verification for the phase). Flip **P13a–P13f markers to `[x]`**; fill the P13 summary; mark P13 done
-  in `docs/ROADMAP.md`; route deferrals to `docs/BACKLOG.md`.
-- **`CLAUDE.md` §7 — encode the phase-close convention**: a (sub)phase earns `[x]` when CI is green + exit
-  criteria met + its per-PR APK spot-check is done; a **top-level phase is closed** by one consolidated
-  cross-feature on-device pass recorded in `VERIFICATION.md` (the holistic gate). Mirror the legend wording.
-- **Exit / review:** every P13 feature shows a clear enabled/gated state; opt-ins persist; **P13 complete** —
-  the v1 AI pillar (next: P14 beta & launch), with only the consolidated cross-feature pass owed.
+#### `[x]` P13f-3 — P13 phase close + phase-close convention *(docs; no code)*
+- `docs/VERIFICATION.md`: a **"P13 — consolidated cross-feature on-device pass"** checklist — the one owed
+  verification for the whole phase (per-subphase rows a–f already landed in their own PRs).
+- **`CLAUDE.md` §7 — encode the phase-close convention** (net-new): the marker legend + the earned-`[x]` rule
+  (a subphase earns `[x]` only when its per-PR APK/on-device check is done; **batched** checks keep it `[~]`,
+  not `[x]`; a pure-Dart/UI/docs subphase is CI-dischargeable); a **top-level phase is closed** by the single
+  consolidated cross-feature on-device pass in `VERIFICATION.md` (the holistic gate).
+- **Honest markers (maintainer call):** P13's APK checks were **batched** into the consolidated pass, so the
+  affected subphases **stay `[~]`** (CI-complete, not yet verified) — they are **not** flipped to `[x]` on the
+  promise of a later check. The consolidated pass, when the maintainer runs it, discharges them all + closes
+  P13. P13f-3 (docs/CI) and P13d-1 (pure-Dart, CI-covered) are the CI-dischargeable exceptions → `[x]`; P13d's
+  parent header is corrected `[x]`→`[~]` (its children d-2a/d-2b/d-3 are still APK-owed).
+- **Status:** implemented (docs-only; CI-green). Landed the consolidated VERIFICATION pass, the CLAUDE.md §7
+  convention + legend, the honest marker set, the honest P13 summary block (below), the ROADMAP status line,
+  and the one missing f-2 BACKLOG entry. **No code.**
+- **Exit / review:** every P13 feature has a clear enabled/gated state and its own VERIFICATION row; the phase
+  is **code-complete** with exactly one owed item — the consolidated cross-feature on-device pass (→ P14).
 
-> **✅ P13 complete.** _(Filled in at P13f-3 — what shipped across P13a–P13f + the consolidated
-> on-device verification pass.)_
+> **P13 — code-complete; on-device verification pending.** All P13 subphases are **implemented, CI-green,
+> and merged**: abstractive summarization + auto-summarize (P13a/a-2); OCR + translation + auto-OCR and the
+> image-download fix (P13b); smart auto-tagging + auto-tag-on-download (P13c/c-2); the local-GraphRAG
+> "Ask your library" multi-turn chat + conversation management + retrieval-only fallback (P13d); advanced
+> graph analytics — community auto-albums, centrality "Rediscover", path/bridge + graph-view polish (P13e);
+> and model/translation-pack management UX + this close (P13f).
+>
+> **The one owed item for the whole phase is the consolidated cross-feature on-device pass** in
+> `docs/VERIFICATION.md` → "P13 — consolidated cross-feature on-device pass". P13's per-PR APK spot-checks
+> were deliberately **batched** into it (CLAUDE.md §6/§7), so each affected subphase stays `[~]`
+> (CI-complete, not yet verified). **Running that single pass discharges every owed per-subphase check and
+> flips all P13 markers — and the phase — to `[x]`**, closing the v1 AI pillar (next: P14 beta & launch).
 
 ---
 

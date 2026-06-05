@@ -226,9 +226,21 @@ lean for speed, not for a minutes budget:
 - **Same-PR doc upkeep.** Every (sub)phase PR also: (a) **updates `docs/VERIFICATION.md`**
   whenever it adds user-facing behavior — the on-device checks CI can't cover (real
   downloads, native, notifications, biometrics, etc.); mandatory, it's the v1-release
-  regression checklist; (b) **flips the relevant plan-doc status marker** (e.g.
-  `docs/design/P11-PLAN.md` `[~]`→`[x]`); and (c) **logs any deliberate deferral in
+  regression checklist; (b) **flips the relevant plan-doc status marker** per the
+  legend + earned-`[x]` rule below; and (c) **logs any deliberate deferral in
   `docs/BACKLOG.md`, tagged `(From P<N><sub>.)`**.
+- **Status markers & phase close.** Plan-doc status legend (one canonical definition):
+  `[ ]` not started · `[~]` in progress · `[x]` **done & verified on-device**.
+  - **A (sub)phase earns `[x]`** only when its CI gates are green, its exit criteria are
+    met, **and** its per-PR APK/on-device spot-check is done. A subphase with **no
+    on-device behaviour** (pure-Dart/UI/docs) is **discharged by CI alone** → `[x]` on merge.
+  - **Batched on-device review:** when a subphase's APK check is deliberately **batched**
+    (§6), it stays **`[~]`** — CI-complete but **not yet verified** — never `[x]` on the
+    promise of a later check.
+  - **A top-level phase is closed** by a single **consolidated cross-feature on-device
+    verification pass** recorded in `docs/VERIFICATION.md` (the holistic gate — features
+    validated *together*, not just per subphase). Running that pass discharges the batched
+    per-subphase checks and flips them — and the phase — to `[x]`.
 - Mid-(sub)phase — i.e. work that doesn't yet meet a boundary — do **not** open a PR
   unless explicitly asked.
 
