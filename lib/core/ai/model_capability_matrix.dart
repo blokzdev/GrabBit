@@ -78,20 +78,32 @@ class ModelCapabilityMatrix {
         DeviceTier.mid || DeviceTier.high => whisperBase,
       };
 
-  /// **`structured_extraction` capability (P12f forward seam, ADR-0002).**
-  /// Gates the `generateStructured` function-calling step the **Things Engine**
-  /// curator (P15) will use. **Empty on every tier for now** — no feature before P15 drives it,
-  /// and the function-calling model is undecided (FunctionGemma's Gemma license vs
-  /// Qwen3-0.6B's Apache-2.0 — fork deferred to P13). Defined + gated so the v2
-  /// fill step is already capability-aware; reuses [GenerationModel] once a model
-  /// is chosen (no speculative catalog type while the list is empty).
+  /// **`structured_extraction` capability (P15a, ADR-0002).** Gates the
+  /// `generateStructured` function-calling step the **Things Engine** curator
+  /// (P15) uses to fill typed schema.org Things. The fill runs on the resident
+  /// generation model via `flutter_gemma` function-calling — so the offer set is
+  /// the **function-calling-capable** subset of the generation ladder, all
+  /// Apache-2.0: low is gated off (no generation), mid runs Qwen3-0.6B, and high
+  /// adds Qwen2.5-1.5B + Gemma 4 E2B. SmolLM2-135M is excluded — it ignores tools
+  /// (no function-calling), so it never appears here even though it's a mid-tier
+  /// generation rung. This dissolves the long-deferred FunctionGemma-vs-Qwen3
+  /// license fork (Gemma 4 went Apache-2.0).
   List<GenerationModel> eligibleStructuredExtractionModels(DeviceTier tier) =>
-      const [];
+      switch (tier) {
+        DeviceTier.low => const [],
+        DeviceTier.mid => const [qwen3_0_6b],
+        DeviceTier.high => const [qwen3_0_6b, qwen2_5_1_5b, gemma4E2b],
+      };
 
-  /// The default structured-extraction model at [tier] — **null everywhere** until
-  /// the P13 function-calling model is vetted (see [eligibleStructuredExtractionModels]).
+  /// The default structured-extraction model at [tier], badged **Recommended**.
+  /// Null on low (gated off); Qwen3-0.6B on mid (its only rung); **Gemma 4 E2B**
+  /// on high — the strongest on-device function-calling fill.
   GenerationModel? recommendedStructuredExtractionModel(DeviceTier tier) =>
-      null;
+      switch (tier) {
+        DeviceTier.low => null,
+        DeviceTier.mid => qwen3_0_6b,
+        DeviceTier.high => gemma4E2b,
+      };
 
   // Every tier runs Gecko by default (Apache-2.0, ~114 MB) — the universal floor.
   static const Map<DeviceTier, EmbedderModel> _defaultEmbedders = {
