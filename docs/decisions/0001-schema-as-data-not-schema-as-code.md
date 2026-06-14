@@ -1,9 +1,9 @@
 # ADR-0001 — Schema-as-data, not schema-as-code
 
-- **Status:** Accepted (P14 Things Engine — architectural foundation)
+- **Status:** Accepted (Things Engine P14–P16 — architectural foundation)
 - **Date:** 2026-05-28
 - **Deciders:** Founder/Architect
-- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+- **Context band:** v1 / **P14–P16** (the Things Engine; see `docs/things-engine.md`). The already-built
   P0–P13 are unchanged by this decision.
 
 > **About this format.** GrabBit's Architecture Decision Records live in `docs/decisions/`,
@@ -17,7 +17,7 @@
 
 ## Context
 
-The expanded GrabBit vision (P14) reframes the app as a **domain-agnostic local library of
+The expanded GrabBit vision (P14–P16) reframes the app as a **domain-agnostic local library of
 structured, AI-actionable artifacts** — schema.org *Things* (Recipe, Event, Place, Article,
 Product, and the Audio/Image/VideoObject media types) — not only downloaded media. The compounding
 value is a **typed, interlinked personal corpus**: a folder of media is inert, but a graph of typed
@@ -133,7 +133,7 @@ Concretely (design language — no schema bump or code lands in the foundation-d
 
 ## Related
 
-- `docs/things-engine.md` — the P14 vision one-pager.
+- `docs/things-engine.md` — the P14–P16 vision one-pager.
 - ADR-0002 — narrow-then-fill curator (how Things get *populated*).
 - ADR-0003 — MediaObject as the migration bridge (how existing downloads *become* Things).
 - ADR-0004 — relationships, provenance & the authored-edge moat (how Things *relate*, and how each

@@ -1,7 +1,7 @@
 # GrabBit — Backlog
 
 > Living list of device-test findings and UX/feature refinements that don't map to a
-> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P17);
+> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P19);
 > `docs/VERIFICATION.md` holds the on-device checklist.
 
 ## In progress
@@ -194,7 +194,7 @@ _(nothing active — pick the next batch from below)_
 - [ ] **16 KB page-size** validation on Pixel 9 / Android 15+ (ffmpeg/python native
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 - [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
-      P16: it's native, on-device-only verification, and pure polish.)*
+      P18: it's native, on-device-only verification, and pure polish.)*
 - [ ] **Duplicate bulk-cleanup keep-policy** — P10c-d-1's **Clean up** keeps the *oldest* copy in each
       group. Offer alternatives (keep *largest* / *newest* / let the user pick which to keep) if the
       fixed policy proves too blunt on-device. *(From P10c-d-1.)*
@@ -268,11 +268,13 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [ ] **FTS5 full-text search** → scheduled as **P10h** (`docs/ROADMAP.md`): SQLite FTS5 over
   transcript + description + title, so the library is searchable by **spoken content** (P10f
   transcripts), not just title/description `LIKE`. *(Promoted now that transcripts exist.)*
-- [ ] **Things Engine — the typed-artifact library** → scheduled as **P14** (`docs/ROADMAP.md`,
-  `docs/things-engine.md`): reframe the library as a domain-agnostic graph of schema.org Things
-  (Recipe/Event/Place/Article/Product + the MediaObjects), captured by a narrow-then-fill curator and
-  reasoned over by on-device GraphRAG. Strategic decisions locked (ADR-0001–0004); subphase map authored
-  at phase start. *(Promoted into v1 — launch now ships the full envisioned scope.)*
+- [ ] **Things Engine — the typed-artifact library (the spine)** → scheduled as the **P14–P16 band**
+  (`docs/ROADMAP.md`, `docs/things-engine.md`): reframe the library as a domain-agnostic graph of schema.org
+  Things (Recipe/Event/Place/Article/Product + the MediaObjects) — **P14** foundation + MediaObject
+  projection, **P15** curator + AI Thing-extraction from downloads, **P16** universal intake + typed types &
+  GraphRAG. Strategic decisions locked (ADR-0001–0004); each phase authors its plan map at start.
+  *(Promoted into v1 as the spine — GrabBit becomes an on-device "everything library"; launch ships the full
+  envisioned scope.)*
 
 ## Cut from P8 / P9 (deliberate — kept here with rationale)
 - [ ] **aria2c external downloader** — youtubedl-android ships no aria2c binary; bundling an
@@ -285,7 +287,7 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [ ] **App-icon disguise / activity-alias** — unreliable launcher re-pin post-Android-10;
       a common source of "app disappeared" reports.
 - [ ] **Background audio playback** — valuable, but adds a second foreground-service type to
-      coordinate with the download service; revisit during production polish (P16).
+      coordinate with the download service; revisit during production polish (P18).
 - [ ] **Download scheduling** (run at a time / wifi window) — needs WorkManager + alarm logic.
 - [ ] **Per-folder lock** — adds lock-state to the virtual-folder model + many UI gates.
 - [ ] **Configurable storage location** (internal vs SD / external app-specific dir) — deferred

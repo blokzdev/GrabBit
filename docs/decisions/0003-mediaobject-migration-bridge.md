@@ -1,9 +1,9 @@
 # ADR-0003 — MediaObject as the migration bridge
 
-- **Status:** Accepted (P14 Things Engine — architectural foundation)
+- **Status:** Accepted (Things Engine P14–P16 — architectural foundation)
 - **Date:** 2026-05-28
 - **Deciders:** Founder/Architect
-- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+- **Context band:** v1 / **P14–P16** (the Things Engine; see `docs/things-engine.md`). The already-built
   P0–P13 are unchanged.
 
 ## Context
@@ -164,4 +164,4 @@ MediaObject bridge is the first *file-backed* Thing type; these entity nodes are
 - ADR-0004 — relationships & provenance (the `grabbit:` extension namespace; the edges by which content
   Things reference these file-leaves; many-to-many content↔file).
 - `docs/SPEC.md` §3 (the canonical media schema), `docs/ARCHITECTURE.md` §4, `docs/GRAPH-SPEC.md`.
-- `docs/things-engine.md` — P14 vision one-pager.
+- `docs/things-engine.md` — P14–P16 vision one-pager.

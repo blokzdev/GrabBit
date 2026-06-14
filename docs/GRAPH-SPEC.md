@@ -45,7 +45,7 @@ don't plan to.)
 
 ---
 
-## 2. Integration — Android via official AAR + Pigeon; Windows (P15) via C-API/FFI
+## 2. Integration — Android via official AAR + Pigeon; Windows (P17) via C-API/FFI
 
 This is the existing `DownloadEngine` dual-impl pattern (native lib on Android, process/FFI on
 Windows). It removes almost all of the "FFI cost" for v1 (which is *engineering time*, never money).
@@ -75,7 +75,7 @@ Kotlin host). Implications:
 - **CI is unaffected** — the lean Ubuntu `ci.yml` just resolves a Maven dependency; no Rust/NDK
   toolchain runs. (APK builds remain the manual `build-apk.yml`.)
 
-### 2.2 Windows (P15) — C-API via `dart:ffi`
+### 2.2 Windows (P17) — C-API via `dart:ffi`
 
 Native-build/obtain `cozo_c.dll`; bind via `dart:ffi` with **`ffigen`** over the tiny `cozo_c.h`
 (`cozo_open_db`, `cozo_run_query(script, params_json) → JSON`, `cozo_close_db`,
@@ -83,7 +83,7 @@ import/export/backup, `cozo_free_str`). Free the returned C string with `cozo_fr
 try/finally. Own the `DynamicLibrary` + DB handle on a **dedicated long-lived background isolate**
 (`DynamicLibrary`/pointers aren't transferable across isolates — confirmed Flutter issue #169431;
 use `RawReceivePort`/`SendPort` + `NativeFinalizer`). Prefer the Flutter **native-assets build hook**
-(`hook/build.dart`, stable since 3.38) to bundle the prebuilt `.dll`. *(Deferred to P15; the app ships
+(`hook/build.dart`, stable since 3.38) to bundle the prebuilt `.dll`. *(Deferred to P17; the app ships
 Android-only via the AAR until then.)*
 
 ### 2.3 Storage backend & file location
@@ -155,7 +155,7 @@ abstract interface class GraphStore {
 > keeps query shapes unit-testable without the native engine.
 
 - `lib/core/graph/android_cozo_graph_store.dart` — Android impl over the `CozoHostApi` Pigeon bridge
-  (v1). A future `windows_cozo_graph_store.dart` (FFI/ffigen) slots behind the same interface (P15).
+  (v1). A future `windows_cozo_graph_store.dart` (FFI/ffigen) slots behind the same interface (P17).
 - `lib/core/graph/graph_store_provider.dart` — `@Riverpod(keepAlive: true)`, platform-branched like
   the existing `engine_provider.dart`; a no-op impl keeps callers safe where unsupported.
 - `pigeons/cozo.dart` → `CozoHostApi` + Kotlin host glue, mirroring `pigeons/engine.dart` /

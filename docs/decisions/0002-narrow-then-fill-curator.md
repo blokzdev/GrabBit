@@ -1,15 +1,15 @@
 # ADR-0002 — Narrow-then-fill curator architecture
 
-- **Status:** Accepted (P14 Things Engine — architectural foundation)
+- **Status:** Accepted (Things Engine P14–P16 — architectural foundation)
 - **Date:** 2026-05-28
 - **Deciders:** Founder/Architect
-- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+- **Context band:** v1 / **P14–P16** (the Things Engine; see `docs/things-engine.md`). The already-built
   P0–P13 are unchanged; the only earlier touch is the `generateStructured(...)` seam this ADR motivates,
   shaped inert in P12 (`docs/AI-SPEC.md` §2).
 
 ## Context
 
-The P14 Things Engine turns arbitrary inputs — a pasted URL, an uploaded file, a camera capture, a
+The Things Engine turns arbitrary inputs — a pasted URL, an uploaded file, a camera capture, a
 barcode, a screenshot, a block of plaintext — into typed schema.org Things (ADR-0001). The hard part
 is **deciding what type a thing is and filling its properties** without an expensive, error-prone
 "throw everything at a big LLM" step on every input.
@@ -157,4 +157,4 @@ These three drive the design and are the acceptance lens for the curator when it
   branches b/c).
 - `docs/AI-SPEC.md` §2 (`generateStructured`), §3 (`structured_extraction` capability + model
   candidates), §4 (licensing/vetting), §5–6 (typed-node GraphRAG).
-- `docs/things-engine.md` — P14 vision one-pager.
+- `docs/things-engine.md` — P14–P16 vision one-pager.

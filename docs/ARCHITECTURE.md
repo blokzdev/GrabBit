@@ -27,7 +27,7 @@ structured so any agent can implement a feature without re-deriving the design.
 │  Android: Kotlin host → Pigeon → youtubedl-android (Py+yt-dlp+ffmpeg)
 │           + CozoDB (cozo_android AAR) · foreground svc · MediaStore
 │           flutter_gemma (MediaPipe/LiteRT-LM) · whisper.cpp · ML Kit (P12)
-│  Windows: Dart Process → yt-dlp.exe/ffmpeg.exe · Cozo via dart:ffi (P15)
+│  Windows: Dart Process → yt-dlp.exe/ffmpeg.exe · Cozo via dart:ffi (P17)
 └──────────────────────────────────────────────────────────────┘
 (Former "Cloud (v3)" layer — Supabase/Gemini/Stripe — is DROPPED; see §9.)
 ```
@@ -171,7 +171,7 @@ Two pure-Dart seams mirror the `DownloadEngine` pattern; deep design in `docs/AI
 
 - **`GraphStore`** (`core/graph/`, P10) — the on-device relationship graph + vector index, backed by
   **CozoDB** (Android `cozo_android` AAR via a `CozoHostApi` Pigeon bridge; Windows via `dart:ffi` in
-  P15). Platform-branched provider, like `downloadEngineProvider`.
+  P17). Platform-branched provider, like `downloadEngineProvider`.
 - **Per-capability AI engines** (`core/ai/`, P12) — each capability has its own engine bound to its own
   model + lifecycle: **`EmbedderEngine`** (embeddings; `flutter_gemma` Gecko + onnxruntime MiniLM),
   **`GenerationEngine`** (text generation; `flutter_gemma`, P12d), and later a transcription engine
@@ -234,7 +234,7 @@ fall back), but it is **not a planned phase** and nothing in the app depends on 
 - Shared: all Dart (domain, data, presentation, Drift, Riverpod).
 - Divergent: only the engine impl (Pigeon/native vs Process) and storage adapter
   (MediaStore vs filesystem) and packaging.
-- Windows arrives in Roadmap **P15** by adding `WindowsProcessEngine` + a desktop storage adapter +
+- Windows arrives in Roadmap **P17** by adding `WindowsProcessEngine` + a desktop storage adapter +
   the Cozo `dart:ffi` `GraphStore` impl + MSIX packaging — no domain/UI rewrite.
 
 ---
