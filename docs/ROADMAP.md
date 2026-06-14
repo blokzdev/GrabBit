@@ -432,8 +432,11 @@ video → a `Recipe`; a vlog → `Place`/`Event`).
   assert** — the user confirms before edges/Things are written.
 - Activate the real `generateStructured` impl + resolve the FunctionGemma-vs-Qwen3 license fork (deferred
   from P13); capability-gated, graceful on incapable devices.
+- **Things Browser (v1):** the first visible payoff of the pivot — a surface to **browse and filter the
+  typed Things** the curator creates (by `@type`: the new Recipe/Event/… plus the MediaObject projection),
+  so the "everything library" becomes tangible. Deepened into the full type-aware browser in P16.
 **Exit criteria:** a capable device turns a downloaded video into a reviewable, typed Thing with structured
-fields, fully on-device; ineligible devices degrade gracefully.
+fields, browsable in the Things Browser, fully on-device; ineligible devices degrade gracefully.
 
 ## P16 — Universal intake + typed types, UX & GraphRAG
 **Goals:** make GrabBit collect **anything**, not just downloads, and make the typed library first-class.
@@ -442,8 +445,13 @@ fields, fully on-device; ineligible devices degrade gracefully.
   camera/barcode** — feeding the same store + curator.
 - **~6 priority types** (Recipe/Event/Place/Article/Product + MediaObjects) with **bespoke capture, cards &
   exporters**; typed-node **GraphRAG** "ask your library across any Thing."
+- **The rich Things Browser** (deepens P15's v1): the full **type-aware library** — browse/search/filter
+  across every `@type`, **bespoke cards** per priority type, a **generic key/value view** for the long tail
+  (ADR-0001), relationship-aware navigation between linked Things, and GraphRAG answers that cite any Thing.
+  This is the everything-library's home screen.
 **Exit criteria:** a user adds a non-media artifact (page/file/manual/barcode), it becomes a typed Thing with
-its own card, browsable + answerable alongside media — all on-device.
+its own bespoke card, browsable + filterable + answerable alongside media in the rich Things Browser — all
+on-device.
 
 ## P17 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
