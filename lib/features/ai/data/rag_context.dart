@@ -20,12 +20,16 @@ class RagSource {
     required this.itemId,
     required this.title,
     required this.snippet,
+    this.type,
   });
 
   final int index;
   final String itemId;
   final String title;
   final String snippet;
+
+  /// The schema.org `@type` of the cited Thing (e.g. `VideoObject`), when known.
+  final String? type;
 }
 
 /// A prior question/answer turn, for multi-turn history (fed back, bounded).
@@ -128,7 +132,8 @@ String buildRagPrompt(
   }
   b.writeln('Sources:');
   for (final s in sources) {
-    b.writeln('[${s.index}] ${s.title} — ${s.snippet}');
+    final type = (s.type != null && s.type!.isNotEmpty) ? ' (${s.type})' : '';
+    b.writeln('[${s.index}] ${s.title}$type — ${s.snippet}');
   }
   b
     ..writeln()

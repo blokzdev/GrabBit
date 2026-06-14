@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
-import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/graph/graph_query_provider.dart';
+import 'package:grabbit/core/things/thing_hydration.dart';
 
 // Hand-written (returns Drift `MediaItem` rows): the shortest connection between
 // two library items for the "How are these related?" chain screen (P13e-3a).
@@ -29,11 +29,13 @@ final connectionPathProvider =
           .pathBetween(pair.$1, pair.$2);
       if (path == null) return null;
 
-      final db = ref.watch(appDatabaseProvider);
-      final found = await (db.select(
-        db.mediaItems,
-      )..where((t) => t.id.isIn(path.itemIds))).get();
-      final byId = {for (final m in found) m.id: m};
+      final nodes = await ref
+          .watch(nodeHydrationProvider)
+          .hydrateNodes(path.itemIds);
+      final byId = {
+        for (final n in nodes)
+          if (n.media != null) n.id: n.media!,
+      };
 
       final items = [
         for (final id in path.itemIds)

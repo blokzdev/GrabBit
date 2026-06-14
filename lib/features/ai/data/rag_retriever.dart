@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/graph/graph_query_provider.dart';
+import 'package:grabbit/core/things/thing_hydration.dart';
 import 'package:grabbit/features/ai/data/rag_context.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
@@ -50,18 +51,21 @@ class RagRetriever {
       ...related,
     ], max: maxSources);
 
+    // Resolve hits through the Thing-aware seam so answers cite Things
+    // (MediaObject today); the rich snippet still comes from the metadata row
+    // keyed by the same id (thing.id == media_items.id for MediaObjects).
+    final nodes = await _ref.read(nodeHydrationProvider).hydrateNodes(ids);
     final repo = _ref.read(metadataRepositoryProvider);
     final sources = <RagSource>[];
-    for (final id in ids) {
-      final item = await repo.mediaItemById(id);
-      if (item == null) continue;
-      final meta = await repo.metadataForItem(id);
-      final tags = await repo.tagNamesForItem(id);
+    for (final node in nodes) {
+      final meta = await repo.metadataForItem(node.id);
+      final tags = await repo.tagNamesForItem(node.id);
       sources.add(
         RagSource(
           index: sources.length + 1,
-          itemId: id,
-          title: item.title,
+          itemId: node.id,
+          title: node.title,
+          type: node.type,
           snippet: buildSourceSnippet(
             uploader: meta?.uploader,
             tags: tags,

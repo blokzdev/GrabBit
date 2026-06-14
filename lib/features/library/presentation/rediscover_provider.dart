@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
-import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/graph/graph_query_provider.dart';
+import 'package:grabbit/core/things/thing_hydration.dart';
 import 'package:grabbit/features/library/presentation/rediscover.dart';
 
 // Hand-written (returns Drift `MediaItem` rows): central-but-stale items for the
@@ -17,16 +17,18 @@ final rediscoverProvider = FutureProvider<List<MediaItem>>((ref) async {
       .itemCentrality();
   if (centrality.isEmpty) return const [];
 
-  final db = ref.watch(appDatabaseProvider);
-  final found = await (db.select(
-    db.mediaItems,
-  )..where((t) => t.id.isIn(centrality.keys.toList()))).get();
-  final byId = {for (final m in found) m.id: m};
+  final nodes = await ref
+      .watch(nodeHydrationProvider)
+      .hydrateNodes(centrality.keys.toList());
+  final byId = {
+    for (final n in nodes)
+      if (n.media != null) n.id: n.media!,
+  };
 
   final ranked = rankRediscover(
     centrality: centrality,
     lastTouchById: {
-      for (final m in found) m.id: m.lastAccessedAt ?? m.createdAt,
+      for (final m in byId.values) m.id: m.lastAccessedAt ?? m.createdAt,
     },
     now: DateTime.now(),
   );

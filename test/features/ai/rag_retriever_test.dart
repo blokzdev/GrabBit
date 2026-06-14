@@ -125,6 +125,36 @@ void main() {
     expect(ctx.systemPrompt, isNotEmpty);
   });
 
+  test('cites the Thing — title from Thing.name + its @type (P14e)', () async {
+    await seedItem('a', 'Live in Tokyo', description: 'a great concert');
+    // A MediaObject Thing for the same id (thing.id == media_items.id).
+    await db
+        .into(db.things)
+        .insert(
+          ThingsCompanion.insert(
+            id: 'a',
+            type: 'VideoObject',
+            jsonld: '{"@type":"VideoObject","name":"Tokyo Concert"}',
+            name: const Value('Tokyo Concert'),
+            createdAt: DateTime.utc(2026),
+            updatedAt: DateTime.utc(2026),
+          ),
+        );
+    final c = makeContainer(
+      graph: FakeGraphQueryService([const VectorHit('a', 0.1)]),
+    );
+
+    final ctx = await c.read(ragRetrieverProvider).retrieve('concerts?');
+
+    expect(ctx.sources.single.title, 'Tokyo Concert'); // Thing name, not media
+    expect(ctx.sources.single.type, 'VideoObject');
+    expect(ctx.prompt, contains('[1] Tokyo Concert (VideoObject)'));
+    expect(
+      ctx.prompt,
+      contains('a great concert'),
+    ); // snippet still from metadata
+  });
+
   test('empty question or unready retrieval → no sources (P13d-1)', () async {
     await seedItem('a', 'X');
     final graph = FakeGraphQueryService([const VectorHit('a', 0.1)]);

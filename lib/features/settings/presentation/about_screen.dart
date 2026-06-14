@@ -121,7 +121,8 @@ class _GraphSelfTestTile extends ConsumerWidget {
         final stats = await ref.read(graphSyncServiceProvider).stats();
         message =
             'Graph OK — ${relations?.length ?? 0} relations · '
-            '${stats.mediaNodes} media · ${stats.edges} edges';
+            '${stats.mediaNodes} media · ${stats.edges} edges · '
+            '${stats.thingNodes} things · ${stats.thingEdges} thing-edges';
       }
     } on GraphException catch (e) {
       message = 'Graph self-test failed: ${e.message}';

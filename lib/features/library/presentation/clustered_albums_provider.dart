@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
 import 'package:grabbit/core/graph/graph_query_provider.dart';
+import 'package:grabbit/core/things/thing_hydration.dart';
 import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
 
 // Hand-written (returns Drift `MediaItem` rows): thematic community clusters over
@@ -22,10 +23,13 @@ final clusteredAlbumsProvider = FutureProvider<List<SuggestedAlbum>>((
 
   final db = ref.watch(appDatabaseProvider);
   final allIds = {for (final c in communities) ...c.items};
-  final found = await (db.select(
-    db.mediaItems,
-  )..where((t) => t.id.isIn(allIds.toList()))).get();
-  final byId = {for (final m in found) m.id: m};
+  final nodes = await ref
+      .watch(nodeHydrationProvider)
+      .hydrateNodes(allIds.toList());
+  final byId = {
+    for (final n in nodes)
+      if (n.media != null) n.id: n.media!,
+  };
 
   // Batched signals for labeling (one query each, no N+1).
   final uploaderById = {

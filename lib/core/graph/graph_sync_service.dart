@@ -15,6 +15,8 @@ class GraphStats {
     this.mediaNodes = 0,
     this.edges = 0,
     this.embeddings = 0,
+    this.thingNodes = 0,
+    this.thingEdges = 0,
   });
 
   final bool available;
@@ -23,6 +25,10 @@ class GraphStats {
 
   /// Stored vector embeddings (0 when semantic search is off / not yet built).
   final int embeddings;
+
+  /// P14e: projected `thing` nodes and Thing→Thing edges (vocabulary + authored).
+  final int thingNodes;
+  final int thingEdges;
 }
 
 /// Outcome of an embedding backfill pass.
@@ -76,7 +82,8 @@ class GraphSyncService {
   /// though the data hasn't changed. Combined with the Drift schema version.
   /// v2: `duplicateOf` + `coDownloadedWith` are now projected (P10b-3).
   /// v3: the embed doc now includes a transcript slice (P10g-1).
-  static const _edgeBuilderVersion = 3;
+  /// v4: Thing nodes + Thing→Thing edges (vocabulary + authored) projected (P14e).
+  static const _edgeBuilderVersion = 4;
 
   /// Identifies the shape of the projected graph; persisted to detect staleness.
   /// Includes the embedder model id so a model change trips the self-heal pass
@@ -322,11 +329,17 @@ class GraphSyncService {
     for (final rel in graphEdgeRelations) {
       edges += await _count(rel);
     }
+    var thingEdges = 0;
+    for (final rel in graphThingEdgeRelations) {
+      thingEdges += await _count(rel);
+    }
     return GraphStats(
       available: true,
       mediaNodes: mediaNodes,
       edges: edges,
       embeddings: await _embeddingCount(),
+      thingNodes: await _count('thing'),
+      thingEdges: thingEdges,
     );
   }
 
@@ -379,6 +392,8 @@ class GraphSyncService {
         for (final mc in mediaCollections)
           (itemId: mc.itemId, collectionId: mc.collectionId),
       ],
+      things: await _db.select(_db.things).get(),
+      thingEdges: await _db.select(_db.thingEdges).get(),
     );
   }
 }

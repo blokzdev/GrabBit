@@ -430,7 +430,7 @@ Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
         SnackBar(
           content: Text(
             stats.available
-                ? 'Graph rebuilt — ${stats.mediaNodes} media · ${stats.edges} edges'
+                ? 'Graph rebuilt — ${stats.mediaNodes} media · ${stats.edges} edges · ${stats.thingNodes} things'
                 : "Graph engine isn't available on this device",
           ),
         ),
@@ -444,7 +444,7 @@ Future<void> _rebuildGraph(BuildContext context, WidgetRef ref) async {
           ? 'Graph index rebuilt'
           : 'Graph engine unavailable',
       body: stats.available
-          ? '${stats.mediaNodes} media · ${stats.edges} edges'
+          ? '${stats.mediaNodes} media · ${stats.edges} edges · ${stats.thingNodes} things'
           : "On-device graph isn't available on this device.",
       dedupeKey: 'graph_rebuild',
     );
