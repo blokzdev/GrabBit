@@ -176,9 +176,11 @@ lean for speed, not for a minutes budget:
 - **`ci.yml` — AUTO** on PR + push to feature branches: `dart format` check →
   `flutter analyze` → `flutter test`. **Ubuntu only**, with pub cache. Keep it ~2-4 min.
   This is the bug/error catcher.
-- **`build-apk.yml` — MANUAL** (`workflow_dispatch`): builds a **debug APK**
-  (boolean input to switch to release/AAB), Gradle + pub caching, uploads the APK
-  as a **downloadable artifact** for on-device testing.
+- **`build-apk.yml` — MANUAL** (`workflow_dispatch`): builds a **release APK by
+  default** (boolean input — uncheck for debug), Gradle + pub caching, uploads the
+  APK as a **downloadable artifact** for on-device testing. Release builds are
+  **debug-signed** until a real keystore is wired (deferred — see `docs/BACKLOG.md`);
+  installable for sideload testing, not for public distribution.
 - **Hard rules**: never auto-build APKs on push (they're slow and rarely needed per
   commit); always ubuntu for Android (faster + cheap); cache aggressively; batch
   changes before triggering an APK build.

@@ -8,6 +8,18 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Proper release signing (keystore + CI secrets) — target P18/P19.** `android/app/build.gradle.kts`
+      release builds currently fall back to the **debug key** (the Flutter-template TODO), and `build-apk.yml`
+      builds a release APK by default — installable for sideload testing but **not** for public distribution
+      (unstable update identity, insecure key). Add a `signingConfigs.release` reading a keystore from
+      `android/key.properties` / GitHub Actions secrets (e.g. `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEY_ALIAS`,
+      `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_PASSWORD`) with a **graceful debug fallback** when absent (so local
+      + secret-less CI builds still work). Needs the maintainer to generate a keystore + add the secrets.
+      Schedule with **P18 (production polish)** / **P19 (launch)**. *(Off-phase: release-apk-default.)*
+- [ ] **Opt-in crash reporting (upload) — future seam.** On-device crash capture + a copy-on-next-launch modal
+      ship now (`lib/core/diagnostics/`), fully local (no upload, no telemetry). A later opt-in could let users
+      send a captured report to a maintainer endpoint — strictly opt-in, off by default, honoring the
+      no-telemetry default. *(Off-phase: crash-capture.)*
 - [ ] **Separate Thing-level embedding index (a dedicated future phase, sequence with P15/P16).** P14e made
       *hydration* Thing-aware but **reuses the existing media-keyed vectors** (a MediaObject's `id ==
       media_items.id`). This adds the **recall** layer: embed Things as their own vectors (a `thing_embedding`

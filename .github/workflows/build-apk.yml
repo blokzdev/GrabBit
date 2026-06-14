@@ -5,9 +5,11 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Build a release APK/AAB instead of debug'
+        # Release-by-default; uncheck for a debug APK. Release builds are
+        # debug-signed until a keystore is wired (CLAUDE.md §6 / BACKLOG).
+        description: 'Build a release APK (uncheck for debug)'
         type: boolean
-        default: false
+        default: true
 
 concurrency:
   group: build-apk-${{ github.ref }}
