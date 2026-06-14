@@ -1,16 +1,16 @@
 # ADR-0003 — MediaObject as the migration bridge
 
-- **Status:** Accepted (v2 Things Engine — architectural foundation, not yet scheduled)
+- **Status:** Accepted (P14 Things Engine — architectural foundation)
 - **Date:** 2026-05-28
 - **Deciders:** Founder/Architect
-- **Context band:** v2 (the Things Engine; see `docs/things-engine.md`). v1 (P12→P13→P14)
-  is unchanged.
+- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+  P0–P13 are unchanged.
 
 ## Context
 
 GrabBit ships v1 with a mature media library: the canonical Drift tables `media_items` +
 `media_metadata` hold every downloaded video/audio/image plus its captured metadata and
-caption-derived transcript (`docs/SPEC.md` §3, `docs/ARCHITECTURE.md` §4). The v2 Things Engine
+caption-derived transcript (`docs/SPEC.md` §3, `docs/ARCHITECTURE.md` §4). The P14 Things Engine
 (ADR-0001) introduces a generic `things` store of schema.org Things. The obvious risk in any
 "reframe media as one artifact type among many" move is a **disruptive migration** — re-processing or
 re-downloading the existing library to fit a new model.
@@ -127,7 +127,7 @@ MediaObject bridge is the first *file-backed* Thing type; these entity nodes are
 - **Two representations of media coexist** (the canonical media tables + the projected MediaObject
   Thing). We keep them honest by making the projection the **only** writer of the Thing view and
   treating the media tables as canonical for file-lifecycle fields — i.e. one-directional projection,
-  not dual editing. The exact persistence shape (materialized `things` rows vs. on-read view) is a v2
+  not dual editing. The exact persistence shape (materialized `things` rows vs. on-read view) is a P14
   implementation choice; this ADR fixes the *mapping contract*, not the storage mechanism.
 - **The committed direction is the *logical* spine, not a physical merge.** Things are GrabBit's
   conceptual/graph spine (everything is a Thing; ADR-0001), with `MediaObject` as the file-leaf and the
@@ -143,14 +143,14 @@ MediaObject bridge is the first *file-backed* Thing type; these entity nodes are
 
 ## Alternatives considered
 
-- **Re-ingest the library through the v2 extraction pipeline (ADR-0002) to "rebuild" media as
+- **Re-ingest the library through the P14 extraction pipeline (ADR-0002) to "rebuild" media as
   Things.** Rejected: needless re-download/re-processing of data we already hold completely; slow,
   battery-hostile, and risky for no fidelity gain.
 - **Invent a GrabBit-proprietary media Thing type instead of using MediaObject.** Rejected: throws
   away schema.org's existing, well-supported media vocabulary and the clean 1:1 mapping, and breaks
   interoperability/grounding for no benefit.
 - **Move media fully into the generic `things` table and retire `media_items` (the full *physical*
-  spine).** Rejected *for the bridge* and **deferred as an open v2+ question** (logged in BACKLOG, by
+  spine).** Rejected *for the bridge* and **deferred as an open P14+ question** (logged in BACKLOG, by
   PR 3/3): the file-lifecycle/storage-state machinery (export, scoped storage, lock) is built on the
   media tables; re-homing it is a large, risky change orthogonal to the Things model. The **logical**
   spine (projection, media tables canonical) gets the benefit now without the upheaval; the physical
@@ -164,4 +164,4 @@ MediaObject bridge is the first *file-backed* Thing type; these entity nodes are
 - ADR-0004 — relationships & provenance (the `grabbit:` extension namespace; the edges by which content
   Things reference these file-leaves; many-to-many content↔file).
 - `docs/SPEC.md` §3 (the canonical media schema), `docs/ARCHITECTURE.md` §4, `docs/GRAPH-SPEC.md`.
-- `docs/things-engine.md` — v2 vision one-pager.
+- `docs/things-engine.md` — P14 vision one-pager.

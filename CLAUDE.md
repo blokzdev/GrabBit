@@ -17,8 +17,8 @@ bulk downloads, metadata management, deep configurability, and an optional
 PIN/biometric app lock.
 
 Platforms: **Android first** (APK/AAB sideload, off Play Store because of YouTube),
-**Windows in v2**. **AI is core to the vision** — v1 is an *AI-powered* downloader/manager and
-ships only **after** the on-device AI + graph work (P10, P12–P13).
+then **Windows (P15)**. **AI is core to the vision** — v1 is an *AI-powered* downloader/manager, and we
+**launch as the full envisioned scope** (the launch phase is last, P17).
 
 ### Monetization principle (memorize — it governs every feature decision)
 
@@ -26,26 +26,28 @@ ships only **after** the on-device AI + graph work (P10, P12–P13).
 > Downloads, media manager, playback, metadata, organization, app lock, all local
 > yt-dlp/ffmpeg/Dart tools, **and all on-device/edge AI + the on-device graph DB** —
 > everything runs on the user's own device, costs us nothing, and is **free forever**.
-> GrabBit is sustained by an **optional donations link** (P14). **No ads, no telemetry,
+> GrabBit is sustained by an **optional donations link** (P17). **No ads, no telemetry,
 > no accounts, no cloud.** (The former cloud/credits "v3" band is **dropped**; the
 > AI engine interfaces leave a *theoretical* cloud seam, but it is unplanned.)
 > Always bias a feature toward an on-device implementation.
 
-### Version strategy (two bands — v3/cloud dropped)
+### Version strategy (one band — v1 is the full envisioned product; v3/cloud dropped)
 
-| Band | Theme | Network | Money |
-|---|---|---|---|
-| **v1** | Android, free, on-device, **AI-powered**: core downloader + private media manager (P0–P9), then the **on-device AI + graph pillar** (P10, P12–P13) with the **Activity Inbox** (P11) in between, then beta & launch (P14). | Offline | Free |
-| **v2** | Local-only expansion: Windows parity (P15) + production polish & authenticated/cookie import (P16). | Offline | Free |
+**v1 — Android + Windows, free, on-device, AI-powered (P0–P17, offline, free).** One band that ships the
+*complete* envisioned product: core downloader + private media manager (P0–P9), then the **on-device AI +
+graph pillar** (P10, P12–P13) with the **Activity Inbox** (P11) in between, then the **Things Engine (P14)**,
+**Windows parity (P15)**, **production polish + authenticated/cookie import (P16)**, and finally **beta,
+production readiness & launch (P17)**.
 
 The app is **free forever and fully offline**, sustained by an optional donations link. **No ads,
-no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* the AI work**. See
-`docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`.
+no telemetry, no cloud, ever.** AI is core to the vision, and we **launch as the full envisioned scope**, so
+the launch phase is **last**. See `docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`.
 
-> **v2 direction — the Things Engine.** A locked-but-unscheduled v2 initiative (no P-number) reframes the
-> library as a domain-agnostic, on-device graph of typed **schema.org Things** (recipes, events, places,
-> articles, products, and media). It **does not change v1 scope**. See `docs/things-engine.md` and
-> `docs/decisions/` (ADR-0001–0004).
+> **The Things Engine — P14.** Now a **scheduled v1 phase** (promoted from the former unscheduled "v2
+> direction"): it reframes the library as a domain-agnostic, on-device graph of typed **schema.org Things**
+> (recipes, events, places, articles, products, and media). Strategic decisions are locked in
+> `docs/decisions/` (ADR-0001–0004); the vision one-pager is `docs/things-engine.md`; its subphase map
+> (`docs/design/P14-PLAN.md`) is authored when the phase starts.
 
 ---
 
@@ -59,7 +61,7 @@ no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* 
 | Local DB | **Drift** (SQLite) | Relational metadata/queue, typed queries, migrations. |
 | Platform bridge | **Pigeon** | Type-safe Dart↔Kotlin codegen for the engine. |
 | Download engine (Android) | **youtubedl-android** (JunkFood02 fork, `io.github.junkfood02.youtubedl-android`) | Bundles Python+yt-dlp+ffmpeg; maintained fork used by Seal; on Maven Central. |
-| Download engine (Windows, v2) | bundled `yt-dlp.exe` + `ffmpeg.exe` via Dart `Process` | Native, simple, no Python embed needed. |
+| Download engine (Windows, P15) | bundled `yt-dlp.exe` + `ffmpeg.exe` via Dart `Process` | Native, simple, no Python embed needed. |
 | Background work | Android **foreground service** + persistent queue | Reliable long downloads, OS-compliant. |
 | Secure storage | **flutter_secure_storage** | PIN hash, future tokens. |
 | App lock | **local_auth** + PIN | Biometric + fallback. |
@@ -96,7 +98,7 @@ no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* 
       ai/               (P10, P12–P13) graph view, related, model selector, AI tools
     main.dart
   android/              Kotlin host + youtubedl-android + Pigeon glue
-  windows/              (v2) desktop runner + bundled binaries
+  windows/              (P15) desktop runner + bundled binaries
   test/                 unit/widget tests
   pigeons/              Pigeon API definitions
 ```
@@ -117,7 +119,7 @@ no telemetry, no cloud, ever.** AI is core to the vision, so **v1 ships *after* 
 Exposes at minimum: `probeFormats(url)`, `download(request) → Stream<Progress>`,
 `cancel(id)`, `extractMetadata(url)`. Implementations:
 - **Android**: `AndroidYtDlpEngine` → Pigeon → Kotlin → `youtubedl-android`.
-- **Windows (v2)**: `WindowsProcessEngine` → `Process.start(yt-dlp.exe …)`, parse
+- **Windows (P15)**: `WindowsProcessEngine` → `Process.start(yt-dlp.exe …)`, parse
   progress from stdout, invoke `ffmpeg.exe` for merge/convert.
 
 Engine selection happens once via a Riverpod provider keyed on `Platform`. UI and
@@ -306,7 +308,7 @@ follow these rules in code and docs:
   schema, sync, algorithm→feature map. Source of truth for the graph pillar.
 - `docs/AI-SPEC.md` — (P10, P12–P13) on-device edge-AI spec: per-capability AI engines, device tiers,
   runtime/models + licensing, local GraphRAG. Source of truth for AI.
-- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P16, two bands v1/v2; v3 dropped).
+- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P17, single v1 band; v3 dropped).
 - `docs/VERIFICATION.md` — per-phase on-device manual test checklist (what CI can't
   cover); used for spot-checks and full v1-release regression.
 - `docs/design/DESIGN_SPEC.md` — (P7) the living design system: brand, color/type/
@@ -328,7 +330,7 @@ follow these rules in code and docs:
 - `docs/design/P13-PLAN.md` — (P13) LLM feature surface & polish sub-roadmap (P13a–P13f: abstractive
   summarization, ML Kit translation/OCR, smart auto-tagging, local GraphRAG "Ask your library", advanced
   graph analytics, model-selector UX + phase close).
-- `docs/things-engine.md` — (v2 initiative, no P-number) the **Things Engine** vision one-pager: the
+- `docs/things-engine.md` — (**P14** vision one-pager) the **Things Engine**: the
   library reframed as a typed, on-device graph of schema.org Things.
 - `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,
   not 823 classes); **ADR-0002** narrow-then-fill curator; **ADR-0003** MediaObject as the file-leaf +

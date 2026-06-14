@@ -1,19 +1,19 @@
 # GrabBit — Multi-Phase Roadmap
 
-Status: Draft v0.4 · Last updated: 2026-06-05
+Status: Draft v0.4 · Last updated: 2026-06-14
 
 Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 **Deliverables**, **Exit criteria**, and **CI/build notes**. Phases are sequential
 by default; later phases assume earlier exit criteria are met.
 
-Legend (two version bands — the former **v3 cloud/credits band is dropped**):
-- **v1 — Android, free, on-device, AI-powered:** P0–P14. Core downloader + private media manager
-  (P0–P9), then the **on-device AI + graph pillar** — P10 (baseline edge AI + Cozo graph/vector
+Legend (one band — v1 is the **full envisioned product**; the former **v3 cloud/credits band is dropped**):
+- **v1 — Android + Windows, free, on-device, AI-powered (P0–P17).** Core downloader + private media
+  manager (P0–P9), then the **on-device AI + graph pillar** — P10 (baseline edge AI + Cozo graph/vector
   foundation) · P12 (device-tiered edge LLM engine) · P13 (LLM features + local GraphRAG) — with the
-  **Activity Inbox (P11)** slotted between P10 and the edge-LLM work, then
-  **P14 (beta, production readiness & launch)**. AI is core to the vision, so **v1 ships *after* it**.
-- **v2 — local-only expansion (still free/offline):** P15 (Windows parity) · P16 (production polish
-  + authenticated/cookie import).
+  **Activity Inbox (P11)** slotted between P10 and the edge-LLM work; then the **Things Engine (P14)** —
+  the typed schema.org graph — **Windows parity (P15)**, **production polish + authenticated/cookie import
+  (P16)**, and finally **beta, production readiness & launch (P17)**. AI is core to the vision, and we
+  **launch as the full envisioned scope**, so the launch phase is **last**.
 
 The app is **free forever and fully offline** — sustained by an **optional donations link**, with
 **no ads and no telemetry**. (The previous **v3** Supabase/Gemini/credit phases are **deleted**; the
@@ -23,7 +23,7 @@ for the AI/graph phases lives in `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`, and
 
 ---
 
-# v1 — Android, free, on-device, AI-powered
+# v1 — Android + Windows, free, on-device, AI-powered
 
 ## P0 — Foundation
 **Goals:** stand up a buildable Flutter project + the architecture skeleton + CI.
@@ -76,7 +76,7 @@ app, reopen with PIN/biometric.
 
 ## P3 — Multi-Site + Bulk
 **Goals:** breadth + scale. **Public content only** — authenticated/private content
-(cookie/login import) is deferred to **v2** (see P16).
+(cookie/login import) is deferred to **P16**.
 **Deliverables:**
 - Instagram, TikTok, X (and more yt-dlp supports) verified for **public** posts,
   playlists, and carousels; clear errors for unsupported/broken extractors.
@@ -223,7 +223,7 @@ breakdown lives in **`docs/design/P9-PLAN.md`**.
   and app-icon disguise are deliberately cut (see `docs/BACKLOG.md`).
 - **P9f — Storage & download safety**: a proactive **low-storage guard** (pre-flight free-space
   gate) and **battery-aware pause** on the scheduler; **orphaned-file cleanup**; and **device
-  free/total** on the Storage screen. (PiP from P9c deferred to v2/P16; scheduling deferred.)
+  free/total** on the Storage screen. (PiP from P9c deferred to P16; scheduling deferred.)
 - **P9g/P9h/P9i/P9j — Actions, menus & polish**: a shared per-item **context menu** + **outbound
   Share** across the grids (P9g); **library multi-select + bulk actions** (P9h); **screen-level
   action menus** — collection/album app-bar actions, whole-queue actions, item-detail richness
@@ -396,24 +396,27 @@ verification pass** (`docs/VERIFICATION.md`) is owed before close — running it
 per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 **Refs:** `docs/AI-SPEC.md` §5–6, `docs/GRAPH-SPEC.md` §7.
 
-## P14 — v1 Beta, Production Readiness & Launch
-**Goals:** harden and **ship v1** (now an AI-powered downloader + private media manager).
-**Deliverables:** **release signing** (keystore + CI secret; the ship blocker); performance
-hardening (large library grid/thumbnails, DB indices, big-playlist picker, AI/graph index build);
-**i18n scaffolding** (ARB/l10n); **distribution** (GitHub Release with the signed APK + a landing
-site, install guides, README; version bump); an **optional donations link in the About screen**
-(no ads, no telemetry); final full `docs/VERIFICATION.md` regression on the signed release APK.
-**Exit criteria:** signed release APK installs and passes the full on-device regression; published
-for sideload. **→ v1 complete (Android, free, offline, AI-powered).**
-
----
-
-# v2 — Local-only expansion (Windows + polish; still free/offline)
-
-> **Acknowledged (no phase number): the Things Engine.** A v2 initiative that reframes the library as a
-> domain-agnostic graph of typed **schema.org Things** (on-device, free, no cloud). Strategic decisions
-> are locked but it is **not yet scheduled** and carries **no P-number**; it sits alongside P15/P16, not
-> within them. See `docs/things-engine.md` (vision) and `docs/decisions/` (ADR-0001–0004).
+## P14 — Things Engine
+**Goals:** evolve the private library from a media store into a **domain-agnostic, on-device graph of
+typed schema.org Things** (Recipe/Event/Place/Article/Product + the existing media as MediaObjects) —
+captured by a narrow-then-fill curator and reasoned over by the on-device GraphRAG built in P13. All
+on-device, free, no cloud. Builds directly on the P10–P13 AI/graph pillar while it's fresh; the inert
+seams shaped in P12–P13 (`generateStructured`, the `structured_extraction` capability row, the empty
+`things` table, typed-node GraphRAG) are now activated.
+**Deliverables (high level — the subphase map lands in `docs/design/P14-PLAN.md` at phase start):**
+- **Generic Thing store**: schema.org vocabulary as a data asset; Things as JSON-LD + promoted columns in
+  the `things` table (ADR-0001); Drift stays canonical.
+- **MediaObject bridge**: project existing `media_items` as MediaObject Things at zero migration cost
+  (ADR-0003); the full physical-spine merge stays a deferred open question (`docs/BACKLOG.md`).
+- **Narrow-then-fill curator**: classify an input, then fill its typed fields via `generateStructured`
+  (ADR-0002); suggest, don't assert.
+- **Relationships + provenance**: the three edge kinds + the authored-edge moat (ADR-0004).
+- **Unified Grab intake**: URL + uploads + camera + barcode into the same typed pipeline.
+- **~6 priority types** with bespoke capture/UX/exporters + **typed-node GraphRAG** ("ask your library"
+  over any Thing, not just media).
+**Exit criteria:** a saved input becomes a typed Thing with structured fields + relationships, browsable
+and answerable via GraphRAG — all on-device; existing media keep working unchanged (projected as
+MediaObjects). **Refs:** `docs/things-engine.md`, `docs/decisions/` (ADR-0001–0004), `docs/AI-SPEC.md` §2–6.
 
 ## P15 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
@@ -421,18 +424,29 @@ for sideload. **→ v1 complete (Android, free, offline, AI-powered).**
 adapter (filesystem export); desktop-adapted UI; **MSIX** packaging; binary update path. **Cozo on
 Windows:** the C-API path — `cozo_c.dll` via `dart:ffi`/`ffigen` on a dedicated isolate (the
 `GraphStore` Windows impl), per `docs/GRAPH-SPEC.md` §2.2.
-**Exit criteria:** Windows build downloads + manages media (incl. the graph/AI features); feature
-parity with v1. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
+**Exit criteria:** Windows build downloads + manages media (incl. the graph/AI/Things features); feature
+parity with the Android app. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
 ## P16 — Production Polish + Authenticated Content
-**Goals:** make the local-only app genuinely world-class and production-ready.
+**Goals:** make the app genuinely world-class and production-ready across both platforms.
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced configuration,
 refined UX across all flows, robust update/onboarding.
-- **Authenticated/private content** (deferred from v1): per-site **cookie/login import** so users
-  can download their own private/age-gated/followers-only media, with cookies stored via
-  `flutter_secure_storage`. Stays on-device — no account, no cloud, still free.
-**Exit criteria:** v2 is stable, polished, and self-recommending; ready for wider (still off-store)
-distribution. **→ v2 complete.**
+- **Authenticated/private content**: per-site **cookie/login import** so users can download their own
+  private/age-gated/followers-only media, with cookies stored via `flutter_secure_storage`. Stays
+  on-device — no account, no cloud, still free.
+**Exit criteria:** the app is stable, polished, and self-recommending across Android + Windows; ready for
+the launch phase.
+
+## P17 — v1 Beta, Production Readiness & Launch
+**Goals:** harden and **ship v1** — the **full envisioned product** (AI-powered downloader + private
+media manager + Things Engine, on Android + Windows).
+**Deliverables:** **release signing** (keystore + CI secret; the ship blocker); performance
+hardening (large library grid/thumbnails, DB indices, big-playlist picker, AI/graph index build);
+**i18n scaffolding** (ARB/l10n); **distribution** (GitHub Release with the signed APK + a landing
+site, install guides, README; version bump); an **optional donations link in the About screen**
+(no ads, no telemetry); final full `docs/VERIFICATION.md` regression on the signed release APK.
+**Exit criteria:** signed release APK installs and passes the full on-device regression; published
+for sideload. **→ v1 complete (Android + Windows, free, offline, AI-powered).**
 
 ---
 
@@ -440,7 +454,7 @@ distribution. **→ v2 complete.**
 
 The former v3 band (Supabase backend + accounts, Genkit→Gemini cloud AI, Stripe/PayPal credit
 monetization, public cloud launch) is **removed**. GrabBit is **free forever and fully offline**,
-sustained by an **optional donations link** (P14) — no ads, no telemetry, no accounts, no cloud. The
+sustained by an **optional donations link** (P17) — no ads, no telemetry, no accounts, no cloud. The
 AI engine interfaces still leave a *theoretical* seam for a future cloud implementation, but
 it is **not a planned phase**. (The corresponding cloud contracts in `docs/SPEC.md` §9.1–9.2 and
 `docs/ARCHITECTURE.md` §9 are retained only as a historical/optional reference, marked dropped.)

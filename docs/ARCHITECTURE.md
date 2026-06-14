@@ -37,7 +37,7 @@ Flutter/plugin imports. Dependencies point inward; outer layers implement inner
 interfaces. Everything platform-specific hides behind a domain interface.
 
 **Forward-compatibility:** the AI + graph layer is shaped during P12–P13 so a future typed-**Thing**
-corpus slots in without reworking it — see the v2 Things Engine (`docs/things-engine.md`,
+corpus slots in without reworking it — see the P14 Things Engine (`docs/things-engine.md`,
 `docs/decisions/`); the concrete seams are noted in §4 and §8.
 
 ---
@@ -105,7 +105,7 @@ Tables (full schema in `docs/SPEC.md`):
 
 Migrations: Drift schema versioning; never destructive without migration.
 
-**Forward seam — the (planned) `things` table (v2 Things Engine).** During P12–P13 a **generic
+**Forward seam — the (planned) `things` table (P14 Things Engine).** During P12–P13 a **generic
 `things` table** (schema.org Things as JSON-LD + promoted columns) is introduced **empty** as a forward
 seam; **Drift stays canonical and the Cozo graph stays the derived index**, with `things.id` kept
 alignable to `media_items.id` so existing media projects into typed MediaObject Things later with no
@@ -199,7 +199,7 @@ abstract interface class GenerationEngine {
   GenerationModel get model;
   Stream<String> generate(String prompt, {String? systemPrompt});
 }
-// A generateStructured seam (P12f forward seam, v2 Things Engine) follows the same shape.
+// A generateStructured seam (P12f forward seam, P14 Things Engine) follows the same shape.
 ```
 *(full method set in `docs/AI-SPEC.md` §2.)*
 
@@ -208,7 +208,7 @@ abstract interface class GenerationEngine {
 - **ModelCapabilityMatrix** maps `feature → eligibleLocalModels[byTier]`. Drives capability-gating
   and the **model selector** UI; unsupported features are clearly disabled with a friendly reason. A
   **`structured_extraction`** row + the `generateStructured` seam above are shaped in P12 but **inert in
-  v1**, and the GraphRAG harness operates over **generic typed nodes** — so the v2 Things Engine slots
+  v1**, and the GraphRAG harness operates over **generic typed nodes** — so the P14 Things Engine slots
   in without reworking this layer. *(forward seams — `docs/decisions/` ADR-0001–0004,
   `docs/things-engine.md`.)*
 - **`flutter_gemma`** (MediaPipe LLM Inference / **LiteRT-LM**) is the primary local runtime for

@@ -1,15 +1,15 @@
 # ADR-0002 — Narrow-then-fill curator architecture
 
-- **Status:** Accepted (v2 Things Engine — architectural foundation, not yet scheduled)
+- **Status:** Accepted (P14 Things Engine — architectural foundation)
 - **Date:** 2026-05-28
 - **Deciders:** Founder/Architect
-- **Context band:** v2 (the Things Engine; see `docs/things-engine.md`). v1 (P12→P13→P14)
-  is unchanged; the only v1 touch is the `generateStructured(...)` seam this ADR motivates
-  (`docs/AI-SPEC.md` §2).
+- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+  P0–P13 are unchanged; the only earlier touch is the `generateStructured(...)` seam this ADR motivates,
+  shaped inert in P12 (`docs/AI-SPEC.md` §2).
 
 ## Context
 
-The v2 Things Engine turns arbitrary inputs — a pasted URL, an uploaded file, a camera capture, a
+The P14 Things Engine turns arbitrary inputs — a pasted URL, an uploaded file, a camera capture, a
 barcode, a screenshot, a block of plaintext — into typed schema.org Things (ADR-0001). The hard part
 is **deciding what type a thing is and filling its properties** without an expensive, error-prone
 "throw everything at a big LLM" step on every input.
@@ -119,7 +119,7 @@ These three drive the design and are the acceptance lens for the curator when it
   against a **minimal schema set**, maximizing accuracy and minimizing latency/battery on-device.
 - Cleanly **AI-tier-gated**: branch (a) is device-universal; (b)/(c) layer on for capable devices,
   with a defined degraded path — matching GrabBit's "graceful gating, never a crash" rule.
-- The seam (`generateStructured`) is **small and shaped during v1** (P12/P13), so v2 slots in without
+- The seam (`generateStructured`) is **small and shaped during v1** (P12/P13), so P14 slots in without
   reworking the AI engine contracts.
 - Reuses signals GrabBit already builds (embedder, OCR, probe, capability matrix) rather than adding a
   parallel ML stack.
@@ -128,7 +128,7 @@ These three drive the design and are the acceptance lens for the curator when it
 
 - **Classifier/narrowing quality is now load-bearing.** A wrong narrow can exclude the correct type.
   Mitigation: conservative narrowing (prefer a slightly larger candidate set when unsure) and a
-  manual type-override affordance in the UI when v2 ships.
+  manual type-override affordance in the UI when P14 ships.
 - **More moving parts than one big prompt.** The Curator is genuine routing logic with several signal
   sources; it must be testable in isolation (deterministic branch selection given fixed signals).
 - **Two model candidates carry a license fork** (FunctionGemma's Gemma terms vs. Qwen3's Apache-2.0).
@@ -157,4 +157,4 @@ These three drive the design and are the acceptance lens for the curator when it
   branches b/c).
 - `docs/AI-SPEC.md` §2 (`generateStructured`), §3 (`structured_extraction` capability + model
   candidates), §4 (licensing/vetting), §5–6 (typed-node GraphRAG).
-- `docs/things-engine.md` — v2 vision one-pager.
+- `docs/things-engine.md` — P14 vision one-pager.

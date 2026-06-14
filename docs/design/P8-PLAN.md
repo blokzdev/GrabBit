@@ -3,7 +3,7 @@
 > The sub-roadmap for **P8** (see `docs/ROADMAP.md`). P8 deepens the downloader into a
 > power-user tool and makes getting links in effortless. Everything is **on-device =
 > FREE** (CLAUDE.md §1): no cloud, no accounts, and **no authenticated/cookie work**
-> (that stays in v2, P16). Most of P8 is native (Pigeon → Kotlin → youtubedl-android),
+> (that stays in P16). Most of P8 is native (Pigeon → Kotlin → youtubedl-android),
 > so it is verified on-device.
 
 ## How subphases work

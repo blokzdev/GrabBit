@@ -1,9 +1,10 @@
-# GrabBit — The Things Engine (v2 vision)
+# GrabBit — The Things Engine (P14 vision)
 
-> **Status: v2 initiative · not yet scheduled (no P-number).** A one-page vision, not a PRD. v1
-> (P12→P13→P14) ships exactly as planned; this describes where GrabBit goes *after* it. The strategic
-> decisions are locked in `docs/decisions/` (ADR-0001/0002/0003); the v1 seams that prepare for it
-> live in `docs/AI-SPEC.md` §2–6 and `docs/ARCHITECTURE.md` §8.
+> **Status: scheduled as v1 phase P14** (after the P10–P13 AI/graph pillar; before Windows P15, polish P16,
+> and launch P17). A one-page **vision**, not a PRD — the granular subphase map lands in
+> `docs/design/P14-PLAN.md` when the phase starts (per CLAUDE.md §7). The strategic decisions are locked in
+> `docs/decisions/` (ADR-0001/0002/0003); the inert seams that prepare for it, shaped in P12–P13, live in
+> `docs/AI-SPEC.md` §2–6 and `docs/ARCHITECTURE.md` §8.
 
 ## Problem
 
@@ -34,7 +35,7 @@ and calls a small on-device function-calling model only when content must be rea
 (ADR-0002). Relationships, and the **provenance** that makes every fact and link trustworthy and
 re-improvable, are first-class — and AI-inferred ones are **proposed, not silently asserted** (ADR-0004).
 
-## Scope (v2, directional)
+## Scope (P14, directional)
 
 - **Generic Thing store** — schema.org Things (the vocabulary rooted at `Thing`) as JSON-LD in a
   `things` table; the schema.org vocabulary bundled as a read-only validation/grounding asset (ADR-0001).
@@ -56,7 +57,8 @@ re-improvable, are first-class — and AI-inferred ones are **proposed, not sile
 
 ## Non-goals
 
-- **Not a v1 feature.** Nothing here changes the v1 launch path or v1 user-visible scope.
+- **Sequenced after the AI pillar (P14).** Nothing here changes the already-built P0–P13 scope or its
+  user-visible behavior; the Things Engine is purely additive, and launch (P17) still comes last.
 - **Not a code-generated schema.org** — no per-type Dart classes, no per-type tables.
 - **Not a pivot away from downloading.** The downloader + private container remain the foundation; the
   Things layer sits on top of them.
@@ -75,9 +77,9 @@ re-improvable, are first-class — and AI-inferred ones are **proposed, not sile
 - The long-tail vocabulary is storable/searchable/linkable on day one with **no per-type code**.
 - "Ask your library" answers span **multiple Thing types**, not just media, citing the underlying
   Things.
-- Retrofitting the Things layer onto v1's AI architecture costs **little**, because the
+- Building the Things layer on the P10–P13 AI architecture costs **little**, because the
   `generateStructured` seam, the `structured_extraction` capability row, the (planned) empty `things`
-  table, and the typed-node GraphRAG harness were shaped during P12–P14.
+  table, and the typed-node GraphRAG harness were shaped during P12–P13.
 
 ## Related
 
@@ -86,5 +88,5 @@ re-improvable, are first-class — and AI-inferred ones are **proposed, not sile
   `0004-relationships-provenance-and-the-authored-edge-moat.md`.
 - v1 seams: `docs/AI-SPEC.md` §2–6, `docs/design/P-AI-PLAN.md` (P12/P13), `docs/ARCHITECTURE.md` §8,
   `docs/GRAPH-SPEC.md` §10 (graph Things-readiness seam map — why the P13 graph features generalize unchanged).
-- Logged in `docs/BACKLOG.md`; acknowledged (no phase number) in `docs/ROADMAP.md`; sibling v2 entry
-  in `docs/PRD.md` §9.
+- Scheduled as **P14** in `docs/ROADMAP.md`; sibling entry in `docs/PRD.md` §9; open questions tracked in
+  `docs/BACKLOG.md`.

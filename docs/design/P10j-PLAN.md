@@ -153,7 +153,7 @@ tappable hint. **No IA change, no new settings surfaced, no copy rewrites** beyo
 - **`InfoHint`** — the key UX upgrade. A tappable `Icons.info_outline` (an `IconButton`, real
   hit target) that opens a **`showModalBottomSheet`** with the setting's title + a
   plain-language explanation. Touch-first; keeps a `Tooltip` semantics label for
-  accessibility/desktop hover (v2). Takes `(title, body)`.
+  accessibility/desktop hover (P15/P16). Takes `(title, body)`.
 - Migrate the **3 existing Transcript tooltips** to `InfoHint` (same copy) to prove the
   affordance. Everything else is a like-for-like widget swap.
 
@@ -294,4 +294,4 @@ trailing icon so help is attached to the control it explains.
 - **Cross-screen control-type unification** (e.g. library's `SegmentedButton` vs settings'
   `DropdownButton`). Within Settings the dropdown convention is consistent; harmonizing across
   features is a separate concern.
-- **Windows settings parity** — v2 / P15.
+- **Windows settings parity** — P15.
