@@ -209,7 +209,7 @@ lean for speed, not for a minutes budget:
   whole-phase map: the goal, a **granular subphase breakdown** (each with scope + exit criteria), and the
   **phase-level decisions** — and get it **approved before** the first subphase is planned or built. The
   map is its own small docs PR; it locks the decomposition (and keeps it phone-reviewable) before any
-  code. Then plan and execute each subphase as its own PR per the rules below. (P7/P8/P9/P10j/P11/P12/P13
+  code. Then plan and execute each subphase as its own PR per the rules below. (P7/P8/P9/P10j/P11/P12/P13/P14
   each have such a plan doc.)
 - **`main`** is the default, integration branch — **never commit directly to it.**
 - **Branches are single-use per PR.** Each PR gets its own **fresh** branch, **cut from the latest
@@ -338,6 +338,9 @@ posture defensible and reduce takedown risk, follow these rules in code and docs
 - `docs/design/P13-PLAN.md` — (P13) LLM feature surface & polish sub-roadmap (P13a–P13f: abstractive
   summarization, ML Kit translation/OCR, smart auto-tagging, local GraphRAG "Ask your library", advanced
   graph analytics, model-selector UX + phase close).
+- `docs/design/P14-PLAN.md` — (P14) Things foundation + MediaObject projection sub-roadmap (P14a–P14f:
+  schema.org vocabulary asset + Thing/JSON-LD core, `ThingRepository`, MediaObject projection, relationships
+  + provenance, Cozo/GraphRAG over Things, diagnostic + phase close). First phase of the Things Engine band.
 - `docs/things-engine.md` — (the **P14–P16** spine; vision one-pager) the **Things Engine**: the
   library reframed as a typed, on-device graph of schema.org Things.
 - `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,
