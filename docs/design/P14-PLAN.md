@@ -115,7 +115,7 @@ Thing graph (ADR-0003).
   backfill/idempotence/update/prune. **CI green; the real-library backfill/sync APK spot-check is batched into
   the P14 consolidated on-device pass — stays `[~]` until then** (CLAUDE.md §7).
 
-### `[ ]` P14d — Relationships & provenance foundation *(Drift + pure Dart; CI; the one schema bump)*
+### `[x]` P14d — Relationships & provenance foundation *(Drift + pure Dart; CI; the one schema bump)*
 The durable plumbing for the three edge kinds + provenance (ADR-0004) — store + derivation only, no authoring.
 - The **`grabbit:` provenance block** convention inside a Thing's JSON-LD (`provenance` ∈ {`direct-parse`,
   `single-tool`, `narrowed-set`, `user-authored`, `ai-suggested`, `ai-inferred`, `vector-similarity`},
@@ -129,6 +129,13 @@ The durable plumbing for the three edge kinds + provenance (ADR-0004) — store 
   authoring UI** (P15+); reified relationships (kind 3) deferred.
 - **Exit / review:** provenance round-trips in JSON-LD; vocabulary edges derive deterministically; `thing_edges`
   CRUD + the **v14→v15 upgrade** are tested. *(CI.)*
+- **Status:** shipped — `provenance.dart` (the `grabbit:provenance` block + `Provenance` enum, now adopted by
+  the MediaObject projection with a deterministic `capturedAt`), `vocabulary_edges.dart`
+  (`deriveVocabularyEdges` — structural `@id`-reference detection, since the vocab indexes `domainIncludes`,
+  not `rangeIncludes`), the `ThingEdges` Drift table + `thing_edge_repository.dart`, and the **v14→v15**
+  migration. Composite PK `{subject,predicate,object}`; **no FK** (mirrors `things.id`, ADR-0003 — edges
+  outlive a rebuilt Thing). Pure-Dart/Drift, migration covered by an upgrade test (v13→v14 precedent) →
+  **CI-discharged → `[x]` on merge.**
 
 ### `[ ]` P14e — Cozo Thing projection + Thing-aware hydration → graph & GraphRAG over Things *(graph; APK)*
 Make the on-device graph + "Ask your library" operate over Things, reusing the GRAPH-SPEC §10 seams.

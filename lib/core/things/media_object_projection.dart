@@ -1,11 +1,6 @@
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/things/provenance.dart';
 import 'package:grabbit/core/things/thing_doc.dart';
-
-/// Bumped when the projection logic changes. Stamped into every projected Thing's
-/// `grabbit:provenance` so a logic change is visible; correctness doesn't depend on
-/// it (the backfill diffs on the canonical `jsonld`, which changes when the logic
-/// does), but it keeps the provenance honest.
-const int kMediaObjectProjectionVersion = 1;
 
 /// The schema.org `MediaObject` subtypes this projection emits — the set the
 /// backfill prunes against (a Thing of one of these types whose media row is gone
@@ -66,10 +61,14 @@ ThingDoc projectMediaObject(MediaItem item, MediaMetadataData? meta) {
     };
   }
 
-  json['grabbit:provenance'] = {
-    'method': 'direct-parse',
-    'projectionVersion': kMediaObjectProjectionVersion,
-  };
+  // Provenance (ADR-0004): a deterministic direct-parse from the canonical media
+  // row. `capturedAt` is the stable `createdAt` (never `now()`) so re-projection
+  // stays byte-identical and the P14c backfill diff holds.
+  json[kGrabbitProvenanceKey] = grabbitProvenanceBlock(
+    provenance: Provenance.directParse,
+    sourceRef: item.sourceUrl,
+    capturedAt: item.createdAt,
+  );
 
   return ThingDoc(json);
 }

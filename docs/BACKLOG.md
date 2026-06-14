@@ -300,6 +300,10 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
       `encodingFormat` (derive a MIME from the file extension), `inLanguage` (no language field captured yet),
       and surfacing GrabBit-derived annotations (`aiSummary` → `abstract`, `ocrText`) onto the Thing. Add when a
       consumer needs them; the projection-version bump re-derives existing Things automatically. *(From P14c.)*
+- [ ] **Orphan `thing_edges` cleanup** — authored edges intentionally have **no FK** to `things` (ADR-0003: an
+      edge must outlive a transiently-rebuilt Thing), so an edge can dangle if a referenced Thing is permanently
+      deleted. Decide a cleanup policy (lazy skip at hydration vs a periodic sweep) once a consumer exists
+      (P14e/P15); the moat value argues for keeping edges by default. *(From P14d.)*
 
 ## Done
 - [x] **Engine auto-update on launch** + Settings toggle (fresh installs were failing

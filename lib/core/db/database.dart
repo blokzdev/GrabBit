@@ -191,6 +191,30 @@ class Things extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// P14d — the durable **authored-edge store** (ADR-0004 kind 2). A loosely-typed,
+/// directed [subject]→[object] relationship (Thing id → Thing id) labelled by
+/// [predicate] (e.g. `relatedTo`), that a user *or* the AI may assert. [provenance]
+/// (an ADR-0004 wire value) + optional [confidence] (0.0–1.0) + [note] let P15 gate
+/// AI-inferred edges through the P11 Activity Inbox ("suggest-don't-assert").
+///
+/// **No foreign key** on [subject]/[object] (mirrors the `things.id` no-FK rule,
+/// ADR-0003): authored edges are the compounding asset and must outlive a
+/// transiently-rebuilt Thing; orphan cleanup is deferred (`docs/BACKLOG.md`).
+/// *Vocabulary edges* (ADR-0004 kind 1) are **derived, not stored** — see
+/// `vocabulary_edges.dart`.
+class ThingEdges extends Table {
+  TextColumn get subject => text()(); // from Thing id (no FK, ADR-0003)
+  TextColumn get predicate => text()(); // relationship label, e.g. relatedTo
+  TextColumn get object => text()(); // to Thing id (no FK, ADR-0003)
+  TextColumn get provenance => text()(); // ADR-0004 wire value
+  RealColumn get confidence => real().nullable()(); // 0.0–1.0
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {subject, predicate, object};
+}
+
 /// Single-row settings blob (JSON), keyed on a fixed id (see SPEC §4).
 class AppSettings extends Table {
   IntColumn get id => integer().withDefault(const Constant(0))();
@@ -243,6 +267,7 @@ class ChatMessages extends Table {
     AppSettings,
     Notifications,
     Things,
+    ThingEdges,
     Chats,
     ChatMessages,
   ],
@@ -252,7 +277,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -336,6 +361,11 @@ class AppDatabase extends _$AppDatabase {
         // data migration (mirrors the v8→v9 notifications / v9→v10 things steps).
         await m.createTable(chats);
         await m.createTable(chatMessages);
+      }
+      if (from < 15) {
+        // P14d: the authored-edge store (ADR-0004 kind 2). New table only — no
+        // data migration (mirrors the v9→v10 things / v13→v14 chats steps).
+        await m.createTable(thingEdges);
       }
       await _createIndices();
       await _createFtsObjects();
