@@ -1125,6 +1125,28 @@ per-subphase rows above stay as the granular per-feature reference). Running thi
       fallback** (now over Things) — no crash, no empty gap.
 - [ ] **Fully offline** (airplane mode) after any one-time model fetch.
 
+### P14f — Diagnostic surface  *(install any debug APK; the "View as Thing" diagnostic needs Advanced mode)*
+- [ ] **View as Thing (JSON-LD):** in **Advanced** mode, an item's overflow menu → **View as Thing (JSON-LD)**
+      shows that item's `MediaObject` JSON-LD **with its `grabbit:provenance` block** (`direct-parse` + source +
+      capturedAt); **Copy** works; the action is **absent in Simple mode**.
+- [ ] **Things count:** Settings → AI shows **"Things in your library — N Things · M authored edges"**, and N
+      tracks the library (matches the item count after a backfill).
+
+### P14 — consolidated cross-feature on-device pass  *(the phase-close gate; run on one low-tier + one mid/high device)*
+The single owed verification for the whole phase — exercises P14 **together** (the per-subphase rows above stay
+as the granular reference). Running this pass is what closes P14 (flips P14c/P14e/P14f → `[x]`).
+- [ ] **Projection over a real library:** after updating, **every** download is a typed `MediaObject` Thing;
+      the AI-settings Things count equals the library item count; a **new download** projects on completion; a
+      **deleted** item's Thing is pruned — all offline, no dupes.
+- [ ] **Graph + "Ask" over Things:** semantic search / Related / neighborhood / connection-path / Rediscover /
+      Discovered albums all work with **no regression**; on a capable device "Ask your library" answers
+      **grounded + citing MediaObject Things**; the rebuild/self-test report `things · thing-edges`.
+- [ ] **Provenance visible:** the **View as Thing** diagnostic renders a real item's JSON-LD + `grabbit:`
+      provenance; the data looks faithful to the source.
+- [ ] **Gracefully device-universal:** on a **low/ineligible** device the Things floor (store, projection,
+      graph, diagnostic, counts) still works and "Ask" degrades to the **retrieval-only** fallback — never a
+      crash or empty gap; everything **offline** bar any one-time model fetch.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

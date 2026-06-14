@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,16 @@ import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/item_detail_screen.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/related_provider.dart';
+import 'package:grabbit/features/settings/data/settings_model.dart';
+import 'package:grabbit/features/settings/presentation/settings_controller.dart';
+
+/// Fixed-settings controller, to drive the Simple/Advanced gate in tests.
+class _FakeSettings extends SettingsController {
+  _FakeSettings(this._value);
+  final SettingsModel _value;
+  @override
+  Future<SettingsModel> build() async => _value;
+}
 
 MediaItem _item({String storageState = 'private', DateTime? lastAccessedAt}) =>
     MediaItem(
@@ -327,6 +338,79 @@ void main() {
         metadata: const MediaMetadataData(itemId: 'x', description: 'Hi.'),
       );
       expect(find.text('Transcript'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'View as Thing (JSON-LD) is hidden in Simple mode (P14f)',
+    (tester) async {
+      await pump(tester, _item()); // default UiMode.simple
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      expect(find.text('View as Thing (JSON-LD)'), findsNothing);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'Advanced mode shows View as Thing and renders the JSON-LD (P14f)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await db
+          .into(db.things)
+          .insert(
+            ThingsCompanion.insert(
+              id: 'x',
+              type: 'ImageObject',
+              jsonld: '{"@type":"ImageObject","name":"My Clip"}',
+              name: const Value('My Clip'),
+              createdAt: DateTime.utc(2026),
+              updatedAt: DateTime.utc(2026),
+            ),
+          );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(db),
+            settingsControllerProvider.overrideWith(
+              () => _FakeSettings(const SettingsModel(mode: UiMode.advanced)),
+            ),
+            mediaItemByIdProvider('x').overrideWith((ref) => _item()),
+            metadataForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(null)),
+            tagsForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<Tag>[])),
+            aiTagNamesForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<String>{})),
+            collectionsForItemProvider(
+              'x',
+            ).overrideWith((ref) => Stream.value(<Collection>[])),
+          ],
+          child: const MaterialApp(home: ItemDetailScreen(itemId: 'x')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      expect(find.text('View as Thing (JSON-LD)'), findsOneWidget);
+
+      await tester.tap(find.text('View as Thing (JSON-LD)'));
+      await tester.pumpAndSettle();
+      // The dialog renders the pretty-printed JSON-LD + a Copy action.
+      expect(find.text('Thing (JSON-LD)'), findsOneWidget);
+      expect(find.textContaining('"@type": "ImageObject"'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Copy'), findsOneWidget);
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );
