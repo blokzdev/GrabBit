@@ -38,9 +38,10 @@ ships an embeddable, mobile-ready build.
 
 Cozo is **MPL-2.0** — *file-level* copyleft on Cozo's **own source files** only. We **link/bundle**
 Cozo, we do not modify its sources, so MPL places **no obligation on GrabBit's own code** and nothing
-on our distribution. MPL-2.0 is fully compatible with GrabBit's **Apache-2.0** license, so we can bundle
-and ship Cozo freely. (If we ever patched a Cozo source file, only that file's changes would need
-publishing — we don't plan to.)
+on our distribution. MPL-2.0 is **GPL-compatible** (standard MPL-2.0, not the "Incompatible With Secondary
+Licenses" variant), so it combines cleanly with GrabBit's **GPL-3.0** license and we can bundle and ship
+Cozo freely. (If we ever patched a Cozo source file, only that file's changes would need publishing — we
+don't plan to.)
 
 ---
 

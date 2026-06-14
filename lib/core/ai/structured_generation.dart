@@ -1,7 +1,7 @@
 /// Forward-seam types for **function-calling / typed-tool-fill** generation
 /// (P12f). These shape the `generateStructured` seam on [GenerationEngine] so the
-/// **v2 Things Engine** curator's "narrow-then-fill" step (ADR-0002) can slot in
-/// without reworking the AI engine contracts. **Inert in v1** — no v1 feature
+/// **P14 Things Engine** curator's "narrow-then-fill" step (ADR-0002) can slot in
+/// without reworking the AI engine contracts. **Inert until P14** — no earlier feature
 /// calls `generateStructured`, and no shipped model implements it yet (the
 /// function-calling model license fork — FunctionGemma vs Qwen3 — is deferred to
 /// P13; see `docs/BACKLOG.md`). Kept deliberately thin: just enough to type the

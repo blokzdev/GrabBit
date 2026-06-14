@@ -286,9 +286,10 @@ with the terms of service and copyright law of the sites they use. GrabBit hosts
 off-Play-Store (sideload + landing site) precisely because of platform policies.
 Include a clear user-responsibility disclaimer in-app and on the landing site.
 
-The repo is **open-source under Apache-2.0** (see `LICENSE`) — the same posture as
-yt-dlp / Seal / NewPipe. To keep that posture defensible and reduce takedown risk,
-follow these rules in code and docs:
+The repo is **open-source under GPL-3.0** (see `LICENSE`) — the same copyleft posture as
+**Seal / NewPipe**, and the clean fit for the **bundled copyleft ffmpeg** (shipped via
+`youtubedl-android`); third-party component notices live in `THIRD-PARTY-NOTICES.md`. To keep that
+posture defensible and reduce takedown risk, follow these rules in code and docs:
 - **Frame it as a general-purpose downloader**, never as a tool to circumvent DRM or
   paywalls. Avoid "rip", "bypass", "unlock", "crack"-style language in identifiers,
   comments, commits, and UI copy.

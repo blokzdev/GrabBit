@@ -164,12 +164,12 @@ class Notifications extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-/// **P12f forward seam — the v2 Things Engine corpus (empty in v1).** A generic,
+/// **P12f forward seam — the P14 Things Engine corpus (empty until P14).** A generic,
 /// typed graph of schema.org Things stored as **JSON-LD** ([jsonld] is the single
 /// canonical payload). The other columns are a **denormalized cache** promoted out
 /// of the JSON-LD for query/sort — never a second source of truth: on conflict the
 /// JSON-LD wins and the columns are re-derived (ADR-0001). Created empty by the
-/// v9→v10 migration; **nothing reads or writes it in v1** — the v2 Things Engine
+/// v9→v10 migration; **nothing reads or writes it before P14** — the P14 Things Engine
 /// projects `media_items` into MediaObject Things and fills richer types later.
 ///
 /// [id] is a plain TEXT primary key kept **alignable to `media_items.id`**
@@ -295,8 +295,8 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(notifications);
       }
       if (from < 10) {
-        // P12f forward seam: the empty `things` table (v2 Things Engine). No
-        // data migration — created empty; nothing reads/writes it in v1.
+        // P12f forward seam: the empty `things` table (P14 Things Engine). No
+        // data migration — created empty; nothing reads/writes it before P14.
         await m.createTable(things);
       }
       if (from < 11) {
