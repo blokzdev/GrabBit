@@ -8,7 +8,7 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 > - `docs/AI-SPEC.md` — per-capability AI engines, device tiers, runtime/models + licensing, GraphRAG.
 >
 > Banding context (see `docs/ROADMAP.md`): AI is **core to the vision** and lands mid-plan (P10, P12–P13);
-> the Things Engine builds on it (P14) and the launch phase (P17) is **last**.
+> the Things Engine builds on it (P14) and the launch phase (P19) is **last**.
 > v3/cloud is **dropped** — everything here is on-device and **free forever**.
 
 ---
@@ -248,4 +248,4 @@ low-end devices.
 - **CI unaffected** — Android consumes Cozo as a Maven dep (no NDK/Rust in CI); models download at
   runtime (not bundled). APK/native checks remain the manual `build-apk.yml` + `docs/VERIFICATION.md`.
 - **Workflow** (CLAUDE.md §7): one branch per subphase (`claude/p10a-…`), one PR each, CI green +
-  VERIFICATION updated. Windows Cozo (C-API/FFI) is deferred to **P15** (GRAPH-SPEC §2.2).
+  VERIFICATION updated. Windows Cozo (C-API/FFI) is deferred to **P17** (GRAPH-SPEC §2.2).

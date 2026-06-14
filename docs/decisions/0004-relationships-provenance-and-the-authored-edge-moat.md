@@ -1,9 +1,9 @@
 # ADR-0004 — Relationships, provenance & the authored-edge moat
 
-- **Status:** Accepted (P14 Things Engine — architectural foundation)
+- **Status:** Accepted (Things Engine P14–P16 — architectural foundation)
 - **Date:** 2026-05-29
 - **Deciders:** Founder/Architect
-- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+- **Context band:** v1 / **P14–P16** (the Things Engine; see `docs/things-engine.md`). The already-built
   P0–P13 are unchanged.
 
 ## Context
@@ -145,4 +145,4 @@ reviewable where it's inferred, consistent with GrabBit's no-surprise posture.
 - `docs/GRAPH-SPEC.md` (the existing multi-type/multi-edge Cozo graph this generalizes),
   `docs/AI-SPEC.md` §5–6 (typed-node GraphRAG), `docs/design/P11-PLAN.md` (the Activity Inbox review
   surface).
-- `docs/things-engine.md` — P14 vision one-pager.
+- `docs/things-engine.md` — P14–P16 vision one-pager.

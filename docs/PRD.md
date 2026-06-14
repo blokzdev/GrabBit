@@ -14,38 +14,39 @@ video, a reel, a thread of images — but the experience is fragmented: ad-ridde
 sketchy websites, single-site tools, paywalls, and downloads that dump straight
 into the camera roll mixed with personal photos.
 
-**Opportunity:** a clean, trustworthy, **free, on-device** downloader that doubles
-as a **private media manager** — downloads stay organized and private inside the
-app until *you* decide to export them — with **on-device AI + a relationship graph**
-that make the private library genuinely smart. **Free forever**, sustained by
-optional donations rather than ads or cloud fees.
+**Opportunity:** a clean, trustworthy, **free, on-device** place to **collect anything** worth keeping —
+not just a downloader. Media downloading (the fragmented, ad-ridden status quo) is the wedge and the first
+intake; the destination is a **private, on-device "everything library"** where **on-device AI + a
+relationship graph** organize everything you save into a typed, searchable form. **Free forever**, sustained
+by optional donations rather than ads or cloud fees.
 
 ## 2. Vision
 
-> GrabBit is the private, no-nonsense home for everything you save from the web —
-> free to download, manage, and *understand* on your device forever, with on-device
-> AI and a relationship graph that surface connections across your library. No cloud,
+> GrabBit is the private, no-nonsense home for **everything you save** — videos, files, pages, places,
+> recipes, products — free to collect, manage, and *understand* on your device forever, organized by
+> on-device AI into a typed graph of schema.org **Things**. Downloading media is one way in. No cloud,
 > no accounts, no ads.
 
-**North star:** the cleanest, most private, most capable media downloader/manager
-a normal person can sideload and trust.
+**North star:** the cleanest, most private, most capable **on-device everything-library** a normal person
+can sideload and trust — with best-in-class media downloading as its first, most built-out intake.
 
-*(The **Things Engine** (P14) extends this from a media library to a typed, interlinked
-**artifact** library — recipes, events, places, articles, products, and media as schema.org Things — all
-still on-device; see `docs/things-engine.md`.)*
+*(The **Things Engine** (the P14–P16 spine) is what turns the library from a media store into this typed,
+interlinked **artifact** library — recipes, events, places, articles, products, and media as schema.org
+Things, with AI extracting Things from what you download — all still on-device; see `docs/things-engine.md`.)*
 
 ## 3. Version Strategy (one band — v1 is the full envisioned product; v3/cloud dropped)
 
-**v1 — Android + Windows, free, on-device, AI-powered (P0–P17, offline, free).** One band that ships the
-*complete* envisioned product: downloader + private media manager (P0–P9), the **on-device AI +
-relationship-graph pillar** (P10, P12–P13) with the **Activity Inbox** (P11), then the **Things Engine
-(P14)**, **Windows parity (P15)**, **production polish + authenticated/cookie import (P16)**, and finally
-**beta, production readiness & launch (P17)** — the launch phase is last, so we ship the full envisioned
-scope.
+**v1 — GrabBit, the on-device everything-library (Android + Windows, free, AI-powered, P0–P19).** One band
+that ships the *complete* envisioned product: **media intake + private manager** (P0–P9), the **on-device AI
++ relationship-graph pillar** (P10, P12–P13) with the **Activity Inbox** (P11), then the **Things Engine
+band — the spine** (P14 foundation + MediaObject projection · P15 curator + AI Thing-extraction from
+downloads · P16 universal intake + typed types & GraphRAG), then **Windows parity (P17)**, **production
+polish + authenticated/cookie import (P18)**, and finally **beta, production readiness & launch (P19)** — the
+launch phase is last, so we ship the full envisioned scope.
 
 The app is **free forever and fully offline**, sustained by an **optional donations link**. **No
-ads, no telemetry, no cloud, no accounts — ever.** AI is core to the vision, so **v1 ships *after*
-the AI work**. (The former **v3** cloud-AI/credit band is **dropped**.)
+ads, no telemetry, no cloud, no accounts — ever.** AI is core to the vision, and the typed Things layer is
+the spine, so the **launch phase comes last**. (The former **v3** cloud-AI/credit band is **dropped**.)
 
 ## 4. Target Users & Personas
 
@@ -171,16 +172,19 @@ demand** (not bundled) to keep the install lean. Runtime: **`flutter_gemma`** (M
 - **"Ask your library"** — natural-language Q&A as **local GraphRAG** (Cozo retrieval + local LLM),
   fully on-device.
 
-## 9. Feature Set — later v1 phases (P14–P16)
+## 9. Feature Set — later v1 phases (P14–P18)
 
-- **Things Engine (P14):** reframes the library as a domain-agnostic graph of typed **schema.org Things**
-  (Recipe/Event/Place/Article/Product + the MediaObjects) stored as JSON-LD, captured by a narrow-then-fill
-  curator and reasoned over by on-device GraphRAG — all on-device, free. Strategic decisions are locked
-  (`docs/things-engine.md`, `docs/decisions/` ADR-0001–0004); the subphase map (`docs/design/P14-PLAN.md`)
-  is authored at phase start.
-- **Windows (P15)** app at parity behind the shared engine (Process-based yt-dlp/ffmpeg; Cozo via the
+- **Things Engine band — the spine (P14–P16):** turns the library into a domain-agnostic graph of typed
+  **schema.org Things** (Recipe/Event/Place/Article/Product + the MediaObjects), stored as JSON-LD, captured
+  by a narrow-then-fill curator and reasoned over by on-device GraphRAG — all on-device, free. Three phases:
+  **P14** foundation + MediaObject projection (downloads become Things via the ADR-0003 bridge); **P15**
+  curator + **AI Thing-extraction from downloads** (a cooking video → a `Recipe`); **P16** universal intake
+  (file/web/manual/camera/barcode) + the typed types, cards/exporters & typed GraphRAG. Strategic decisions
+  are locked (`docs/things-engine.md`, `docs/decisions/` ADR-0001–0004); each phase authors its
+  `docs/design/P<N>-PLAN.md` map at its start.
+- **Windows (P17)** app at parity behind the shared engine (Process-based yt-dlp/ffmpeg; Cozo via the
   C-API/FFI `GraphStore` impl).
-- **Production polish + authenticated content (P16):** accessibility, complete i18n, performance
+- **Production polish + authenticated content (P18):** accessibility, complete i18n, performance
   hardening, advanced configuration, deep polish, plus per-site **cookie/login import** for the user's own
   private/age-gated media, stored via `flutter_secure_storage` — still on-device, no account, free.
 
@@ -192,7 +196,7 @@ demand** (not bundled) to keep the install lean. Runtime: **`flutter_gemma`** (M
 **Principle: everything is on-device, and on-device = free, forever.** Sustained by an **optional
 donations link**. **No ads, no telemetry, no cloud, no accounts — ever.**
 
-| Capability | v1 (P0–P17) | Cost |
+| Capability | v1 (P0–P19) | Cost |
 |---|---|---|
 | Downloads (all platforms), queue, bulk | ✅ | Free |
 | Private library, player, metadata, organization | ✅ | Free |
@@ -200,9 +204,9 @@ donations link**. **No ads, no telemetry, no cloud, no accounts — ever.**
 | Storage policy, export, auto-store | ✅ | Free |
 | App lock (PIN/biometric) | ✅ | Free |
 | On-device AI + relationship graph (semantic search, related, hubs, transcribe, summarize, OCR, translate, tag, local GraphRAG) | ✅ | Free |
-| Things Engine — typed schema.org graph (P14) | ✅ | Free |
-| Windows app (P15) | ✅ | Free |
-| Authenticated/cookie import (P16) | ✅ | Free |
+| Things Engine — typed schema.org graph + AI Thing-extraction + universal intake (P14–P16) | ✅ | Free |
+| Windows app (P17) | ✅ | Free |
+| Authenticated/cookie import (P18) | ✅ | Free |
 | Optional donations | ✅ | — |
 
 Off-store distribution means Google Play Billing is unavailable; there are no in-app purchases —
@@ -216,8 +220,8 @@ support is via an optional external donations link only.
 - No cloud sync of the user's library (media stays on-device).
 - No social/sharing network; GrabBit is a personal tool.
 - No ads or tracking.
-- No cloud Thing extraction or sync — the **Things Engine** (P14) captures, extracts, and reasons entirely
-  on-device; and GrabBit is **not** a schema.org authoring/editing tool (it captures and organizes
+- No cloud Thing extraction or sync — the **Things Engine** (P14–P16) captures, extracts, and reasons
+  entirely on-device; and GrabBit is **not** a schema.org authoring/editing tool (it captures and organizes
   Things, it doesn't author them).
 
 ## 12. Success Metrics
@@ -226,8 +230,9 @@ support is via an optional external donations link only.
   time-to-first-download; retention of the private-library habit.
 - **AI + graph (P10–P13):** % devices eligible for each AI tier; correct capability-gating (zero AI
   crashes on low-end devices); adoption of related/search/graph/"ask your library".
-- **Things Engine + platform (P14–P16):** typed-Thing capture quality; Windows parity;
-  authenticated-content adoption.
+- **Things Engine — the spine (P14–P16):** typed-Thing capture quality; AI Thing-extraction accuracy from
+  downloads; breadth of non-media intake adopted; GraphRAG-over-Things usefulness.
+- **Platform + launch (P17–P19):** Windows parity; authenticated-content adoption; signed-release stability.
 
 (Metrics measured locally/voluntarily; no covert analytics.)
 
@@ -252,4 +257,4 @@ support is via an optional external donations link only.
 - Exact per-tier model choices (light/mid LLM, embedder dim, whisper variant) — confirmed at P12
   start per `docs/AI-SPEC.md` §4.
 - APK-size budget impact of the Cozo native lib (measured in the first P10 APK build).
-- Donations provider/link for the About screen (P17).
+- Donations provider/link for the About screen (P19).

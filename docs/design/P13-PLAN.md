@@ -427,15 +427,15 @@ the docs close-out. Split for phone-reviewable PRs.
 > were deliberately **batched** into it (CLAUDE.md §6/§7), so each affected subphase stays `[~]`
 > (CI-complete, not yet verified). **Running that single pass discharges every owed per-subphase check and
 > flips all P13 markers — and the phase — to `[x]`**, closing the v1 AI pillar (next: **P14 Things Engine**;
-> launch is now **P17**).
+> launch is now **P19**).
 
 ---
 
 ## Deferred (cut from P13 → `docs/BACKLOG.md` or a later band)
 - **Real `generateStructured` + the FunctionGemma-vs-Qwen3 license fork** → P14 / BACKLOG (auto-tagging uses
   free-text generation; the structured seam stays inert per ADR-0002).
-- **Smart auto-tagging as the P14 Things-Engine curator** — P13's free-text tagging is deliberately
-  lightweight; the narrow-then-fill structured curator is the P14 Things Engine (ADR-0002, `docs/things-engine.md`).
+- **Smart auto-tagging as the Things-Engine curator (P15)** — P13's free-text tagging is deliberately
+  lightweight; the narrow-then-fill structured curator is the Things Engine's P15 phase (ADR-0002, `docs/things-engine.md`).
 - **Long-transcript multivector chunking** for GraphRAG passage retrieval — only if modest-library retrieval
   proves insufficient (AI-SPEC §5; carried from P10g-1 / BACKLOG).
 - **Cloud inference** — out of scope permanently (the AI engines' cloud seam is theoretical/unplanned;

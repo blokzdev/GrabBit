@@ -32,7 +32,7 @@ abstract interface class GenerationEngine {
   /// Given a small set of [toolDefs], fills one and returns the structured
   /// result. **Inert in v1** — no v1 feature calls this, and no shipped model
   /// implements it yet (concrete engines throw [InferenceErrorCode.unsupported]);
-  /// it is shaped now so the **P14 Things Engine** curator's "narrow-then-fill"
+  /// it is shaped now so the **Things Engine** curator (P15) "narrow-then-fill"
   /// step slots in without reworking this contract. Throws an [InferenceException]
   /// (`unavailable`/`unsupported`/`generateFailed`).
   Future<StructuredResult> generateStructured(

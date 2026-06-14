@@ -183,8 +183,8 @@ class FlutterGemmaGenerationEngine implements GenerationEngine {
     // P12f forward seam: defined + gated, but not yet implemented. The
     // flutter_gemma Chat API exposes only TextResponse (no tool/function-calling
     // pathway), and the function-calling model is undecided (FunctionGemma's
-    // Gemma license vs Qwen3 — deferred to P13). The P14 Things Engine curator
-    // (ADR-0002) lands the real impl. Inert until P14.
+    // Gemma license vs Qwen3 — deferred to P13). The Things Engine curator (P15)
+    // (ADR-0002) lands the real impl. Inert until then.
     throw const InferenceException(
       InferenceErrorCode.unsupported,
       'Structured (function-calling) generation is not yet available',

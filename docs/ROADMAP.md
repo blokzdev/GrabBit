@@ -7,12 +7,16 @@ Phased delivery plan for end-to-end agentic DevOps. Each phase has **Goals**,
 by default; later phases assume earlier exit criteria are met.
 
 Legend (one band — v1 is the **full envisioned product**; the former **v3 cloud/credits band is dropped**):
-- **v1 — Android + Windows, free, on-device, AI-powered (P0–P17).** Core downloader + private media
-  manager (P0–P9), then the **on-device AI + graph pillar** — P10 (baseline edge AI + Cozo graph/vector
-  foundation) · P12 (device-tiered edge LLM engine) · P13 (LLM features + local GraphRAG) — with the
-  **Activity Inbox (P11)** slotted between P10 and the edge-LLM work; then the **Things Engine (P14)** —
-  the typed schema.org graph — **Windows parity (P15)**, **production polish + authenticated/cookie import
-  (P16)**, and finally **beta, production readiness & launch (P17)**. AI is core to the vision, and we
+- **v1 — GrabBit, the on-device "everything library" (Android + Windows, free, AI-powered, P0–P19).**
+  GrabBit collects **anything** into a private, on-device library and uses on-device AI to organize it into
+  a typed, searchable graph of **schema.org Things** — downloading media is one way in. The build:
+  **media intake + private manager** (P0–P9, today's downloader/library), then the **on-device AI + graph
+  pillar** — P10 (baseline edge AI + Cozo graph/vector foundation) · P12 (device-tiered edge LLM engine) ·
+  P13 (LLM features + local GraphRAG) — with the **Activity Inbox (P11)** in between; then the **Things
+  Engine band — the spine** that turns the library into a typed Thing graph: **Things foundation +
+  MediaObject projection (P14)**, **curator + AI Thing-extraction from downloads (P15)**, **universal
+  intake + typed types & GraphRAG (P16)**; then **Windows parity (P17)**, **production polish +
+  authenticated/cookie import (P18)**, and finally **beta, production readiness & launch (P19)**. We
   **launch as the full envisioned scope**, so the launch phase is **last**.
 
 The app is **free forever and fully offline** — sustained by an **optional donations link**, with
@@ -396,38 +400,61 @@ verification pass** (`docs/VERIFICATION.md`) is owed before close — running it
 per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 **Refs:** `docs/AI-SPEC.md` §5–6, `docs/GRAPH-SPEC.md` §7.
 
-## P14 — Things Engine
-**Goals:** evolve the private library from a media store into a **domain-agnostic, on-device graph of
-typed schema.org Things** (Recipe/Event/Place/Article/Product + the existing media as MediaObjects) —
-captured by a narrow-then-fill curator and reasoned over by the on-device GraphRAG built in P13. All
-on-device, free, no cloud. Builds directly on the P10–P13 AI/graph pillar while it's fresh; the inert
-seams shaped in P12–P13 (`generateStructured`, the `structured_extraction` capability row, the empty
-`things` table, typed-node GraphRAG) are now activated.
-**Deliverables (high level — the subphase map lands in `docs/design/P14-PLAN.md` at phase start):**
-- **Generic Thing store**: schema.org vocabulary as a data asset; Things as JSON-LD + promoted columns in
-  the `things` table (ADR-0001); Drift stays canonical.
-- **MediaObject bridge**: project existing `media_items` as MediaObject Things at zero migration cost
-  (ADR-0003); the full physical-spine merge stays a deferred open question (`docs/BACKLOG.md`).
-- **Narrow-then-fill curator**: classify an input, then fill its typed fields via `generateStructured`
-  (ADR-0002); suggest, don't assert.
-- **Relationships + provenance**: the three edge kinds + the authored-edge moat (ADR-0004).
-- **Unified Grab intake**: URL + uploads + camera + barcode into the same typed pipeline.
-- **~6 priority types** with bespoke capture/UX/exporters + **typed-node GraphRAG** ("ask your library"
-  over any Thing, not just media).
-**Exit criteria:** a saved input becomes a typed Thing with structured fields + relationships, browsable
-and answerable via GraphRAG — all on-device; existing media keep working unchanged (projected as
-MediaObjects). **Refs:** `docs/things-engine.md`, `docs/decisions/` (ADR-0001–0004), `docs/AI-SPEC.md` §2–6.
+# Things Engine band (P14–P16) — the spine that makes GrabBit an "everything library"
 
-## P15 — Windows Port
+> The typed-graph pillar, split into three sequential phases (maintainer call). It promotes the library
+> from a media store into a domain-agnostic, on-device graph of **schema.org Things**, with downloaded media
+> as the **first** Thing type. Built on the P10–P13 AI/graph pillar; the inert seams shaped in P12–P13
+> (`generateStructured`, the `structured_extraction` capability row, the empty `things` table, typed-node
+> GraphRAG) are activated here. P0–P13 stay media-first; Things is the spine **going forward** (existing
+> downloads project in via the ADR-0003 bridge — **not** a retro-rewrite). Deep design: `docs/things-engine.md`,
+> `docs/decisions/` (ADR-0001–0004). Each phase authors its own `docs/design/P<N>-PLAN.md` map at its start.
+
+## P14 — Things foundation + MediaObject projection
+**Goals:** lay the typed-graph **spine** so the library *is* a graph of Things, with media as the first type.
+**Deliverables (high level — subphase map in `docs/design/P14-PLAN.md` at phase start):**
+- **Generic Thing store**: schema.org vocabulary as a data asset; Things as JSON-LD + promoted columns in
+  the `things` table (ADR-0001; the table was seeded empty in P12f). Drift stays canonical; Cozo derived.
+- **MediaObject projection**: existing `media_items` surface as `Audio`/`Image`/`VideoObject` Things at zero
+  migration cost (ADR-0003); the full physical `media_items`→`things` merge stays a deferred open question
+  (`docs/BACKLOG.md`).
+- **Relationships + provenance plumbing**: the three edge kinds + the authored-edge moat (ADR-0004), and the
+  typed-node GraphRAG (already built node-type-blind in P13) now answering over Things.
+**Exit criteria:** the library renders as a typed Thing graph with media projected as MediaObjects;
+relationships and GraphRAG operate over Things; no regression to the media-first experience.
+
+## P15 — Curator + AI Thing-extraction from downloads
+**Goals:** the marquee payoff — **on-device AI extracts structured Things from what you download** (a cooking
+video → a `Recipe`; a vlog → `Place`/`Event`).
+**Deliverables (high level — subphase map in `docs/design/P15-PLAN.md` at phase start):**
+- **Narrow-then-fill curator** (ADR-0002): classify a downloaded item, then fill its typed fields via
+  `generateStructured` over the **transcript/description/OCR** (the P13 text sources); **suggest, don't
+  assert** — the user confirms before edges/Things are written.
+- Activate the real `generateStructured` impl + resolve the FunctionGemma-vs-Qwen3 license fork (deferred
+  from P13); capability-gated, graceful on incapable devices.
+**Exit criteria:** a capable device turns a downloaded video into a reviewable, typed Thing with structured
+fields, fully on-device; ineligible devices degrade gracefully.
+
+## P16 — Universal intake + typed types, UX & GraphRAG
+**Goals:** make GrabBit collect **anything**, not just downloads, and make the typed library first-class.
+**Deliverables (high level — subphase map in `docs/design/P16-PLAN.md` at phase start):**
+- **Universal "Grab anything" intake**: beyond URLs — **file upload, web-article capture, manual entry,
+  camera/barcode** — feeding the same store + curator.
+- **~6 priority types** (Recipe/Event/Place/Article/Product + MediaObjects) with **bespoke capture, cards &
+  exporters**; typed-node **GraphRAG** "ask your library across any Thing."
+**Exit criteria:** a user adds a non-media artifact (page/file/manual/barcode), it becomes a typed Thing with
+its own card, browsable + answerable alongside media — all on-device.
+
+## P17 — Windows Port
 **Goals:** second platform with zero domain/UI rewrite.
 **Deliverables:** `WindowsProcessEngine` (bundled `yt-dlp.exe`/`ffmpeg.exe`); desktop storage
 adapter (filesystem export); desktop-adapted UI; **MSIX** packaging; binary update path. **Cozo on
 Windows:** the C-API path — `cozo_c.dll` via `dart:ffi`/`ffigen` on a dedicated isolate (the
 `GraphStore` Windows impl), per `docs/GRAPH-SPEC.md` §2.2.
-**Exit criteria:** Windows build downloads + manages media (incl. the graph/AI/Things features); feature
+**Exit criteria:** Windows build collects + manages the library (incl. the graph/AI/Things features); feature
 parity with the Android app. **CI note:** windows runners = 2x minutes — build Windows manually/on tags.
 
-## P16 — Production Polish + Authenticated Content
+## P18 — Production Polish + Authenticated Content
 **Goals:** make the app genuinely world-class and production-ready across both platforms.
 **Deliverables:** accessibility, complete i18n, performance hardening, advanced configuration,
 refined UX across all flows, robust update/onboarding.
@@ -437,9 +464,9 @@ refined UX across all flows, robust update/onboarding.
 **Exit criteria:** the app is stable, polished, and self-recommending across Android + Windows; ready for
 the launch phase.
 
-## P17 — v1 Beta, Production Readiness & Launch
-**Goals:** harden and **ship v1** — the **full envisioned product** (AI-powered downloader + private
-media manager + Things Engine, on Android + Windows).
+## P19 — v1 Beta, Production Readiness & Launch
+**Goals:** harden and **ship v1** — the **full envisioned product** (the on-device everything-library:
+media intake + private manager + the AI Things Engine, on Android + Windows).
 **Deliverables:** **release signing** (keystore + CI secret; the ship blocker); performance
 hardening (large library grid/thumbnails, DB indices, big-playlist picker, AI/graph index build);
 **i18n scaffolding** (ARB/l10n); **distribution** (GitHub Release with the signed APK + a landing
@@ -454,7 +481,7 @@ for sideload. **→ v1 complete (Android + Windows, free, offline, AI-powered).*
 
 The former v3 band (Supabase backend + accounts, Genkit→Gemini cloud AI, Stripe/PayPal credit
 monetization, public cloud launch) is **removed**. GrabBit is **free forever and fully offline**,
-sustained by an **optional donations link** (P17) — no ads, no telemetry, no accounts, no cloud. The
+sustained by an **optional donations link** (P19) — no ads, no telemetry, no accounts, no cloud. The
 AI engine interfaces still leave a *theoretical* seam for a future cloud implementation, but
 it is **not a planned phase**. (The corresponding cloud contracts in `docs/SPEC.md` §9.1–9.2 and
 `docs/ARCHITECTURE.md` §9 are retained only as a historical/optional reference, marked dropped.)

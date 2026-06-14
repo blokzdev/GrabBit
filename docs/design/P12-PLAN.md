@@ -182,7 +182,7 @@ Split into three PRs (risk-first), mirroring P12c's cadence:
   `TranscriptResult`, the whisper ggml catalog (HEAD-verified MIT/ungated URLs + SHA-256), matrix rows
   (low=`[tiny]`, mid=`[tiny, base]`, high=`[base, small, turbo]`), providers, settings, error code.
 - **`[x]` P12e-2** (PR #131, merged) — native `WhisperTranscriptionEngine` (`whisper_ggml_plus`, decided
-  here over `whisper_kit` for Windows/P15 parity), ffmpeg → 16 kHz mono WAV via the existing
+  here over `whisper_kit` for Windows/P17 parity), ffmpeg → 16 kHz mono WAV via the existing
   `MediaToolsEngine`, the app-managed model file fed as whisper's `modelPath`, + a tier-gated opt-in
   transcription card with a Labs self-test (transcribes a bundled synthetic clip).
 - **`[x]` P12e-3** — wire whisper as the caption-less fallback into the existing transcript flows:

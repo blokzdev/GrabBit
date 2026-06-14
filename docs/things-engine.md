@@ -1,10 +1,13 @@
-# GrabBit — The Things Engine (P14 vision)
+# GrabBit — The Things Engine (the P14–P16 spine)
 
-> **Status: scheduled as v1 phase P14** (after the P10–P13 AI/graph pillar; before Windows P15, polish P16,
-> and launch P17). A one-page **vision**, not a PRD — the granular subphase map lands in
-> `docs/design/P14-PLAN.md` when the phase starts (per CLAUDE.md §7). The strategic decisions are locked in
-> `docs/decisions/` (ADR-0001/0002/0003); the inert seams that prepare for it, shaped in P12–P13, live in
-> `docs/AI-SPEC.md` §2–6 and `docs/ARCHITECTURE.md` §8.
+> **Status: the v1 spine — a three-phase band (P14–P16)**, after the P10–P13 AI/graph pillar; before Windows
+> (P17), polish (P18), and launch (P19). It promotes GrabBit from a media store into an **everything library**:
+> **P14** Things foundation + MediaObject projection · **P15** curator + AI Thing-extraction from downloads ·
+> **P16** universal intake + typed types & GraphRAG. P0–P13 stay media-first; Things is the spine **going
+> forward** (downloads project in via the ADR-0003 bridge — not a rewrite). A one-page **vision**, not a PRD —
+> each phase authors its own `docs/design/P<N>-PLAN.md` map at its start (CLAUDE.md §7). Strategic decisions
+> are locked in `docs/decisions/` (ADR-0001/0002/0003/0004); the inert seams that prepare for it, shaped in
+> P12–P13, live in `docs/AI-SPEC.md` §2–6 and `docs/ARCHITECTURE.md` §8.
 
 ## Problem
 
@@ -35,7 +38,7 @@ and calls a small on-device function-calling model only when content must be rea
 (ADR-0002). Relationships, and the **provenance** that makes every fact and link trustworthy and
 re-improvable, are first-class — and AI-inferred ones are **proposed, not silently asserted** (ADR-0004).
 
-## Scope (P14, directional)
+## Scope (P14–P16, directional)
 
 - **Generic Thing store** — schema.org Things (the vocabulary rooted at `Thing`) as JSON-LD in a
   `things` table; the schema.org vocabulary bundled as a read-only validation/grounding asset (ADR-0001).
@@ -57,8 +60,8 @@ re-improvable, are first-class — and AI-inferred ones are **proposed, not sile
 
 ## Non-goals
 
-- **Sequenced after the AI pillar (P14).** Nothing here changes the already-built P0–P13 scope or its
-  user-visible behavior; the Things Engine is purely additive, and launch (P17) still comes last.
+- **Sequenced after the AI pillar (P14–P16).** Nothing here changes the already-built P0–P13 scope or its
+  user-visible behavior; the Things Engine is purely additive, and launch (P19) still comes last.
 - **Not a code-generated schema.org** — no per-type Dart classes, no per-type tables.
 - **Not a pivot away from downloading.** The downloader + private container remain the foundation; the
   Things layer sits on top of them.
@@ -88,5 +91,5 @@ re-improvable, are first-class — and AI-inferred ones are **proposed, not sile
   `0004-relationships-provenance-and-the-authored-edge-moat.md`.
 - v1 seams: `docs/AI-SPEC.md` §2–6, `docs/design/P-AI-PLAN.md` (P12/P13), `docs/ARCHITECTURE.md` §8,
   `docs/GRAPH-SPEC.md` §10 (graph Things-readiness seam map — why the P13 graph features generalize unchanged).
-- Scheduled as **P14** in `docs/ROADMAP.md`; sibling entry in `docs/PRD.md` §9; open questions tracked in
-  `docs/BACKLOG.md`.
+- Scheduled as the **P14–P16** band in `docs/ROADMAP.md`; sibling entry in `docs/PRD.md` §9; open questions
+  tracked in `docs/BACKLOG.md`.

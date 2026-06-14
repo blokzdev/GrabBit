@@ -16,7 +16,7 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 - **On-device = free, forever.** All AI here runs locally; it costs us nothing and is free to the
   user. **No cloud, no account, no credits, no telemetry.** (v3/cloud is dropped — see ROADMAP.)
 - **AI is core to the vision**, not a bolt-on: the AI work (P10, P12–P13) lands mid-plan, the Things
-  Engine builds on it (P14), and the launch phase (P17) is **last** — we ship the full envisioned scope.
+  Engine builds on it (P14), and the launch phase (P19) is **last** — we ship the full envisioned scope.
 - **Graceful capability-gating, never a crash or silent no-op.** Every AI feature is gated on a
   measured device tier; unsupported features are clearly disabled with a friendly reason.
 - **Always-available floor.** Where possible a zero-dependency, pure-Dart baseline (e.g. extractive
@@ -61,9 +61,9 @@ abstract interface class GenerationEngine {
   `GenerationEngine`, with `StructuredToolDef`/`StructuredResult` types) and **inert in v1** — no v1
   feature calls it and no shipped engine implements it (concrete impls throw
   `InferenceErrorCode.unsupported`); it is gated by the `structured_extraction` capability (§3). Shaping
-  it on the generation layer now is what lets the **P14 Things Engine** curator's fill step slot in
+  it on the generation layer now is what lets the **Things Engine** curator's fill step slot in
   without reworking the AI engine contracts. The real impl + the function-calling **model-license fork**
-  (FunctionGemma 270M vs Qwen3-0.6B) land in **P13** *(forward seam — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
+  (FunctionGemma 270M vs Qwen3-0.6B) land with the curator in **P15** *(forward seam — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 
 - **`DeviceCapabilityService`** computes a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion,
   freeStorageMB }` → a **device tier** (e.g. low / mid / high). *(P12a ships the RAM-primary subset —

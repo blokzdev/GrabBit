@@ -1099,7 +1099,7 @@ per-subphase rows above stay as the granular per-feature reference). Running thi
       downloaded language packs) and everything stays **offline** (airplane mode) bar the one-time model /
       pack fetches.
 
-## P17 — v1 Beta, Production Readiness & Launch  *(v1)*
+## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.
 - [ ] i18n scaffolding present.
@@ -1123,8 +1123,8 @@ per-subphase rows above stay as the granular per-feature reference). Running thi
 
 ## v1 release (full regression with the **release** APK)
 1. **Release signing** configured (keystore + CI secret) so the release APK installs
-   — done in **P17**.
+   — done in **P19**.
 2. Build with **Build APK → release = true**, install the signed release APK.
-3. Run **every** section above (P0 → P17) end-to-end on a real device.
+3. Run **every** section above (P0 → P19) end-to-end on a real device.
 4. Confirm: privacy (nothing in Gallery until exported), app lock, background downloads, playback,
    and the **on-device AI + graph** features (incl. Cozo loading on the AOT release build) all work.
