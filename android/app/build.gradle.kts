@@ -44,6 +44,17 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // Flutter shrinks release builds with R8. The on-device AI libraries
+            // (ML Kit text recognition, flutter_gemma/MediaPipe) reference
+            // optional classes that aren't on our classpath, so R8 full mode
+            // needs explicit keep rules or it fails with "Missing classes
+            // detected". Resource shrinking stays off (the failure is code-only).
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
