@@ -79,7 +79,7 @@ class ModelCapabilityMatrix {
       };
 
   /// **`structured_extraction` capability (P12f forward seam, ADR-0002).**
-  /// Gates the `generateStructured` function-calling step the **v2 Things Engine**
+  /// Gates the `generateStructured` function-calling step the **P14 Things Engine**
   /// curator will use. **Empty on every tier for now** — no v1 feature drives it,
   /// and the function-calling model is undecided (FunctionGemma's Gemma license vs
   /// Qwen3-0.6B's Apache-2.0 — fork deferred to P13). Defined + gated so the v2

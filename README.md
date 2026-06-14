@@ -7,11 +7,11 @@ stay in a private in-app library by default; exporting to the device gallery is
 always an explicit choice. On-device AI + a relationship graph make the library
 searchable and self-organizing — no cloud, no accounts.
 
-> **Where it's going (v2):** the [Things Engine](docs/things-engine.md) extends the library from media
-> to a typed, interlinked graph of on-device **schema.org artifacts** (recipes, events, places, …). v1
-> ships unchanged first.
+> **The vision (P14 — the [Things Engine](docs/things-engine.md)):** GrabBit grows from a media library
+> into a typed, interlinked graph of on-device **schema.org artifacts** (recipes, events, places, …),
+> captured and reasoned over fully on-device. It's a scheduled v1 phase, building on the AI/graph pillar.
 
-**Platforms:** Android first (sideload APK/AAB, off the Play Store). Windows in v2.
+**Platforms:** Android first (sideload APK/AAB, off the Play Store), then **Windows** (P15).
 
 ## Core principle
 
@@ -20,15 +20,20 @@ searchable and self-organizing — no cloud, no accounts.
 > relationship graph run on your own device, cost nothing, and are free forever.
 > Sustained by an optional donations link. **No ads, no telemetry, no cloud, no accounts.**
 
-## Version bands
+## Roadmap — one band, the full vision (P0–P17)
 
-| Band | Theme | Network | Money |
-|---|---|---|---|
-| **v1** | Android, free, on-device, **AI-powered**: downloader + private media manager, then the Activity Inbox (P11) + the on-device AI + relationship-graph pillar (P10, P12–P13), then beta & launch (P14) | Offline | Free |
-| **v2** | Local-only expansion: Windows parity + production polish + authenticated/cookie import | Offline | Free |
+GrabBit ships as a single **v1** band — the complete envisioned product — and **launches last**, so the
+first public release is the full scope:
 
-*(AI is core to the vision, so v1 ships **after** the AI work. The previously planned
-v3 cloud/credits band is **dropped**.)*
+- **Core downloader + private media manager** (P0–P9)
+- **On-device AI + relationship-graph pillar** (P10, P12–P13) + the **Activity Inbox** (P11)
+- **Things Engine** (P14) — the typed schema.org artifact graph
+- **Windows parity** (P15)
+- **Production polish + authenticated/cookie import** (P16)
+- **Beta, production readiness & launch** (P17) — last
+
+*(AI is core to the vision, so the launch phase is last. The previously planned v3 cloud/credits band is
+**dropped** — GrabBit is free forever and fully offline.)* See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Tech stack
 
@@ -60,7 +65,7 @@ CI runs format → analyze → test on every push/PR. APK builds are manual
 - [`docs/GRAPH-SPEC.md`](docs/GRAPH-SPEC.md) — on-device graph + vector DB (CozoDB)
 - [`docs/AI-SPEC.md`](docs/AI-SPEC.md) — on-device edge-AI design
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased delivery plan
-- [`docs/things-engine.md`](docs/things-engine.md) — the **Things Engine** (v2 vision: a typed,
+- [`docs/things-engine.md`](docs/things-engine.md) — the **Things Engine** (P14 vision: a typed,
   on-device artifact library)
 - [`docs/decisions/`](docs/decisions) — Architecture Decision Records (ADR-0001–0004)
 
@@ -75,5 +80,9 @@ tools entirely on-device.
 
 ## License
 
-Licensed under the [Apache License, Version 2.0](LICENSE). You may use, modify, and
-distribute this software under those terms.
+Licensed under the **[GNU General Public License v3.0](LICENSE)** — © 2026 blokzdev (GrabBit). You may
+use, study, share, and modify GrabBit under the GPL-3.0 terms; derivative works must stay free and open
+under the same license.
+
+Bundled and linked third-party components (ffmpeg, yt-dlp, Python, CozoDB, …) keep their own licenses —
+see [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
