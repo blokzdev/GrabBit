@@ -296,6 +296,10 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [ ] **Extractive TextRank summarization** (pure-Dart, zero-dependency) — considered for P9 and
       deferred to **P13** as the always-available baseline tier beneath the local LLM summary
       (see `docs/ROADMAP.md` P13). Acts on captured descriptions/subtitles/transcripts.
+- [ ] **Richer `MediaObject` projection fields** — the P14c projection maps the core schema.org fields; defer
+      `encodingFormat` (derive a MIME from the file extension), `inLanguage` (no language field captured yet),
+      and surfacing GrabBit-derived annotations (`aiSummary` → `abstract`, `ocrText`) onto the Thing. Add when a
+      consumer needs them; the projection-version bump re-derives existing Things automatically. *(From P14c.)*
 
 ## Done
 - [x] **Engine auto-update on launch** + Settings toggle (fresh installs were failing

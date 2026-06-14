@@ -95,7 +95,7 @@ The canonical store API over the existing `things` table.
   is store-only (validation stays the writer's job). Pure-Dart/Drift, no `build_runner` —
   **CI-discharged → `[x]` on merge.**
 
-### `[ ]` P14c — MediaObject projection + rebuildable backfill + sync hook *(projection pure-Dart CI; backfill APK)*
+### `[~]` P14c — MediaObject projection + rebuildable backfill + sync hook *(projection pure-Dart CI; backfill APK)*
 Every existing (and future) download becomes a typed `MediaObject` Thing — the bridge that makes the library a
 Thing graph (ADR-0003).
 - A **pure, deterministic projection** `(MediaItem + MediaMetadata) → Audio/Image/VideoObject` JSON-LD,
@@ -107,6 +107,13 @@ Thing graph (ADR-0003).
   `GraphSyncService`'s table-update listener, or a sibling `ThingSyncService`).
 - **Exit / review:** every media item has an up-to-date `MediaObject` Thing; rebuild is idempotent (no dupes,
   prunes deleted); a new download projects on completion; APK spot-check over a real library, offline. *(APK.)*
+- **Status:** shipped — `lib/core/things/media_object_projection.dart` (pure projection + `iso8601Duration`)
+  + `lib/core/things/thing_projection_service.dart` (diffed backfill + pruning + debounced `tableUpdates`
+  listener, the **sibling-service** option), wired non-blocking in `app.dart`. The jsonld-equality diff means
+  **no fingerprint/settings field** (it re-derives on data *or* projection-logic change). Tests cover the
+  field-by-field mapping, determinism, schema validity against the **real** vendored vocabulary, and
+  backfill/idempotence/update/prune. **CI green; the real-library backfill/sync APK spot-check is batched into
+  the P14 consolidated on-device pass — stays `[~]` until then** (CLAUDE.md §7).
 
 ### `[ ]` P14d — Relationships & provenance foundation *(Drift + pure Dart; CI; the one schema bump)*
 The durable plumbing for the three edge kinds + provenance (ADR-0004) — store + derivation only, no authoring.
