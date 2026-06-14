@@ -9,6 +9,7 @@ import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/lifecycle/app_lifecycle_provider.dart';
 import 'package:grabbit/core/routing/app_router.dart';
 import 'package:grabbit/core/theme/app_theme.dart';
+import 'package:grabbit/core/things/thing_projection_service.dart';
 import 'package:grabbit/features/downloader/data/share_intake_service.dart';
 import 'package:grabbit/features/library/data/media_dimension_service.dart';
 import 'package:grabbit/features/lock/auto_lock_controller.dart';
@@ -53,6 +54,12 @@ class _GrabBitAppState extends ConsumerState<GrabBitApp>
       ref.read(activeDeviceTierProvider);
       // Backfill pixel dimensions for items downloaded before P10i-c. Non-blocking.
       unawaited(ref.read(mediaDimensionServiceProvider).backfillDimensions());
+      // P14c: project the library into MediaObject Things and keep them in sync.
+      // Reading the provider starts the debounced listener; the backfill catches up
+      // existing items. Non-blocking, offline-safe; the diff makes it cheap.
+      unawaited(
+        ref.read(thingProjectionServiceProvider).backfillMediaObjects(),
+      );
       // P11: lazily drop expired activity-inbox entries on launch (no scheduler).
       unawaited(
         ref.read(notificationsRepositoryProvider).sweepExpired(DateTime.now()),

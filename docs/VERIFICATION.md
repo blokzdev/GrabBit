@@ -1099,6 +1099,21 @@ per-subphase rows above stay as the granular per-feature reference). Running thi
       downloaded language packs) and everything stays **offline** (airplane mode) bar the one-time model /
       pack fetches.
 
+## P14 — Things Engine foundation  *(v1)*
+> P14a/P14b are pure-Dart/Drift (CI-discharged, no APK owed). The checks below are **batched** into the
+> P14 consolidated on-device pass (CLAUDE.md §7); until it runs they stay open and the subphases sit at `[~]`.
+
+### P14c — MediaObject projection + rebuildable backfill + sync hook  *(install any debug APK; needs a real library; works offline)*
+- [ ] **Backfill over a real library:** after updating to this build, every existing download has a
+      `MediaObject` Thing — the Things count (P14f diagnostic / DB inspect) equals the library item count.
+- [ ] **New download projects on completion:** download an item, and its `MediaObject` Thing appears
+      (correct `VideoObject`/`AudioObject`/`ImageObject` type, `name`/`url`/`contentUrl`) without any manual action.
+- [ ] **Edit re-projects:** renaming an item / editing metadata updates its Thing within a couple of seconds
+      (the debounced listener), with no duplicate rows.
+- [ ] **Idempotent + prunes deleted:** deleting a library item removes its `MediaObject` Thing; reopening the
+      app (re-running the backfill) creates no duplicates and leaves the count stable.
+- [ ] **Fully offline** (airplane mode) — projection touches no network.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.
