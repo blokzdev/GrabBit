@@ -1147,6 +1147,17 @@ as the granular reference). Running this pass is what closes P14 (flips P14c/P14
       graph, diagnostic, counts) still works and "Ask" degrades to the **retrieval-only** fallback — never a
       crash or empty gap; everything **offline** bar any one-time model fetch.
 
+## P15 — Curator + AI Thing-extraction  *(v1)*
+> The checks below are **batched** into the P15 consolidated on-device pass (CLAUDE.md §7); until it runs they
+> stay open and the subphases sit at `[~]`.
+
+### P15a — `generateStructured` function-calling fill  *(install `app-arm64-v8a-debug.apk`; needs a capable device + a downloaded generation model)*
+- [ ] On a **mid/high** device with a function-calling generation model downloaded (Qwen3-0.6B or Gemma 4 E2B),
+      a single-tool schema + a prompt over real item text yields a **valid `StructuredResult`** (the chosen
+      `@type` + plausible filled arguments) — no crash, returns within a reasonable time.
+- [ ] On a **low/ineligible** device the `structured_extraction` capability is **gated off** (no eligible model);
+      a call degrades gracefully (`unavailable`) — never a crash.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

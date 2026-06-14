@@ -3,6 +3,7 @@ import 'package:grabbit/core/ai/generation_engine.dart';
 import 'package:grabbit/core/ai/generation_model.dart';
 import 'package:grabbit/core/ai/inference_error.dart';
 import 'package:grabbit/core/ai/structured_generation.dart';
+import 'package:grabbit/core/ai/structured_tool_adapter.dart';
 import 'package:grabbit/core/storage/disk_space_service.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -180,15 +181,55 @@ class FlutterGemmaGenerationEngine implements GenerationEngine {
     String prompt, {
     String? systemPrompt,
   }) async {
-    // P12f forward seam: defined + gated, but not yet implemented. The
-    // flutter_gemma Chat API exposes only TextResponse (no tool/function-calling
-    // pathway), and the function-calling model is undecided (FunctionGemma's
-    // Gemma license vs Qwen3 — deferred to P13). The Things Engine curator (P15)
-    // (ADR-0002) lands the real impl. Inert until then.
-    throw const InferenceException(
-      InferenceErrorCode.unsupported,
-      'Structured (function-calling) generation is not yet available',
-    );
+    final loaded = _loaded;
+    if (loaded == null) {
+      throw const InferenceException(
+        InferenceErrorCode.unavailable,
+        'The generation model is not loaded',
+      );
+    }
+    if (toolDefs.isEmpty) {
+      throw const InferenceException(
+        InferenceErrorCode.generateFailed,
+        'No tools were provided to fill',
+      );
+    }
+    try {
+      // ADR-0002 narrow-then-fill: pass the curator's candidate schema(s) as
+      // flutter_gemma tools; `required` forces a fill for a single confident
+      // candidate, `auto` lets the model pick among a narrowed set.
+      final chat = await loaded.createChat(
+        modelType: _modelType,
+        systemInstruction: systemPrompt,
+        tools: toolDefs.map(toGemmaTool).toList(),
+        supportsFunctionCalls: true,
+        toolChoice: toolChoiceFor(toolDefs),
+      );
+      await chat.addQueryChunk(Message.text(text: prompt, isUser: true));
+      await for (final response in chat.generateChatResponseAsync()) {
+        if (response is FunctionCallResponse) {
+          return structuredResultFrom(response);
+        }
+        if (response is ParallelFunctionCallResponse &&
+            response.calls.isNotEmpty) {
+          return structuredResultFrom(response.calls.first);
+        }
+      }
+      // The model answered with text only — the curator (P15c) treats this as
+      // "nothing to extract" rather than an error condition.
+      throw const InferenceException(
+        InferenceErrorCode.generateFailed,
+        'The model returned no tool call',
+      );
+    } on InferenceException {
+      rethrow;
+    } catch (e) {
+      throw InferenceException(
+        InferenceErrorCode.generateFailed,
+        'Failed to generate structured output',
+        cause: e,
+      );
+    }
   }
 
   @override

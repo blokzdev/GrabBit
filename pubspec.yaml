@@ -52,7 +52,7 @@ dependencies:
 
   # On-device AI (P10b-2): MediaPipe/LiteRT runtime, loaded embedder-only for the
   # opt-in semantic-search embedder (Gecko); also the planned P12 LLM runtime.
-  flutter_gemma: ^0.16.1
+  flutter_gemma: ^0.16.5
 
   # On-device AI (P12c): pure-Dart Unicode NFKC normalization for the
   # hand-rolled XLM-RoBERTa (Unigram) tokenizer of the multilingual embedder.

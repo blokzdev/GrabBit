@@ -14,11 +14,11 @@ enum InferenceErrorCode {
   ocrFailed,
   translateFailed,
 
-  /// A capability seam exists but has no working implementation on this build —
-  /// e.g. `generateStructured` (P12f forward seam): the method is defined and
-  /// gated, but no shipped model implements function-calling yet (v2 Things
-  /// Engine; see docs/AI-SPEC.md §2). Distinct from [unavailable] (a device/model
-  /// limitation) — this is "not built yet", by design.
+  /// A capability seam exists but has no working implementation on this build:
+  /// the method is defined and gated, but the feature isn't wired yet. Distinct
+  /// from [unavailable] (a device/model limitation) — this is "not built yet",
+  /// by design. (Used by test fakes / forward seams; no shipped engine throws it
+  /// today now that `generateStructured` is implemented — P15a.)
   unsupported,
   unknown,
 }

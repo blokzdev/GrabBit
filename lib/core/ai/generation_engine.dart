@@ -28,13 +28,15 @@ abstract interface class GenerationEngine {
   /// [InferenceException] (`unavailable`/`generateFailed`) on failure.
   Stream<String> generate(String prompt, {String? systemPrompt});
 
-  /// **Function-calling / typed-tool-fill seam (P12f forward seam, ADR-0002).**
-  /// Given a small set of [toolDefs], fills one and returns the structured
-  /// result. **Inert in v1** — no v1 feature calls this, and no shipped model
-  /// implements it yet (concrete engines throw [InferenceErrorCode.unsupported]);
-  /// it is shaped now so the **Things Engine** curator (P15) "narrow-then-fill"
-  /// step slots in without reworking this contract. Throws an [InferenceException]
-  /// (`unavailable`/`unsupported`/`generateFailed`).
+  /// **Function-calling / typed-tool-fill (P15a, ADR-0002).** Given a small set
+  /// of [toolDefs] (the curator's candidate schema.org types), the model fills
+  /// one and returns the structured result — single-tool when [toolDefs] holds
+  /// one confident candidate, narrowed-set when it holds several. Backed by
+  /// `flutter_gemma` function-calling on capable tiers; the
+  /// [UnavailableGenerationEngine] throws [InferenceErrorCode.unavailable] where
+  /// generation isn't supported. Throws an [InferenceException]
+  /// (`unavailable`/`generateFailed` — the latter also when the model answers
+  /// with text and no tool call).
   Future<StructuredResult> generateStructured(
     List<StructuredToolDef> toolDefs,
     String prompt, {

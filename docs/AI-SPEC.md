@@ -56,14 +56,16 @@ abstract interface class GenerationEngine {
 // (P12f forward seam, ADR-0002) follow the same per-capability shape.
 ```
 
-- **`generateStructured(toolDefs, prompt)`** is a **function-calling / typed-tool-fill** seam: given a
-  small set of tool definitions it returns a structured result filling one. **Shaped in P12f** (on
-  `GenerationEngine`, with `StructuredToolDef`/`StructuredResult` types) and **inert in v1** — no v1
-  feature calls it and no shipped engine implements it (concrete impls throw
-  `InferenceErrorCode.unsupported`); it is gated by the `structured_extraction` capability (§3). Shaping
-  it on the generation layer now is what lets the **Things Engine** curator's fill step slot in
-  without reworking the AI engine contracts. The real impl + the function-calling **model-license fork**
-  (FunctionGemma 270M vs Qwen3-0.6B) land with the curator in **P15** *(forward seam — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
+- **`generateStructured(toolDefs, prompt)`** is the **function-calling / typed-tool-fill** seam: given a
+  small set of tool definitions the model fills one and returns a structured result. **Shaped in P12f**
+  (on `GenerationEngine`, with `StructuredToolDef`/`StructuredResult` types) and **implemented in P15a**
+  via `flutter_gemma` function-calling (`structured_tool_adapter.dart` maps `StructuredToolDef`↔`Tool`,
+  `FunctionCallResponse`↔`StructuredResult`; single candidate → `ToolChoice.required`, a narrowed set →
+  `ToolChoice.auto`). It is gated by the `structured_extraction` capability (§3): low is gated off,
+  mid runs Qwen3-0.6B, high adds Qwen2.5-1.5B + Gemma 4 E2B (recommended) — the function-calling-capable
+  subset of the generation ladder, **all Apache-2.0**, which **dissolves the former FunctionGemma-vs-Qwen3
+  license fork** (SmolLM2-135M is excluded — it ignores tools). The curator that builds the tool schemas
+  from the schema.org vocabulary lands in **P15b** *(`docs/decisions/0002-narrow-then-fill-curator.md`)*.
 
 - **`DeviceCapabilityService`** computes a `DeviceProfile { ramMB, soc, hasNpu, hasGpu, osVersion,
   freeStorageMB }` → a **device tier** (e.g. low / mid / high). *(P12a ships the RAM-primary subset —

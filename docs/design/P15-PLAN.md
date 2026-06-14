@@ -79,12 +79,12 @@
 
 ---
 
-### `[ ]` P15a — `generateStructured` impl + `structured_extraction` gating *(engine; APK)*
+### `[~]` P15a — `generateStructured` impl + `structured_extraction` gating *(engine; APK)*
 Make the inert function-calling seam real — the precondition for the curator.
 - Map `StructuredToolDef` → flutter_gemma `Tool`, pass `tools` + `toolChoice` when creating the chat, and
   parse the model's `FunctionCallResponse{name, args}` → `StructuredResult` on the **flutter_gemma-backed**
   `GenerationEngine` (`flutter_gemma_generation_engine.dart`). `UnavailableGenerationEngine` keeps throwing
-  `unsupported` (graceful on ineligible tiers/platforms).
+  `unavailable` (graceful on ineligible tiers/platforms).
 - Bump `flutter_gemma 0.16.1 → 0.16.5` (Gemma 4 E2B function-calling); justify in the commit + record in
   `docs/SPEC.md`.
 - Fill `eligibleStructuredExtractionModels`/`recommendedStructuredExtractionModel` in `ModelCapabilityMatrix`
@@ -92,6 +92,15 @@ Make the inert function-calling seam real — the precondition for the curator.
 - **Exit / review:** on a capable device, `generateStructured` fills a one-tool schema from a prompt → a
   valid `StructuredResult`; the low tier is gated off. CI covers the adapter mapping (fake/contract test) +
   the matrix rows. *(APK: real on-device model fill.)*
+- **Status:** shipped — `flutter_gemma` bumped to `^0.16.5`; `generateStructured` implemented on
+  `FlutterGemmaGenerationEngine` via a pure `structured_tool_adapter.dart` (`toGemmaTool` /
+  `toolChoiceFor` — 1 candidate→`required`, ≥2→`auto` / `structuredResultFrom`), passing
+  `tools` + `supportsFunctionCalls: true` + `toolChoice` to `createChat` and returning the first
+  `FunctionCall`/`ParallelFunctionCall` response (text-only → `generateFailed`). Matrix rows filled
+  (low none · mid Qwen3-0.6B · high Qwen3-0.6B + Qwen2.5-1.5B + Gemma 4 E2B, recommended Gemma 4 E2B;
+  SmolLM2 excluded). Stale `unsupported` doc comments retired. CI green (adapter mapping + matrix rows
+  + Unavailable fallback). **The real on-device model fill is batched into the P15 consolidated pass →
+  stays `[~]` until then** (CLAUDE.md §7).
 
 ### `[ ]` P15b — The Curator: classify → tool-schema → validated ThingDoc *(pure Dart; CI)*
 The pure curator (ADR-0002 routing) + tool-schema builder + result assembly — no I/O, fully unit-testable.
