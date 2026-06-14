@@ -2,13 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/things/thing_edge_repository.dart';
 import 'package:grabbit/core/things/thing_repository.dart';
 
-/// Live count of all Things (P14f diagnostic). Hand-written — wraps the repo's
-/// `watchThingCount()` stream.
-final thingCountProvider = StreamProvider<int>(
-  (ref) => ref.watch(thingRepositoryProvider).watchThingCount(),
+/// Count of all Things, for the P14f AI-settings diagnostic. A **one-shot**
+/// `.get()` read (via `autoDispose`, so it refreshes each time the screen opens)
+/// rather than a live `.watch()` stream — a settings diagnostic doesn't need to
+/// tick live, and a one-shot read leaves **no pending drift query timer** to trip
+/// widget-test teardown (`!timersPending`).
+final thingCountProvider = FutureProvider.autoDispose<int>(
+  (ref) => ref.watch(thingRepositoryProvider).countThings(),
 );
 
-/// Live count of all authored Thing→Thing edges (P14f diagnostic).
-final thingEdgeCountProvider = StreamProvider<int>(
-  (ref) => ref.watch(thingEdgeRepositoryProvider).watchEdgeCount(),
+/// Count of all authored Thing→Thing edges (P14f diagnostic). One-shot, as above.
+final thingEdgeCountProvider = FutureProvider.autoDispose<int>(
+  (ref) => ref.watch(thingEdgeRepositoryProvider).countEdges(),
 );

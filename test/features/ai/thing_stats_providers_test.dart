@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,17 +18,6 @@ void main() {
     return c;
   }
 
-  /// First emitted count from a live count provider (subscribes to drive it).
-  Future<int> firstCount(ProviderContainer c, StreamProvider<int> p) {
-    final completer = Completer<int>();
-    final sub = c.listen(p, (_, next) {
-      if (next is AsyncData<int> && !completer.isCompleted) {
-        completer.complete(next.value);
-      }
-    }, fireImmediately: true);
-    return completer.future.whenComplete(sub.close);
-  }
-
   Future<void> addThing(String id) => db
       .into(db.things)
       .insert(
@@ -43,7 +30,7 @@ void main() {
         ),
       );
 
-  test('reports the live Things + authored-edge counts', () async {
+  test('reports the Things + authored-edge counts', () async {
     await addThing('a');
     await addThing('b');
     await db
@@ -58,13 +45,13 @@ void main() {
           ),
         );
     final c = container();
-    expect(await firstCount(c, thingCountProvider), 2);
-    expect(await firstCount(c, thingEdgeCountProvider), 1);
+    expect(await c.read(thingCountProvider.future), 2);
+    expect(await c.read(thingEdgeCountProvider.future), 1);
   });
 
   test('zero on an empty library', () async {
     final c = container();
-    expect(await firstCount(c, thingCountProvider), 0);
-    expect(await firstCount(c, thingEdgeCountProvider), 0);
+    expect(await c.read(thingCountProvider.future), 0);
+    expect(await c.read(thingEdgeCountProvider.future), 0);
   });
 }
