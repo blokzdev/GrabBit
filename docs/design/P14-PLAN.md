@@ -80,15 +80,20 @@ The schema-as-data foundation every later subphase builds on (ADR-0001).
   schema/Drift change; no `build_runner`. **CI-discharged → `[x]` on merge** (the asset loads the same way in
   CI as on-device).
 
-### `[ ]` P14b — `ThingRepository` + promoted-column discipline *(Drift; CI)*
+### `[x]` P14b — `ThingRepository` + promoted-column discipline *(Drift; CI)*
 The canonical store API over the existing `things` table.
 - `ThingRepository(_db)` mirroring `MetadataRepository`: `upsertThing` (write JSON-LD canonical → re-derive
-  `name`/`url` on write — ADR-0001), `thingById`, `watchThingsByType`, `deleteThing`; a **rebuildable,
-  idempotent promoted-column backfill** (re-derive from `jsonld`, same shape as the FTS/dimension backfills).
-  Hand-written providers (Drift row types throw `InvalidTypeException` under codegen — CLAUDE.md §8).
+  `name`/`url` on write — ADR-0001), `thingById`, `watchThingsByType`, `countThings`/`watchThingCount`,
+  `deleteThing`; a **rebuildable, idempotent promoted-column backfill** `refreshPromotedColumns` (re-derive
+  from `jsonld`, same shape as the FTS/dimension backfills). Hand-written `thingRepositoryProvider` (Drift row
+  types throw `InvalidTypeException` under codegen — CLAUDE.md §8).
 - **Reuses the `things` table as-is** (`id/type/jsonld/name?/url?/createdAt/updatedAt`) — **no schema bump.**
 - **Exit / review:** upsert/read/watch/delete + backfill round-trip; promoted columns always reflect `jsonld`;
   unit tests. *(CI.)*
+- **Status:** done — `lib/core/things/thing_repository.dart` + `test/core/things/thing_repository_test.dart`.
+  `createdAt` is preserved across upserts via the codebase's explicit read-then-write (no `DoUpdate`); the repo
+  is store-only (validation stays the writer's job). Pure-Dart/Drift, no `build_runner` —
+  **CI-discharged → `[x]` on merge.**
 
 ### `[ ]` P14c — MediaObject projection + rebuildable backfill + sync hook *(projection pure-Dart CI; backfill APK)*
 Every existing (and future) download becomes a typed `MediaObject` Thing — the bridge that makes the library a
