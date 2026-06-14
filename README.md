@@ -1,17 +1,19 @@
 # GrabBit
 
-A free, privacy-first, multi-platform social-media downloader, **private media
-manager**, and **on-device AI library**. Paste a link (YouTube, Instagram, TikTok,
-X, …) and GrabBit downloads the media **on-device** using yt-dlp + ffmpeg. Downloads
-stay in a private in-app library by default; exporting to the device gallery is
-always an explicit choice. On-device AI + a relationship graph make the library
-searchable and self-organizing — no cloud, no accounts.
+A free, privacy-first, **on-device personal "everything library"** — a **Things collection engine**. Add
+**anything** (paste a YouTube/Instagram/TikTok/X link, drop in a file, capture a web page, a place, a
+product, a note, a barcode) and GrabBit keeps it in a **private, on-device** library, using on-device AI to
+organize everything into a typed, searchable graph of **schema.org Things**. **Downloading media** (on-device
+via yt-dlp + ffmpeg) is *one way in*, and AI **extracts structured Things from what you download** — a
+cooking video becomes a `Recipe`, a vlog a `Place`/`Event`. Everything stays on-device; exporting to the
+device gallery is always an explicit choice — no cloud, no ads, no accounts.
 
-> **The vision (P14 — the [Things Engine](docs/things-engine.md)):** GrabBit grows from a media library
-> into a typed, interlinked graph of on-device **schema.org artifacts** (recipes, events, places, …),
-> captured and reasoned over fully on-device. It's a scheduled v1 phase, building on the AI/graph pillar.
+> **The spine — the [Things Engine](docs/things-engine.md) (P14–P16):** the typed-graph pillar that turns the
+> library into a domain-agnostic graph of schema.org Things, with downloaded media as the first Thing type.
+> P0–P13 (today's downloader + AI/graph pillar) ship first and stay media-first; Things is the spine going
+> forward.
 
-**Platforms:** Android first (sideload APK/AAB, off the Play Store), then **Windows** (P15).
+**Platforms:** Android first (sideload APK/AAB, off the Play Store), then **Windows** (P17).
 
 ## Core principle
 
@@ -20,17 +22,18 @@ searchable and self-organizing — no cloud, no accounts.
 > relationship graph run on your own device, cost nothing, and are free forever.
 > Sustained by an optional donations link. **No ads, no telemetry, no cloud, no accounts.**
 
-## Roadmap — one band, the full vision (P0–P17)
+## Roadmap — one band, the full vision (P0–P19)
 
 GrabBit ships as a single **v1** band — the complete envisioned product — and **launches last**, so the
 first public release is the full scope:
 
-- **Core downloader + private media manager** (P0–P9)
+- **Media intake + private manager** (P0–P9) — today's downloader/library
 - **On-device AI + relationship-graph pillar** (P10, P12–P13) + the **Activity Inbox** (P11)
-- **Things Engine** (P14) — the typed schema.org artifact graph
-- **Windows parity** (P15)
-- **Production polish + authenticated/cookie import** (P16)
-- **Beta, production readiness & launch** (P17) — last
+- **Things Engine band — the spine** (P14–P16): foundation + MediaObject projection (P14) · curator + AI
+  Thing-extraction from downloads (P15) · universal intake + typed types & GraphRAG (P16)
+- **Windows parity** (P17)
+- **Production polish + authenticated/cookie import** (P18)
+- **Beta, production readiness & launch** (P19) — last
 
 *(AI is core to the vision, so the launch phase is last. The previously planned v3 cloud/credits band is
 **dropped** — GrabBit is free forever and fully offline.)* See [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -65,7 +68,7 @@ CI runs format → analyze → test on every push/PR. APK builds are manual
 - [`docs/GRAPH-SPEC.md`](docs/GRAPH-SPEC.md) — on-device graph + vector DB (CozoDB)
 - [`docs/AI-SPEC.md`](docs/AI-SPEC.md) — on-device edge-AI design
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased delivery plan
-- [`docs/things-engine.md`](docs/things-engine.md) — the **Things Engine** (P14 vision: a typed,
+- [`docs/things-engine.md`](docs/things-engine.md) — the **Things Engine** (the P14–P16 spine: a typed,
   on-device artifact library)
 - [`docs/decisions/`](docs/decisions) — Architecture Decision Records (ADR-0001–0004)
 

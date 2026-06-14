@@ -8,17 +8,19 @@
 
 ## 1. Mission & Vision
 
-**GrabBit** is a free, privacy-first, multi-platform social-media downloader and
-**private media manager**. Users paste a link (YouTube, Instagram, TikTok, X, …)
-and GrabBit downloads the image/video **on-device** using **yt-dlp + ffmpeg**.
-Downloads live in a private in-app library by default; the user explicitly chooses
-what to export to the device gallery. The app supports Simple and Advanced modes,
-bulk downloads, metadata management, deep configurability, and an optional
-PIN/biometric app lock.
+**GrabBit** is a free, privacy-first, on-device **personal "everything library" — a Things collection
+engine**. You add **anything** — paste a link (YouTube, Instagram, TikTok, X, …), drop in a file, capture a
+web page, a place, a product, a note, a barcode — and GrabBit keeps it in a **private, on-device** library,
+using **on-device AI** to organize everything into a typed, searchable graph of **schema.org Things**.
+**Downloading media** (on-device via **yt-dlp + ffmpeg**) is *one way in* — the first and, today, most
+built-out intake — and AI **extracts structured Things from what you download** (a cooking video → a
+`Recipe`; a vlog → a `Place`/`Event`). Downloads live in a private in-app library by default; the user
+explicitly chooses what to export to the device gallery. The app supports Simple and Advanced modes, bulk
+downloads, metadata management, deep configurability, and an optional PIN/biometric app lock.
 
 Platforms: **Android first** (APK/AAB sideload, off Play Store because of YouTube),
-then **Windows (P15)**. **AI is core to the vision** — v1 is an *AI-powered* downloader/manager, and we
-**launch as the full envisioned scope** (the launch phase is last, P17).
+then **Windows (P17)**. **AI is core to the vision** — GrabBit is an *AI-powered collection engine*, and we
+**launch as the full envisioned scope** (the launch phase is last, P19).
 
 ### Monetization principle (memorize — it governs every feature decision)
 
@@ -26,28 +28,33 @@ then **Windows (P15)**. **AI is core to the vision** — v1 is an *AI-powered* d
 > Downloads, media manager, playback, metadata, organization, app lock, all local
 > yt-dlp/ffmpeg/Dart tools, **and all on-device/edge AI + the on-device graph DB** —
 > everything runs on the user's own device, costs us nothing, and is **free forever**.
-> GrabBit is sustained by an **optional donations link** (P17). **No ads, no telemetry,
+> GrabBit is sustained by an **optional donations link** (P19). **No ads, no telemetry,
 > no accounts, no cloud.** (The former cloud/credits "v3" band is **dropped**; the
 > AI engine interfaces leave a *theoretical* cloud seam, but it is unplanned.)
 > Always bias a feature toward an on-device implementation.
 
 ### Version strategy (one band — v1 is the full envisioned product; v3/cloud dropped)
 
-**v1 — Android + Windows, free, on-device, AI-powered (P0–P17, offline, free).** One band that ships the
-*complete* envisioned product: core downloader + private media manager (P0–P9), then the **on-device AI +
-graph pillar** (P10, P12–P13) with the **Activity Inbox** (P11) in between, then the **Things Engine (P14)**,
-**Windows parity (P15)**, **production polish + authenticated/cookie import (P16)**, and finally **beta,
-production readiness & launch (P17)**.
+**v1 — GrabBit, the on-device everything-library (Android + Windows, free, AI-powered, P0–P19).** One band
+that ships the *complete* envisioned product: **media intake + private manager** (P0–P9, today's
+downloader/library), then the **on-device AI + graph pillar** (P10, P12–P13) with the **Activity Inbox**
+(P11) in between, then the **Things Engine band — the spine** (P14 foundation + MediaObject projection ·
+P15 curator + AI Thing-extraction from downloads · P16 universal intake + typed types & GraphRAG), then
+**Windows parity (P17)**, **production polish + authenticated/cookie import (P18)**, and finally **beta,
+production readiness & launch (P19)**.
 
 The app is **free forever and fully offline**, sustained by an optional donations link. **No ads,
 no telemetry, no cloud, ever.** AI is core to the vision, and we **launch as the full envisioned scope**, so
 the launch phase is **last**. See `docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs/AI-SPEC.md`.
 
-> **The Things Engine — P14.** Now a **scheduled v1 phase** (promoted from the former unscheduled "v2
-> direction"): it reframes the library as a domain-agnostic, on-device graph of typed **schema.org Things**
-> (recipes, events, places, articles, products, and media). Strategic decisions are locked in
-> `docs/decisions/` (ADR-0001–0004); the vision one-pager is `docs/things-engine.md`; its subphase map
-> (`docs/design/P14-PLAN.md`) is authored when the phase starts.
+> **The Things Engine — the spine (P14–P16).** GrabBit's defining pillar: it reframes the library from a
+> media store into a domain-agnostic, on-device graph of typed **schema.org Things** (recipes, events,
+> places, articles, products — and media as `MediaObject`s), with downloaded media as the **first** Thing
+> type and AI extracting structured Things from what you download. Split into three phases — **foundation +
+> MediaObject projection (P14)**, **curator + extraction (P15)**, **universal intake + typed types & GraphRAG
+> (P16)**. P0–P13 stay media-first; Things is the spine **going forward** (ADR-0003 bridge, not a rewrite).
+> Strategic decisions locked in `docs/decisions/` (ADR-0001–0004); vision one-pager `docs/things-engine.md`;
+> each phase authors its `docs/design/P<N>-PLAN.md` map at its start.
 
 ---
 
@@ -61,7 +68,7 @@ the launch phase is **last**. See `docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs
 | Local DB | **Drift** (SQLite) | Relational metadata/queue, typed queries, migrations. |
 | Platform bridge | **Pigeon** | Type-safe Dart↔Kotlin codegen for the engine. |
 | Download engine (Android) | **youtubedl-android** (JunkFood02 fork, `io.github.junkfood02.youtubedl-android`) | Bundles Python+yt-dlp+ffmpeg; maintained fork used by Seal; on Maven Central. |
-| Download engine (Windows, P15) | bundled `yt-dlp.exe` + `ffmpeg.exe` via Dart `Process` | Native, simple, no Python embed needed. |
+| Download engine (Windows, P17) | bundled `yt-dlp.exe` + `ffmpeg.exe` via Dart `Process` | Native, simple, no Python embed needed. |
 | Background work | Android **foreground service** + persistent queue | Reliable long downloads, OS-compliant. |
 | Secure storage | **flutter_secure_storage** | PIN hash, future tokens. |
 | App lock | **local_auth** + PIN | Biometric + fallback. |
@@ -98,7 +105,7 @@ the launch phase is **last**. See `docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs
       ai/               (P10, P12–P13) graph view, related, model selector, AI tools
     main.dart
   android/              Kotlin host + youtubedl-android + Pigeon glue
-  windows/              (P15) desktop runner + bundled binaries
+  windows/              (P17) desktop runner + bundled binaries
   test/                 unit/widget tests
   pigeons/              Pigeon API definitions
 ```
@@ -119,7 +126,7 @@ the launch phase is **last**. See `docs/ROADMAP.md`, `docs/GRAPH-SPEC.md`, `docs
 Exposes at minimum: `probeFormats(url)`, `download(request) → Stream<Progress>`,
 `cancel(id)`, `extractMetadata(url)`. Implementations:
 - **Android**: `AndroidYtDlpEngine` → Pigeon → Kotlin → `youtubedl-android`.
-- **Windows (P15)**: `WindowsProcessEngine` → `Process.start(yt-dlp.exe …)`, parse
+- **Windows (P17)**: `WindowsProcessEngine` → `Process.start(yt-dlp.exe …)`, parse
   progress from stdout, invoke `ffmpeg.exe` for merge/convert.
 
 Engine selection happens once via a Riverpod provider keyed on `Platform`. UI and
@@ -127,7 +134,7 @@ queue code must be engine-agnostic.
 
 ### `GraphStore` (P10, pure-Dart interface in `core/graph/`)
 The on-device relationship graph + vector index. Backed by **CozoDB** (Android via the
-`cozo_android` Maven AAR + a `CozoHostApi` Pigeon bridge; Windows via `dart:ffi` in P15). **Drift
+`cozo_android` Maven AAR + a `CozoHostApi` Pigeon bridge; Windows via `dart:ffi` in P17). **Drift
 stays canonical; Cozo is a derived, rebuildable index** keyed by `MediaItems.id`. `GraphStore` must
 not import the AI layer — only `GraphSyncService` bridges Drift → Cozo (and consumes embeddings).
 Full design in **`docs/GRAPH-SPEC.md`**.
@@ -309,7 +316,7 @@ posture defensible and reduce takedown risk, follow these rules in code and docs
   schema, sync, algorithm→feature map. Source of truth for the graph pillar.
 - `docs/AI-SPEC.md` — (P10, P12–P13) on-device edge-AI spec: per-capability AI engines, device tiers,
   runtime/models + licensing, local GraphRAG. Source of truth for AI.
-- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P17, single v1 band; v3 dropped).
+- `docs/ROADMAP.md` — multi-phase delivery plan (P0–P19, single v1 band; v3 dropped).
 - `docs/VERIFICATION.md` — per-phase on-device manual test checklist (what CI can't
   cover); used for spot-checks and full v1-release regression.
 - `docs/design/DESIGN_SPEC.md` — (P7) the living design system: brand, color/type/
@@ -331,7 +338,7 @@ posture defensible and reduce takedown risk, follow these rules in code and docs
 - `docs/design/P13-PLAN.md` — (P13) LLM feature surface & polish sub-roadmap (P13a–P13f: abstractive
   summarization, ML Kit translation/OCR, smart auto-tagging, local GraphRAG "Ask your library", advanced
   graph analytics, model-selector UX + phase close).
-- `docs/things-engine.md` — (**P14** vision one-pager) the **Things Engine**: the
+- `docs/things-engine.md` — (the **P14–P16** spine; vision one-pager) the **Things Engine**: the
   library reframed as a typed, on-device graph of schema.org Things.
 - `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,
   not 823 classes); **ADR-0002** narrow-then-fill curator; **ADR-0003** MediaObject as the file-leaf +
