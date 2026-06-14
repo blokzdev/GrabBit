@@ -1155,6 +1155,16 @@ as the granular reference). Running this pass is what closes P14 (flips P14c/P14
       in-app; no ads, no telemetry.
 - [ ] Distribution: signed release APK on the GitHub Release; landing-site install steps work.
 
+## Off-phase — on-device crash capture  *(install any debug APK; works offline)*
+- [ ] **Capture + next-launch modal:** force an uncaught error (debug build), reopen the app → a
+      **"GrabBit closed unexpectedly"** modal appears (behind the app lock if enabled) showing the report
+      (time · app version · platform · error · stack).
+- [ ] **Copy** puts the full report on the clipboard (paste-check); **Dismiss** closes it.
+- [ ] **Shown once:** relaunching again does **not** re-show the same crash; a **new** crash does.
+- [ ] **About → Last crash log** re-opens the most recent report on demand (or reads "No crashes
+      recorded" on a clean install).
+- [ ] **Offline + private:** airplane mode throughout — nothing is uploaded.
+
 ## Device-test refinements  *(v1, tracked in `docs/BACKLOG.md`)*
 - [ ] Single video → **Download now** starts immediately; **Add to queue** holds it
       (shows "Held (batch)") until **Start all** runs it.

@@ -122,6 +122,10 @@ abstract class SettingsModel with _$SettingsModel {
     @Default(true) bool notifyTranscript,
     @Default(true) bool notifyAi,
     @Default(true) bool notifyGraph,
+    // The timestamp of the last crash report the user was shown (on-device crash
+    // capture). The next-launch modal appears only for a crash newer than this,
+    // so each distinct crash is surfaced once.
+    DateTime? lastSeenCrashAt,
   }) = _SettingsModel;
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) =>
