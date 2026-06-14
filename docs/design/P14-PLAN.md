@@ -157,7 +157,7 @@ Make the on-device graph + "Ask your library" operate over Things, reusing the G
   the separate Thing-embedding index is deferred to P15/P16 (BACKLOG + AI-SPEC). CI green (pure projection +
   fake-store rebuild + seam + retriever); **live Cozo/RAG APK check batched into the P14 close → stays `[~]`.**
 
-### `[ ]` P14f — Diagnostic surface + P14 phase close *(UI-light + docs; APK)*
+### `[~]` P14f — Diagnostic surface + P14 phase close *(UI-light + docs; APK)*
 A thin, verifiable window into the new layer, then close the phase.
 - A small **diagnostic** (maintainer call — *not* a Thing browser): a Labs/Advanced **"View as Thing
   (JSON-LD)"** action on item detail (shows a media item's projected `MediaObject` + its `grabbit:`
@@ -168,6 +168,13 @@ A thin, verifiable window into the new layer, then close the phase.
   to `docs/BACKLOG.md`.
 - **Exit / review:** the diagnostic shows a media item's `MediaObject` JSON-LD + provenance; the consolidated
   on-device pass closes P14 (→ P15, the curator).
+- **Status:** shipped — Advanced-gated **"View as Thing (JSON-LD)"** on item detail (`item_detail_screen.dart`
+  + pure `thing_jsonld_format.dart`) and a read-only **Things count** tile in AI settings
+  (`thing_stats_providers.dart`). Docs landed: the `docs/VERIFICATION.md` **P14f** + **consolidated P14**
+  sections, ROADMAP/`things-engine.md` status. CI green (pretty-printer, Advanced-mode gating widget test,
+  count providers). **Phase-close bookkeeping:** P14a/b/d are `[x]` (CI-discharged); **P14c/P14e/P14f remain
+  `[~]` until the maintainer runs the consolidated on-device pass, which flips them — and P14 — to `[x]`**
+  (CLAUDE.md §7; not pre-flipped on a promise).
 
 ---
 

@@ -22,6 +22,7 @@ import 'package:grabbit/core/device/device_profile.dart';
 import 'package:grabbit/core/device/device_tier_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/widgets/confirm_dialog.dart';
+import 'package:grabbit/features/ai/data/thing_stats_providers.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
 import 'package:grabbit/features/library/presentation/translation.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
@@ -70,6 +71,7 @@ class AiSettingsScreen extends ConsumerWidget {
             ),
             const _SemanticSearchTile(),
             const _MultilingualModelTile(),
+            const _ThingsStatsTile(),
             const _EmbedderSelfTestTile(),
             const _MultilingualSelfTestTile(),
           ],
@@ -581,6 +583,39 @@ class _SemanticSearchTileState extends ConsumerState<_SemanticSearchTile> {
 /// On-device diagnostic: embeds a sample string and reports the engine's
 /// availability + vector dimension via a snackbar. The verification surface for
 /// the embedder foundation (mirrors the graph self-test).
+/// P14f diagnostic: a read-only count of the Things layer (typed schema.org
+/// records projected from the library + any authored relationships).
+class _ThingsStatsTile extends ConsumerWidget {
+  const _ThingsStatsTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final things = ref.watch(thingCountProvider);
+    final edges = ref.watch(thingEdgeCountProvider);
+    final count = things.value;
+    final edgeCount = edges.value;
+    final subtitle = count == null
+        ? 'Counting…'
+        : '$count Thing${count == 1 ? '' : 's'}'
+              "${edgeCount == null ? '' : ' · $edgeCount authored edge${edgeCount == 1 ? '' : 's'}'}";
+    return ListTile(
+      leading: const Icon(Icons.schema_outlined),
+      title: const Text('Things in your library'),
+      subtitle: Text(subtitle),
+      trailing: const InfoHintButton(
+        InfoHint(
+          title: 'Things',
+          body:
+              'Your library as typed schema.org records. Every download is '
+              'projected into a MediaObject Thing; authored edges are '
+              'relationships you or the app assert between them. The graph and '
+              '“Ask your library” read this layer.',
+        ),
+      ),
+    );
+  }
+}
+
 class _EmbedderSelfTestTile extends ConsumerWidget {
   const _EmbedderSelfTestTile();
 

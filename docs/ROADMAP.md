@@ -411,6 +411,7 @@ per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 > `docs/decisions/` (ADR-0001–0004). Each phase authors its own `docs/design/P<N>-PLAN.md` map at its start.
 
 ## P14 — Things foundation + MediaObject projection
+**Status: foundation shipped (P14a–f); pending the consolidated on-device pass that closes the phase.** Next: P15.
 **Goals:** lay the typed-graph **spine** so the library *is* a graph of Things, with media as the first type.
 **Deliverables (high level — subphase map in `docs/design/P14-PLAN.md` at phase start):**
 - **Generic Thing store**: schema.org vocabulary as a data asset; Things as JSON-LD + promoted columns in

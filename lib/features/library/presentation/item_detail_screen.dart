@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/ai/generation_provider.dart';
@@ -17,6 +18,8 @@ import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/text/textrank.dart';
 import 'package:grabbit/core/text/transcript_dedup.dart';
+import 'package:grabbit/core/things/thing_jsonld_format.dart';
+import 'package:grabbit/core/things/thing_repository.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/utils/byte_format.dart';
 import 'package:grabbit/core/utils/duration_format.dart';
@@ -105,6 +108,8 @@ class ItemDetailScreen extends ConsumerWidget {
                     await ref
                         .read(externalShareServiceProvider)
                         .openUrl(row.sourceUrl);
+                  case 'viewAsThing':
+                    await _viewAsThing(context, ref, itemId);
                   case 'delete':
                     await _deleteAndPop(context, ref, row);
                 }
@@ -151,6 +156,14 @@ class ItemDetailScreen extends ConsumerWidget {
                   value: 'open',
                   child: Text('Open source link'),
                 ),
+                // P14f diagnostic: inspect the item's projected MediaObject Thing
+                // (JSON-LD + grabbit: provenance). Advanced mode only.
+                if (ref.watch(settingsControllerProvider).value?.mode ==
+                    UiMode.advanced)
+                  const PopupMenuItem(
+                    value: 'viewAsThing',
+                    child: Text('View as Thing (JSON-LD)'),
+                  ),
                 const PopupMenuItem(value: 'delete', child: Text('Delete')),
               ],
             ),
@@ -176,6 +189,56 @@ class ItemDetailScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// P14f diagnostic (Advanced): shows the item's projected `MediaObject` Thing as
+/// pretty-printed JSON-LD (with its `grabbit:` provenance), in a copyable dialog.
+/// A read-only window into the Things layer — not an editor.
+Future<void> _viewAsThing(
+  BuildContext context,
+  WidgetRef ref,
+  String itemId,
+) async {
+  final thing = await ref.read(thingRepositoryProvider).thingById(itemId);
+  if (!context.mounted) return;
+  final pretty = thing == null ? null : prettyThingJsonld(thing.jsonld);
+  await showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Thing (JSON-LD)'),
+      content: pretty == null
+          ? const Text(
+              'Not projected yet — rebuild the library (Settings → AI → '
+              'Rebuild graph index) to generate this item’s Thing.',
+            )
+          : SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  pretty,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                ),
+              ),
+            ),
+      actions: [
+        if (pretty != null)
+          TextButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              await Clipboard.setData(ClipboardData(text: pretty));
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Copied JSON-LD')),
+              );
+            },
+            child: const Text('Copy'),
+          ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
 }
 
 /// Confirms, deletes the item (honoring the secure-delete setting), then pops
