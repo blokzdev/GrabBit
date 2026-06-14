@@ -60,7 +60,7 @@
 
 ---
 
-### `[ ]` P14a — Schema.org vocabulary asset + Thing/JSON-LD core *(pure Dart; CI)*
+### `[x]` P14a — Schema.org vocabulary asset + Thing/JSON-LD core *(pure Dart; CI)*
 The schema-as-data foundation every later subphase builds on (ADR-0001).
 - Vendor the **schema.org vocabulary** (JSON-LD context + type/property definitions) as a **read-only,
   versioned app asset**, with a pure-Dart loader (parse once, cache).
@@ -69,6 +69,16 @@ The schema-as-data foundation every later subphase builds on (ADR-0001).
   against the asset (is the `@type` known; are these properties defined). No Drift, no UI.
 - **Exit / review:** a JSON-LD Thing round-trips; promoted-column derivation + boundary validation behave on
   known and unknown `@type`s; covered by unit tests. *(CI-discharged — no on-device behaviour.)*
+- **Status:** implemented (CI-green). Vendored the full **schema.org v30.0** `schemaorg-current-https.jsonld`
+  (~1.5 MB) at `assets/vocab/` (+ pinned README, pubspec asset, CC BY-SA 3.0 notice). New `lib/core/things/`:
+  `thing_doc.dart` (`ThingDoc` JSON-LD value type + `schemaLocalName`), `schema_org_vocabulary.dart` (pure
+  `SchemaOrgVocabulary.parse` → class/subClassOf + domain index; `isKnownType`/`propertiesFor`(inherited)/
+  `isDefined`; drops raw JSON after indexing), `thing_validation.dart` (advisory `validateThingDoc`, tolerant
+  of `@`-keywords + `grabbit:`), `schema_org_vocabulary_provider.dart` (lazy `FutureProvider`). Tests: vocab
+  query (fixture), `ThingDoc` parse/derive, validation truth table, + a real-asset smoke test (loads via
+  `rootBundle` in CI; asserts ~1000 types incl. Recipe/VideoObject/Event/Place + inherited props). No
+  schema/Drift change; no `build_runner`. **CI-discharged → `[x]` on merge** (the asset loads the same way in
+  CI as on-device).
 
 ### `[ ]` P14b — `ThingRepository` + promoted-column discipline *(Drift; CI)*
 The canonical store API over the existing `things` table.

@@ -116,6 +116,10 @@ flutter:
     # P12e: a short synthetic (TTS) speech clip — 16 kHz mono WAV — used by the
     # AI-settings transcription self-test. License-clean, no copyrighted media.
     - assets/audio/transcription_sample.wav
+    # P14a: the schema.org vocabulary (pinned v30.0), vendored as a read-only asset
+    # for on-device Thing validation/grounding (ADR-0001). CC BY-SA 3.0 — see
+    # THIRD-PARTY-NOTICES.md and assets/vocab/README.md.
+    - assets/vocab/schemaorg-current-https.jsonld
   # Bundled (offline, no runtime fetch) brand type. Variable fonts — weights are
   # selected via fontWeight against the wght axis.
   fonts:
