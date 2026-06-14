@@ -215,7 +215,7 @@ lean for speed, not for a minutes budget:
 - **Branches are single-use per PR.** Each PR gets its own **fresh** branch, **cut from the latest
   `main`**, named for the work it contains: **`claude/p<N><sub>-<short-topic>`** for a (sub)phase
   (e.g. `claude/p10a-cozo-foundation`) or **`claude/<short-topic>`** for off-phase work (e.g.
-  `claude/docs-consistency-sweep`). The maintainer **deletes the branch on merge**, so a branch name
+  `claude/docs-consistency-sweep`). GitHub **auto-deletes the head branch on merge**, so a branch name
   maps 1:1 to a single PR and is **never reused**.
   - **Do not lock onto a branch name handed to a session at startup.** A session may be seeded with a
     designated dev-branch name (e.g. from a prior task); treat that as valid only for the *current*
@@ -225,13 +225,19 @@ lean for speed, not for a minutes budget:
 - **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`…).
 - Small, reviewable commits. Push with `git push -u origin <branch>`; retry network
   failures with exponential backoff. Never force-push shared branches.
-- **Subphase = PR**: at the end of each completed (sub)phase — all CI gates green
-  (format · analyze · test) **and** the (sub)phase's exit criteria met — the agent
-  **opens a PR into `main`** as the final step of its execution, without waiting for
-  a maintainer trigger. The maintainer reviews, merges, and deletes the branch, then
-  tells the agent; the agent syncs local `main` and starts the next (sub)phase's
-  branch. (A "phase" with no subphases opens one PR; a phase split into subphases
-  opens one PR per subphase.)
+- **Subphase = PR → self-merge on green → plan the next.** At the end of each completed
+  (sub)phase — all CI gates green (format · analyze · test) **and** the (sub)phase's exit
+  criteria met — the agent **opens a PR into `main`**, then **watches it until CI is green**
+  (a CI failure is the agent's to diagnose and fix). The maintainer has given **standing
+  authorization for the agent to merge its own (sub)phase PR once CI is green** — **squash**
+  merge; GitHub auto-deletes the head branch. The agent then **syncs local `main`** and
+  **immediately enters plan mode to comprehensively plan the next (sub)phase** — exploring the
+  code *and* **researching the web** to de-risk and surface better/newer approaches & best
+  practices — and presents that plan (`ExitPlanMode`) for approval **before building**. (A
+  "phase" with no subphases opens one PR; a split phase opens one PR per subphase.) Still
+  **pause for the maintainer** on genuinely ambiguous product forks and risky/irreversible
+  actions (§ above); this standing authorization covers the routine green-CI merge only, not
+  force-pushes, history rewrites, or merges with unresolved review feedback.
 - **Same-PR doc upkeep.** Every (sub)phase PR also: (a) **updates `docs/VERIFICATION.md`**
   whenever it adds user-facing behavior — the on-device checks CI can't cover (real
   downloads, native, notifications, biometrics, etc.); mandatory, it's the v1-release
