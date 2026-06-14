@@ -1114,6 +1114,17 @@ per-subphase rows above stay as the granular per-feature reference). Running thi
       app (re-running the backfill) creates no duplicates and leaves the count stable.
 - [ ] **Fully offline** (airplane mode) — projection touches no network.
 
+### P14e — Cozo Thing projection + Thing-aware hydration → graph & GraphRAG  *(install `app-arm64-v8a-debug.apk`; needs a real library; a capable device + downloaded models for "Ask")*
+- [ ] **"Ask your library" cites Things:** on a capable device, an answer's source chips/`[n]` citations show
+      the **MediaObject** Thing (name from the Thing) and still deep-link to the item; answers are grounded.
+- [ ] **No regression** to the graph features — semantic search, **Related**, the **neighborhood graph**,
+      **connection path**, **Rediscover**, and **Discovered** albums all still resolve real items.
+- [ ] **Rebuild reports Things:** Settings → AI → **Rebuild graph index** and the About **graph self-test**
+      now show `… · N things · M thing-edges`; the thing count tracks the library.
+- [ ] **Low/ineligible tier:** on a device that can't run generation, "Ask" still returns the **retrieval-only
+      fallback** (now over Things) — no crash, no empty gap.
+- [ ] **Fully offline** (airplane mode) after any one-time model fetch.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

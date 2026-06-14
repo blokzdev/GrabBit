@@ -212,6 +212,14 @@ general case — so the retrieval/generation loop needs no rework when richer ty
 for the P14 Things Engine — `docs/decisions/0001-schema-as-data-not-schema-as-code.md`,
 `docs/decisions/0004-relationships-provenance-and-the-authored-edge-moat.md`)*.
 
+> **Thing-level embedding index — deferred to a dedicated phase (P15/P16).** P14e makes retrieval *hydration*
+> Thing-aware but **reuses the media-keyed vectors** (a MediaObject's `id == media_items.id`). **Non-MediaObject**
+> Things — AI-extracted (P15) or deterministically imported (P16: `Recipe`/`Event`/`Place`/…) — own no media
+> vector, so they aren't recalled by "Ask" until they have their own embeddings. A future phase adds a
+> `thing_embedding` relation keyed by `things.id` (built from the Thing's JSON-LD text); its hits flow through
+> P14e's `hydrateNodes` seam (recall vs. resolve/cite), converging toward keying embeddings on `things.id`
+> uniformly. See `docs/BACKLOG.md`.
+
 **Feasibility (affirmed):** Google AI Edge ships on-device RAG + function-calling libraries for SLMs
 (Gemma 3n); `flutter_gemma` has built-in on-device RAG; the **MobileRAG** approach runs a ~33M
 embedder + Qwen2.5-0.5B generation on phones. **RAM-gated** (the HNSW index lives in RAM; our

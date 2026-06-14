@@ -8,6 +8,15 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Separate Thing-level embedding index (a dedicated future phase, sequence with P15/P16).** P14e made
+      *hydration* Thing-aware but **reuses the existing media-keyed vectors** (a MediaObject's `id ==
+      media_items.id`). This adds the **recall** layer: embed Things as their own vectors (a `thing_embedding`
+      Cozo relation keyed by `things.id`, built from the Thing's JSON-LD text) so **non-MediaObject** Things —
+      `Recipe`/`Event`/`Place`/`Article`, whether AI-extracted (P15) or **deterministically imported** (P16) —
+      become semantically searchable in "Ask". It is **complementary to, not a replacement for**, P14e's
+      `hydrateNodes` seam (recall vs. resolve/cite): the index's hits flow *through* that same seam. No value
+      before non-MediaObject Things exist (today it would only re-embed identical content under a second key);
+      the eventual consolidation is to key embeddings on `things.id` uniformly. *(From P14e.)*
 - [ ] **Translation — unify the language name/code sources.** P13f-2 added `kTranslationLanguages` (full ML Kit
       set, code→name) for the settings card + picker, while item-detail keeps its short curated `_captionLanguages`
       translate-target list. Fold the two into one source (the curated targets as a subset of the full set) so a

@@ -148,4 +148,56 @@ void main() {
       expect(entry.value, isEmpty, reason: entry.key);
     }
   });
+
+  test('projects thing nodes + vocabulary and authored edges (P14e)', () {
+    final rels = buildGraphRelations(
+      LibrarySnapshot(
+        things: [
+          Thing(
+            id: 'v1',
+            type: 'VideoObject',
+            // an @id-bearing object property → one vocabulary edge
+            jsonld:
+                '{"@type":"VideoObject","name":"V","isPartOf":{"@id":"pl-1"},'
+                '"author":{"@type":"Person","name":"NoId"}}',
+            name: 'V',
+            url: 'https://e/v1',
+            createdAt: t0,
+            updatedAt: t0,
+          ),
+        ],
+        thingEdges: [
+          ThingEdge(
+            subject: 'v1',
+            predicate: 'relatedTo',
+            object: 'r1',
+            provenance: 'user-authored',
+            confidence: 0.9,
+            note: 'linked',
+            createdAt: t0,
+          ),
+        ],
+      ),
+    );
+
+    expect(rels['thing']!.single, [
+      'v1',
+      'VideoObject',
+      'V',
+      'https://e/v1',
+      1000,
+      1000,
+    ]);
+    // Only the @id-bearing `isPartOf` yields an edge; the inline `author` (no
+    // @id) does not.
+    expect(rels['thingVocabEdge']!.single, ['v1', 'isPartOf', 'pl-1']);
+    expect(rels['thingAuthoredEdge']!.single, [
+      'v1',
+      'relatedTo',
+      'r1',
+      'user-authored',
+      0.9,
+      'linked',
+    ]);
+  });
 }

@@ -35,6 +35,17 @@ const Map<String, String> graphSchema = {
   'coDownloadedWith':
       ':create coDownloadedWith { mediaId: String, otherId: String => '
       'gapSec: Int }',
+  // --- things (P14e) -----------------------------------------------------
+  'thing':
+      ':create thing { id: String => '
+      'type: String, name: String?, url: String?, '
+      'createdAt: Int, updatedAt: Int }',
+  'thingVocabEdge':
+      ':create thingVocabEdge { subject: String, predicate: String, '
+      'object: String }',
+  'thingAuthoredEdge':
+      ':create thingAuthoredEdge { subject: String, predicate: String, '
+      'object: String => provenance: String, confidence: Float?, note: String? }',
 };
 
 /// The `:create` scripts for every relation in [graphSchema] not present in
@@ -74,9 +85,19 @@ const Map<String, List<String>> graphRelationColumns = {
   'folderParent': ['folderId', 'parentId'],
   'duplicateOf': ['mediaId', 'otherId'],
   'coDownloadedWith': ['mediaId', 'otherId', 'gapSec'],
+  'thing': ['id', 'type', 'name', 'url', 'createdAt', 'updatedAt'],
+  'thingVocabEdge': ['subject', 'predicate', 'object'],
+  'thingAuthoredEdge': [
+    'subject',
+    'predicate',
+    'object',
+    'provenance',
+    'confidence',
+    'note',
+  ],
 };
 
-/// Edge relations (vs. node relations) — used for stats.
+/// Edge relations (vs. node relations) — used for the media `edges` stat.
 const Set<String> graphEdgeRelations = {
   'postedBy',
   'onPlatform',
@@ -87,6 +108,12 @@ const Set<String> graphEdgeRelations = {
   'folderParent',
   'duplicateOf',
   'coDownloadedWith',
+};
+
+/// Thing→Thing edge relations (P14e) — counted separately from media edges.
+const Set<String> graphThingEdgeRelations = {
+  'thingVocabEdge',
+  'thingAuthoredEdge',
 };
 
 /// A `:replace` script that recreates [relation] with exactly the rows bound to

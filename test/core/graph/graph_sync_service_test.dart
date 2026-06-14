@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/ai/embedder_engine.dart';
@@ -129,6 +130,58 @@ void main() {
       (c) => c.script.contains(':replace onPlatform'),
     );
     expect((onPlatform.params['rows']! as List).single, ['a', 'youtube']);
+  });
+
+  test('rebuild :replaces the thing node + edge relations (P14e)', () async {
+    final db = newDb();
+    addTearDown(db.close);
+    await db
+        .into(db.things)
+        .insert(
+          ThingsCompanion.insert(
+            id: 'v1',
+            type: 'VideoObject',
+            jsonld:
+                '{"@type":"VideoObject","name":"V","isPartOf":{"@id":"pl"}}',
+            name: const Value('V'),
+            createdAt: DateTime.fromMillisecondsSinceEpoch(1000),
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(1000),
+          ),
+        );
+    await db
+        .into(db.thingEdges)
+        .insert(
+          ThingEdgesCompanion.insert(
+            subject: 'v1',
+            predicate: 'relatedTo',
+            object: 'r1',
+            provenance: 'user-authored',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(1000),
+          ),
+        );
+    final fake = _FakeGraphStore();
+
+    await GraphSyncService(fake, db).rebuild();
+
+    Object? rowsFor(String marker) =>
+        fake.calls.firstWhere((c) => c.script.contains(marker)).params['rows'];
+    expect((rowsFor(':replace thing') as List).single, [
+      'v1',
+      'VideoObject',
+      'V',
+      null,
+      1000,
+      1000,
+    ]);
+    expect((rowsFor(':replace thingVocabEdge') as List).single, [
+      'v1',
+      'isPartOf',
+      'pl',
+    ]);
+    expect(
+      ((rowsFor(':replace thingAuthoredEdge') as List).single as List).take(4),
+      ['v1', 'relatedTo', 'r1', 'user-authored'],
+    );
   });
 
   test('syncIfStale rebuilds + stamps on mismatch, skips on match', () async {

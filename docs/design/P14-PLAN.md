@@ -137,7 +137,7 @@ The durable plumbing for the three edge kinds + provenance (ADR-0004) — store 
   outlive a rebuilt Thing). Pure-Dart/Drift, migration covered by an upgrade test (v13→v14 precedent) →
   **CI-discharged → `[x]` on merge.**
 
-### `[ ]` P14e — Cozo Thing projection + Thing-aware hydration → graph & GraphRAG over Things *(graph; APK)*
+### `[~]` P14e — Cozo Thing projection + Thing-aware hydration → graph & GraphRAG over Things *(graph; APK)*
 Make the on-device graph + "Ask your library" operate over Things, reusing the GRAPH-SPEC §10 seams.
 - **Edge production (seam 1):** extend the Cozo projection (`graph_projection.dart`/`cozo_schema.dart`) to emit
   **Thing nodes + Thing→Thing edges** (vocabulary + authored) keyed by `things.id`. Node ids are already
@@ -149,6 +149,13 @@ Make the on-device graph + "Ask your library" operate over Things, reusing the G
 - **Exit / review:** on a capable device, graph features + "Ask your library" resolve/cite `MediaObject`
   Things; **no regression** to related/neighborhood/path/RAG; low/ineligible tiers keep the retrieval-only
   fallback (now over Things). APK spot-check. *(APK.)*
+- **Status:** shipped — projection emits `thing`/`thingVocabEdge`/`thingAuthoredEdge` (`graph_projection.dart`
+  + `cozo_schema.dart`), `GraphStats`+self-test/rebuild report thing counts, `_edgeBuilderVersion`→4 (startup
+  self-heal). New **`thing_hydration.dart`** seam (`hydrateNodes` → `HydratedNode{id,title,type,media}`); the
+  RAG retriever cites Things (`RagSource.type`, `[n] title (type)`) and the path/rediscover/albums providers
+  resolve through it (media rendering unchanged). **Reuses existing media vectors — no re-embedding** (locked);
+  the separate Thing-embedding index is deferred to P15/P16 (BACKLOG + AI-SPEC). CI green (pure projection +
+  fake-store rebuild + seam + retriever); **live Cozo/RAG APK check batched into the P14 close → stays `[~]`.**
 
 ### `[ ]` P14f — Diagnostic surface + P14 phase close *(UI-light + docs; APK)*
 A thin, verifiable window into the new layer, then close the phase.
