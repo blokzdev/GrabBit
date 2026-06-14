@@ -274,6 +274,14 @@ enum DownloadErrorCode {
 user-facing error), `inferenceFailed`, `transcriptionFailed`, `indexUnavailable`. Never crash; gate
 rather than fail where the device can't run a model. See `docs/AI-SPEC.md` §8 / `docs/GRAPH-SPEC.md` §8.
 
+**On-device crash capture (off-phase).** Uncaught Dart/Flutter errors (`FlutterError.onError` +
+`PlatformDispatcher.instance.onError`, wired in `main.dart`) are written **synchronously** to a single
+app-private file `<appSupport>/diagnostics/last_crash.log` (`lib/core/diagnostics/crash_log.dart`); only
+the latest crash is kept. The **next launch** surfaces it once — behind the app lock — in a copyable
+modal (gated by `SettingsModel.lastSeenCrashAt` so each distinct crash shows once); it's also re-viewable
+on demand from **About → Last crash log**. **Privacy-first: on-device only, nothing is uploaded** (the
+user copies + shares manually). Opt-in crash *reporting* (upload) is a future seam (`docs/BACKLOG.md`).
+
 ---
 
 ## 7. Packaging

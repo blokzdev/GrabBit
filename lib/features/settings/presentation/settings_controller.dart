@@ -190,6 +190,11 @@ class SettingsController extends _$SettingsController {
   Future<void> setNotifyGraph(bool value) async =>
       _update((await future).copyWith(notifyGraph: value));
 
+  /// Records that the user has been shown the crash report at [time], so the
+  /// next-launch modal doesn't re-surface the same crash.
+  Future<void> markCrashSeen(DateTime time) async =>
+      _update((await future).copyWith(lastSeenCrashAt: time));
+
   /// Restores all preferences to their defaults, but preserves the app-lock
   /// (its PIN lives in secure storage) and the accepted disclaimer (resetting
   /// it would force re-onboarding).

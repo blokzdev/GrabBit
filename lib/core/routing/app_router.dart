@@ -6,6 +6,7 @@ import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/adaptive_navigation_scaffold.dart';
 import 'package:grabbit/features/downloader/presentation/add_download_screen.dart';
 import 'package:grabbit/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:grabbit/features/diagnostics/presentation/crash_report_dialog.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
@@ -337,7 +338,8 @@ class _AdaptiveShell extends StatelessWidget {
           label: 'Settings',
         ),
       ],
-      child: navigationShell,
+      // Surfaces a previous crash once after unlock (behind the app lock).
+      child: CrashNoticeGate(child: navigationShell),
     );
   }
 }

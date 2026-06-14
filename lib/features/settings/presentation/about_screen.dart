@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:grabbit/core/diagnostics/crash_log_providers.dart';
 import 'package:grabbit/core/graph/graph_error.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/graph/graph_sync_provider.dart';
 import 'package:grabbit/core/theme/tokens.dart';
 import 'package:grabbit/core/widgets/content_bounds.dart';
+import 'package:grabbit/features/diagnostics/presentation/crash_report_dialog.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// App identity, version, licenses, and a link back to the user-responsibility
@@ -70,6 +72,7 @@ class AboutScreen extends StatelessWidget {
                     onTap: () => context.push('/disclaimer'),
                   ),
                   const _GraphSelfTestTile(),
+                  const _LastCrashTile(),
                 ],
               ),
             ),
@@ -128,6 +131,26 @@ class _GraphSelfTestTile extends ConsumerWidget {
       message = 'Graph self-test failed: ${e.message}';
     }
     messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// On-demand view of the last recorded crash (on-device crash capture). Shows
+/// the copyable report when one exists, otherwise a quiet "no crashes" state.
+class _LastCrashTile extends ConsumerWidget {
+  const _LastCrashTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final report = ref.watch(pendingCrashReportProvider).value;
+    final has = report != null;
+    return ListTile(
+      leading: const Icon(Icons.bug_report_outlined),
+      title: const Text('Last crash log'),
+      subtitle: Text(has ? 'View or copy the report' : 'No crashes recorded'),
+      trailing: has ? const Icon(Icons.chevron_right) : null,
+      enabled: has,
+      onTap: has ? () => showCrashReportDialog(context, report) : null,
+    );
   }
 }
 
