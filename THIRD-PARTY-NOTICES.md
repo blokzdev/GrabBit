@@ -21,6 +21,13 @@ their sources, as required when conveying the combined work.
 - **Artifact:** `io.github.cozodb:cozo_android` (native library, linked **unmodified**)
 - **Source:** https://github.com/cozodb/cozo
 
+### schema.org vocabulary — Things validation/grounding data (P14)
+- **License:** **CC BY-SA 3.0** (https://creativecommons.org/licenses/by-sa/3.0/)
+- **Asset:** `assets/vocab/schemaorg-current-https.jsonld` — the schema.org vocabulary **v30.0**, vendored
+  **unmodified** as a read-only data asset (not code; GrabBit's own code stays GPL-3.0).
+- **Source:** https://schema.org · https://github.com/schemaorg/schemaorg (`data/releases/30.0/`)
+- **Attribution:** "schema.org" — © schema.org community; see `assets/vocab/README.md`.
+
 ## Downloaded on demand at runtime (not bundled in the app)
 
 - **Embedding / generation models** (Gecko, paraphrase-multilingual-MiniLM-L12-v2, SmolLM2, Qwen3 /
