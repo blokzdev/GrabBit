@@ -36,7 +36,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | **Graph+vector (P10):** `io.github.cozodb:cozo_android:0.7.2` (Maven Central AAR) via a `CozoHostApi` Pigeon bridge; `ffi`+`ffigen` (dev) for the Windows `dart:ffi` impl (P15). MPL-2.0. | On-device graph + HNSW vector DB. See `docs/GRAPH-SPEC.md`. |
 | **On-device AI (P10b-2+):** `flutter_gemma` (MediaPipe/LiteRT-LM — embeddings + LLM + RAG; added P10b-2 embedder-only), a whisper.cpp pkg (`whisper_ggml_plus`/`whisper_kit`), ML Kit (OCR/translate) | On-device/edge AI. See `docs/AI-SPEC.md`. |
 | **On-device AI (P12c):** `unorm_dart` (pure-Dart Unicode NFKC); `onnxruntime_v2` (P12c-2; 16KB-page + GPU) | NFKC for the hand-rolled XLM-R tokenizer (the multilingual embedder); ONNX runtime for MiniLM. |
-| **On-device AI (P12e):** `whisper_ggml_plus` (whisper.cpp FFI, MIT) | Speech transcription. Chosen over `whisper_kit` for Windows/v2 parity; app-managed ggml model fed as `modelPath`, 16 kHz WAV made with our existing ffmpeg (no ffmpeg companion). |
+| **On-device AI (P12e):** `whisper_ggml_plus` (whisper.cpp FFI, MIT) | Speech transcription. Chosen over `whisper_kit` for Windows/P15 parity; app-managed ggml model fed as `modelPath`, 16 kHz WAV made with our existing ffmpeg (no ffmpeg companion). |
 | **On-device AI (P13b-1):** `google_mlkit_text_recognition` (MIT plugin; ML Kit binaries free/proprietary) | OCR for image items. **Bundled Latin model — no Google Play Services, fully offline** (fits the sideloaded/de-Googled posture); behind the `OcrEngine` seam, graceful off-Android. Non-Latin scripts deferred (BACKLOG). |
 | **On-device AI (P13b-2):** `google_mlkit_translation` + `google_mlkit_language_id` (MIT plugins) | On-device translation of item description/transcript. **No Google Play Services** — language models (~30 MB each, English pivot) download over HTTPS and run offline; behind the `TranslationEngine` seam, graceful off-Android. |
 | **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
@@ -127,10 +127,10 @@ IntColumn orderIndex;                                    // v3 (P9d): queue reor
 //   citationsJson?, createdAt
 ```
 
-> **Forward seam (v2 Things Engine).** A generic **`things`** table (schema.org Things as JSON-LD +
+> **Forward seam (P14 Things Engine).** A generic **`things`** table (schema.org Things as JSON-LD +
 > promoted `name`/`url`/timestamp columns) is **introduced empty in v10 (P12f)**; existing media then
 > projects into `Audio`/`Image`/`VideoObject` Things by a field-by-field mapping (no re-download, files
-> don't move) **in v2** — nothing reads or writes the table in v1. **Drift stays canonical**, Cozo stays
+> don't move) **in P14** — nothing reads or writes the table before then. **Drift stays canonical**, Cozo stays
 > the derived index, and `things.id` is kept alignable to `media_items.id` (no FK). See ADR-0001
 > (schema-as-data) and ADR-0003 (MediaObject bridge); overview in `docs/things-engine.md`.
 
@@ -162,8 +162,8 @@ have it. Width/height are captured at download (video from the `.info.json` side
 decode via the `image` package) and best-effort backfilled for legacy items by `MediaDimensionService`.
 **v9 (P11)** adds the `notifications` table backing the Activity Inbox (shipped).
 **v10 (P12f)** adds the empty **`things`** table (schema.org Things as JSON-LD + promoted
-`name`/`url`/`created_at`/`updated_at`; `id` alignable to `media_items.id`, **no FK**) — the v2
-Things-Engine forward seam, created empty and **unused in v1** (Drift canonical).
+`name`/`url`/`created_at`/`updated_at`; `id` alignable to `media_items.id`, **no FK**) — the P14
+Things-Engine forward seam, created empty and **unused until P14** (Drift canonical).
 **v11 (P13a)** adds `media_metadata.{aiSummary,aiSummaryModelId}` (cached on-device LLM summary + its
 model). **v12 (P13b-1)** adds `media_metadata.ocrText` and extends `media_fts` with an `ocr` column
 (the FTS5 table is dropped + rebuilt by the migration since FTS5 can't `ALTER ADD COLUMN`). **v13 (P13c-2)**

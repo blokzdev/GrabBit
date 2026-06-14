@@ -66,7 +66,7 @@ three PRs:
   track change, reusing the video controller). **markPlayed** stamps `lastAccessedAt` on first play
   → fills P9b-2's Recently-played album. Shared `subtitle_files` util (reused by Media Studio).
   Also backfilled the P8/P9 VERIFICATION checklist. **Shipped.**
-- **`[→]` P9c-2 — Picture-in-Picture (native): deferred to `docs/BACKLOG.md`** (revisit v2/P16).
+- **`[→]` P9c-2 — Picture-in-Picture (native): deferred to `docs/BACKLOG.md`** (revisit P16).
   It's native, on-device-only verification, and pure polish — not worth a native APK round now.
 - **Background audio is deferred** (`docs/BACKLOG.md`).
 - **Exit / review:** change speed/loop and pick a subtitle track in-player (P9c-1). *(PiP backlog.)*
@@ -194,7 +194,7 @@ initializing, and the selection-screen white icon sits on a dark scrim over medi
   amoled)` pushes dark surfaces to true black (graded container roles keep cards/inputs legible); wired
   through `app.dart`; "Pure black (AMOLED)" switch in Settings → Appearance.
 - **Cross-platform route transitions** — `pageTransitionsTheme` extended beyond Android to
-  windows/linux/macOS/iOS (`FadeForwardsPageTransitionsBuilder`); future-proofs Windows v2.
+  windows/linux/macOS/iOS (`FadeForwardsPageTransitionsBuilder`); future-proofs Windows (P15).
 - **Motion-token adoption** — `lock_screen` shake uses `GrabBitTokens.standard.motionLong` instead of a
   hardcoded 400ms.
 - **Exit / review:** toggle AMOLED in dark mode → true-black background, cards still distinguishable;

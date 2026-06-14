@@ -47,8 +47,8 @@
   and self-test tiles. The user-facing AI features (summaries, "Ask your library", auto-tagging, the
   transcription UX) are **P13**. **ML Kit OCR/translate is deferred to P13** (listed there as gated
   features).
-- **Things-Engine seams are inert in v1.** P12f shapes them (`generateStructured`, the
-  `structured_extraction` matrix row, the empty `things` table) so the v2 Things Engine slots in cheaply;
+- **Things-Engine seams are inert until P14.** P12f shapes them (`generateStructured`, the
+  `structured_extraction` matrix row, the empty `things` table) so the P14 Things Engine slots in cheaply;
   no v1 feature calls them (ADR-0001/0002/0003, `docs/things-engine.md`).
 
 ## Status legend
@@ -182,7 +182,7 @@ Split into three PRs (risk-first), mirroring P12c's cadence:
   `TranscriptResult`, the whisper ggml catalog (HEAD-verified MIT/ungated URLs + SHA-256), matrix rows
   (low=`[tiny]`, mid=`[tiny, base]`, high=`[base, small, turbo]`), providers, settings, error code.
 - **`[x]` P12e-2** (PR #131, merged) — native `WhisperTranscriptionEngine` (`whisper_ggml_plus`, decided
-  here over `whisper_kit` for Windows/v2 parity), ffmpeg → 16 kHz mono WAV via the existing
+  here over `whisper_kit` for Windows/P15 parity), ffmpeg → 16 kHz mono WAV via the existing
   `MediaToolsEngine`, the app-managed model file fed as whisper's `modelPath`, + a tier-gated opt-in
   transcription card with a Labs self-test (transcribes a bundled synthetic clip).
 - **`[x]` P12e-3** — wire whisper as the caption-less fallback into the existing transcript flows:
@@ -195,7 +195,7 @@ Split into three PRs (risk-first), mirroring P12c's cadence:
   the item; a captioned item still prefers its sidecar.
 
 ### `[x]` P12f — Things-Engine forward seams + empty `things` table *(pure Dart + the one Drift migration)*
-Thin, inert scaffolding so the v2 Things Engine slots in cheaply — no v1 behaviour change.
+Thin, inert scaffolding so the P14 Things Engine slots in cheaply — no behaviour change before P14.
 - Add **`generateStructured(toolDefs, prompt)`** to the generation layer (`GenerationEngine` or a sibling
   structured seam; scaffold/minimal impl gated by the new **`structured_extraction`** matrix row); resolve
   the **function-calling model license fork** here

@@ -1,10 +1,10 @@
 # ADR-0001 — Schema-as-data, not schema-as-code
 
-- **Status:** Accepted (v2 Things Engine — architectural foundation, not yet scheduled)
+- **Status:** Accepted (P14 Things Engine — architectural foundation)
 - **Date:** 2026-05-28
 - **Deciders:** Founder/Architect
-- **Context band:** v2 (the Things Engine; see `docs/things-engine.md`). v1 (P12→P13→P14)
-  is unchanged by this decision.
+- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+  P0–P13 are unchanged by this decision.
 
 > **About this format.** GrabBit's Architecture Decision Records live in `docs/decisions/`,
 > numbered `NNNN-kebab-title.md`. Each ADR is tight and self-contained: **Context** (the forces
@@ -17,7 +17,7 @@
 
 ## Context
 
-The expanded GrabBit vision (v2) reframes the app as a **domain-agnostic local library of
+The expanded GrabBit vision (P14) reframes the app as a **domain-agnostic local library of
 structured, AI-actionable artifacts** — schema.org *Things* (Recipe, Event, Place, Article,
 Product, and the Audio/Image/VideoObject media types) — not only downloaded media. The compounding
 value is a **typed, interlinked personal corpus**: a folder of media is inert, but a graph of typed
@@ -53,7 +53,7 @@ The forces:
 
 ## Decision
 
-**The v2 Things Engine stores schema.org Things as JSON-LD in a single generic `things` table; it
+**The P14 Things Engine stores schema.org Things as JSON-LD in a single generic `things` table; it
 does not model the schema.org hierarchy as Dart classes or per-type tables.**
 
 Concretely (design language — no schema bump or code lands in the foundation-docs initiative):
@@ -133,7 +133,7 @@ Concretely (design language — no schema bump or code lands in the foundation-d
 
 ## Related
 
-- `docs/things-engine.md` — the v2 vision one-pager.
+- `docs/things-engine.md` — the P14 vision one-pager.
 - ADR-0002 — narrow-then-fill curator (how Things get *populated*).
 - ADR-0003 — MediaObject as the migration bridge (how existing downloads *become* Things).
 - ADR-0004 — relationships, provenance & the authored-edge moat (how Things *relate*, and how each

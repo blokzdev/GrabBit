@@ -1,10 +1,10 @@
 # ADR-0004 — Relationships, provenance & the authored-edge moat
 
-- **Status:** Accepted (v2 Things Engine — architectural foundation, not yet scheduled)
+- **Status:** Accepted (P14 Things Engine — architectural foundation)
 - **Date:** 2026-05-29
 - **Deciders:** Founder/Architect
-- **Context band:** v2 (the Things Engine; see `docs/things-engine.md`). v1 (P12→P13→P14)
-  is unchanged.
+- **Context band:** v1 / **P14** (the Things Engine; see `docs/things-engine.md`). The already-built
+  P0–P13 are unchanged.
 
 ## Context
 
@@ -117,7 +117,7 @@ reviewable where it's inferred, consistent with GrabBit's no-surprise posture.
 
 - **A relationship/annotation store is now part of the graph model** (authored edges + reified
   `Comment`/`Note` Things). It must round-trip through the rebuildable projection like everything else.
-- **A review/confirmation flow is required** for AI-inferred Things/edges; until v2 builds it, AI
+- **A review/confirmation flow is required** for AI-inferred Things/edges; until P14 builds it, AI
   inference must default to *proposed* state, never auto-asserted.
 - **Authored-edge labels are free-form**, so search/UX over them needs light normalization (the loose
   typing is deliberate, but it isn't free).
@@ -145,4 +145,4 @@ reviewable where it's inferred, consistent with GrabBit's no-surprise posture.
 - `docs/GRAPH-SPEC.md` (the existing multi-type/multi-edge Cozo graph this generalizes),
   `docs/AI-SPEC.md` §5–6 (typed-node GraphRAG), `docs/design/P11-PLAN.md` (the Activity Inbox review
   surface).
-- `docs/things-engine.md` — v2 vision one-pager.
+- `docs/things-engine.md` — P14 vision one-pager.

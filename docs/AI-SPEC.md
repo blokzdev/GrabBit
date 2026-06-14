@@ -15,8 +15,8 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 
 - **On-device = free, forever.** All AI here runs locally; it costs us nothing and is free to the
   user. **No cloud, no account, no credits, no telemetry.** (v3/cloud is dropped — see ROADMAP.)
-- **AI is core to v1's vision**, not a v2 add-on: v1 ships *after* the AI work (P10, P12–P13), then
-  launches at P14.
+- **AI is core to the vision**, not a bolt-on: the AI work (P10, P12–P13) lands mid-plan, the Things
+  Engine builds on it (P14), and the launch phase (P17) is **last** — we ship the full envisioned scope.
 - **Graceful capability-gating, never a crash or silent no-op.** Every AI feature is gated on a
   measured device tier; unsupported features are clearly disabled with a friendly reason.
 - **Always-available floor.** Where possible a zero-dependency, pure-Dart baseline (e.g. extractive
@@ -61,7 +61,7 @@ abstract interface class GenerationEngine {
   `GenerationEngine`, with `StructuredToolDef`/`StructuredResult` types) and **inert in v1** — no v1
   feature calls it and no shipped engine implements it (concrete impls throw
   `InferenceErrorCode.unsupported`); it is gated by the `structured_extraction` capability (§3). Shaping
-  it on the generation layer now is what lets the **v2 Things Engine** curator's fill step slot in
+  it on the generation layer now is what lets the **P14 Things Engine** curator's fill step slot in
   without reworking the AI engine contracts. The real impl + the function-calling **model-license fork**
   (FunctionGemma 270M vs Qwen3-0.6B) land in **P13** *(forward seam — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 
@@ -79,8 +79,8 @@ abstract interface class GenerationEngine {
   the model-selector UI. (Context: 2026 flagships handle ~4B params at Q4; tiny 0.5–1B models fit
   broadly — gate accordingly.) Feature rows include `embeddings`, `generation`, `transcription`,
   `ocr`/`translation`, plus a **`structured_extraction`** row — the AI-tier-gated capability backing
-  `generateStructured`; it is **unused by any v1 feature** and exists only so the v2 curator's fill step
-  is already gated *(forward seam for the v2 Things Engine — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
+  `generateStructured`; it is **unused before P14** and exists only so the P14 curator's fill step
+  is already gated *(forward seam for the P14 Things Engine — `docs/decisions/0002-narrow-then-fill-curator.md`)*.
 - **Separation from `GraphStore`:** `embed()` *produces* vectors; `GraphStore` *stores/searches*
   them (see `GRAPH-SPEC.md`). Only `GraphSyncService` calls both.
 - **Engine selection (P10g-2):** `embedderEngineFor(EmbedderModel)` maps a model to its runtime engine
@@ -185,7 +185,7 @@ abstract interface class GenerationEngine {
 - `DeviceCapabilityService` + tiers + `ModelCapabilityMatrix`; model catalog + download + integrity +
   caching; `flutter_gemma` generation impl; whisper.cpp transcription impl; capability-gating.
 - **`structured_extraction`** capability + the `generateStructured` seam (§2) are **shaped here** —
-  defined, gated, but driven by no v1 feature *(forward seam for the v2 Things Engine — ADR-0002)*.
+  defined, gated, but driven by no feature before P14 *(forward seam for the P14 Things Engine — ADR-0002)*.
 
 ### P13 — LLM feature surface & polish
 - **Transcription**, **abstractive summarization** (layered on the P10 TextRank floor),
@@ -209,7 +209,7 @@ Fully on-device natural-language Q&A over the private library:
 The harness operates over **generic typed nodes**, not a media-only collection: the v1 graph's media +
 entity nodes (uploader/playlist/tag/site) are one case, and a future typed-**Thing** corpus is the
 general case — so the retrieval/generation loop needs no rework when richer types arrive *(forward seam
-for the v2 Things Engine — `docs/decisions/0001-schema-as-data-not-schema-as-code.md`,
+for the P14 Things Engine — `docs/decisions/0001-schema-as-data-not-schema-as-code.md`,
 `docs/decisions/0004-relationships-provenance-and-the-authored-edge-moat.md`)*.
 
 **Feasibility (affirmed):** Google AI Edge ships on-device RAG + function-calling libraries for SLMs

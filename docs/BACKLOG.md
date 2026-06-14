@@ -1,7 +1,7 @@
 # GrabBit — Backlog
 
 > Living list of device-test findings and UX/feature refinements that don't map to a
-> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P16);
+> roadmap phase. Cleared via small PRs. `docs/ROADMAP.md` holds the phase plan (P0–P17);
 > `docs/VERIFICATION.md` holds the on-device checklist.
 
 ## In progress
@@ -137,7 +137,7 @@ _(nothing active — pick the next batch from below)_
       *(From P12f.)*
 - [ ] **`media_items` → MediaObject projection into `things`.** The v10 `things` table ships **empty**;
       the ADR-0003 field-by-field bridge that projects existing media into `Audio`/`Image`/`VideoObject`
-      Things (and Cozo node sync, promoted-column indices/FTS, the bespoke/​generic Thing UI) is the v2
+      Things (and Cozo node sync, promoted-column indices/FTS, the bespoke/​generic Thing UI) is the P14
       Things-Engine build. *(From P12f.)*
 - [ ] **Long-audio transcription — chunking + progress.** P12e transcribes a whole file in one
       whisper pass (fine for short clips; the queue gates auto-fallback on a downloaded model so it
@@ -194,7 +194,7 @@ _(nothing active — pick the next batch from below)_
 - [ ] **16 KB page-size** validation on Pixel 9 / Android 15+ (ffmpeg/python native
       libs); adopt a 16 KB-aligned ffmpeg-kit build if needed.
 - [ ] **Picture-in-Picture** for the in-app player. *(Deferred from P9c-2 → revisit in
-      v2/P16: it's native, on-device-only verification, and pure polish.)*
+      P16: it's native, on-device-only verification, and pure polish.)*
 - [ ] **Duplicate bulk-cleanup keep-policy** — P10c-d-1's **Clean up** keeps the *oldest* copy in each
       group. Offer alternatives (keep *largest* / *newest* / let the user pick which to keep) if the
       fixed policy proves too blunt on-device. *(From P10c-d-1.)*
@@ -249,14 +249,11 @@ _(nothing active — pick the next batch from below)_
 - [ ] **Activity Inbox — `reminder`-category producers.** The `reminder` category + always-record
       gating exist with no producer yet. Candidate nudges (items missing transcripts, a held batch
       waiting to start, low-storage reminder) — needs a product call to avoid nagging. *(From P11c.)*
-- [ ] **Things Engine (v2) — the typed-artifact library.** Reframe the library as a domain-agnostic
-      graph of schema.org Things (Recipe/Event/Place/Article/Product + the MediaObjects), captured by a
-      narrow-then-fill curator and reasoned over by on-device GraphRAG. Strategic decisions are locked;
-      not yet scheduled (no P-number). *(Things Engine v2 — `docs/things-engine.md`, ADR-0001–0004.)*
-- [ ] **Things Engine — full physical spine (open question).** v2 adopts the *logical* spine (Things
+- [ ] **Things Engine — full physical spine (open question).** P14 adopts the *logical* spine (Things
       are the conceptual/graph model; `media_items` stays canonical, `MediaObject` is the file-leaf).
       Whether to physically absorb `media_items` into the generic `things` table is **deferred /
-      unscheduled** — real file-lifecycle migration weight, no urgency. *(Things Engine v2 — ADR-0003.)*
+      unscheduled** (a P14-or-later question) — real file-lifecycle migration weight, no urgency.
+      *(Things Engine — ADR-0003.)*
 
 ## Pulled into the roadmap
 _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
@@ -271,6 +268,11 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [ ] **FTS5 full-text search** → scheduled as **P10h** (`docs/ROADMAP.md`): SQLite FTS5 over
   transcript + description + title, so the library is searchable by **spoken content** (P10f
   transcripts), not just title/description `LIKE`. *(Promoted now that transcripts exist.)*
+- [ ] **Things Engine — the typed-artifact library** → scheduled as **P14** (`docs/ROADMAP.md`,
+  `docs/things-engine.md`): reframe the library as a domain-agnostic graph of schema.org Things
+  (Recipe/Event/Place/Article/Product + the MediaObjects), captured by a narrow-then-fill curator and
+  reasoned over by on-device GraphRAG. Strategic decisions locked (ADR-0001–0004); subphase map authored
+  at phase start. *(Promoted into v1 — launch now ships the full envisioned scope.)*
 
 ## Cut from P8 / P9 (deliberate — kept here with rationale)
 - [ ] **aria2c external downloader** — youtubedl-android ships no aria2c binary; bundling an
@@ -283,7 +285,7 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
 - [ ] **App-icon disguise / activity-alias** — unreliable launcher re-pin post-Android-10;
       a common source of "app disappeared" reports.
 - [ ] **Background audio playback** — valuable, but adds a second foreground-service type to
-      coordinate with the download service; revisit in v2.
+      coordinate with the download service; revisit during production polish (P16).
 - [ ] **Download scheduling** (run at a time / wifi window) — needs WorkManager + alarm logic.
 - [ ] **Per-folder lock** — adds lock-state to the virtual-folder model + many UI gates.
 - [ ] **Configurable storage location** (internal vs SD / external app-specific dir) — deferred

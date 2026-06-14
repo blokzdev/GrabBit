@@ -7,7 +7,8 @@ Status: Draft v0.1 · Last updated: 2026-05-24
 > - `docs/GRAPH-SPEC.md` — CozoDB engine, integration, schema, sync, algorithm→feature map.
 > - `docs/AI-SPEC.md` — per-capability AI engines, device tiers, runtime/models + licensing, GraphRAG.
 >
-> Banding context (see `docs/ROADMAP.md`): AI is **core to v1**. v1 ships *after* this work (P14).
+> Banding context (see `docs/ROADMAP.md`): AI is **core to the vision** and lands mid-plan (P10, P12–P13);
+> the Things Engine builds on it (P14) and the launch phase (P17) is **last**.
 > v3/cloud is **dropped** — everything here is on-device and **free forever**.
 
 ---
@@ -211,7 +212,7 @@ suggestions work — all with the small embedder, no LLM.
   generation layer (`GenerationEngine` or a sibling structured seam) + the **`structured_extraction`**
   capability row (AI-SPEC §2–§4), and create the
   **(planned) empty `things` table** (generic JSON-LD store; Drift stays canonical). No v1 feature uses
-  them; they exist so the v2 Things Engine slots in cheaply. *(ADR-0001, ADR-0002, ADR-0003;
+  them; they exist so the P14 Things Engine slots in cheaply. *(ADR-0001, ADR-0002, ADR-0003;
   `docs/things-engine.md`)*
 
 **Exit:** on a capable device, download a model and generate/transcribe offline; on a low-end device

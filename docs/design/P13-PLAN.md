@@ -47,13 +47,13 @@
   never a replacement. Low/ineligible tiers keep the extractive TL;DR (AI-SPEC §5).
 - **Auto-tagging = free-text LLM generation + parse.** Prompt the active model for tags, parse the text, feed
   the existing suggestion chips. `generateStructured` **stays inert**; the FunctionGemma-vs-Qwen3 license fork
-  stays deferred to v2 / BACKLOG (avoids pre-building the v2 Things-Engine curator — ADR-0002).
+  stays deferred to P14 / BACKLOG (avoids pre-building the P14 Things-Engine curator — ADR-0002).
 - **ML Kit for OCR/translate** (`google_mlkit_text_recognition`, `google_mlkit_translation`): on-device,
   language packs downloaded on demand by ML Kit; no model bundled. **Measure APK-size impact in the first
   ML Kit APK build** and budget per GRAPH-SPEC/CI discipline.
 - **GraphRAG operates over generic typed nodes.** v1 media + entity nodes (uploader/playlist/tag/site) are
   one case; a future typed-**Thing** corpus is the general case, so the retrieve→generate loop needs no
-  rework when v2 arrives (forward seam — ADR-0001, ADR-0004). Grounded answers **cite deep-linkable library
+  rework when P14 arrives (forward seam — ADR-0001, ADR-0004). Grounded answers **cite deep-linkable library
   items**; **low/ineligible tiers fall back to retrieval-only** ("here are the relevant items/passages") with
   the extractive summary, no generation. Validate **LLM + HNSW RAM co-residency** on real devices
   (BACKLOG item carried from P12d-2).
@@ -426,15 +426,16 @@ the docs close-out. Split for phone-reviewable PRs.
 > `docs/VERIFICATION.md` → "P13 — consolidated cross-feature on-device pass". P13's per-PR APK spot-checks
 > were deliberately **batched** into it (CLAUDE.md §6/§7), so each affected subphase stays `[~]`
 > (CI-complete, not yet verified). **Running that single pass discharges every owed per-subphase check and
-> flips all P13 markers — and the phase — to `[x]`**, closing the v1 AI pillar (next: P14 beta & launch).
+> flips all P13 markers — and the phase — to `[x]`**, closing the v1 AI pillar (next: **P14 Things Engine**;
+> launch is now **P17**).
 
 ---
 
 ## Deferred (cut from P13 → `docs/BACKLOG.md` or a later band)
-- **Real `generateStructured` + the FunctionGemma-vs-Qwen3 license fork** → v2 / BACKLOG (auto-tagging uses
+- **Real `generateStructured` + the FunctionGemma-vs-Qwen3 license fork** → P14 / BACKLOG (auto-tagging uses
   free-text generation; the structured seam stays inert per ADR-0002).
-- **Smart auto-tagging as the v2 Things-Engine curator** — P13's free-text tagging is deliberately
-  lightweight; the narrow-then-fill structured curator is the v2 Things Engine (ADR-0002, `docs/things-engine.md`).
+- **Smart auto-tagging as the P14 Things-Engine curator** — P13's free-text tagging is deliberately
+  lightweight; the narrow-then-fill structured curator is the P14 Things Engine (ADR-0002, `docs/things-engine.md`).
 - **Long-transcript multivector chunking** for GraphRAG passage retrieval — only if modest-library retrieval
   proves insufficient (AI-SPEC §5; carried from P10g-1 / BACKLOG).
 - **Cloud inference** — out of scope permanently (the AI engines' cloud seam is theoretical/unplanned;
