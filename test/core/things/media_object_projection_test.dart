@@ -120,8 +120,10 @@ void main() {
         'identifier': 'PL9',
       });
       expect(j['grabbit:provenance'], {
-        'method': 'direct-parse',
-        'projectionVersion': kMediaObjectProjectionVersion,
+        'provenance': 'direct-parse',
+        'sourceRef': 'https://example.com/watch?v=1',
+        'capturedAt':
+            '2026-01-01T00:00:00.000Z', // item.createdAt (deterministic)
       });
     });
 

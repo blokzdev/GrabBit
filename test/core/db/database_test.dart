@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 14 with all tables created', () async {
-    expect(db.schemaVersion, 14);
+  test('opens at schema version 15 with all tables created', () async {
+    expect(db.schemaVersion, 15);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -28,6 +28,7 @@ void main() {
         'app_settings',
         'notifications',
         'things',
+        'thing_edges',
         'chats',
         'chat_messages',
       ]),
@@ -1210,6 +1211,70 @@ void main() {
         upgraded.chats,
       )..where((t) => t.id.equals(chatId))).go();
       expect(await upgraded.select(upgraded.chatMessages).get(), isEmpty);
+    },
+  );
+
+  test(
+    'upgrades a v14 database to v15, adding the thing_edges table (P14d)',
+    () async {
+      // Seed a minimal v14 DB (the tables the migration tail touches), then open
+      // at v15 — the from<15 step must create thing_edges.
+      final upgraded = AppDatabase(
+        NativeDatabase.memory(
+          setup: (raw) {
+            raw.execute('''
+              CREATE TABLE media_items (
+                id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL,
+                source_url TEXT NOT NULL, site TEXT NOT NULL,
+                file_path TEXT NOT NULL, type TEXT NOT NULL, duration_sec INTEGER,
+                size_bytes INTEGER, width INTEGER, height INTEGER, thumb_path TEXT,
+                created_at INTEGER NOT NULL, storage_state TEXT NOT NULL, notes TEXT,
+                folder_id INTEGER, is_favorite INTEGER NOT NULL DEFAULT 0,
+                content_hash TEXT, last_accessed_at INTEGER
+              )''');
+            raw.execute('''
+              CREATE TABLE media_metadata (
+                item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+                uploader TEXT, upload_date INTEGER, description TEXT,
+                original_url TEXT, uploader_id TEXT, channel_id TEXT, source_id TEXT,
+                playlist_id TEXT, playlist_title TEXT, tags TEXT, transcript TEXT,
+                transcript_cues TEXT, ai_summary TEXT, ai_summary_model_id TEXT,
+                ocr_text TEXT
+              )''');
+            raw.execute('''
+              CREATE TABLE notifications (
+                id TEXT NOT NULL PRIMARY KEY, category TEXT NOT NULL,
+                severity TEXT NOT NULL, title TEXT NOT NULL, body TEXT,
+                target_route TEXT, item_id TEXT, task_id TEXT, dedupe_key TEXT,
+                created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+                read_at INTEGER, expires_at INTEGER,
+                coalesce_count INTEGER NOT NULL DEFAULT 1
+              )''');
+            raw.execute('PRAGMA user_version = 14');
+          },
+        ),
+      );
+      addTearDown(upgraded.close);
+
+      // The new table exists and an authored edge round-trips.
+      await upgraded
+          .into(upgraded.thingEdges)
+          .insert(
+            ThingEdgesCompanion.insert(
+              subject: 'a',
+              predicate: 'relatedTo',
+              object: 'b',
+              provenance: 'user-authored',
+              confidence: const Value(0.9),
+              note: const Value('linked'),
+              createdAt: DateTime.utc(2026),
+            ),
+          );
+      final edges = await upgraded.select(upgraded.thingEdges).get();
+      expect(edges, hasLength(1));
+      expect(edges.single.subject, 'a');
+      expect(edges.single.object, 'b');
+      expect(edges.single.provenance, 'user-authored');
     },
   );
 
