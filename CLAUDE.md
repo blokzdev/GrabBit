@@ -349,6 +349,10 @@ posture defensible and reduce takedown risk, follow these rules in code and docs
 - `docs/design/P14-PLAN.md` — (P14) Things foundation + MediaObject projection sub-roadmap (P14a–P14f:
   schema.org vocabulary asset + Thing/JSON-LD core, `ThingRepository`, MediaObject projection, relationships
   + provenance, Cozo/GraphRAG over Things, diagnostic + phase close). First phase of the Things Engine band.
+- `docs/design/P15-PLAN.md` — (P15) Curator + AI Thing-extraction from downloads sub-roadmap (P15a–P15f:
+  `generateStructured` impl + `structured_extraction` gating, the narrow-then-fill Curator, extraction service
+  + pending suggestions, confirmation flow + Activity Inbox, Things Browser v1, auto-extract opt-in + phase
+  close). The curator phase of the Things Engine band.
 - `docs/things-engine.md` — (the **P14–P16** spine; vision one-pager) the **Things Engine**: the
   library reframed as a typed, on-device graph of schema.org Things.
 - `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,
