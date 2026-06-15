@@ -106,6 +106,13 @@ abstract class SettingsModel with _$SettingsModel {
     // background (marked as 'ai', deletable). Opt-in (defaults off); runs only
     // when text generation is enabled and its model is already downloaded.
     @Default(false) bool autoTagOnDownload,
+    // P15f: auto-extract structured schema.org Things from a newly downloaded
+    // item in the background (the function-calling curator). Opt-in (defaults
+    // off); runs only when text generation is enabled and a function-calling-
+    // capable model is already downloaded (no surprise mid-queue fetch). Results
+    // are pending suggestions in the inbox — never auto-asserted (ADR-0004). The
+    // on-demand "Extract Things" on item detail (P15c) works regardless.
+    @Default(false) bool autoExtractOnDownload,
     // On-device speech transcription (P12e). Opt-in (defaults off); the whisper
     // model is downloaded only when the user enables it + picks a model.
     // `selectedTranscriptionModelId` empty = the device-tier recommendation;

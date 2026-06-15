@@ -425,6 +425,7 @@ per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 relationships and GraphRAG operate over Things; no regression to the media-first experience.
 
 ## P15 — Curator + AI Thing-extraction from downloads
+**Status: code-complete (P15a–f); pending the consolidated on-device pass that closes the phase.** Next: P16.
 **Goals:** the marquee payoff — **on-device AI extracts structured Things from what you download** (a cooking
 video → a `Recipe`; a vlog → `Place`/`Event`).
 **Deliverables (high level — subphase map in `docs/design/P15-PLAN.md` at phase start):**

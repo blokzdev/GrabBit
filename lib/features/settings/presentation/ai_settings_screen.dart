@@ -930,6 +930,7 @@ class _GenerationCard extends ConsumerWidget {
           for (final m in eligible) _GenerationModelTile(model: m),
           const _AutoSummarizeTile(),
           const _AutoTagTile(),
+          const _AutoExtractTile(),
           const _GenerationSelfTestTile(),
         ],
       ),
@@ -1014,6 +1015,51 @@ class _AutoTagTile extends ConsumerWidget {
       value: auto,
       onChanged: (v) =>
           ref.read(settingsControllerProvider.notifier).setAutoTagOnDownload(v),
+    );
+  }
+}
+
+/// Opt-in (P15f): auto-extract structured schema.org Things from new downloads in
+/// the background. Shown only when text generation is enabled **and** this device
+/// can run structured (function-calling) extraction; runs only when a compatible
+/// model is downloaded. Results are pending suggestions in the inbox — never
+/// auto-asserted; the on-demand "Extract Things" on item detail works regardless.
+class _AutoExtractTile extends ConsumerWidget {
+  const _AutoExtractTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.generationEnabled ?? false,
+      ),
+    );
+    if (!enabled || !ref.watch(structuredExtractionSupportedProvider)) {
+      return const SizedBox.shrink();
+    }
+    final auto = ref.watch(
+      settingsControllerProvider.select(
+        (s) => s.value?.autoExtractOnDownload ?? false,
+      ),
+    );
+    return SwitchListTile(
+      secondary: const InfoHintButton(
+        InfoHint(
+          title: 'Auto-extract Things',
+          body:
+              'Extract structured records (a Recipe, Event, Place…) from each new '
+              'download automatically, in the background — all on-device. Runs '
+              'only when a function-calling-capable model is downloaded. Each '
+              'extraction is a suggestion you confirm before it joins your '
+              'library; you can always extract by hand from an item.',
+        ),
+      ),
+      title: const Text('Auto-extract Things'),
+      subtitle: const Text('Extract structured data from each download'),
+      value: auto,
+      onChanged: (v) => ref
+          .read(settingsControllerProvider.notifier)
+          .setAutoExtractOnDownload(v),
     );
   }
 }
