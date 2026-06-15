@@ -1248,6 +1248,16 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
 - [ ] **Privacy:** the fetch is a single user-initiated https GET (no login, no cookies); all other
       intake paths (download / manual) are unaffected.
 
+### P16b-3 — File upload ("Grab a file")  *(install any debug APK; works offline)*
+- [ ] Grab → **Add a file** → **Choose a file** → pick a **photo/video/audio** → no storage-permission
+      prompt (SAF); it copies into app-private storage and appears in the **Library** (image shows
+      itself; video/audio show a typed icon) **and** the **Things Browser** (as a Media Object).
+- [ ] Pick a **non-media file** (PDF/doc) → it's saved as a **`DigitalDocument`** in the Things
+      Browser (generic render shows name/encodingFormat/size); **View** opens it.
+- [ ] **Cancel** the picker → nothing is added (no snackbar, screen stays).
+- [ ] A large file copies without freezing the UI; the original file can be deleted afterwards and the
+      imported copy still opens (durable copy, not a SAF cache reference).
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

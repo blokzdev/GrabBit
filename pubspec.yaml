@@ -96,6 +96,13 @@ dependencies:
   # account/cookies/telemetry) — the official Dart-team client, wrapped behind a
   # `WebPageFetcher` seam so Windows (P17) can swap the impl.
   http: ^1.2.2
+  # P16b-3 file import ("Grab a file"): pick a local file to add to the library.
+  # The official Flutter-team picker (flutter.dev, BSD); on Android it uses the
+  # Storage Access Framework (ACTION_OPEN_DOCUMENT), so no storage permission is
+  # needed. Picked files are copied into app-private storage (the SAF cache path
+  # isn't durable). Chosen over file_picker, which pins win32 ^5 (conflicts with
+  # share_plus's win32 ^6).
+  file_selector: ^1.0.3
 
 dev_dependencies:
   flutter_test:
