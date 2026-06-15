@@ -23,6 +23,7 @@ import 'package:grabbit/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/storage_donut_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/suggestions_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/things_entry_tile.dart';
+import 'package:grabbit/features/capture/presentation/grab_sheet.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
@@ -43,6 +44,11 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const _BrandTitle(),
         actions: const [_InboxBellAction()],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showGrabSheet(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Grab'),
       ),
       body: switch (summary) {
         AsyncError(:final error) => ErrorView(

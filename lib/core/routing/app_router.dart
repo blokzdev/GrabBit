@@ -8,6 +8,7 @@ import 'package:grabbit/features/downloader/presentation/add_download_screen.dar
 import 'package:grabbit/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:grabbit/features/diagnostics/presentation/crash_report_dialog.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
+import 'package:grabbit/features/capture/presentation/manual_entry_screen.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/entity_hub_screen.dart';
@@ -147,6 +148,12 @@ GoRouter appRouter(Ref ref) {
         name: 'select',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SelectionScreen(),
+      ),
+      GoRoute(
+        path: '/grab/manual',
+        name: 'grab-manual',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ManualEntryScreen(),
       ),
       GoRoute(
         path: '/item/:id',
