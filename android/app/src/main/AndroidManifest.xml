@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <!-- P16b-4: scan a product/book barcode with the camera (mobile_scanner). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Camera is optional so the app still installs/runs on camera-less devices. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="GrabBit"
         android:name="${applicationName}"

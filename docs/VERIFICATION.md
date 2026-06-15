@@ -1258,6 +1258,18 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
 - [ ] A large file copies without freezing the UI; the original file can be deleted afterwards and the
       imported copy still opens (durable copy, not a SAF cache reference).
 
+### P16b-4 — Camera barcode scan ("Scan a barcode")  *(install any debug APK; needs a camera)*
+- [ ] Grab → **Scan a barcode** → first use prompts for **camera** permission; **deny** → friendly
+      rationale + **Allow camera** retry; deny permanently → **Open settings**.
+- [ ] Grant → live camera preview; scan a grocery item's **UPC/EAN** → confirm card "Found a
+      Product"; **Add to library** → a `Product` Thing (with `gtin`) appears in the Things Browser
+      (View opens it); **Scan again** resumes scanning.
+- [ ] Scan a **book's ISBN** (978…) → "Found a Book" → a `Book` Thing (with `isbn`, book icon).
+- [ ] A random **QR / non-product code** → "not a product or book barcode" with **Scan again**;
+      nothing is added.
+- [ ] The **Scan a barcode** row is **absent** on a build with no camera / off-Android; everything is
+      **offline**, no Play Services, no network product lookup.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

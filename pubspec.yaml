@@ -103,6 +103,12 @@ dependencies:
   # isn't durable). Chosen over file_picker, which pins win32 ^5 (conflicts with
   # share_plus's win32 ^6).
   file_selector: ^1.0.3
+  # P16b-4 barcode scan ("Scan a barcode"): camera barcode/QR scanning to add a
+  # Product (GTIN) or Book (ISBN) skeleton Thing. CameraX + the **bundled** ML Kit
+  # barcode model (embedded in the APK, no Google Play Services at runtime) — the
+  # same de-Googled posture as the OCR/translate ML Kit deps above. Android-only;
+  # gracefully hidden where there's no camera. Adds the CAMERA permission.
+  mobile_scanner: ^7.2.0
 
 dev_dependencies:
   flutter_test:

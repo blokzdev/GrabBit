@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grabbit/core/theme/tokens.dart';
@@ -59,6 +61,15 @@ class _GrabSheet extends StatelessWidget {
                   'Import a photo, video, audio, or document from your device',
               route: '/grab/file',
             ),
+            // Camera barcode scanning is Android-only (no camera on the P17
+            // desktop build) — hide the row where it can't run.
+            if (Platform.isAndroid)
+              const _GrabOption(
+                icon: Icons.qr_code_scanner,
+                title: 'Scan a barcode',
+                subtitle: 'Add a product or book by its barcode',
+                route: '/grab/scan',
+              ),
             const _GrabOption(
               icon: Icons.edit_outlined,
               title: 'Write a note or add manually',
