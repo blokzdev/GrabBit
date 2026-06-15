@@ -88,7 +88,7 @@ class _SuggestionCardState extends ConsumerState<_SuggestionCard> {
 
   void _startEditing() {
     _controllers.clear();
-    for (final field in suggestionDisplayFields(_doc)) {
+    for (final field in thingDisplayFields(_doc)) {
       _controllers[field.key] = TextEditingController(text: field.value);
     }
     setState(() => _editing = true);
@@ -150,7 +150,7 @@ class _SuggestionCardState extends ConsumerState<_SuggestionCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = GrabBitTokens.of(context);
-    final fields = suggestionDisplayFields(_doc);
+    final fields = thingDisplayFields(_doc);
     final confidence = widget.suggestion.confidence;
     return Card(
       child: Padding(

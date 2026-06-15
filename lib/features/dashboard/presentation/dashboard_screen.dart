@@ -22,6 +22,7 @@ import 'package:grabbit/features/dashboard/presentation/widgets/rediscover_row.d
 import 'package:grabbit/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/storage_donut_tile.dart';
 import 'package:grabbit/features/dashboard/presentation/widgets/suggestions_tile.dart';
+import 'package:grabbit/features/dashboard/presentation/widgets/things_entry_tile.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
@@ -176,6 +177,7 @@ class _DashboardBody extends ConsumerWidget {
             const RecentActivityTile(),
             const SuggestionsTile(),
             const DuplicatesCallout(),
+            const ThingsEntryTile(),
             const AskEntryTile(),
             const GraphEntryTile(),
           ],

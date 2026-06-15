@@ -47,6 +47,12 @@ class ThingRepository {
   Future<Thing?> thingById(String id) =>
       (_db.select(_db.things)..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  /// Live list of all Things, most-recently-updated first (the P15e Browser's
+  /// "All" facet).
+  Stream<List<Thing>> watchAllThings() => (_db.select(
+    _db.things,
+  )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).watch();
+
   /// Live list of Things of the given schema.org [type] (bare, e.g. `Recipe`),
   /// most-recently-updated first.
   Stream<List<Thing>> watchThingsByType(String type) =>
@@ -54,6 +60,23 @@ class ThingRepository {
             ..where((t) => t.type.equals(type))
             ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
           .watch();
+
+  /// Live count of Things per distinct schema.org `@type`, most-populous first
+  /// (the P15e Browser's facet chips).
+  Stream<List<ThingTypeCount>> watchTypeCounts() {
+    final typeCol = _db.things.type;
+    final countCol = _db.things.id.count();
+    final q = _db.selectOnly(_db.things)
+      ..addColumns([typeCol, countCol])
+      ..groupBy([typeCol])
+      ..orderBy([OrderingTerm.desc(countCol), OrderingTerm.asc(typeCol)]);
+    return q.watch().map(
+      (rows) => [
+        for (final r in rows)
+          (type: r.read(typeCol)!, count: r.read(countCol) ?? 0),
+      ],
+    );
+  }
 
   /// One-shot count of all Things.
   Future<int> countThings() async {
@@ -99,6 +122,9 @@ class ThingRepository {
     return repaired;
   }
 }
+
+/// A distinct schema.org `@type` paired with how many Things carry it (P15e).
+typedef ThingTypeCount = ({String type, int count});
 
 final thingRepositoryProvider = Provider<ThingRepository>(
   (ref) => ThingRepository(ref.watch(appDatabaseProvider)),

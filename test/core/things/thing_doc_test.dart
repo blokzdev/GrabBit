@@ -56,4 +56,47 @@ void main() {
       },
     );
   });
+
+  group('thingDisplayFields', () {
+    test('skips @* / grabbit:* and joins lists', () {
+      const doc = ThingDoc({
+        '@type': 'Recipe',
+        '@context': 'https://schema.org',
+        'grabbit:provenance': {'provenance': 'single-tool'},
+        'name': 'Carbonara',
+        'recipeIngredient': ['eggs', 'guanciale'],
+        'cookTime': 'PT20M',
+      });
+
+      final fields = thingDisplayFields(doc);
+
+      expect(fields.map((e) => e.key), [
+        'name',
+        'recipeIngredient',
+        'cookTime',
+      ]);
+      expect(
+        fields.firstWhere((e) => e.key == 'recipeIngredient').value,
+        'eggs, guanciale',
+      );
+    });
+
+    test('drops empty values', () {
+      const doc = ThingDoc({'name': '  ', 'keywords': <String>[], 'url': 'x'});
+      expect(thingDisplayFields(doc).map((e) => e.key), ['url']);
+    });
+
+    test('renders nested objects via name/@id', () {
+      const doc = ThingDoc({
+        'author': {'@type': 'Person', 'name': 'Ada'},
+        'mainEntity': {'@id': 'schema:Thing'},
+      });
+      final fields = thingDisplayFields(doc);
+      expect(fields.firstWhere((e) => e.key == 'author').value, 'Ada');
+      expect(
+        fields.firstWhere((e) => e.key == 'mainEntity').value,
+        'schema:Thing',
+      );
+    });
+  });
 }

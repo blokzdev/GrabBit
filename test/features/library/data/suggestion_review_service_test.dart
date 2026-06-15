@@ -122,36 +122,6 @@ void main() {
     expect(await edges.countEdges(), 0);
   });
 
-  group('suggestionDisplayFields', () {
-    test('skips @* / grabbit:* and joins lists', () {
-      const doc = ThingDoc({
-        '@type': 'Recipe',
-        '@context': 'https://schema.org',
-        'grabbit:provenance': {'provenance': 'single-tool'},
-        'name': 'Carbonara',
-        'recipeIngredient': ['eggs', 'guanciale'],
-        'cookTime': 'PT20M',
-      });
-
-      final fields = suggestionDisplayFields(doc);
-
-      expect(fields.map((e) => e.key), [
-        'name',
-        'recipeIngredient',
-        'cookTime',
-      ]);
-      expect(
-        fields.firstWhere((e) => e.key == 'recipeIngredient').value,
-        'eggs, guanciale',
-      );
-    });
-
-    test('drops empty values', () {
-      const doc = ThingDoc({'name': '  ', 'keywords': <String>[], 'url': 'x'});
-      expect(suggestionDisplayFields(doc).map((e) => e.key), ['url']);
-    });
-  });
-
   test('postSuggestionNotification writes an ai entry deep-linking to the '
       'review surface', () async {
     final repo = NotificationsRepository(db);

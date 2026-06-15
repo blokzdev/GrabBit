@@ -167,13 +167,19 @@ Close the suggest-don't-assert loop: the user confirms before anything is assert
   `suggestionDisplayFields` (service test) + a review-screen widget test. **The APK pass (inbox entry →
   screen → assert, on device) is batched into the P15 close → stays `[~]`** (§7).
 
-### `[ ]` P15e — Things Browser (v1) *(UI; APK)*
+### `[~]` P15e — Things Browser (v1) *(UI; APK)*
 The first visible payoff of the pivot — the "everything library" becomes tangible.
-- A surface that **browses + filters** the typed Things by `@type` (the new Recipe/Event/… plus the projected
-  `MediaObject`s), tapping into the generic render or the linked media item. Reuses `watchThingsByType` + a new
-  **all-types** query (distinct `@type`s with counts); a nav/route entry; available in **both** UI modes.
+- A **`ThingsBrowserScreen`** (route `/things`, reached from a `ThingsEntryTile` on the Dashboard — both UI
+  modes; no 6th nav destination since Material caps the bar at 5) **browses + filters** the typed Things by
+  `@type`: a `ChoiceChip` facet row ("All" + per-type counts) over the new `watchTypeCounts` all-types query,
+  with the list from `watchAllThings`/`watchThingsByType`. Tapping routes by class (`thingDestinationRoute`): a
+  projected `MediaObject` (id == `media_items.id`) → `/item/:id`; any other Thing → a standalone
+  **`ThingDetailScreen`** (`/thing/:id`) — the ADR-0001 generic key/value render (shared `thingDisplayFields`)
+  with a "Based on" link to its source media leaf and an Advanced-only "View JSON-LD".
 - **Exit / review:** the Browser lists + filters Things by type over a real library; tapping a Thing opens its
-  render/linked item. CI: the all-types query + a widget test. *(APK: over a real, mixed library.)*
+  render/linked item. CI green: `watchTypeCounts`/`watchAllThings` queries + `thingDestinationRoute` +
+  `thingDisplayFields` + browser & detail widget tests. **The APK pass (over a real, mixed library) is batched
+  into the P15 close → stays `[~]`** (§7).
 
 ### `[ ]` P15f — Auto-extract-on-download opt-in + P15 phase close *(UI + docs; APK)*
 The opt-in automation, then close the phase.

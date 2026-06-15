@@ -58,36 +58,6 @@ class SuggestionReviewService {
   Future<void> reject(String id) => _suggestions.delete(id);
 }
 
-/// The user-facing properties of a candidate Thing — every key except the JSON-LD
-/// keywords (`@type`, `@context`, …) and GrabBit's `grabbit:` extension block.
-/// Scalars stringify; lists comma-join. Empty values are dropped. Used both to
-/// render the review card and to seed its inline editor.
-List<MapEntry<String, String>> suggestionDisplayFields(ThingDoc doc) {
-  final out = <MapEntry<String, String>>[];
-  doc.json.forEach((key, value) {
-    if (key.startsWith('@') || key.startsWith('grabbit:')) return;
-    final formatted = _formatValue(value);
-    if (formatted.isEmpty) return;
-    out.add(MapEntry(key, formatted));
-  });
-  return out;
-}
-
-String _formatValue(Object? value) {
-  if (value is List) {
-    return value.map(_scalar).where((s) => s.isNotEmpty).join(', ');
-  }
-  return _scalar(value);
-}
-
-String _scalar(Object? value) {
-  if (value == null) return '';
-  if (value is Map) {
-    return (value['name'] ?? value['@id'] ?? '').toString().trim();
-  }
-  return value.toString().trim();
-}
-
 /// Posts the actionable Activity-Inbox entry that deep-links to the confirmation
 /// surface for [itemId]. Shared so P15f auto-extract reuses the exact wording and
 /// dedupe behavior. Coalesces per item via [dedupeKey] so re-extracting resurfaces
