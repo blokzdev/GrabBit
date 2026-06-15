@@ -129,8 +129,12 @@ The visible "add anything" entry — beyond URLs.
     `postSuggestionNotification` takes an overridable `targetRoute`/`dedupeKey`, and a
     `/capture/:id/suggestions` route reuses the review screen. Added `http`; readable-text extraction
     is a pure-Dart heuristic (no readability package). *APK-owed (batched into the P16 pass).*
-  - **`[ ]` P16b-3 — file upload** *(UI+data; APK)*: `file_picker` → media ⇒ MediaObject leaf
-    (+ the new local-file→`MediaItem` import seam); other ⇒ `DigitalDocument`/generic Thing.
+  - **`[~]` P16b-3 — file upload** *(UI+data; APK)*: shipped — `file_selector` (Android SAF, no
+    permission; chosen over `win32`-conflicting `file_picker`) → a media file is copied into
+    app-private storage + inserted as a `MediaItem` (auto-projected to a MediaObject Thing via the
+    existing `ThingProjectionService`); any other file is copied in + asserted as a `DigitalDocument`
+    Thing via `commitThing`. New `mediaTypeForExtOrNull`, `buildDocumentThing`, `FileImportController`
+    (injectable picker), `/grab/file` screen + Grab-sheet row. No Drift migration. *APK-owed.*
   - **`[ ]` P16b-4 — camera/barcode** *(UI+data; APK)*: scanner → GTIN/ISBN → `Product`/`Book`
     skeleton, on-device only.
 - **Exit / review:** on a real device each path (file/web/manual/barcode) lands a typed Thing or

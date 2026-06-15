@@ -9,6 +9,9 @@ Future<void> showGrabSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    // Scroll-controlled + a scroll view so the option list fits any screen size
+    // and text scale without overflowing the sheet.
+    isScrollControlled: true,
     builder: (sheetContext) => const _GrabSheet(),
   );
 }
@@ -20,42 +23,51 @@ class _GrabSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = GrabBitTokens.of(context);
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              tokens.spaceLg,
-              tokens.spaceSm,
-              tokens.spaceLg,
-              tokens.spaceSm,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.spaceLg,
+                tokens.spaceSm,
+                tokens.spaceLg,
+                tokens.spaceSm,
+              ),
+              child: Text(
+                'Grab anything',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
-            child: Text(
-              'Grab anything',
-              style: Theme.of(context).textTheme.titleMedium,
+            const _GrabOption(
+              icon: Icons.link,
+              title: 'Paste a link to download',
+              subtitle: 'Save a video, audio, or page from a URL',
+              route: '/add',
             ),
-          ),
-          const _GrabOption(
-            icon: Icons.link,
-            title: 'Paste a link to download',
-            subtitle: 'Save a video, audio, or page from a URL',
-            route: '/add',
-          ),
-          const _GrabOption(
-            icon: Icons.language,
-            title: 'Grab a web page',
-            subtitle: 'Capture an article, recipe, product… as a Thing',
-            route: '/grab/web',
-          ),
-          const _GrabOption(
-            icon: Icons.edit_outlined,
-            title: 'Write a note or add manually',
-            subtitle: 'Create a Thing yourself — a note, recipe, place…',
-            route: '/grab/manual',
-          ),
-          SizedBox(height: tokens.spaceSm),
-        ],
+            const _GrabOption(
+              icon: Icons.language,
+              title: 'Grab a web page',
+              subtitle: 'Capture an article, recipe, product… as a Thing',
+              route: '/grab/web',
+            ),
+            const _GrabOption(
+              icon: Icons.upload_file,
+              title: 'Add a file',
+              subtitle:
+                  'Import a photo, video, audio, or document from your device',
+              route: '/grab/file',
+            ),
+            const _GrabOption(
+              icon: Icons.edit_outlined,
+              title: 'Write a note or add manually',
+              subtitle: 'Create a Thing yourself — a note, recipe, place…',
+              route: '/grab/manual',
+            ),
+            SizedBox(height: tokens.spaceSm),
+          ],
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import 'package:grabbit/features/downloader/presentation/add_download_screen.dar
 import 'package:grabbit/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:grabbit/features/diagnostics/presentation/crash_report_dialog.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
+import 'package:grabbit/features/capture/presentation/file_import_screen.dart';
 import 'package:grabbit/features/capture/presentation/manual_entry_screen.dart';
 import 'package:grabbit/features/capture/presentation/web_capture_screen.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
@@ -161,6 +162,12 @@ GoRouter appRouter(Ref ref) {
         name: 'grab-web',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const WebCaptureScreen(),
+      ),
+      GoRoute(
+        path: '/grab/file',
+        name: 'grab-file',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FileImportScreen(),
       ),
       GoRoute(
         path: '/item/:id',

@@ -39,11 +39,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('lists the P16b-1 intake options', (tester) async {
+  testWidgets('lists the intake options', (tester) async {
     await openSheet(tester);
 
     expect(find.text('Grab anything'), findsOneWidget);
     expect(find.text('Paste a link to download'), findsOneWidget);
+    expect(find.text('Grab a web page'), findsOneWidget);
+    expect(find.text('Add a file'), findsOneWidget);
     expect(find.text('Write a note or add manually'), findsOneWidget);
   });
 
