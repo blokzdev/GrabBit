@@ -1270,6 +1270,14 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
 - [ ] The **Scan a barcode** row is **absent** on a build with no camera / off-Android; everything is
       **offline**, no Play Services, no network product lookup.
 
+### P16c — Bespoke priority-type cards + exporters  *(install any debug APK; works offline)*
+- [ ] Open a **Recipe** Thing → a first-class card with ingredients + numbered steps; **Event** →
+      when/where; **Place** → address; **Article** → headline/byline/summary; **Product** →
+      brand/price/gtin. An **unknown type** still shows the generic field list.
+- [ ] The **share/export** app-bar action: **Recipe/Article/Product** → text in the system share
+      sheet; **Event** → a `.ics` file the calendar app imports (correct date/time); **Place** →
+      opens the maps app at the address (`geo:`). Non-exportable types show no export action.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

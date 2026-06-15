@@ -347,5 +347,7 @@ class _FakeShare implements ExternalShareService {
   Future<void> shareFiles(List<String> paths) async =>
       sharedPaths.addAll(paths);
   @override
+  Future<void> shareText(String text, {String? subject}) async {}
+  @override
   Future<void> openUrl(String url) async {}
 }
