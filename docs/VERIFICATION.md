@@ -1221,6 +1221,20 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
       the auto-extract toggle are hidden/nudge appropriately — never a crash; the Things Browser still works
       over projected `MediaObject`s; everything **offline** bar the one-time model fetch.
 
+## P16 — Universal intake + typed types & GraphRAG  *(v1)*
+
+### P16b-1 — Capture-commit foundation + manual entry + the Grab sheet  *(install any debug APK; works offline; no AI model needed)*
+- [ ] The **Dashboard** shows a **"Grab"** FAB (in **both** Simple and Advanced modes); tapping it opens the
+      **"Grab anything"** sheet listing **"Paste a link to download"** (→ the add-download screen) and
+      **"Write a note or add manually"** (→ manual entry).
+- [ ] **Manual entry** (`/grab/manual`): pick a **Type** (Note by default, or Recipe/Event/Place/Article/
+      Product, or **Other…** with a free-typed schema.org type), enter a **Name** (required — saving with a
+      blank name is blocked) + optional description/link, then **Add to library**.
+- [ ] On save it asserts **directly** (no review step) — a confirmation **"Added to your library"** SnackBar
+      with a **View** action opens the new Thing; the Thing appears immediately in the **Things Browser**
+      (and, after sync, the graph), fully **offline** on a device with **no** AI model.
+- [ ] **Other…** with an unrecognized type still saves (advisory "not a known schema.org type" hint, never a block).
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

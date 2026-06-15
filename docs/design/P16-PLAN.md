@@ -50,10 +50,16 @@
   to the P15 curator (branches b/c), which is tier-gated. Direct-parse, storage, the generic/
   bespoke render, the browser, and authored edges run on **every device**.
 - **One curator, many intakes.** Every new intake path (file, web-article, manual, barcode)
-  funnels through a single `CaptureService` seam → branch (a) if structured, else curator →
-  **pending suggestion** (`thing_suggestions`), surfaced via the P11 inbox. Nothing is
-  asserted to canonical `things`/the graph without user confirmation (ADR-0004). Web-article
-  fetch is a **user-initiated** network call (consistent with downloads) — no account, no cloud.
+  funnels through a single `CaptureService` seam → branch (a) if structured, else curator. Web-
+  article fetch is a **user-initiated** network call (consistent with downloads) — no account,
+  no cloud.
+- **Commit model: assert-direct for deterministic captures, review only AI (ADR-0004).**
+  Deterministic, user-initiated captures — manual entry, branch (a) direct-parse, barcode —
+  **assert straight into `things`** via `CaptureCommitService.commitThing` (mints `thing_<micros>`,
+  no source-media edge) with a confirmation + Undo. Only **model-extracted** (AI-inferred, branch
+  b/c) captures stay suggest-don't-assert: a pending suggestion surfaced through the P11 inbox,
+  asserted only on confirm. (The media-coupled `thing_suggestions`/`/item/:id/suggestions` review
+  is generalized for non-media model captures in P16b-2.)
 - **Barcode = on-device GTIN/ISBN capture only.** A scan writes the code into a `Product`
   (gtin*) or `Book`/`CreativeWork` (isbn) Thing skeleton; the user/curator fills the rest.
   **No external product/book lookup** (CLAUDE.md §1/§9). An opt-in online/offline-dump lookup
@@ -99,15 +105,29 @@ Complete the curator's three branches and add the single intake seam everything 
   review deferred to P16b** (the media-coupled `thing_suggestions`/`/item/:id/suggestions`).
   Pure-Dart, no codegen — **CI-discharged → `[x]` on merge.**
 
-### `[ ]` P16b — Universal "Grab anything" intake surfaces *(UI; APK)*
+### `[~]` P16b — Universal "Grab anything" intake surfaces *(UI; APK)*
 The visible "add anything" entry — beyond URLs.
 - A unified **Grab** action (FAB/sheet) offering: **URL** (existing), **file upload**
   (`file_picker` → media file ⇒ MediaObject leaf path; other file ⇒ `DigitalDocument`/generic
   Thing), **web-article capture** (paste/share a URL → `dart:io` fetch → P16a), **manual entry**
   (typed note/Thing form), **camera/barcode** (scanner — candidate `mobile_scanner`; bundled
   offline ML Kit, de-Googled-clean → GTIN/ISBN into a `Product`/`Book` skeleton, on-device only).
-- Each path → `CaptureService` → suggestion/Thing, surfaced via the P15d inbox helper. Camera
-  permission via `permission_handler`. Justify new deps in the commit + `docs/SPEC.md`.
+- Each path → `CaptureService`/`CaptureCommitService`; deterministic captures assert directly,
+  AI-extracted ones surface via the P15d inbox helper. Camera permission via `permission_handler`.
+  Justify new deps in the commit + `docs/SPEC.md`.
+- **Split into 4 reviewable PRs (phone-reviewable):**
+  - **`[x]` P16b-1 — capture-commit foundation + manual entry + the Grab sheet** *(UI+data; CI)*:
+    `CaptureCommitService.commitThing` (the shared assert seam — mints id, upserts, no source edge),
+    `buildManualThing` (user-authored `ThingDoc`), the `ManualEntryScreen` (`/grab/manual`: type ·
+    name · description · url), the unified `showGrabSheet` (URL + manual rows), and the Dashboard
+    **Grab** FAB. No new deps, no migration; manual entry is device-universal (no model). 11 tests.
+  - **`[ ]` P16b-2 — web-article capture** *(UI+data; APK)*: paste/share a URL → `dart:io` fetch →
+    `CaptureService` (branch a direct-parse asserts; branch b/c → review). Generalizes the non-media
+    model-branch suggestion keying + review surface.
+  - **`[ ]` P16b-3 — file upload** *(UI+data; APK)*: `file_picker` → media ⇒ MediaObject leaf
+    (+ the new local-file→`MediaItem` import seam); other ⇒ `DigitalDocument`/generic Thing.
+  - **`[ ]` P16b-4 — camera/barcode** *(UI+data; APK)*: scanner → GTIN/ISBN → `Product`/`Book`
+    skeleton, on-device only.
 - **Exit / review:** on a real device each path (file/web/manual/barcode) lands a typed Thing or
   pending suggestion, confirmable via the inbox; ineligible/AI-off degrades to direct-parse/manual.
   *(APK: real intake on device.)*
