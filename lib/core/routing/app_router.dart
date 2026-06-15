@@ -26,6 +26,8 @@ import 'package:grabbit/features/library/presentation/storage_screen.dart';
 import 'package:grabbit/features/library/presentation/suggested_album_screen.dart';
 import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
 import 'package:grabbit/features/library/presentation/suggestion_review_screen.dart';
+import 'package:grabbit/features/library/presentation/thing_detail_screen.dart';
+import 'package:grabbit/features/library/presentation/things_browser_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/ai_setup_screen.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
@@ -180,6 +182,19 @@ GoRouter appRouter(Ref ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             SuggestionReviewScreen(itemId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/things',
+        name: 'things',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ThingsBrowserScreen(),
+      ),
+      GoRoute(
+        path: '/thing/:id',
+        name: 'thing',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            ThingDetailScreen(thingId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/item/:id/path',

@@ -1180,6 +1180,19 @@ as the granular reference). Running this pass is what closes P14 (flips P14c/P14
 - [ ] Resolving the **last** pending suggestion shows the **empty state**; a stale inbox tap after
       resolution degrades to that empty state (no crash).
 
+### P15e — Things Browser (v1)  *(install `app-arm64-v8a-debug.apk`; needs a real, mixed library)*
+- [ ] Over a library with downloads (and ideally a confirmed extraction), the **Dashboard** shows a
+      **"Browse your Things"** tile (in **both** Simple and Advanced modes) → opens the **Things Browser**
+      (`/things`). On an **empty** library the tile is **hidden** and the Browser shows the "No Things yet"
+      empty state.
+- [ ] The Browser's **facet chips** list `All (n)` + each `@type` with its count (e.g. `VideoObject (45)`,
+      `Recipe (3)`); selecting a chip **filters** the list; selecting **All** shows everything.
+- [ ] Tapping a **MediaObject** Thing (Video/Audio/Image) opens its **media item** detail; tapping a
+      **Recipe** (or other non-media Thing) opens the **generic Thing render** — type + name header, its
+      properties as key/value, and a **"Based on"** row that opens the source media item.
+- [ ] In **Advanced** mode the Thing render's **"View JSON-LD"** action shows the canonical document;
+      in **Simple** mode it's hidden.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

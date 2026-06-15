@@ -89,6 +89,38 @@ void main() {
     },
   );
 
+  test('watchAllThings emits every row, most-recently-updated first', () async {
+    await repo.upsertThing('v1', _doc(type: 'VideoObject', name: 'vid'));
+    await repo.upsertThing('r1', _doc(type: 'Recipe', name: 'recipe'));
+    // Force distinct updatedAt so the ordering assertion isn't a same-tick tie.
+    await (db.update(db.things)..where((t) => t.id.equals('v1'))).write(
+      ThingsCompanion(updatedAt: Value(DateTime.utc(2026, 1, 1))),
+    );
+    await (db.update(db.things)..where((t) => t.id.equals('r1'))).write(
+      ThingsCompanion(updatedAt: Value(DateTime.utc(2026, 1, 2))),
+    );
+
+    final all = await repo.watchAllThings().first;
+    // r1 has the newer updatedAt → first.
+    expect(all.map((t) => t.id), ['r1', 'v1']);
+  });
+
+  test('watchTypeCounts groups distinct types, most-populous first', () async {
+    await repo.upsertThing('v1', _doc(type: 'VideoObject', name: 'a'));
+    await repo.upsertThing('v2', _doc(type: 'VideoObject', name: 'b'));
+    await repo.upsertThing('r1', _doc(type: 'Recipe', name: 'c'));
+
+    final counts = await repo.watchTypeCounts().first;
+    expect(counts, [
+      (type: 'VideoObject', count: 2),
+      (type: 'Recipe', count: 1),
+    ]);
+  });
+
+  test('watchTypeCounts is empty when there are no Things', () async {
+    expect(await repo.watchTypeCounts().first, isEmpty);
+  });
+
   test('deleteThing removes the row', () async {
     await repo.upsertThing('m1', _doc(name: 'x'));
     await repo.deleteThing('m1');

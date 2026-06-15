@@ -49,6 +49,37 @@ class ThingDoc {
       v is List ? (v.isEmpty ? null : v.first) : v;
 }
 
+/// The user-facing properties of a [doc] — every key except the JSON-LD keywords
+/// (`@type`, `@context`, …) and GrabBit's `grabbit:` extension block. Scalars
+/// stringify; lists comma-join; nested objects show their `name`/`@id`. Empty
+/// values are dropped. The shared generic-render helper behind the P15d review card
+/// and the P15e Things Browser (ADR-0001 schema-driven key/value view).
+List<MapEntry<String, String>> thingDisplayFields(ThingDoc doc) {
+  final out = <MapEntry<String, String>>[];
+  doc.json.forEach((key, value) {
+    if (key.startsWith('@') || key.startsWith('grabbit:')) return;
+    final formatted = _formatValue(value);
+    if (formatted.isEmpty) return;
+    out.add(MapEntry(key, formatted));
+  });
+  return out;
+}
+
+String _formatValue(Object? value) {
+  if (value is List) {
+    return value.map(_scalar).where((s) => s.isNotEmpty).join(', ');
+  }
+  return _scalar(value);
+}
+
+String _scalar(Object? value) {
+  if (value == null) return '';
+  if (value is Map) {
+    return (value['name'] ?? value['@id'] ?? '').toString().trim();
+  }
+  return value.toString().trim();
+}
+
 /// Strips a `schema:` / `https://schema.org/` / `http://schema.org/` prefix from a
 /// schema.org IRI or CURIE, returning the bare local name (e.g. `Recipe`). Accepts a
 /// `String`, a `{@id: ...}` map, or null (→ '').
