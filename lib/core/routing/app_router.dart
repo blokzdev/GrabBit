@@ -25,6 +25,7 @@ import 'package:grabbit/features/library/presentation/smart_album_screen.dart';
 import 'package:grabbit/features/library/presentation/storage_screen.dart';
 import 'package:grabbit/features/library/presentation/suggested_album_screen.dart';
 import 'package:grabbit/features/library/presentation/suggested_albums_provider.dart';
+import 'package:grabbit/features/library/presentation/suggestion_review_screen.dart';
 import 'package:grabbit/features/lock/lock_controller.dart';
 import 'package:grabbit/features/onboarding/presentation/ai_setup_screen.dart';
 import 'package:grabbit/features/onboarding/presentation/disclaimer_screen.dart';
@@ -172,6 +173,13 @@ GoRouter appRouter(Ref ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             GraphViewScreen(itemId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/item/:id/suggestions',
+        name: 'item-suggestions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            SuggestionReviewScreen(itemId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/item/:id/path',

@@ -1168,6 +1168,18 @@ as the granular reference). Running this pass is what closes P14 (flips P14c/P14
       **not downloaded**, tapping it routes to **AI settings** with a friendly reason. With a **non-FC** active model
       (SmolLM2) selected, it nudges to pick Qwen3/Gemma.
 
+### P15d — Confirmation flow + Activity Inbox integration  *(install `app-arm64-v8a-debug.apk`; needs a capable device + a downloaded FC model)*
+- [ ] **"Extract Things"** on a recipe item posts an **`ai` Activity-Inbox entry** ("Confirm extracted
+      &lt;Type&gt;?") **and** shows a **"Review"** SnackBar action. Tapping **either** opens the
+      **review screen** (`/item/:id/suggestions`) showing the suggestion's type, fields, and confidence.
+- [ ] **Accept** asserts the extracted `Recipe` into `things` (a new `thing_*` Thing, distinct from the
+      source MediaObject) **linked** to its `MediaObject` with an **`isBasedOn`** authored edge — verifiable
+      via the P14f "View as Thing" / graph; the suggestion clears.
+- [ ] **Edit → Save & Accept** persists the tweaked field(s) into the asserted Thing.
+- [ ] **Reject** (confirm dialog) writes **nothing** to `things`/`thing_edges`; the suggestion clears.
+- [ ] Resolving the **last** pending suggestion shows the **empty state**; a stale inbox tap after
+      resolution degrades to that empty state (no crash).
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.
