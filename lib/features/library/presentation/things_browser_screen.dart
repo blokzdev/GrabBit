@@ -185,6 +185,7 @@ IconData iconForThingType(String type) => switch (type) {
   'Place' => Icons.place_outlined,
   'Article' => Icons.article_outlined,
   'Product' => Icons.shopping_bag_outlined,
+  'Book' => Icons.menu_book_outlined,
   'Person' => Icons.person_outlined,
   _ => Icons.category_outlined,
 };

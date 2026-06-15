@@ -42,6 +42,7 @@ Implementation-level detail. Versions are targets to confirm at scaffold time
 | **Things Engine (P16a):** `html` (pure-Dart, dart.dev-maintained) | Parse embedded JSON-LD / microdata / OpenGraph from a captured page into a typed schema.org Thing — the curator's direct-parse branch (a), no model call, on every device. No native deps, no network (fetching is the caller's job). |
 | **Things Engine (P16b-2):** `http` (pure-Dart, dart.dev-maintained) | Fetch a pasted page's HTML for **web-article capture** — a single **user-initiated** https GET behind the `WebPageFetcher` seam (https-only, redirects, timeout + size caps, content-type check; **no account, no cookies, no telemetry**). The `html` dep above parses the result; readable-text extraction is a pure-Dart heuristic (no readability package — the pub options are native FFI / heavy widget renderers, unfit for Windows parity + minimal deps). Windows (P17) can swap the impl behind the seam. |
 | **Things Engine (P16b-3):** `file_selector` (official flutter.dev, BSD) | Pick a local file for **file import** ("Grab a file"). On Android it uses the Storage Access Framework (`ACTION_OPEN_DOCUMENT`) → **no storage permission**. Picked files are **copied into app-private storage** (the SAF cache path isn't durable). A media file (video/audio/image) is imported as a `MediaItem` (auto-projected to a MediaObject Thing); any other file becomes a `DigitalDocument` Thing. Chosen over `file_picker` (pins `win32 ^5`, conflicting with `share_plus`'s `win32 ^6`). |
+| **Things Engine (P16b-4):** `mobile_scanner` (MIT) | Camera **barcode scan** ("Scan a barcode") → a skeleton `Product` (GTIN) or `Book` (ISBN) Thing, asserted on-device with **no** network/product-DB lookup. Uses CameraX + the **bundled** ML Kit barcode model (embedded in the APK, **no Google Play Services** at runtime) — same de-Googled posture as the OCR/translate ML Kit deps. Adds the **CAMERA** permission; **Android-only**, the entry is hidden where there's no camera. |
 | **Graph viz (P10):** `graphview` | Interactive relationship explorer. |
 | **Charts (P10d-2):** `fl_chart` | On-device Dashboard storage donuts + library-activity bars. Pure-Dart (CustomPainter), no native deps, no telemetry. |
 | ~~**v3:** `supabase_flutter`, Stripe/PayPal SDKs~~ | **Dropped** (no cloud/credits). |
@@ -244,6 +245,7 @@ biometric unlock (requires `MainActivity` to extend `FlutterFragmentActivity`).
 | SAF tree URI (persisted) | when user picks an export folder | `ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`; no storage permission |
 | Scoped MediaStore write | export with no folder picked (gallery default, API 29+) | `RELATIVE_PATH` under Movies/Music/Pictures + `/GrabBit`; no `MANAGE_EXTERNAL_STORAGE` |
 | `USE_BIOMETRIC` | if app lock + biometric | local_auth |
+| `CAMERA` | when the user opens **Scan a barcode** (P16b-4) | runtime-requested via `permission_handler`; `<uses-feature camera required="false">` so camera-less devices still install; entry hidden off-Android |
 
 Never request broad storage. Private library lives in app-specific storage (no
 permission needed).

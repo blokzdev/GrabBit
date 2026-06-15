@@ -8,6 +8,7 @@ import 'package:grabbit/features/downloader/presentation/add_download_screen.dar
 import 'package:grabbit/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:grabbit/features/diagnostics/presentation/crash_report_dialog.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
+import 'package:grabbit/features/capture/presentation/barcode_scan_screen.dart';
 import 'package:grabbit/features/capture/presentation/file_import_screen.dart';
 import 'package:grabbit/features/capture/presentation/manual_entry_screen.dart';
 import 'package:grabbit/features/capture/presentation/web_capture_screen.dart';
@@ -168,6 +169,12 @@ GoRouter appRouter(Ref ref) {
         name: 'grab-file',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const FileImportScreen(),
+      ),
+      GoRoute(
+        path: '/grab/scan',
+        name: 'grab-scan',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BarcodeScanScreen(),
       ),
       GoRoute(
         path: '/item/:id',

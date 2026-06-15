@@ -28,6 +28,10 @@ their sources, as required when conveying the combined work.
 - **Source:** https://schema.org · https://github.com/schemaorg/schemaorg (`data/releases/30.0/`)
 - **Attribution:** "schema.org" — © schema.org community; see `assets/vocab/README.md`.
 
+### ML Kit barcode model (via `mobile_scanner`, P16b-4) — barcode/QR scanning
+- **License:** `mobile_scanner` plugin **MIT**; the on-device barcode-scanning model binary is
+  Google's ML Kit, **bundled in the APK** and run offline (no Google Play Services).
+
 ## Downloaded on demand at runtime (not bundled in the app)
 
 - **Embedding / generation models** (Gecko, paraphrase-multilingual-MiniLM-L12-v2, SmolLM2, Qwen3 /

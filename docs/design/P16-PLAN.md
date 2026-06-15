@@ -135,8 +135,13 @@ The visible "add anything" entry — beyond URLs.
     existing `ThingProjectionService`); any other file is copied in + asserted as a `DigitalDocument`
     Thing via `commitThing`. New `mediaTypeForExtOrNull`, `buildDocumentThing`, `FileImportController`
     (injectable picker), `/grab/file` screen + Grab-sheet row. No Drift migration. *APK-owed.*
-  - **`[ ]` P16b-4 — camera/barcode** *(UI+data; APK)*: scanner → GTIN/ISBN → `Product`/`Book`
-    skeleton, on-device only.
+  - **`[~]` P16b-4 — camera/barcode** *(UI+data; APK)*: shipped — `mobile_scanner` (CameraX +
+    **bundled** ML Kit, no Play Services; CAMERA permission, Android-only/hidden off-Android) →
+    `classifyBarcode` (978/979 + 10-digit → `Book`/`isbn`; EAN-8/UPC-A/EAN-13 → `Product`/`gtin`;
+    else null) → `buildBarcodeThing` skeleton asserted directly via `commitThing` (no network
+    lookup). `BarcodeScanScreen` (`/grab/scan`) with camera-permission states + a confirm card; a
+    `Book` icon. No Drift migration. *APK-owed.* **P16b intake band code-complete** (manual · web ·
+    file · scan) pending the batched on-device pass.
 - **Exit / review:** on a real device each path (file/web/manual/barcode) lands a typed Thing or
   pending suggestion, confirmable via the inbox; ineligible/AI-off degrades to direct-parse/manual.
   *(APK: real intake on device.)*
