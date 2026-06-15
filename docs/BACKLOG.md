@@ -325,6 +325,12 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
       edge must outlive a transiently-rebuilt Thing), so an edge can dangle if a referenced Thing is permanently
       deleted. Decide a cleanup policy (lazy skip at hydration vs a periodic sweep) once a consumer exists
       (P14e/P15); the moat value argues for keeping edges by default. *(From P14d.)*
+- [ ] **Embedder-similarity classification for the curator** — P15b classifies download text into candidate
+      Thing types with cheap synchronous signals (keywords / host / media-type). An optional augmentation embeds
+      the text and scores cosine similarity against per-type exemplars (the `EmbedderEngine` + `l2Normalize`
+      seams already exist) for better recall on weak-keyword items. Deferred to keep the P15b curator pure (the
+      embed call is async I/O); wire it as an injected scorer in P15c+ if classification accuracy needs it.
+      *(From P15b.)*
 
 ## Done
 - [x] **Engine auto-update on launch** + Settings toggle (fresh installs were failing
