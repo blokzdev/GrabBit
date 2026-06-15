@@ -35,6 +35,7 @@ import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/data/suggestion_review_service.dart';
 import 'package:grabbit/features/library/data/thing_extraction_service.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
@@ -47,6 +48,7 @@ import 'package:grabbit/features/library/presentation/media_grid.dart';
 import 'package:grabbit/features/library/presentation/transcribe_fallback.dart';
 import 'package:grabbit/features/library/presentation/translation.dart';
 import 'package:grabbit/features/library/presentation/related_provider.dart';
+import 'package:grabbit/features/notifications/data/notifications_repository.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
 import 'package:video_player/video_player.dart';
@@ -1084,9 +1086,33 @@ Future<void> _extractThings(
               generate: engine.generateStructured,
               modelId: model!.id,
             );
-        messenger
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(_extractionMessage(outcome))));
+        if (outcome.status == ExtractionStatus.extracted) {
+          // Surface it as an actionable inbox entry + a "Review" shortcut — the
+          // suggestion is asserted only when the user confirms it (P15d).
+          await postSuggestionNotification(
+            ref.read(notificationCenterProvider),
+            itemId: row.id,
+            title: row.title,
+            type: outcome.type!,
+          );
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(_extractionMessage(outcome)),
+                action: SnackBarAction(
+                  label: 'Review',
+                  onPressed: () => router.push('/item/${row.id}/suggestions'),
+                ),
+              ),
+            );
+        } else {
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(_extractionMessage(outcome))),
+            );
+        }
       } on InferenceException catch (e) {
         messenger
           ..hideCurrentSnackBar()

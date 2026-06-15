@@ -150,17 +150,22 @@ trigger.
   vocab + a fake engine). **CI-green; the real-extraction APK check is batched into the P15 close → stays
   `[~]`** (§7).
 
-### `[ ]` P15d — Confirmation flow + Activity Inbox integration *(UI; APK)*
+### `[~]` P15d — Confirmation flow + Activity Inbox integration *(UI; APK)*
 Close the suggest-don't-assert loop: the user confirms before anything is asserted (ADR-0004).
-- A **confirmation sheet** renders a pending suggestion (generic key/value, "View as Thing" style) with
-  **Accept / Edit / Reject**. **Accept** → `upsertThing` + `upsertEdge(subject: thing, object: mediaObjectId,
-  predicate, provenance)` → delete the suggestion. **Reject** → delete (writes nothing). **Edit** → tweak
-  fields before accepting.
-- Post an actionable `NotificationCategory.ai` inbox entry per extraction ("Confirm extracted Recipe?") with
-  `targetRoute` to the sheet + `itemId` + `dedupeKey` (coalesces repeats).
-- **Exit / review:** confirming an extracted `Recipe` asserts it in `things` and links it to its
-  `MediaObject`; rejecting writes nothing. CI: the accept/reject write path + the inbox entry + a sheet widget
-  test. *(APK: inbox entry → sheet → assert, on device.)*
+- A **confirmation surface** — a route-reachable `SuggestionReviewScreen` at `/item/:id/suggestions`
+  (the inbox deep-links via `context.push`, and the app has no route-based sheets) — renders a pending
+  suggestion (generic key/value via `suggestionDisplayFields`, confidence chip) with **Accept / Edit /
+  Reject**. **Accept** → `upsertThing(thing_<micros>)` + `upsertEdge(subject: thing, object: sourceItemId,
+  predicate: isBasedOn, provenance: userAuthored)` → delete the suggestion. **Reject** → confirm dialog →
+  delete (writes nothing). **Edit** → a minimal inline editor (string fields / comma-joined lists) → "Save &
+  Accept" runs the same accept path. The Thing keeps its curator provenance; the **edge** is user-authored.
+- Post an actionable `NotificationCategory.ai` inbox entry per extraction ("Confirm extracted Recipe?") via
+  the shared `postSuggestionNotification` helper, with `targetRoute` to the screen + `itemId` + `dedupeKey`
+  (coalesces repeats); item detail also shows a "Review" SnackBar action.
+- **Exit / review:** confirming an extracted `Recipe` asserts it in `things` and links it (`isBasedOn`) to its
+  `MediaObject`; rejecting writes nothing. CI green: the accept/reject/edit write path + the inbox entry +
+  `suggestionDisplayFields` (service test) + a review-screen widget test. **The APK pass (inbox entry →
+  screen → assert, on device) is batched into the P15 close → stays `[~]`** (§7).
 
 ### `[ ]` P15e — Things Browser (v1) *(UI; APK)*
 The first visible payoff of the pivot — the "everything library" becomes tangible.
