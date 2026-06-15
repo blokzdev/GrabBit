@@ -88,4 +88,62 @@ void main() {
 
     expect(find.text('No Things yet'), findsOneWidget);
   });
+
+  testWidgets('typing a query searches across types and hides the facets', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          thingTypeCountsProvider.overrideWith(
+            (ref) => Stream.value(const [
+              (type: 'VideoObject', count: 1),
+              (type: 'Recipe', count: 1),
+            ]),
+          ),
+          allThingsProvider.overrideWith(
+            (ref) => Stream.value([
+              _thing('v1', 'VideoObject', 'Vid A'),
+              _thing('r1', 'Recipe', 'Carbonara'),
+            ]),
+          ),
+          thingsSearchProvider('carb').overrideWith(
+            (ref) => Stream.value([_thing('r1', 'Recipe', 'Carbonara')]),
+          ),
+        ],
+        child: const MaterialApp(home: ThingsBrowserScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), 'carb');
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Carbonara'), findsOneWidget);
+    expect(find.text('Vid A'), findsNothing);
+    expect(find.text('All (2)'), findsNothing); // facets hidden while searching
+  });
+
+  testWidgets('a priority-type row shows its type-aware summary', (
+    tester,
+  ) async {
+    final recipe = Thing(
+      id: 'r1',
+      type: 'Recipe',
+      jsonld:
+          '{"@type":"Recipe","name":"Carbonara","recipeIngredient":["eggs","guanciale"]}',
+      name: 'Carbonara',
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026),
+    );
+    await pump(
+      tester,
+      counts: const [(type: 'Recipe', count: 1)],
+      all: [recipe],
+    );
+
+    expect(find.text('2 ingredients'), findsOneWidget);
+  });
 }

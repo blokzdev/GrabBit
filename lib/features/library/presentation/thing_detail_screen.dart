@@ -77,7 +77,7 @@ class ThingDetailScreen extends ConsumerWidget {
               children: [
                 _Header(thing: row),
                 card ?? _Fields(thing: row),
-                _BasedOn(thingId: thingId),
+                _Relationships(thingId: thingId),
               ],
             );
           },
@@ -206,33 +206,66 @@ class _Fields extends StatelessWidget {
   }
 }
 
-class _BasedOn extends ConsumerWidget {
-  const _BasedOn({required this.thingId});
+/// The Thing's linked nodes (P16d): outgoing authored edges ("Based on"), incoming
+/// authored edges ("Referenced by"), and derived vocabulary edges ("Mentions") —
+/// each hydrated to a real name/type and tappable to traverse.
+class _Relationships extends ConsumerWidget {
+  const _Relationships({required this.thingId});
 
   final String thingId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final edges = ref.watch(thingEdgesFromProvider(thingId)).asData?.value;
-    if (edges == null || edges.isEmpty) return const SizedBox.shrink();
+    final rel = ref.watch(thingRelationshipsProvider(thingId)).asData?.value;
+    if (rel == null || rel.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader('Based on', icon: Icons.link_outlined),
-        for (final edge in edges)
-          ListTile(
-            leading: const Icon(Icons.movie_outlined),
-            title: Text(_humanizePredicate(edge.predicate)),
-            subtitle: Text(
-              edge.object,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/item/${edge.object}'),
-          ),
+        ..._section(context, 'Based on', Icons.link_outlined, rel.outgoing),
+        ..._section(
+          context,
+          'Referenced by',
+          Icons.call_received_outlined,
+          rel.incoming,
+        ),
+        ..._section(
+          context,
+          'Mentions',
+          Icons.alternate_email_outlined,
+          rel.mentions,
+        ),
       ],
     );
+  }
+
+  List<Widget> _section(
+    BuildContext context,
+    String title,
+    IconData icon,
+    List<ThingRelation> rels,
+  ) {
+    if (rels.isEmpty) return const [];
+    return [
+      SectionHeader(title, icon: icon),
+      for (final r in rels)
+        ListTile(
+          leading: Icon(
+            r.node.media != null
+                ? Icons.movie_outlined
+                : iconForThingType(r.node.type ?? ''),
+          ),
+          title: Text(
+            r.node.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(_humanizePredicate(r.predicate)),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(
+            r.node.media != null ? '/item/${r.node.id}' : '/thing/${r.node.id}',
+          ),
+        ),
+    ];
   }
 }
 

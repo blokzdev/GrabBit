@@ -184,4 +184,31 @@ void main() {
       expect((await repo.thingById('good'))!.name, 'Good');
     },
   );
+
+  group('watchThingsSearch', () {
+    setUp(() async {
+      await repo.upsertThing('r', _doc(type: 'Recipe', name: 'Carbonara'));
+      await repo.upsertThing('p', _doc(type: 'Place', name: 'Blue Cafe'));
+      await repo.upsertThing('v', _doc(name: 'Holiday Recipe Vlog'));
+    });
+
+    test('matches a substring of the name, case-insensitively', () async {
+      final hits = await repo.watchThingsSearch('cafe').first;
+      expect(hits.map((t) => t.id), ['p']);
+    });
+
+    test('matches the @type too', () async {
+      final hits = await repo.watchThingsSearch('recipe').first;
+      // The Recipe (by type) and the vlog (by name) — not the Place.
+      expect(hits.map((t) => t.id).toSet(), {'r', 'v'});
+    });
+
+    test('a blank query returns all Things', () async {
+      expect((await repo.watchThingsSearch('   ').first).length, 3);
+    });
+
+    test('excludes non-matches', () async {
+      expect(await repo.watchThingsSearch('zzz').first, isEmpty);
+    });
+  });
 }

@@ -1278,6 +1278,15 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
       sheet; **Event** → a `.ics` file the calendar app imports (correct date/time); **Place** →
       opens the maps app at the address (`geo:`). Non-exportable types show no export action.
 
+### P16d — Rich Things Browser  *(install any debug APK; works offline)*
+- [ ] Over a real mixed library, the Things Browser **search** finds Things by `name` and by `@type`
+      (case-insensitive); clearing the box restores the `@type` facet chips.
+- [ ] List rows show **type-aware summaries** (Recipe → ingredient count, Event → date, Place →
+      address, Article → byline, Product → brand·price); long-tail rows show their bare type.
+- [ ] Opening a Thing lists its **linked Things/media with real names** under "Based on" /
+      "Referenced by" (and "Mentions" once Things carry `@id` refs); **tapping traverses** —
+      Thing→Thing opens the Thing, Thing→media opens the media item.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

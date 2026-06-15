@@ -9,6 +9,7 @@ import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/features/library/data/things_browse_providers.dart';
+import 'package:grabbit/features/library/presentation/thing_cards.dart';
 
 /// P15e — the Things Browser. Browses + filters the on-device graph of schema.org
 /// Things by `@type` (facet chips with counts) and opens each Thing's render: a
@@ -25,6 +26,14 @@ class ThingsBrowserScreen extends ConsumerStatefulWidget {
 class _ThingsBrowserScreenState extends ConsumerState<ThingsBrowserScreen> {
   // null = the "All" facet.
   String? _selectedType;
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,15 +64,30 @@ class _ThingsBrowserScreenState extends ConsumerState<ThingsBrowserScreen> {
                     typeCounts.any((c) => c.type == _selectedType)
                 ? _selectedType
                 : null;
+            final searching = _query.trim().isNotEmpty;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _FacetChips(
-                  typeCounts: typeCounts,
-                  selected: selected,
-                  onSelect: (type) => setState(() => _selectedType = type),
+                _SearchBar(
+                  controller: _searchController,
+                  onChanged: (q) => setState(() {
+                    _query = q;
+                    if (q.trim().isNotEmpty) _selectedType = null;
+                  }),
                 ),
-                Expanded(child: _ThingList(type: selected)),
+                // The text search is global; the type facet only applies when not
+                // searching.
+                if (!searching)
+                  _FacetChips(
+                    typeCounts: typeCounts,
+                    selected: selected,
+                    onSelect: (type) => setState(() => _selectedType = type),
+                  ),
+                Expanded(
+                  child: searching
+                      ? _ThingList(searchQuery: _query)
+                      : _ThingList(type: selected),
+                ),
               ],
             );
           },
@@ -116,14 +140,17 @@ class _FacetChips extends StatelessWidget {
 }
 
 class _ThingList extends ConsumerWidget {
-  const _ThingList({required this.type});
+  const _ThingList({this.type, this.searchQuery});
 
   final String? type;
+  final String? searchQuery;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = GrabBitTokens.of(context);
-    final things = type == null
+    final things = searchQuery != null
+        ? ref.watch(thingsSearchProvider(searchQuery!))
+        : type == null
         ? ref.watch(allThingsProvider)
         : ref.watch(thingsByTypeProvider(type!));
     return AsyncFade(
@@ -132,10 +159,14 @@ class _ThingList extends ConsumerWidget {
       error: (e, _) => ErrorView(message: 'Failed to load Things: $e'),
       data: (list) {
         if (list.isEmpty) {
-          return const EmptyState(
-            icon: Icons.category_outlined,
-            title: 'Nothing here',
-            message: 'No Things of this type.',
+          return EmptyState(
+            icon: searchQuery != null
+                ? Icons.search_off_outlined
+                : Icons.category_outlined,
+            title: searchQuery != null ? 'No matches' : 'Nothing here',
+            message: searchQuery != null
+                ? 'No Things match "$searchQuery".'
+                : 'No Things of this type.',
           );
         }
         return ListView.builder(
@@ -167,9 +198,54 @@ class _ThingTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(thing.type),
+      subtitle: Text(
+        thingListSummary(thing) ?? thing.type,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push(thingDestinationRoute(thing)),
+    );
+  }
+}
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({required this.controller, required this.onChanged});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = GrabBitTokens.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spaceLg,
+        tokens.spaceSm,
+        tokens.spaceLg,
+        0,
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: 'Search Things',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: 'Clear',
+                  onPressed: () {
+                    controller.clear();
+                    onChanged('');
+                  },
+                ),
+          border: const OutlineInputBorder(),
+        ),
+      ),
     );
   }
 }

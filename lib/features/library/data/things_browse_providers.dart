@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/things/media_object_projection.dart';
+import 'package:grabbit/core/things/thing_doc.dart';
 import 'package:grabbit/core/things/thing_edge_repository.dart';
+import 'package:grabbit/core/things/thing_hydration.dart';
 import 'package:grabbit/core/things/thing_repository.dart';
+import 'package:grabbit/core/things/vocabulary_edges.dart';
 
 /// Read providers for the P15e Things Browser. Hand-written — they return Drift
 /// generated row types (`Thing`/`ThingEdge`) and the `ThingTypeCount` record
@@ -23,6 +26,12 @@ final thingsByTypeProvider = StreamProvider.family<List<Thing>, String>(
   (ref, type) => ref.watch(thingRepositoryProvider).watchThingsByType(type),
 );
 
+/// Things matching a case-insensitive substring of their `name`/`type` (P16d),
+/// most-recently-updated first — the Browser's search results.
+final thingsSearchProvider = StreamProvider.family<List<Thing>, String>(
+  (ref, query) => ref.watch(thingRepositoryProvider).watchThingsSearch(query),
+);
+
 /// One Thing by id (one-shot; autoDispose so it refreshes each open and leaves no
 /// pending Drift query timer).
 final thingByIdProvider = FutureProvider.autoDispose.family<Thing?, String>(
@@ -36,6 +45,82 @@ final thingEdgesFromProvider = FutureProvider.autoDispose
       (ref, subject) =>
           ref.watch(thingEdgeRepositoryProvider).edgesFrom(subject),
     );
+
+/// One linked node in a Thing's relationships (P16d): the [predicate] of the edge
+/// and the hydrated target/source [node].
+class ThingRelation {
+  const ThingRelation(this.predicate, this.node);
+  final String predicate;
+  final HydratedNode node;
+}
+
+/// A Thing's relationships for the detail screen (P16d): its outgoing/incoming
+/// **authored** edges and its derived **vocabulary** (`mentions`) edges, each with
+/// its target hydrated to a real name/type.
+class ThingRelationships {
+  const ThingRelationships({
+    required this.outgoing,
+    required this.incoming,
+    required this.mentions,
+  });
+  final List<ThingRelation> outgoing;
+  final List<ThingRelation> incoming;
+  final List<ThingRelation> mentions;
+
+  bool get isEmpty => outgoing.isEmpty && incoming.isEmpty && mentions.isEmpty;
+}
+
+/// Hydrated relationships for the Thing [id] (P16d): authored `edgesFrom`
+/// (outgoing) + `edgesTo` (incoming) + derived vocabulary edges, resolved through
+/// [NodeHydration] in a single batch. Targets that resolve to neither a Thing nor
+/// a media item are dropped.
+final thingRelationshipsProvider = FutureProvider.autoDispose
+    .family<ThingRelationships, String>((ref, id) async {
+      final edges = ref.watch(thingEdgeRepositoryProvider);
+      final from = await edges.edgesFrom(id);
+      final to = await edges.edgesTo(id);
+
+      final thing = await ref.watch(thingRepositoryProvider).thingById(id);
+      var vocab = const <VocabularyEdge>[];
+      if (thing != null) {
+        try {
+          vocab = deriveVocabularyEdges(
+            id,
+            ThingDoc.fromJsonString(thing.jsonld),
+          );
+        } on FormatException {
+          vocab = const [];
+        }
+      }
+
+      final nodes = {
+        for (final n in await ref.watch(nodeHydrationProvider).hydrateNodes([
+          ...from.map((e) => e.object),
+          ...to.map((e) => e.subject),
+          ...vocab.map((e) => e.object),
+        ]))
+          n.id: n,
+      };
+
+      List<ThingRelation> relate(
+        Iterable<({String predicate, String node})> es,
+      ) => [
+        for (final e in es)
+          if (nodes[e.node] != null) ThingRelation(e.predicate, nodes[e.node]!),
+      ];
+
+      return ThingRelationships(
+        outgoing: relate(
+          from.map((e) => (predicate: e.predicate, node: e.object)),
+        ),
+        incoming: relate(
+          to.map((e) => (predicate: e.predicate, node: e.subject)),
+        ),
+        mentions: relate(
+          vocab.map((e) => (predicate: e.predicate, node: e.object)),
+        ),
+      );
+    });
 
 /// Where tapping a [thing] in the Browser goes: a projected **MediaObject**
 /// (`VideoObject`/`AudioObject`/`ImageObject`, whose Thing id == `media_items.id`)
