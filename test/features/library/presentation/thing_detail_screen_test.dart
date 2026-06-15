@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grabbit/core/db/database.dart';
+import 'package:grabbit/core/things/thing_hydration.dart';
 import 'package:grabbit/features/library/data/things_browse_providers.dart';
 import 'package:grabbit/features/library/presentation/thing_detail_screen.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
@@ -26,13 +27,15 @@ Thing _recipe() => Thing(
   updatedAt: DateTime.utc(2026),
 );
 
-ThingEdge _edge() => ThingEdge(
-  subject: 'thing_1',
-  predicate: 'isBasedOn',
-  object: 'item-1',
-  provenance: 'user-authored',
-  confidence: 0.8,
-  createdAt: DateTime.utc(2026),
+ThingRelationships _relationships() => const ThingRelationships(
+  outgoing: [
+    ThingRelation(
+      'isBasedOn',
+      HydratedNode(id: 'item-1', title: 'Source Clip', type: 'VideoObject'),
+    ),
+  ],
+  incoming: [],
+  mentions: [],
 );
 
 void main() {
@@ -44,9 +47,9 @@ void main() {
             () => _FakeSettings(SettingsModel(mode: mode)),
           ),
           thingByIdProvider('thing_1').overrideWith((ref) async => _recipe()),
-          thingEdgesFromProvider(
+          thingRelationshipsProvider(
             'thing_1',
-          ).overrideWith((ref) async => [_edge()]),
+          ).overrideWith((ref) async => _relationships()),
         ],
         child: const MaterialApp(home: ThingDetailScreen(thingId: 'thing_1')),
       ),
@@ -64,8 +67,10 @@ void main() {
     expect(find.text('Recipe'), findsWidgets);
     expect(find.text('Ingredients'), findsOneWidget); // bespoke card section
     expect(find.text('•  eggs'), findsOneWidget); // bespoke ingredient row
-    expect(find.text('Based on'), findsOneWidget); // linked-edge section
-    expect(find.text('item-1'), findsOneWidget);
+    expect(find.text('Based on'), findsOneWidget); // relationships section
+    // The link shows the hydrated target name, not the raw id.
+    expect(find.text('Source Clip'), findsOneWidget);
+    expect(find.text('item-1'), findsNothing);
   });
 
   testWidgets('shows the share/export action for an exportable type', (

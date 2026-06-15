@@ -26,6 +26,47 @@ Widget? thingCardFor(Thing thing) {
   };
 }
 
+/// A one-line, type-aware summary of [thing] for the Browser list (P16d), or null
+/// for the long tail (which falls back to its bare `@type`). A compact realization
+/// of the bespoke cards — the full cards live on the detail screen.
+String? thingListSummary(Thing thing) {
+  final ThingDoc doc;
+  try {
+    doc = ThingDoc.fromJsonString(thing.jsonld);
+  } on FormatException {
+    return null;
+  }
+  switch (thing.type) {
+    case 'Recipe':
+      final n = _list(doc, 'recipeIngredient').length;
+      final parts = [
+        if (n > 0) '$n ingredient${n == 1 ? '' : 's'}',
+        if (_str(doc, 'cookTime') != null) 'cook ${_str(doc, 'cookTime')}',
+      ];
+      return parts.isEmpty ? null : parts.join(' · ');
+    case 'Event':
+      final start = _str(doc, 'startDate');
+      final parts = [
+        if (start != null) _displayDate(start),
+        if (_str(doc, 'location') != null) _str(doc, 'location')!,
+      ];
+      return parts.isEmpty ? null : parts.join(' · ');
+    case 'Place':
+      return _str(doc, 'address');
+    case 'Article':
+      final by = _str(doc, 'author');
+      return by == null ? null : 'By $by';
+    case 'Product':
+      final parts = [
+        if (_str(doc, 'brand') != null) _str(doc, 'brand')!,
+        if (_str(doc, 'offers') != null) _str(doc, 'offers')!,
+      ];
+      return parts.isEmpty ? null : parts.join(' · ');
+    default:
+      return null;
+  }
+}
+
 // ── shared helpers ──────────────────────────────────────────────────────────
 
 String? _str(ThingDoc doc, String key) {

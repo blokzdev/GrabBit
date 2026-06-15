@@ -76,4 +76,37 @@ void main() {
     await pumpCard(tester, card);
     expect(find.text('no-card'), findsOneWidget);
   });
+
+  group('thingListSummary', () {
+    test('summarizes priority types', () {
+      expect(
+        thingListSummary(
+          _thing(
+            'Recipe',
+            '{"@type":"Recipe","name":"C","recipeIngredient":["a","b","c"]}',
+          ),
+        ),
+        '3 ingredients',
+      );
+      expect(
+        thingListSummary(
+          _thing('Place', '{"@type":"Place","name":"Cafe","address":"1 Main"}'),
+        ),
+        '1 Main',
+      );
+      expect(
+        thingListSummary(
+          _thing('Product', '{"@type":"Product","name":"W","brand":"Acme"}'),
+        ),
+        'Acme',
+      );
+    });
+
+    test('returns null for the long tail', () {
+      expect(
+        thingListSummary(_thing('Book', '{"@type":"Book","name":"B"}')),
+        isNull,
+      );
+    });
+  });
 }

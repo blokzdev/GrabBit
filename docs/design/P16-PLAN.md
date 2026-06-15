@@ -159,12 +159,14 @@ Make the priority types feel first-class. **Shipped.**
 - **Exit / review:** each priority type renders a bespoke card and exports correctly; an unknown
   type still renders generically. *(APK: render/export on device.)*
 
-### `[ ]` P16d — Rich Things Browser *(UI; APK)*
-Deepen the P15 v1 into the everything-library's home.
-- Add **search** (over promoted `name`/`type`, contains/LIKE) atop the existing `@type` facet
-  filter; show **bespoke cards** (P16c) in the list; **relationship-aware navigation** — a Thing
-  detail lists its vocabulary + authored edges (`edgesFrom`/`edgesTo` + `NodeHydration`), tap to
-  traverse linked Things.
+### `[~]` P16d — Rich Things Browser *(UI; APK)*
+Deepen the P15 v1 into the everything-library's home. **Shipped.**
+- **Search** (`watchThingsSearch` — case-insensitive LIKE over promoted `name`/`type`) atop the
+  `@type` facet (search is global, overrides the facet when active); **type-aware list items** (a
+  one-line `thingListSummary` per priority type — the compact realization of the P16c cards);
+  **relationship-aware navigation** — `thingRelationshipsProvider` hydrates a Thing's authored
+  `edgesFrom`/`edgesTo` + derived vocabulary edges via `NodeHydration`, rendered as "Based on" /
+  "Referenced by" / "Mentions" with real names, tap to traverse (Thing→Thing or Thing→media).
 - **Exit / review:** search + filter across a real mixed library; tap-through between linked
   Things; MediaObject Things still route to media detail. *(APK: over a real, mixed library.)*
 

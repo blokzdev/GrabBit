@@ -61,6 +61,20 @@ class ThingRepository {
             ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
           .watch();
 
+  /// Live search over the promoted `name`/`type` (case-insensitive substring,
+  /// P16d), most-recently-updated first. A blank [query] yields all Things.
+  Stream<List<Thing>> watchThingsSearch(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return watchAllThings();
+    final pattern = '%$q%';
+    return (_db.select(_db.things)
+          ..where(
+            (t) => t.name.lower().like(pattern) | t.type.lower().like(pattern),
+          )
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+        .watch();
+  }
+
   /// Live count of Things per distinct schema.org `@type`, most-populous first
   /// (the P15e Browser's facet chips).
   Stream<List<ThingTypeCount>> watchTypeCounts() {
