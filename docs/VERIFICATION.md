@@ -1235,6 +1235,19 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
       (and, after sync, the graph), fully **offline** on a device with **no** AI model.
 - [ ] **Other…** with an unrecognized type still saves (advisory "not a known schema.org type" hint, never a block).
 
+### P16b-2 — Web-article capture  *(install any debug APK; needs network; AI parts need a capable device + FC model)*
+- [ ] Grab → **Grab a web page** → paste an **article/recipe/product URL with structured markup**
+      (e.g. a major recipe site) → a **typed Thing asserts directly** with an "Added to your library"
+      SnackBar; **View** opens it and it shows in the Things Browser. No review step for structured pages.
+- [ ] A **markup-less** page on a **capable device with an FC model** → lands on the **review screen**;
+      **Accept** adds the Thing with **no** dangling "Based on" source edge (it asserts on its own).
+- [ ] The same markup-less page on a **low-tier / AI-off** device → a friendly "couldn't find
+      structured info" notice with an **Add manually** shortcut, never a crash.
+- [ ] **Fetch errors are friendly:** airplane mode → network message; a non-HTML link (PDF/image) →
+      "isn't a web page we can read"; a 404 → an HTTP error — each with copyable details.
+- [ ] **Privacy:** the fetch is a single user-initiated https GET (no login, no cookies); all other
+      intake paths (download / manual) are unaffected.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

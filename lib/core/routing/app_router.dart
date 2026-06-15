@@ -9,6 +9,7 @@ import 'package:grabbit/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:grabbit/features/diagnostics/presentation/crash_report_dialog.dart';
 import 'package:grabbit/features/downloader/presentation/selection_screen.dart';
 import 'package:grabbit/features/capture/presentation/manual_entry_screen.dart';
+import 'package:grabbit/features/capture/presentation/web_capture_screen.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/collections_screen.dart';
 import 'package:grabbit/features/library/presentation/entity_hub_screen.dart';
@@ -156,6 +157,12 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const ManualEntryScreen(),
       ),
       GoRoute(
+        path: '/grab/web',
+        name: 'grab-web',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const WebCaptureScreen(),
+      ),
+      GoRoute(
         path: '/item/:id',
         name: 'item',
         parentNavigatorKey: _rootNavigatorKey,
@@ -186,6 +193,15 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/item/:id/suggestions',
         name: 'item-suggestions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            SuggestionReviewScreen(itemId: state.pathParameters['id']!),
+      ),
+      // Non-media captures (P16b-2 web capture) review their pending suggestions
+      // here — the same screen, keyed by a synthetic `cap_*` id (no media item).
+      GoRoute(
+        path: '/capture/:id/suggestions',
+        name: 'capture-suggestions',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             SuggestionReviewScreen(itemId: state.pathParameters['id']!),

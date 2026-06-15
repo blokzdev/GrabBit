@@ -42,11 +42,23 @@ void main() {
   });
   tearDown(() => db.close());
 
-  Future<ThingSuggestion> seed({double? confidence = 0.8}) async {
+  Future<ThingSuggestion> seed({
+    double? confidence = 0.8,
+    String sourceItemId = 'item-1',
+    bool sourceThingExists = true,
+  }) async {
+    // The source MediaObject is projected as a Thing (P14c) — present it so the
+    // `isBasedOn` edge resolves (a real download). Non-media web captures omit it.
+    if (sourceThingExists) {
+      await things.upsertThing(
+        sourceItemId,
+        const ThingDoc({'@type': 'VideoObject', 'name': 'Source'}),
+      );
+    }
     await suggestions.insert(
       ThingSuggestionsCompanion.insert(
         id: 'sug_1',
-        sourceItemId: 'item-1',
+        sourceItemId: sourceItemId,
         type: 'Recipe',
         jsonld: _recipeJsonld,
         confidence: Value(confidence),
@@ -106,14 +118,31 @@ void main() {
 
       await defaulted.accept(s);
 
-      expect(await things.countThings(), 1);
+      // The source Thing (seeded) + the newly asserted one.
+      expect(await things.countThings(), 2);
       final edge = (await edges.edgesTo('item-1')).single;
       expect(edge.subject, startsWith('thing_'));
     });
+
+    test(
+      'a non-media capture asserts the Thing but writes no source edge',
+      () async {
+        // P16b-2 web capture: the source is a synthetic `cap_*` ref with no Thing.
+        final s = await seed(sourceItemId: 'cap_x', sourceThingExists: false);
+
+        await service.accept(s);
+
+        expect(await things.thingById('thing_test'), isNotNull);
+        // No dangling isBasedOn edge to the non-existent source.
+        expect(await edges.edgesFrom('thing_test'), isEmpty);
+        expect(await edges.countEdges(), 0);
+        expect(await suggestions.byId('sug_1'), isNull);
+      },
+    );
   });
 
   test('reject deletes the suggestion and writes nothing', () async {
-    final s = await seed();
+    final s = await seed(sourceThingExists: false);
 
     await service.reject(s.id);
 
