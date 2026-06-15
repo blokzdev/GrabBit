@@ -86,6 +86,12 @@ dependencies:
   google_mlkit_translation: ^0.13.1
   google_mlkit_language_id: ^0.13.1
 
+  # Things Engine (P16a): pure-Dart HTML parser (dart.dev-maintained) for the
+  # curator's direct-parse branch (a) — extract embedded JSON-LD / microdata /
+  # OpenGraph from a captured page into a typed schema.org Thing, no model call,
+  # on every device. No native deps, no network (fetching is the caller's job).
+  html: ^0.15.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

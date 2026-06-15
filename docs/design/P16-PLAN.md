@@ -76,17 +76,28 @@
 
 ---
 
-### `[ ]` P16a — Direct-parse (branch a) + unified capture core *(pure Dart; CI)*
+### `[x]` P16a — Direct-parse (branch a) + unified capture core *(pure Dart; CI)*
 Complete the curator's three branches and add the single intake seam everything routes through.
 - A pure `direct_parse.dart`: extract JSON-LD / OpenGraph / microdata from HTML (or a metadata
   map) → candidate `ThingDoc`(s), `validateThingDoc` (drop unknown props), stamp
   `grabbitProvenanceBlock(directParse, sourceRef, capturedAt)`. Add the `html` dep (pure-Dart).
 - A `CaptureService` / `CaptureRequest` abstraction: route any raw input (fetched HTML, file
   metadata, manual text, barcode payload) → branch (a) when structured, else the P15 `Curator`
-  → a **pending suggestion** via `ThingSuggestionRepository` (suggest-don't-assert).
+  → a `CaptureOutcome` (suggest-don't-assert).
 - **Exit / review:** fixture HTML with a JSON-LD `Recipe` → a correct `Recipe` `ThingDoc` with
   no model call; an OG-only page → a generic/`Article` Thing; routing + validation unit-tested.
   *(CI-discharged — no on-device behaviour.)*
+- **Status:** shipped — `lib/core/things/capture/`: `direct_parse.dart` (pure `directParse` —
+  JSON-LD via `<script type="application/ld+json">` incl. `@graph`/array flattening, `@type`
+  string-or-list → most-specific known type, nested `mainEntity`; microdata via
+  `itemscope`/`itemprop`; OpenGraph/meta → loose `og:type` map; boundary-validated, container
+  types ranked below content, best-first), `capture_service.dart` (the pure ADR-0002 router:
+  branch (a) when `html` carries structure → no model, else the P15 `Curator` over `text` →
+  `CaptureOutcome{branch, doc, type, confidence, provenance}`; rethrows `unavailable`), and a
+  hand-written `capture_service_provider.dart`. Added `html ^0.15.6` (`docs/SPEC.md`). 14 unit
+  tests over the real vocab + a fake `generate`. **Persistence + non-media suggestion keying/
+  review deferred to P16b** (the media-coupled `thing_suggestions`/`/item/:id/suggestions`).
+  Pure-Dart, no codegen — **CI-discharged → `[x]` on merge.**
 
 ### `[ ]` P16b — Universal "Grab anything" intake surfaces *(UI; APK)*
 The visible "add anything" entry — beyond URLs.
