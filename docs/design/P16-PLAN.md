@@ -121,9 +121,14 @@ The visible "add anything" entry — beyond URLs.
     `buildManualThing` (user-authored `ThingDoc`), the `ManualEntryScreen` (`/grab/manual`: type ·
     name · description · url), the unified `showGrabSheet` (URL + manual rows), and the Dashboard
     **Grab** FAB. No new deps, no migration; manual entry is device-universal (no model). 11 tests.
-  - **`[ ]` P16b-2 — web-article capture** *(UI+data; APK)*: paste/share a URL → `dart:io` fetch →
-    `CaptureService` (branch a direct-parse asserts; branch b/c → review). Generalizes the non-media
-    model-branch suggestion keying + review surface.
+  - **`[~]` P16b-2 — web-article capture** *(UI+data; APK)*: shipped — paste a URL → `http` fetch
+    (`WebPageFetcher` seam) → `CaptureService`: structured markup → direct-parse **asserts directly**;
+    markup-less on a capable device → curator → **pending suggestion + review**; low/AI-off → "add
+    manually". Generalized the review pipeline for non-media captures: `accept()` writes the
+    `isBasedOn` edge only when the source resolves to a Thing (no dangling edge for `cap_*`),
+    `postSuggestionNotification` takes an overridable `targetRoute`/`dedupeKey`, and a
+    `/capture/:id/suggestions` route reuses the review screen. Added `http`; readable-text extraction
+    is a pure-Dart heuristic (no readability package). *APK-owed (batched into the P16 pass).*
   - **`[ ]` P16b-3 — file upload** *(UI+data; APK)*: `file_picker` → media ⇒ MediaObject leaf
     (+ the new local-file→`MediaItem` import seam); other ⇒ `DigitalDocument`/generic Thing.
   - **`[ ]` P16b-4 — camera/barcode** *(UI+data; APK)*: scanner → GTIN/ISBN → `Product`/`Book`

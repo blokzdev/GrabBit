@@ -91,6 +91,11 @@ dependencies:
   # OpenGraph from a captured page into a typed schema.org Thing, no model call,
   # on every device. No native deps, no network (fetching is the caller's job).
   html: ^0.15.6
+  # P16b-2 web-article capture: fetch a page's HTML for the capture pipeline (the
+  # `html` dep above parses it). A single user-initiated GET (https-only, no
+  # account/cookies/telemetry) — the official Dart-team client, wrapped behind a
+  # `WebPageFetcher` seam so Windows (P17) can swap the impl.
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:

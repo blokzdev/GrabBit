@@ -43,6 +43,12 @@ class _GrabSheet extends StatelessWidget {
             route: '/add',
           ),
           const _GrabOption(
+            icon: Icons.language,
+            title: 'Grab a web page',
+            subtitle: 'Capture an article, recipe, product… as a Thing',
+            route: '/grab/web',
+          ),
+          const _GrabOption(
             icon: Icons.edit_outlined,
             title: 'Write a note or add manually',
             subtitle: 'Create a Thing yourself — a note, recipe, place…',

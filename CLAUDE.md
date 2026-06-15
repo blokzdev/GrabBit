@@ -288,7 +288,9 @@ lean for speed, not for a minutes budget:
 - App lock: PIN hashed (never stored plain) in `flutter_secure_storage`; biometric
   via `local_auth`.
 - **Never commit secrets.** No API keys in the client — there is **no backend and no cloud**. The
-  only network calls are downloads and a one-time, integrity-checked model download (P12).
+  only network calls are downloads, a one-time, integrity-checked model download (P12), and the
+  **user-initiated web-article capture fetch** (P16b — a single https GET of a page the user pasted,
+  no account/cookies/telemetry).
 - Scoped storage / least-privilege permissions only (see SPEC permissions matrix).
 
 ---
