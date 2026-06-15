@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// elsewhere / in tests so callers stay platform-agnostic and testable.
 abstract class ExternalShareService {
   Future<void> shareFiles(List<String> paths);
+  Future<void> shareText(String text, {String? subject});
   Future<void> openUrl(String url);
 }
 
@@ -18,6 +19,12 @@ class PlatformExternalShareService implements ExternalShareService {
     final files = [for (final p in paths) XFile(p)];
     if (files.isEmpty) return;
     await SharePlus.instance.share(ShareParams(files: files));
+  }
+
+  @override
+  Future<void> shareText(String text, {String? subject}) async {
+    if (text.trim().isEmpty) return;
+    await SharePlus.instance.share(ShareParams(text: text, subject: subject));
   }
 
   @override
@@ -31,6 +38,8 @@ class PlatformExternalShareService implements ExternalShareService {
 class NoopExternalShareService implements ExternalShareService {
   @override
   Future<void> shareFiles(List<String> paths) async {}
+  @override
+  Future<void> shareText(String text, {String? subject}) async {}
   @override
   Future<void> openUrl(String url) async {}
 }

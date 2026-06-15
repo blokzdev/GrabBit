@@ -146,13 +146,16 @@ The visible "add anything" entry — beyond URLs.
   pending suggestion, confirmable via the inbox; ineligible/AI-off degrades to direct-parse/manual.
   *(APK: real intake on device.)*
 
-### `[ ]` P16c — Bespoke priority-type cards + exporters *(UI; APK)*
-Make the priority types feel first-class.
-- A `thingCardFor(type)` dispatcher → bespoke detail cards for **Recipe/Event/Place/Article/
-  Product + MediaObjects** (typed layout over the JSON-LD), falling back to the generic
-  `thingDisplayFields` render for the long tail.
-- On-device **exporters**: Event → `.ics` (VEVENT), Place → `geo:`/maps deep link + share,
-  Recipe/Article → formatted text (`share_plus`), Product → text incl. gtin.
+### `[~]` P16c — Bespoke priority-type cards + exporters *(UI; APK)*
+Make the priority types feel first-class. **Shipped.**
+- A `thingCardFor(type)` dispatcher → bespoke, first-class detail **cards** for **Recipe/Event/
+  Place/Article/Product** (typed layout over the JSON-LD) in `ThingDetailScreen`, falling back to the
+  generic `thingDisplayFields` render for the long tail. (MediaObjects route to the media detail, so
+  no Thing-detail card is needed for them.)
+- On-device **exporters** (a `ThingExportService` over pure `thing_exporters.dart`, behind the
+  `ExternalShareService` seam — `shareText` added): Event → `.ics` (VEVENT, temp file + share), Place
+  → `geo:` maps deep link, Recipe/Article/Product → formatted text via `share_plus`. A share/export
+  app-bar action appears on `ThingDetailScreen` for exportable types. No new deps. *APK-owed.*
 - **Exit / review:** each priority type renders a bespoke card and exports correctly; an unknown
   type still renders generically. *(APK: render/export on device.)*
 

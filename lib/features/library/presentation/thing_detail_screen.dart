@@ -10,7 +10,10 @@ import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
+import 'package:grabbit/features/library/data/thing_export_service.dart';
+import 'package:grabbit/features/library/data/thing_exporters.dart';
 import 'package:grabbit/features/library/data/things_browse_providers.dart';
+import 'package:grabbit/features/library/presentation/thing_cards.dart';
 import 'package:grabbit/features/library/presentation/things_browser_screen.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
 import 'package:grabbit/features/settings/presentation/settings_controller.dart';
@@ -35,6 +38,13 @@ class ThingDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Thing'),
         actions: [
+          if (loaded != null && exportKindFor(loaded.type) != null)
+            IconButton(
+              tooltip: 'Share / export',
+              icon: const Icon(Icons.ios_share),
+              onPressed: () =>
+                  ref.read(thingExportServiceProvider).export(loaded),
+            ),
           if (advanced && loaded != null)
             IconButton(
               tooltip: 'View JSON-LD',
@@ -59,11 +69,14 @@ class ThingDetailScreen extends ConsumerWidget {
                 message: 'It may have been removed.',
               );
             }
+            // A priority type gets its bespoke, first-class card; the long tail
+            // falls back to the generic schema-driven field list (ADR-0001).
+            final card = thingCardFor(row);
             return ListView(
               padding: EdgeInsets.only(bottom: tokens.spaceXl),
               children: [
                 _Header(thing: row),
-                _Fields(thing: row),
+                card ?? _Fields(thing: row),
                 _BasedOn(thingId: thingId),
               ],
             );

@@ -54,17 +54,25 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders the Recipe header, fields, and a Based-on link', (
+  testWidgets('renders the Recipe header, bespoke card, and a Based-on link', (
     tester,
   ) async {
     await pump(tester);
 
     expect(find.text('Carbonara'), findsOneWidget); // header name
-    expect(find.text('Recipe'), findsOneWidget); // type subtitle
-    expect(find.text('recipeIngredient'), findsOneWidget); // field label
-    expect(find.text('eggs'), findsOneWidget); // field value
+    // 'Recipe' shows in the header subtitle and the bespoke card title.
+    expect(find.text('Recipe'), findsWidgets);
+    expect(find.text('Ingredients'), findsOneWidget); // bespoke card section
+    expect(find.text('•  eggs'), findsOneWidget); // bespoke ingredient row
     expect(find.text('Based on'), findsOneWidget); // linked-edge section
     expect(find.text('item-1'), findsOneWidget);
+  });
+
+  testWidgets('shows the share/export action for an exportable type', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.byIcon(Icons.ios_share), findsOneWidget);
   });
 
   testWidgets('hides the JSON-LD action in Simple mode', (tester) async {
