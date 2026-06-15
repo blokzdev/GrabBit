@@ -155,6 +155,11 @@ class SettingsController extends _$SettingsController {
   Future<void> setAutoTagOnDownload(bool value) async =>
       _update((await future).copyWith(autoTagOnDownload: value));
 
+  /// Auto-extract structured Things from newly downloaded items in the
+  /// background (P15f).
+  Future<void> setAutoExtractOnDownload(bool value) async =>
+      _update((await future).copyWith(autoExtractOnDownload: value));
+
   /// On-device transcription opt-in (P12e).
   Future<void> setTranscriptionEnabled(bool value) async =>
       _update((await future).copyWith(transcriptionEnabled: value));

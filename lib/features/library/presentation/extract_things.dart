@@ -38,3 +38,34 @@ ExtractThingsAction extractThingsAction({
   if (!modelReady) return ExtractThingsAction.offerDownload;
   return ExtractThingsAction.extractNow;
 }
+
+/// What auto-extract-on-download (P15f) should do for a freshly downloaded item,
+/// assuming the feature **and** generation are opted in. A pure decision so the
+/// queue path is testable (mirrors `autoSummaryDecision`/`autoTagDecision`). The
+/// caller only enters this when `autoExtractOnDownload && generationEnabled` — so
+/// this decides given the active model's capability + readiness. "No text" is left
+/// to the extraction service (it returns `noText` per item).
+enum AutoExtractDecision {
+  /// Nothing to do — no function-calling-capable model is active (the user must
+  /// switch models, not download one), so don't run and don't nudge.
+  skip,
+
+  /// Would extract, but the FC model isn't downloaded — nudge once.
+  needsModel,
+
+  /// Extract from each item now (FC model active + ready).
+  extract,
+}
+
+/// [eligible] is whether an FC-capable model is the active one
+/// (`activeStructuredExtractionModel != null`); [modelReady] is whether it's
+/// already downloaded (`engine.ensureReady()` — no fetch).
+AutoExtractDecision autoExtractDecision({
+  required bool eligible,
+  required bool modelReady,
+}) {
+  if (!eligible) return AutoExtractDecision.skip;
+  return modelReady
+      ? AutoExtractDecision.extract
+      : AutoExtractDecision.needsModel;
+}

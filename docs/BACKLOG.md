@@ -331,6 +331,10 @@ _(promoted out of the backlog into a planned phase — see `docs/ROADMAP.md`)_
       seams already exist) for better recall on weak-keyword items. Deferred to keep the P15b curator pure (the
       embed call is async I/O); wire it as an injected scorer in P15c+ if classification accuracy needs it.
       *(From P15b.)*
+- [ ] **Throttle/scope auto-extract for large playlist/bulk downloads** — P15f's auto-extract runs the
+      function-calling curator **per item** on download complete (mirrors auto-tag). For a big playlist/bulk
+      grab this is many sequential LLM calls in the background. If it proves heavy on-device, cap the count,
+      extract only the primary item, or queue extraction lazily. *(From P15f.)*
 
 ## Done
 - [x] **Engine auto-update on launch** + Settings toggle (fresh installs were failing

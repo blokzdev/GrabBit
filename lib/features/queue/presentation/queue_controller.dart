@@ -10,6 +10,7 @@ import 'package:grabbit/core/ai/ocr_provider.dart';
 import 'package:grabbit/core/ai/transcription_provider.dart';
 import 'package:grabbit/core/db/database.dart';
 import 'package:grabbit/core/db/database_provider.dart';
+import 'package:grabbit/core/things/schema_org_vocabulary_provider.dart';
 import 'package:grabbit/core/engine/download_engine.dart';
 import 'package:grabbit/core/engine/download_error.dart';
 import 'package:grabbit/core/engine/engine_provider.dart';
@@ -25,8 +26,11 @@ import 'package:grabbit/core/utils/upload_date.dart';
 import 'package:grabbit/features/downloader/presentation/error_messages.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/data/suggestion_review_service.dart';
+import 'package:grabbit/features/library/data/thing_extraction_service.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/ai_summary.dart';
+import 'package:grabbit/features/library/presentation/extract_things.dart';
 import 'package:grabbit/features/library/presentation/ocr.dart';
 import 'package:grabbit/features/library/presentation/tag_suggestions.dart';
 import 'package:grabbit/features/notifications/data/notification_enums.dart';
@@ -60,6 +64,10 @@ typedef _PersistResult = ({
   // the generation model isn't downloaded → prompt to finish setup.
   int tagCount,
   bool tagNeedsModel,
+  // P15f: per-item Things auto-extracted (each → an inbox "confirm" suggestion),
+  // and whether auto-extract is opted in but the FC model isn't downloaded.
+  List<({String itemId, String title, String type})> extractedSuggestions,
+  bool extractNeedsModel,
 });
 
 class QueueConfig {
@@ -466,6 +474,30 @@ class QueueController extends _$QueueController {
         dedupeKey: 'tags_needs_model',
       );
     }
+    // P15f: auto-extract produced pending Thing suggestions — one actionable
+    // "Confirm extracted <Type>?" entry per item (deep-links to its review
+    // surface; never auto-asserted). Reuses the P15d helper for exact parity.
+    for (final s in result.extractedSuggestions) {
+      await postSuggestionNotification(
+        center,
+        itemId: s.itemId,
+        title: s.title,
+        type: s.type,
+      );
+    }
+    // P15f: opted into auto-extract but the FC model isn't downloaded.
+    if (result.extractNeedsModel) {
+      await center.post(
+        category: NotificationCategory.ai,
+        severity: NotificationSeverity.info,
+        title: 'Finish setting up auto-extract',
+        body:
+            'Download a function-calling model to auto-extract Things from new '
+            'downloads.',
+        targetRoute: '/settings/ai',
+        dedupeKey: 'extract_needs_model',
+      );
+    }
     await _maybeNotifyOs(
       taskId: id,
       title: queued.title,
@@ -629,6 +661,8 @@ class QueueController extends _$QueueController {
       ocrCount: 0,
       tagCount: 0,
       tagNeedsModel: false,
+      extractedSuggestions: <({String itemId, String title, String type})>[],
+      extractNeedsModel: false,
     );
     // Files land in a per-task subfolder (see YtDlpHost `-o`): the task id names
     // the folder, the user's template names the file inside it.
@@ -919,6 +953,54 @@ class QueueController extends _$QueueController {
       }
     }
 
+    // P15f: auto-extract structured Things from freshly downloaded items when
+    // opted in + a function-calling-capable model is already downloaded (no
+    // surprise fetch). Each extraction is a pending suggestion confirmed via the
+    // inbox — never auto-asserted (ADR-0004). Mirrors auto-tag; per-item failures
+    // never fail the download.
+    final extractedSuggestions =
+        <({String itemId, String title, String type})>[];
+    var extractNeedsModel = false;
+    if (settings.autoExtractOnDownload && settings.generationEnabled) {
+      final generation = ref.read(generationEngineProvider);
+      final eligible =
+          ref.read(activeStructuredExtractionModelProvider) != null;
+      final modelReady = eligible && await generation.ensureReady();
+      switch (autoExtractDecision(eligible: eligible, modelReady: modelReady)) {
+        case AutoExtractDecision.skip:
+          break;
+        case AutoExtractDecision.needsModel:
+          extractNeedsModel = true;
+        case AutoExtractDecision.extract:
+          final vocab = await ref.read(schemaOrgVocabularyProvider.future);
+          final modelId = ref.read(activeStructuredExtractionModelProvider)!.id;
+          final service = ref.read(thingExtractionServiceProvider);
+          final metadata = ref.read(metadataRepositoryProvider);
+          for (final (i, _) in outputs.media.indexed) {
+            final itemId = single ? id : '${id}__$i';
+            try {
+              final item = await metadata.mediaItemById(itemId);
+              if (item == null) continue;
+              final outcome = await service.extract(
+                item: item,
+                vocab: vocab,
+                generate: generation.generateStructured,
+                modelId: modelId,
+              );
+              if (outcome.status == ExtractionStatus.extracted) {
+                extractedSuggestions.add((
+                  itemId: itemId,
+                  title: item.title,
+                  type: outcome.type!,
+                ));
+              }
+            } catch (_) {
+              // A per-item extraction failure must not fail the download.
+            }
+          }
+      }
+    }
+
     return (
       primaryId: single ? id : '${id}__0',
       itemCount: outputs.media.length,
@@ -929,6 +1011,8 @@ class QueueController extends _$QueueController {
       ocrCount: ocrCount,
       tagCount: tagCount,
       tagNeedsModel: tagNeedsModel,
+      extractedSuggestions: extractedSuggestions,
+      extractNeedsModel: extractNeedsModel,
     );
   }
 

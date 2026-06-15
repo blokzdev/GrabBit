@@ -31,4 +31,31 @@ void main() {
       );
     });
   });
+
+  group('autoExtractDecision', () {
+    test('not eligible → skip (no FC model active; no nudge)', () {
+      expect(
+        autoExtractDecision(eligible: false, modelReady: false),
+        AutoExtractDecision.skip,
+      );
+      expect(
+        autoExtractDecision(eligible: false, modelReady: true),
+        AutoExtractDecision.skip,
+      );
+    });
+
+    test('eligible but model not downloaded → needsModel', () {
+      expect(
+        autoExtractDecision(eligible: true, modelReady: false),
+        AutoExtractDecision.needsModel,
+      );
+    });
+
+    test('eligible + ready → extract', () {
+      expect(
+        autoExtractDecision(eligible: true, modelReady: true),
+        AutoExtractDecision.extract,
+      );
+    });
+  });
 }

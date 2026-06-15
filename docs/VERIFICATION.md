@@ -1193,6 +1193,34 @@ as the granular reference). Running this pass is what closes P14 (flips P14c/P14
 - [ ] In **Advanced** mode the Thing render's **"View JSON-LD"** action shows the canonical document;
       in **Simple** mode it's hidden.
 
+### P15f — Auto-extract-on-download opt-in  *(install `app-arm64-v8a-debug.apk`; needs a capable device + a downloaded FC model)*
+- [ ] **Auto-extract Things** appears in **AI settings** only when text generation is enabled **and** the
+      device/model supports function-calling extraction; it's **off by default**.
+- [ ] With it **on** and an FC model downloaded, a completed download posts an **`ai` "Confirm extracted
+      &lt;Type&gt;?"** inbox entry per item (deep-links to its review surface) — **nothing** is asserted into
+      `things` until the user confirms. With it **off**, a download posts no extraction entry.
+- [ ] **No surprise fetch:** opted in but the FC model **not** downloaded → a one-time "finish setup" nudge,
+      never a mid-queue model download. On a **non-FC / low-tier** device the toggle is hidden and nothing
+      auto-runs.
+- [ ] The opt-in **persists across restart**; auto-extract runs **offline** (no network) once the model is local.
+
+### P15 — consolidated cross-feature on-device pass  *(the phase-close gate; run on one low-tier + one mid/high device)*
+The single owed verification for the whole phase — exercises P15 **together** (the per-subphase rows above stay
+as the granular reference). Running this pass is what closes P15 (flips P15a/c/d/e/f → `[x]`).
+- [ ] **Extract → confirm → browse, end-to-end:** on a capable device with an FC model, **"Extract Things"** on
+      a recipe video yields an inbox entry + "Review" SnackBar; **Accept** asserts a `Recipe` linked
+      (`isBasedOn`) to its `MediaObject`; **Edit → Save & Accept** persists a tweak; **Reject** writes nothing;
+      the confirmed Recipe appears in the **Things Browser** and its render's **"Based on"** opens the source
+      media — all **offline**.
+- [ ] **Auto-extract opt-in:** with the toggle on, a fresh download produces a **pending** suggestion via the
+      inbox (never auto-asserted); off by default; the opt-in persists across restart.
+- [ ] **Browser over a real, mixed library:** the facet chips list each `@type` with counts; filtering works;
+      tapping a `MediaObject` opens its media item, tapping a non-media Thing opens the generic render; both UI
+      modes show the Dashboard "Browse your Things" entry.
+- [ ] **Gracefully device-universal:** on a **low/ineligible** or non-FC device the "Extract Things" action and
+      the auto-extract toggle are hidden/nudge appropriately — never a crash; the Things Browser still works
+      over projected `MediaObject`s; everything **offline** bar the one-time model fetch.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

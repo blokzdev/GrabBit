@@ -181,16 +181,22 @@ The first visible payoff of the pivot — the "everything library" becomes tangi
   `thingDisplayFields` + browser & detail widget tests. **The APK pass (over a real, mixed library) is batched
   into the P15 close → stays `[~]`** (§7).
 
-### `[ ]` P15f — Auto-extract-on-download opt-in + P15 phase close *(UI + docs; APK)*
+### `[~]` P15f — Auto-extract-on-download opt-in + P15 phase close *(UI + docs; APK)*
 The opt-in automation, then close the phase.
-- An opt-in **`autoExtractOnDownload`** setting (default off; mirrors the P13 auto-* toggles): on download
-  complete, if enabled **and** the model is ready, extract in the background → **suggestions via the inbox**
-  (**never** auto-asserted). Plugs into `queue_controller._persistCompleted` **after** the auto-tag block,
-  reusing `extractThingsDecision`; per-item failures never fail the download.
+- An opt-in **`autoExtractOnDownload`** setting (default off; mirrors the P13 auto-* toggles, gated by
+  `generationEnabled` + `structuredExtractionSupported`): on download complete, if enabled **and** an
+  FC-capable model is active **and** ready, extract in the background → **suggestions via the inbox**
+  (**never** auto-asserted). A pure `autoExtractDecision` (skip/needsModel/extract) gates a per-item block in
+  `queue_controller._persistCompleted` **after** the auto-tag block, reusing `ThingExtractionService.extract`
+  + the P15d `postSuggestionNotification` helper; per-item failures never fail the download.
 - **Phase close:** add `docs/VERIFICATION.md` rows + a **"P15 — consolidated cross-feature on-device pass"**
   (on-demand extract over a real library · the confirm/reject loop · inbox entries · the Browser · auto-extract
   · graceful gating on an incapable tier); flip the P15 markers per the §7 earned-`[x]` rule; update the
   ROADMAP/`things-engine.md` status; route any deferrals to `docs/BACKLOG.md`.
+- **Status:** code shipped — the setting + AI-settings toggle, the `autoExtractDecision` gate (CI-tested), the
+  queue block, and the consolidated-pass checklist. **CI green; P15f's auto-extract APK check + the whole-phase
+  consolidated on-device pass are batched → P15a/c/d/e/f stay `[~]` until the maintainer runs that pass, which
+  flips them all (and P15) to `[x]`** (§7).
 - **Exit / review:** the consolidated on-device pass closes P15 (→ **P16**, universal intake + typed types &
   GraphRAG).
 
