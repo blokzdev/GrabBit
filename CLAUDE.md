@@ -353,6 +353,11 @@ posture defensible and reduce takedown risk, follow these rules in code and docs
   `generateStructured` impl + `structured_extraction` gating, the narrow-then-fill Curator, extraction service
   + pending suggestions, confirmation flow + Activity Inbox, Things Browser v1, auto-extract opt-in + phase
   close). The curator phase of the Things Engine band.
+- `docs/design/P16-PLAN.md` — (P16) Universal intake + typed types, UX & GraphRAG sub-roadmap (P16a–P16g:
+  direct-parse curator branch (a) + unified capture core, universal "Grab anything" intake (file/web/manual/
+  camera-barcode), bespoke priority-type cards + exporters, the rich Things Browser, authored-edge UI + reified
+  relationships, Thing-level embedding index + typed-node GraphRAG over any Thing, phase close). The final
+  phase of the Things Engine band.
 - `docs/things-engine.md` — (the **P14–P16** spine; vision one-pager) the **Things Engine**: the
   library reframed as a typed, on-device graph of schema.org Things.
 - `docs/decisions/` — Architecture Decision Records. **ADR-0001** schema-as-data (Things as JSON-LD,

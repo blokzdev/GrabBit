@@ -441,6 +441,7 @@ video → a `Recipe`; a vlog → `Place`/`Event`).
 fields, browsable in the Things Browser, fully on-device; ineligible devices degrade gracefully.
 
 ## P16 — Universal intake + typed types, UX & GraphRAG
+**Status: planning — the phase map `docs/design/P16-PLAN.md` is authored (P16a–P16g); subphases not yet built.**
 **Goals:** make GrabBit collect **anything**, not just downloads, and make the typed library first-class.
 **Deliverables (high level — subphase map in `docs/design/P16-PLAN.md` at phase start):**
 - **Universal "Grab anything" intake**: beyond URLs — **file upload, web-article capture, manual entry,

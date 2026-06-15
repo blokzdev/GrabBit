@@ -20,7 +20,7 @@ _(nothing active — pick the next batch from below)_
       ship now (`lib/core/diagnostics/`), fully local (no upload, no telemetry). A later opt-in could let users
       send a captured report to a maintainer endpoint — strictly opt-in, off by default, honoring the
       no-telemetry default. *(Off-phase: crash-capture.)*
-- [ ] **Separate Thing-level embedding index (a dedicated future phase, sequence with P15/P16).** P14e made
+- [ ] **Separate Thing-level embedding index — now scheduled in P16f (see `docs/design/P16-PLAN.md`).** P14e made
       *hydration* Thing-aware but **reuses the existing media-keyed vectors** (a MediaObject's `id ==
       media_items.id`). This adds the **recall** layer: embed Things as their own vectors (a `thing_embedding`
       Cozo relation keyed by `things.id`, built from the Thing's JSON-LD text) so **non-MediaObject** Things —
@@ -29,6 +29,17 @@ _(nothing active — pick the next batch from below)_
       `hydrateNodes` seam (recall vs. resolve/cite): the index's hits flow *through* that same seam. No value
       before non-MediaObject Things exist (today it would only re-embed identical content under a second key);
       the eventual consolidation is to key embeddings on `things.id` uniformly. *(From P14e.)*
+- [ ] **Opt-in barcode → product/book auto-fill.** P16b's camera/barcode intake captures a GTIN/ISBN **on-device
+      only** (into a `Product`/`Book` skeleton) — no external lookup, per the no-cloud/no-telemetry principle
+      (CLAUDE.md §1/§9). A later **opt-in** enrichment could auto-fill the rest. Prefer an approach that keeps the
+      posture: bundle/optionally-download a **free, open data dump** as an on-device dataset — **OpenFoodFacts**
+      (free API **and** a full downloadable database dump, for groceries) and **Open Library** (ISBN→book) — so
+      lookups stay offline; an online API call would be the fallback and must be strictly opt-in + disclosed.
+      Off by default; revisit after the Things Engine band. *(From P16b.)*
+- [ ] **Things FTS5 index (full-text over Thing properties).** P16d's rich-browser search runs over the promoted
+      `name`/`type` columns (contains/LIKE) plus P16f's semantic embedding recall. If name-search proves too
+      shallow, add a dedicated FTS5 virtual table over Thing property text (mirroring the media FTS), with a
+      rebuildable backfill keyed on `things.id`. Add only when a query need proves out. *(From P16d.)*
 - [ ] **Translation — unify the language name/code sources.** P13f-2 added `kTranslationLanguages` (full ML Kit
       set, code→name) for the settings card + picker, while item-detail keeps its short curated `_captionLanguages`
       translate-target list. Fold the two into one source (the curated targets as a subset of the full set) so a
