@@ -171,6 +171,11 @@ adds `media_tags.source` (`'user'` default; `'ai'` for auto-applied tags). **v14
 **`chats`** + **`chat_messages`** tables backing the "Ask your library" GraphRAG chat — `chats`
 (id/title/createdAt/updatedAt/`archivedAt?`) and `chat_messages` (autoinc id, `chatId`→`chats` **FK
 cascade**, role, content, `citationsJson?`, createdAt); created by `m.createTable` (no data migration).
+**v15 (P14d)** adds the **`thing_edges`** authored-edge store (subject/predicate/object composite key,
+provenance/`confidence?`/`note?`, **no FK** — ADR-0004). **v16 (P15c)** adds the **`thing_suggestions`**
+table — pending, unconfirmed AI extractions (`id`, `sourceItemId`→`media_items` **no FK** per ADR-0003,
+`type`, `jsonld`, `confidence?`, `createdAt`); the curator writes here, **never** to `things`, until the user
+confirms (ADR-0004 suggest-don't-assert); created by `m.createTable` (no data migration).
 
 ---
 

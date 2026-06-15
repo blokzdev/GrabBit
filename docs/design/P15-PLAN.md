@@ -124,7 +124,7 @@ The pure curator (ADR-0002 routing) + tool-schema builder + result assembly — 
   codegen — **CI-discharged → `[x]` on merge.** The optional embedder-similarity scorer is deferred
   (`docs/BACKLOG.md`, *From P15b*).
 
-### `[ ]` P15c — Extraction service + on-demand trigger + pending suggestions *(data + UI; APK; the one schema bump)*
+### `[~]` P15c — Extraction service + on-demand trigger + pending suggestions *(data + UI; APK; the one schema bump)*
 Wire the curator to real item text, persist its output as **pending** suggestions, and expose the on-demand
 trigger.
 - `ThingExtractionService`: gather the best available text (`aiSummary ?? transcript ?? description ??
@@ -140,6 +140,15 @@ trigger.
 - **Exit / review:** tapping "Extract Things" on a capable device yields persisted **pending** suggestions
   (nothing in `things` yet); ineligible shows a friendly reason; the **v15→v16** upgrade is tested. CI: the
   decision helper + suggestion persistence + migration. *(APK: real extraction over a real library, offline.)*
+- **Status:** shipped — `thing_suggestions` table + **v15→v16** migration (`database.dart` + migration test);
+  `ThingSuggestionRepository` (`replaceForItem` = idempotent re-run) + provider; the `structured_extraction`
+  providers `structuredExtractionSupported`/`activeStructuredExtractionModel` (`generation_provider.dart`);
+  the 4-state `extractThingsAction` (mirrors `aiSummaryAction` — the manual on-ramp, *not* the 3-state
+  background `autoSummaryDecision`, which is P15f); `ThingExtractionService` (gather text → Curator → persist,
+  `ExtractionOutcome`); and the **"Extract Things"** item-detail action (gated on `structuredExtractionSupported`,
+  routes setup/download → AI settings). 16 new CI tests (migration · repo · decision · service over the real
+  vocab + a fake engine). **CI-green; the real-extraction APK check is batched into the P15 close → stays
+  `[~]`** (§7).
 
 ### `[ ]` P15d — Confirmation flow + Activity Inbox integration *(UI; APK)*
 Close the suggest-don't-assert loop: the user confirms before anything is asserted (ADR-0004).

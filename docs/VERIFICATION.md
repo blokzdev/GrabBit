@@ -1158,6 +1158,16 @@ as the granular reference). Running this pass is what closes P14 (flips P14c/P14
 - [ ] On a **low/ineligible** device the `structured_extraction` capability is **gated off** (no eligible model);
       a call degrades gracefully (`unavailable`) — never a crash.
 
+### P15c — "Extract Things" + pending suggestions  *(install `app-arm64-v8a-debug.apk`; needs a capable device + a downloaded FC model)*
+- [ ] On a **mid/high** device with generation enabled + a function-calling model downloaded, **"Extract Things"**
+      on an item detail (a recipe video/article with transcript/description) shows "Extracting Things…" then
+      **"Extracted a &lt;Type&gt; suggestion"** — and a row lands in `thing_suggestions` (re-running **replaces** it,
+      never accumulates). Nothing is written to `things` yet (that's P15d).
+- [ ] An item with **no text** says "No text to extract from yet"; when the curator finds nothing, "No Things found".
+- [ ] On a **low-tier** device the **"Extract Things"** action is **hidden**. With generation **off** /the model
+      **not downloaded**, tapping it routes to **AI settings** with a friendly reason. With a **non-FC** active model
+      (SmolLM2) selected, it nudges to pick Qwen3/Gemma.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.

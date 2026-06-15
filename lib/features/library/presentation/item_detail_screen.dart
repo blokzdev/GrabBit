@@ -18,6 +18,7 @@ import 'package:grabbit/core/engine/engine_provider.dart';
 import 'package:grabbit/core/graph/graph_store_provider.dart';
 import 'package:grabbit/core/text/textrank.dart';
 import 'package:grabbit/core/text/transcript_dedup.dart';
+import 'package:grabbit/core/things/schema_org_vocabulary_provider.dart';
 import 'package:grabbit/core/things/thing_jsonld_format.dart';
 import 'package:grabbit/core/things/thing_repository.dart';
 import 'package:grabbit/core/theme/tokens.dart';
@@ -34,10 +35,12 @@ import 'package:grabbit/core/share/external_share_service.dart';
 import 'package:grabbit/features/downloader/data/download_request_builder.dart';
 import 'package:grabbit/features/library/data/library_repository.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
+import 'package:grabbit/features/library/data/thing_extraction_service.dart';
 import 'package:grabbit/features/library/data/transcript_service.dart';
 import 'package:grabbit/features/library/presentation/library_controller.dart';
 import 'package:grabbit/features/library/presentation/media_actions.dart';
 import 'package:grabbit/features/library/presentation/ai_summary.dart';
+import 'package:grabbit/features/library/presentation/extract_things.dart';
 import 'package:grabbit/features/library/presentation/item_picker.dart';
 import 'package:grabbit/features/library/presentation/item_translation_provider.dart';
 import 'package:grabbit/features/library/presentation/media_grid.dart';
@@ -100,6 +103,8 @@ class ItemDetailScreen extends ConsumerWidget {
                     await _getTranscript(context, ref, row);
                   case 'translate':
                     await _translateItem(context, ref, row);
+                  case 'extractThings':
+                    await _extractThings(context, ref, row);
                   case 'share':
                     await shareItems(ref, [row]);
                   case 'copy':
@@ -146,6 +151,13 @@ class ItemDetailScreen extends ConsumerWidget {
                   const PopupMenuItem(
                     value: 'translate',
                     child: Text('Translate…'),
+                  ),
+                // P15c: AI extraction of typed schema.org Things from the item's
+                // text. Shown when the device tier can run structured extraction.
+                if (ref.watch(structuredExtractionSupportedProvider))
+                  const PopupMenuItem(
+                    value: 'extractThings',
+                    child: Text('Extract Things'),
                   ),
                 const PopupMenuItem(value: 'share', child: Text('Share file')),
                 const PopupMenuItem(
@@ -1010,6 +1022,89 @@ Future<void> _getTranscript(
   );
   messenger.showSnackBar(const SnackBar(content: Text('Transcript ready')));
 }
+
+/// P15c — the on-demand "Extract Things" action: run the curator over the item's
+/// text and persist a **pending suggestion** (never asserted — confirm/reject is
+/// P15d). A 4-state on-ramp (mirrors the AI-summary action): unavailable / set up /
+/// download / extract now.
+Future<void> _extractThings(
+  BuildContext context,
+  WidgetRef ref,
+  MediaItem row,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final router = GoRouter.of(context);
+
+  final model = ref.read(activeStructuredExtractionModelProvider);
+  final enabled =
+      ref.read(settingsControllerProvider).value?.generationEnabled ?? false;
+  final engine = ref.read(generationEngineProvider);
+  // Probe the model only when enabled — never load one the user hasn't opted into.
+  final modelReady = model != null && enabled && await engine.ensureReady();
+
+  switch (extractThingsAction(
+    eligible: model != null,
+    enabled: enabled,
+    modelReady: modelReady,
+  )) {
+    case ExtractThingsAction.unavailable:
+      // The device supports extraction, but the active model can't function-call
+      // (e.g. SmolLM2) — point the user at a compatible model.
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Pick Qwen3 or Gemma in AI settings to extract Things',
+            ),
+          ),
+        );
+      await router.push('/settings/ai');
+    case ExtractThingsAction.offerSetup:
+    case ExtractThingsAction.offerDownload:
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Set up on-device text generation to extract Things'),
+          ),
+        );
+      await router.push('/settings/ai');
+    case ExtractThingsAction.extractNow:
+      final vocab = await ref.read(schemaOrgVocabularyProvider.future);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Extracting Things…')));
+      try {
+        final outcome = await ref
+            .read(thingExtractionServiceProvider)
+            .extract(
+              item: row,
+              vocab: vocab,
+              generate: engine.generateStructured,
+              modelId: model!.id,
+            );
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(_extractionMessage(outcome))));
+      } on InferenceException catch (e) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text("Couldn't extract — ${e.message}")),
+          );
+      }
+  }
+}
+
+String _extractionMessage(ExtractionOutcome outcome) =>
+    switch (outcome.status) {
+      ExtractionStatus.extracted => 'Extracted a ${outcome.type} suggestion',
+      ExtractionStatus.noText => 'No text to extract from yet',
+      ExtractionStatus.nothingFound => 'No Things found in this item',
+      ExtractionStatus.needsModel =>
+        'Set up on-device text generation to extract Things',
+    };
 
 /// The on-device transcription fallback (P12e-3) for the manual "Get transcript"
 /// action, reached only when an item has **no captions** (local or online). A
