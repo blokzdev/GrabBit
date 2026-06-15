@@ -102,7 +102,7 @@ Make the inert function-calling seam real — the precondition for the curator.
   + Unavailable fallback). **The real on-device model fill is batched into the P15 consolidated pass →
   stays `[~]` until then** (CLAUDE.md §7).
 
-### `[ ]` P15b — The Curator: classify → tool-schema → validated ThingDoc *(pure Dart; CI)*
+### `[x]` P15b — The Curator: classify → tool-schema → validated ThingDoc *(pure Dart; CI)*
 The pure curator (ADR-0002 routing) + tool-schema builder + result assembly — no I/O, fully unit-testable.
 - **Classify** with cheap signals (keywords/tags/site/MIME; optional embedder similarity to type exemplars) →
   a small candidate set of priority types (Recipe/Event/Place/Article/Product).
@@ -115,6 +115,14 @@ The pure curator (ADR-0002 routing) + tool-schema builder + result assembly — 
 - **Exit / review:** fixture text + a **fake** `generateStructured` → a valid `Recipe` `ThingDoc` with
   provenance and only-known props; branch selection covered by unit tests. *(CI-discharged — no on-device
   behaviour.)*
+- **Status:** shipped — `lib/core/things/curator/`: `priority_types.dart` (the 5-type catalog + curated <20-prop
+  field subsets, **vocab-validated** so curation can't drift), `thing_classifier.dart` (pure keyword/host/
+  media-type scoring → single-tool vs narrowed-set + per-type confidence), `curator.dart` (`buildToolDef`
+  JSON-schema, prompt, and the injected-`generateStructured` orchestration → boundary-validated, provenance-
+  stamped `ThingDoc`; `null` on no-extract, rethrows `unavailable`). 35 unit tests (catalog/classifier/curator)
+  over the real vocab + a fake engine. Real-model fill efficacy is exercised in P15c's APK check. Pure-Dart, no
+  codegen — **CI-discharged → `[x]` on merge.** The optional embedder-similarity scorer is deferred
+  (`docs/BACKLOG.md`, *From P15b*).
 
 ### `[ ]` P15c — Extraction service + on-demand trigger + pending suggestions *(data + UI; APK; the one schema bump)*
 Wire the curator to real item text, persist its output as **pending** suggestions, and expose the on-demand
