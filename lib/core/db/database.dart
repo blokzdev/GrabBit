@@ -215,6 +215,26 @@ class ThingEdges extends Table {
   Set<Column<Object>> get primaryKey => {subject, predicate, object};
 }
 
+/// P15c — a **pending, unconfirmed AI extraction** ("suggest-don't-assert",
+/// ADR-0004). The curator proposes a typed schema.org Thing from a download's
+/// text; it lands here, **never** in `things`, until the user confirms it (P15d).
+/// On accept it's upserted into `things` + linked to its source `MediaObject`; on
+/// reject it's discarded. [id] is a minted `sug_<micros>` key; [sourceItemId] is
+/// the `media_items.id` it derived from (**no FK** — mirrors `things.id`,
+/// ADR-0003). [jsonld] is the candidate `ThingDoc` (carrying `grabbit:provenance`);
+/// [type]/[confidence] are promoted out of it for listing/sorting.
+class ThingSuggestions extends Table {
+  TextColumn get id => text()(); // 'sug_<micros>'
+  TextColumn get sourceItemId => text()(); // media_items.id (no FK, ADR-0003)
+  TextColumn get type => text()(); // schema.org @type, e.g. Recipe
+  TextColumn get jsonld => text()(); // candidate JSON-LD (ADR-0001/0004)
+  RealColumn get confidence => real().nullable()(); // promoted; 0.0–1.0
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 /// Single-row settings blob (JSON), keyed on a fixed id (see SPEC §4).
 class AppSettings extends Table {
   IntColumn get id => integer().withDefault(const Constant(0))();
@@ -268,6 +288,7 @@ class ChatMessages extends Table {
     Notifications,
     Things,
     ThingEdges,
+    ThingSuggestions,
     Chats,
     ChatMessages,
   ],
@@ -277,7 +298,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'grabbit'));
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -366,6 +387,11 @@ class AppDatabase extends _$AppDatabase {
         // P14d: the authored-edge store (ADR-0004 kind 2). New table only — no
         // data migration (mirrors the v9→v10 things / v13→v14 chats steps).
         await m.createTable(thingEdges);
+      }
+      if (from < 16) {
+        // P15c: the pending-extraction store (ADR-0004 suggest-don't-assert).
+        // New table only — no data migration (mirrors the v14→v15 thingEdges step).
+        await m.createTable(thingSuggestions);
       }
       await _createIndices();
       await _createFtsObjects();

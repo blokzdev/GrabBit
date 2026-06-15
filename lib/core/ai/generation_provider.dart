@@ -47,3 +47,28 @@ GenerationEngine generationEngine(Ref ref) {
     diskSpace: ref.watch(diskSpaceServiceProvider),
   );
 }
+
+/// Whether this device's [DeviceTier] can run **structured extraction** at all
+/// (P15a/c) — i.e. the tier offers at least one function-calling-capable model
+/// (low tier → none). Drives whether the "Extract Things" affordance is shown.
+@Riverpod(keepAlive: true)
+bool structuredExtractionSupported(Ref ref) {
+  final tier = ref.watch(activeDeviceTierProvider);
+  const matrix = ModelCapabilityMatrix();
+  return matrix.eligibleStructuredExtractionModels(tier).isNotEmpty;
+}
+
+/// The model the curator would actually fill with (P15c): the **active
+/// generation model** iff it's function-calling-capable on this tier, else null.
+/// The engine loads the active model, so a non-FC selection (e.g. SmolLM2) yields
+/// null — the UI then nudges the user to pick a compatible model in AI settings.
+@Riverpod(keepAlive: true)
+GenerationModel? activeStructuredExtractionModel(Ref ref) {
+  final model = ref.watch(activeGenerationModelProvider);
+  if (model == null) return null;
+  final tier = ref.watch(activeDeviceTierProvider);
+  const matrix = ModelCapabilityMatrix();
+  return matrix.eligibleStructuredExtractionModels(tier).contains(model)
+      ? model
+      : null;
+}

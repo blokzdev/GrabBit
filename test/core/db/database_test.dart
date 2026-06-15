@@ -9,8 +9,8 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  test('opens at schema version 15 with all tables created', () async {
-    expect(db.schemaVersion, 15);
+  test('opens at schema version 16 with all tables created', () async {
+    expect(db.schemaVersion, 16);
 
     // Forces onCreate (createAll) + beforeOpen to run.
     final tableNames = db.allTables.map((t) => t.actualTableName).toSet();
@@ -29,6 +29,7 @@ void main() {
         'notifications',
         'things',
         'thing_edges',
+        'thing_suggestions',
         'chats',
         'chat_messages',
       ]),
@@ -1275,6 +1276,71 @@ void main() {
       expect(edges.single.subject, 'a');
       expect(edges.single.object, 'b');
       expect(edges.single.provenance, 'user-authored');
+    },
+  );
+
+  test(
+    'upgrades a v15 database to v16, adding the thing_suggestions table (P15c)',
+    () async {
+      // Seed a minimal v15 DB (the tables the migration tail touches), then open
+      // at v16 — the from<16 step must create thing_suggestions.
+      final upgraded = AppDatabase(
+        NativeDatabase.memory(
+          setup: (raw) {
+            raw.execute('''
+              CREATE TABLE media_items (
+                id TEXT NOT NULL PRIMARY KEY, title TEXT NOT NULL,
+                source_url TEXT NOT NULL, site TEXT NOT NULL,
+                file_path TEXT NOT NULL, type TEXT NOT NULL, duration_sec INTEGER,
+                size_bytes INTEGER, width INTEGER, height INTEGER, thumb_path TEXT,
+                created_at INTEGER NOT NULL, storage_state TEXT NOT NULL, notes TEXT,
+                folder_id INTEGER, is_favorite INTEGER NOT NULL DEFAULT 0,
+                content_hash TEXT, last_accessed_at INTEGER
+              )''');
+            raw.execute('''
+              CREATE TABLE media_metadata (
+                item_id TEXT NOT NULL PRIMARY KEY REFERENCES media_items (id),
+                uploader TEXT, upload_date INTEGER, description TEXT,
+                original_url TEXT, uploader_id TEXT, channel_id TEXT, source_id TEXT,
+                playlist_id TEXT, playlist_title TEXT, tags TEXT, transcript TEXT,
+                transcript_cues TEXT, ai_summary TEXT, ai_summary_model_id TEXT,
+                ocr_text TEXT
+              )''');
+            raw.execute('''
+              CREATE TABLE notifications (
+                id TEXT NOT NULL PRIMARY KEY, category TEXT NOT NULL,
+                severity TEXT NOT NULL, title TEXT NOT NULL, body TEXT,
+                target_route TEXT, item_id TEXT, task_id TEXT, dedupe_key TEXT,
+                created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+                read_at INTEGER, expires_at INTEGER,
+                coalesce_count INTEGER NOT NULL DEFAULT 1
+              )''');
+            raw.execute('PRAGMA user_version = 15');
+          },
+        ),
+      );
+      addTearDown(upgraded.close);
+
+      // The new table exists and a pending suggestion round-trips.
+      await upgraded
+          .into(upgraded.thingSuggestions)
+          .insert(
+            ThingSuggestionsCompanion.insert(
+              id: 'sug_1',
+              sourceItemId: 'item-1',
+              type: 'Recipe',
+              jsonld: '{"@type":"Recipe","name":"Carbonara"}',
+              confidence: const Value(0.8),
+              createdAt: DateTime.utc(2026),
+            ),
+          );
+      final suggestions = await upgraded
+          .select(upgraded.thingSuggestions)
+          .get();
+      expect(suggestions, hasLength(1));
+      expect(suggestions.single.sourceItemId, 'item-1');
+      expect(suggestions.single.type, 'Recipe');
+      expect(suggestions.single.confidence, 0.8);
     },
   );
 
