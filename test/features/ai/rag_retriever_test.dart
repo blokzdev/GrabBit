@@ -38,9 +38,13 @@ class FakeEmbedderEngine implements EmbedderEngine {
 /// GraphQueryService with canned vector + related results (the underlying store
 /// is the no-op one; we override the two methods the retriever uses).
 class FakeGraphQueryService extends GraphQueryService {
-  FakeGraphQueryService(this.hits, {this.related = const []})
-    : super(const UnavailableGraphStore());
+  FakeGraphQueryService(
+    this.hits, {
+    this.related = const [],
+    this.thingHits = const [],
+  }) : super(const UnavailableGraphStore());
   final List<VectorHit> hits;
+  final List<VectorHit> thingHits;
   final List<String> related;
 
   @override
@@ -48,7 +52,8 @@ class FakeGraphQueryService extends GraphQueryService {
     List<double> query, {
     int k = 50,
     int ef = 100,
-  }) async => hits;
+    String relation = 'embedding',
+  }) async => relation == 'thing_embedding' ? thingHits : hits;
 
   @override
   Future<List<String>> relatedTo(
@@ -154,6 +159,41 @@ void main() {
       contains('a great concert'),
     ); // snippet still from metadata
   });
+
+  test(
+    'recalls a non-media Thing via thing_embedding + JSON-LD snippet (P16f)',
+    () async {
+      // A non-media Recipe Thing — no media row, so its snippet comes from JSON-LD.
+      await db
+          .into(db.things)
+          .insert(
+            ThingsCompanion.insert(
+              id: 'r',
+              type: 'Recipe',
+              jsonld:
+                  '{"@type":"Recipe","name":"Carbonara","recipeIngredient":["eggs","guanciale"]}',
+              name: const Value('Carbonara'),
+              createdAt: DateTime.utc(2026),
+              updatedAt: DateTime.utc(2026),
+            ),
+          );
+      final c = makeContainer(
+        // media search empty; the Thing index returns the Recipe.
+        graph: FakeGraphQueryService(
+          const [],
+          thingHits: const [VectorHit('r', 0.1)],
+        ),
+      );
+
+      final ctx = await c.read(ragRetrieverProvider).retrieve('pasta?');
+
+      expect(ctx.sources.single.itemId, 'r');
+      expect(ctx.sources.single.title, 'Carbonara');
+      expect(ctx.sources.single.type, 'Recipe');
+      expect(ctx.prompt, contains('[1] Carbonara (Recipe)'));
+      expect(ctx.prompt, contains('eggs')); // snippet from the Thing's JSON-LD
+    },
+  );
 
   test('empty question or unready retrieval → no sources (P13d-1)', () async {
     await seedItem('a', 'X');

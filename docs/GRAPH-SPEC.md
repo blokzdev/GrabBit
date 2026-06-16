@@ -193,6 +193,18 @@ DIM via the embedder), **not** by the dim-agnostic `GraphStore.ensureSchema`, an
 vector search (`~embedding:idx`) is **live in P10c-a** via `GraphQueryService.vectorSearch` (powers
 semantic library search); `similarTo` materialization follows in later P10c subphases.
 
+**Thing-level vector index (P16f):** a parallel HNSW relation `thing_embedding {id => v: <F32; DIM>,
+textHash}` keyed by **`things.id`**, built from each **non-MediaObject** Thing's JSON-LD text (`name` +
+`thingDisplayFields`) — a MediaObject's `id == media_items.id` is already embedded in `embedding`, so
+it's excluded to avoid duplicate vectors. Same DIM/shape, **shares `embedding_meta`** (one embedder
+governs both; a model/dim change drops + recreates both), and is **maintained in the same
+`backfillEmbeddings()` pass** (`buildThingEmbeddingDocs` → `diffEmbeddings` → `:put`/`:rm`). The
+`_edgeBuilderVersion` bump (v4→v5) trips the startup self-heal so it populates on first run after
+upgrade. RAG (`RagRetriever`) searches **both** indexes (`vectorSearch(relation:'thing_embedding')`),
+merges nearest-first, and cites any Thing — a non-media Thing's snippet comes from its JSON-LD
+(`buildThingSnippet`). The eventual consolidation (keying embeddings on `things.id` uniformly) stays in
+BACKLOG.
+
 **Signal reliability (from the codebase data map)** — build edges only on real signals:
 
 | Signal | Source | Reliability |

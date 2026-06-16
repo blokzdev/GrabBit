@@ -183,12 +183,15 @@ Surface the compounding asset — the links nobody else has (ADR-0004). **Shippe
 - **Exit / review:** author an edge and a reified note across two Things; both persist and appear
   in the browser + graph. *(APK: authoring on device.)*
 
-### `[ ]` P16f — Thing-level embedding index + typed-node GraphRAG over any Thing *(data + engine; APK)*
-Make "Ask your library" answer across every Thing type (BACKLOG "From P14e").
-- A **`thing_embedding`** Cozo relation keyed by `things.id`, built from each Thing's JSON-LD
-  text via `EmbedderEngine` + `GraphSyncService.backfillEmbeddings` (the fingerprint/projection-
-  version rebuild — **not** a Drift migration). `RagRetriever` + `NodeHydration` rank and cite
-  any Thing; richer Thing-property snippets in the prompt.
+### `[~]` P16f — Thing-level embedding index + typed-node GraphRAG over any Thing *(data + engine; APK)*
+Make "Ask your library" answer across every Thing type (BACKLOG "From P14e"). **Shipped.**
+- A **`thing_embedding`** Cozo HNSW relation keyed by `things.id`, built from each **non-MediaObject**
+  Thing's JSON-LD text (`buildThingEmbeddingDocs` — MediaObjects already sit in the media `embedding`),
+  maintained in the same `GraphSyncService.backfillEmbeddings` pass (shared `embedding_meta`,
+  `_edgeBuilderVersion` v4→v5 — **not** a Drift migration). `RagRetriever` searches **both** indexes
+  (`vectorSearch(relation:'thing_embedding')`), merges nearest-first, hydrates via `NodeHydration`, and
+  cites any Thing — a non-media Thing's snippet is built from its JSON-LD (`buildThingSnippet`).
+  *APK-owed.*
 - **Exit / review:** a question is answered from a non-media Thing (e.g. an extracted Recipe),
   citing it; generation stays tier-gated with the retrieval-only fallback on incapable devices.
   *(APK: real ask over a real library.)*

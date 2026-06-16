@@ -306,6 +306,72 @@ void main() {
       expect((put.params['rows']! as List).length, 2);
     });
 
+    test(
+      'embeds non-media Things into thing_embedding, skipping MediaObjects',
+      () async {
+        final db = newDb();
+        addTearDown(db.close);
+        const t0 = 1000;
+        await seedItem(db, 'a'); // media → `embedding`
+        // A non-media Thing → `thing_embedding`.
+        await db
+            .into(db.things)
+            .insert(
+              ThingsCompanion.insert(
+                id: 'r',
+                type: 'Recipe',
+                jsonld:
+                    '{"@type":"Recipe","name":"Carbonara","recipeIngredient":["eggs"]}',
+                name: const Value('Carbonara'),
+                createdAt: DateTime.fromMillisecondsSinceEpoch(t0),
+                updatedAt: DateTime.fromMillisecondsSinceEpoch(t0),
+              ),
+            );
+        // A MediaObject Thing (id == media id) must be excluded — already embedded
+        // in `embedding`.
+        await db
+            .into(db.things)
+            .insert(
+              ThingsCompanion.insert(
+                id: 'a',
+                type: 'VideoObject',
+                jsonld: '{"@type":"VideoObject","name":"Clip"}',
+                name: const Value('Clip'),
+                createdAt: DateTime.fromMillisecondsSinceEpoch(t0),
+                updatedAt: DateTime.fromMillisecondsSinceEpoch(t0),
+              ),
+            );
+        final engine = _FakeEmbedderEngine();
+        final fake = _FakeGraphStore();
+
+        final stats = await GraphSyncService(
+          fake,
+          db,
+          engine: engine,
+        ).backfillEmbeddings();
+
+        // media 'a' + Recipe 'r' embedded; the MediaObject Thing 'a' is excluded.
+        expect(engine.embedded, 2);
+        expect(stats.embedded, 2);
+        expect(
+          fake.calls.any((c) => c.script.contains(':create thing_embedding')),
+          isTrue,
+        );
+        expect(
+          fake.calls.any(
+            (c) => c.script.contains('::hnsw create thing_embedding:idx'),
+          ),
+          isTrue,
+        );
+        final put = fake.calls.firstWhere(
+          (c) => c.script.contains(':put thing_embedding'),
+        );
+        final rows = put.params['rows']! as List;
+        expect(rows.length, 1); // only the Recipe
+        expect((rows.first as List).first, 'r');
+      },
+    );
+
     test('skips create when the relation + meta already match', () async {
       final db = newDb();
       addTearDown(db.close);

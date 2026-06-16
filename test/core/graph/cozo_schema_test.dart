@@ -103,5 +103,24 @@ void main() {
       expect(embeddingMetaPutScript(), contains(':put embedding_meta'));
       expect(embeddingDropScript(), '::remove embedding');
     });
+
+    test('thing_embedding scripts mirror the media ones (P16f)', () {
+      expect(
+        thingEmbeddingCreateScript(768),
+        contains(':create thing_embedding { id: String => v: <F32; 768>'),
+      );
+      expect(
+        thingEmbeddingHnswScript(768),
+        contains('::hnsw create thing_embedding:idx { dim: 768'),
+      );
+      expect(thingEmbeddingPutScript(), contains(':put thing_embedding'));
+      expect(thingEmbeddingRemoveScript(), contains(':rm thing_embedding'));
+      expect(
+        thingEmbeddingPairsScript(),
+        contains('*thing_embedding{id, textHash}'),
+      );
+      expect(thingEmbeddingCountScript(), contains('count(id)'));
+      expect(thingEmbeddingDropScript(), '::remove thing_embedding');
+    });
   });
 }

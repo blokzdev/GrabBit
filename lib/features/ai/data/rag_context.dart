@@ -4,6 +4,8 @@
 /// the prompt shape + bounds are unit-testable in isolation.
 library;
 
+import 'package:grabbit/core/things/thing_doc.dart';
+
 /// System instruction: answer only from the provided sources, cite them, and
 /// admit ignorance rather than invent. On-device; nothing leaves the device.
 const String kRagSystemPrompt =
@@ -76,6 +78,19 @@ String buildSourceSnippet({
     ?(clean(aiSummary) ?? clean(description)),
     if (clean(transcript) != null) transcript!.trim(),
     if (clean(ocrText) != null) 'text in image: ${ocrText!.trim()}',
+  ];
+  final joined = parts.join(' · ');
+  return joined.length > maxChars
+      ? joined.substring(0, maxChars).trimRight()
+      : joined;
+}
+
+/// Builds a compact grounding snippet for a non-media **Thing** (P16f) from its
+/// salient JSON-LD properties (`thingDisplayFields`), truncated to [maxChars] — so
+/// answers can cite a Recipe/Article/… with real content, not just its title.
+String buildThingSnippet(ThingDoc doc, {int maxChars = 400}) {
+  final parts = [
+    for (final f in thingDisplayFields(doc)) '${f.key}: ${f.value}',
   ];
   final joined = parts.join(' · ');
   return joined.length > maxChars

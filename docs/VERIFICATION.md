@@ -1297,6 +1297,15 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
       a `Comment` Thing is created (searchable in the Things Browser) and is **linked from both**
       participants. All authoring is **offline**, no AI.
 
+### P16f — Thing-level embedding index + GraphRAG over any Thing  *(needs a capable device: embedder + FC model)*
+- [ ] Enable AI (embedder + generation), extract/import a **non-media Thing** (e.g. a `Recipe`), let the
+      graph index rebuild, then **Ask** a question that Thing answers → the answer **cites the Recipe**
+      with a real snippet from its properties (not just its title).
+- [ ] Ask still works over **media** items (a MediaObject is recalled + cited as before); a mixed answer
+      can cite both a media item and a Thing.
+- [ ] On an **embedder-off / low-tier** device, Ask degrades gracefully (retrieval-only / no sources),
+      no crash — `thing_embedding` is simply absent.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.
