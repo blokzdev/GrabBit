@@ -8,6 +8,14 @@
 _(nothing active — pick the next batch from below)_
 
 ## Deferred / future refinements
+- [ ] **Reified relationships via JSON-LD `@id` (the "Hybrid" P16e option).** Start minting a stable
+      JSON-LD `@id` on newly-created Things (== the Drift `thing.id`) and reify content-bearing links via
+      native `about:[{@id}]` references, making the graph **self-describing/portable** (export, round-trip)
+      and lighting up `deriveVocabularyEdges` generally. P16e instead modelled reified notes as a `Comment`
+      Thing + **stored** authored `about` edges (immediate, indexed two-sided visibility, zero cross-cutting
+      change). Revisiting needs: forward-mint `@id` in all Thing builders + projection; for two-sided
+      visibility either also keep authored edges or add an **incoming-`@id`-reference scan** (no index →
+      consider a derived edge index). *(From P16e.)*
 - [ ] **Proper release signing (keystore + CI secrets) — target P18/P19.** `android/app/build.gradle.kts`
       release builds currently fall back to the **debug key** (the Flutter-template TODO), and `build-apk.yml`
       builds a release APK by default — installable for sideload testing but **not** for public distribution

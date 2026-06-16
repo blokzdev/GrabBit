@@ -46,12 +46,25 @@ final thingEdgesFromProvider = FutureProvider.autoDispose
           ref.watch(thingEdgeRepositoryProvider).edgesFrom(subject),
     );
 
-/// One linked node in a Thing's relationships (P16d): the [predicate] of the edge
-/// and the hydrated target/source [node].
+/// One linked node in a Thing's relationships (P16d/P16e): the [predicate] of the
+/// edge and the hydrated target/source [node]. [authored] marks a stored authored
+/// edge (deletable; vocabulary edges are derived and not), with its raw
+/// [subjectId]/[objectId] for unambiguous deletion and any authored [note].
 class ThingRelation {
-  const ThingRelation(this.predicate, this.node);
+  const ThingRelation(
+    this.predicate,
+    this.node, {
+    this.authored = false,
+    this.subjectId,
+    this.objectId,
+    this.note,
+  });
   final String predicate;
   final HydratedNode node;
+  final bool authored;
+  final String? subjectId;
+  final String? objectId;
+  final String? note;
 }
 
 /// A Thing's relationships for the detail screen (P16d): its outgoing/incoming
@@ -102,23 +115,39 @@ final thingRelationshipsProvider = FutureProvider.autoDispose
           n.id: n,
       };
 
-      List<ThingRelation> relate(
-        Iterable<({String predicate, String node})> es,
-      ) => [
-        for (final e in es)
-          if (nodes[e.node] != null) ThingRelation(e.predicate, nodes[e.node]!),
-      ];
-
       return ThingRelationships(
-        outgoing: relate(
-          from.map((e) => (predicate: e.predicate, node: e.object)),
-        ),
-        incoming: relate(
-          to.map((e) => (predicate: e.predicate, node: e.subject)),
-        ),
-        mentions: relate(
-          vocab.map((e) => (predicate: e.predicate, node: e.object)),
-        ),
+        // Outgoing authored: this Thing is the subject.
+        outgoing: [
+          for (final e in from)
+            if (nodes[e.object] != null)
+              ThingRelation(
+                e.predicate,
+                nodes[e.object]!,
+                authored: true,
+                subjectId: id,
+                objectId: e.object,
+                note: e.note,
+              ),
+        ],
+        // Incoming authored: this Thing is the object.
+        incoming: [
+          for (final e in to)
+            if (nodes[e.subject] != null)
+              ThingRelation(
+                e.predicate,
+                nodes[e.subject]!,
+                authored: true,
+                subjectId: e.subject,
+                objectId: id,
+                note: e.note,
+              ),
+        ],
+        // Derived vocabulary references — not deletable.
+        mentions: [
+          for (final e in vocab)
+            if (nodes[e.object] != null)
+              ThingRelation(e.predicate, nodes[e.object]!),
+        ],
       );
     });
 

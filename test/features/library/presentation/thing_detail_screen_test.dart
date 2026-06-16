@@ -32,6 +32,9 @@ ThingRelationships _relationships() => const ThingRelationships(
     ThingRelation(
       'isBasedOn',
       HydratedNode(id: 'item-1', title: 'Source Clip', type: 'VideoObject'),
+      authored: true,
+      subjectId: 'thing_1',
+      objectId: 'item-1',
     ),
   ],
   incoming: [],
@@ -71,12 +74,15 @@ void main() {
     // The link shows the hydrated target name, not the raw id.
     expect(find.text('Source Clip'), findsOneWidget);
     expect(find.text('item-1'), findsNothing);
+    // P16e: an authored row offers a remove affordance.
+    expect(find.byIcon(Icons.close), findsOneWidget);
   });
 
-  testWidgets('shows the share/export action for an exportable type', (
+  testWidgets('shows the add-relationship and share/export actions', (
     tester,
   ) async {
     await pump(tester);
+    expect(find.byIcon(Icons.add_link), findsOneWidget);
     expect(find.byIcon(Icons.ios_share), findsOneWidget);
   });
 

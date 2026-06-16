@@ -63,6 +63,7 @@ void main() {
       object: 'med',
       predicate: 'isBasedOn',
       provenance: Provenance.userAuthored,
+      note: 'clipped this',
     );
     await edges.upsertEdge(
       subject: 'other',
@@ -86,10 +87,16 @@ void main() {
     () async {
       final r = await rel('src');
       expect(r.outgoing, hasLength(1)); // 'ghost' dropped
-      expect(r.outgoing.single.predicate, 'isBasedOn');
-      expect(r.outgoing.single.node.id, 'med');
-      expect(r.outgoing.single.node.title, 'Clip');
-      expect(r.outgoing.single.node.media, isNotNull); // routes to /item/
+      final o = r.outgoing.single;
+      expect(o.predicate, 'isBasedOn');
+      expect(o.node.id, 'med');
+      expect(o.node.title, 'Clip');
+      expect(o.node.media, isNotNull); // routes to /item/
+      // P16e: authored rows carry their identity + note for delete/display.
+      expect(o.authored, isTrue);
+      expect(o.subjectId, 'src');
+      expect(o.objectId, 'med');
+      expect(o.note, 'clipped this');
     },
   );
 
@@ -99,6 +106,14 @@ void main() {
     expect(r.incoming.single.node.id, 'other');
     expect(r.incoming.single.node.title, 'Friend');
     expect(r.incoming.single.node.media, isNull); // routes to /thing/
+    expect(r.incoming.single.authored, isTrue);
+    expect(r.incoming.single.subjectId, 'other');
+    expect(r.incoming.single.objectId, 'src');
+  });
+
+  test('vocabulary mentions are not authored (not deletable)', () async {
+    final r = await rel('src');
+    expect(r.mentions.single.authored, isFalse);
   });
 
   test('vocabulary (@id) references surface as mentions', () async {
