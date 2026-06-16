@@ -1,11 +1,12 @@
 # GrabBit — The Things Engine (the P14–P16 spine)
 
-> **Status: the v1 spine — a three-phase band (P14–P16)**, after the P10–P13 AI/graph pillar; before Windows
-> (P17), polish (P18), and launch (P19). It promotes GrabBit from a media store into an **everything library**:
-> **P14** Things foundation + MediaObject projection *(foundation shipped P14a–f; pending the consolidated
-> on-device pass)* · **P15** curator + AI Thing-extraction from downloads *(code-complete P15a–f; pending the
-> consolidated on-device pass)* · **P16** universal intake + typed types & GraphRAG *(phase map authored —
-> `docs/design/P16-PLAN.md`; subphases P16a–P16g not yet built)*. P0–P13 stay media-first; Things is the spine **going
+> **Status: the v1 spine — a three-phase band (P14–P16), code-complete across all three; CI-green and
+> merged**, after the P10–P13 AI/graph pillar; before Windows (P17), polish (P18), and launch (P19). It
+> promotes GrabBit from a media store into an **everything library**: **P14** Things foundation +
+> MediaObject projection *(shipped P14a–f)* · **P15** curator + AI Thing-extraction from downloads
+> *(code-complete P15a–f)* · **P16** universal intake + typed types & GraphRAG *(implemented P16a–P16g)*.
+> One **consolidated cross-feature on-device pass** (`docs/VERIFICATION.md` — "P14–P16 — Things Engine
+> band") is the single owed gate that, when run, closes the band → P17. P0–P13 stay media-first; Things is the spine **going
 > forward** (downloads project in via the ADR-0003 bridge — not a rewrite). A one-page **vision**, not a PRD —
 > each phase authors its own `docs/design/P<N>-PLAN.md` map at its start (CLAUDE.md §7). Strategic decisions
 > are locked in `docs/decisions/` (ADR-0001/0002/0003/0004); the inert seams that prepare for it, shaped in

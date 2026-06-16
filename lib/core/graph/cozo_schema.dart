@@ -141,33 +141,59 @@ String countScript(String relation) {
 // schema (`ensureSchema`) stays dim-agnostic; the sync service creates these on
 // demand once the embedder is ready.
 
+// HNSW index tuning shared by every embedding relation (media + Things): `m` is
+// the graph connectivity, `efConstruction` the build-time search breadth.
+const int _hnswM = 16;
+const int _hnswEfConstruction = 50;
+
+// Relation-parameterized builders so the media `embedding` and the Thing
+// `thing_embedding` relations share one definition (same shape/index/queries,
+// only the relation name differs). The public, named wrappers below pin each
+// relation; callers and tests use those.
+String _createEmbeddingScript(String relation, int dim) =>
+    ':create $relation { id: String => v: <F32; $dim>, textHash: String }';
+
+String _hnswEmbeddingScript(String relation, int dim) =>
+    '::hnsw create $relation:idx { dim: $dim, dtype: F32, '
+    'fields: [v], distance: Cosine, m: $_hnswM, ef_construction: $_hnswEfConstruction }';
+
+String _putEmbeddingScript(String relation) =>
+    '?[id, v, textHash] <- \$rows\n:put $relation { id => v, textHash }';
+
+String _removeEmbeddingScript(String relation) =>
+    '?[id] <- \$rows\n:rm $relation { id }';
+
+String _embeddingPairsScript(String relation) =>
+    '?[id, textHash] := *$relation{id, textHash}';
+
+String _embeddingCountScript(String relation) =>
+    '?[count(id)] := *$relation{id}';
+
+String _dropRelationScript(String relation) => '::remove $relation';
+
 /// The stored embedding relation: a per-item vector plus the hash of the text it
 /// was embedded from (the cache key — an unchanged hash means no re-embed).
 String embeddingCreateScript(int dim) =>
-    ':create embedding { id: String => v: <F32; $dim>, textHash: String }';
+    _createEmbeddingScript('embedding', dim);
 
-/// The HNSW index over the embedding vectors (cosine distance). Created once,
-/// right after [embeddingCreateScript]; vector search (`~embedding:idx`) lands in
-/// P10c — this PR only builds and maintains the index.
-String embeddingHnswScript(int dim) =>
-    '::hnsw create embedding:idx { dim: $dim, dtype: F32, '
-    'fields: [v], distance: Cosine, m: 16, ef_construction: 50 }';
+/// The HNSW index over the embedding vectors (cosine distance), created once
+/// right after [embeddingCreateScript].
+String embeddingHnswScript(int dim) => _hnswEmbeddingScript('embedding', dim);
 
 /// Upserts the rows bound to `\$rows` (`[id, v, textHash]`) into the embedding
 /// relation, updating the HNSW index in place.
-String embeddingPutScript() =>
-    '?[id, v, textHash] <- \$rows\n:put embedding { id => v, textHash }';
+String embeddingPutScript() => _putEmbeddingScript('embedding');
 
 /// Removes the ids bound to `\$rows` (`[id]`) — prunes embeddings for items
 /// deleted from the library.
-String embeddingRemoveScript() => '?[id] <- \$rows\n:rm embedding { id }';
+String embeddingRemoveScript() => _removeEmbeddingScript('embedding');
 
 /// Reads the cache: `[id, textHash]` for every stored embedding, so the backfill
 /// can diff against the desired set and re-embed only what changed.
-String embeddingPairsScript() => '?[id, textHash] := *embedding{id, textHash}';
+String embeddingPairsScript() => _embeddingPairsScript('embedding');
 
 /// Counts stored embeddings (result has a single row `[n]`).
-String embeddingCountScript() => '?[count(id)] := *embedding{id}';
+String embeddingCountScript() => _embeddingCountScript('embedding');
 
 /// Sidecar that records which embedder (`model`, `dim`) the `embedding` relation
 /// was built with, so a model/dimension change can drop + recreate it rather
@@ -185,7 +211,7 @@ String embeddingMetaPutScript() =>
 
 /// Drops the stored embedding relation (and its HNSW index) — used when the
 /// embedder model/dimension changes, so it's recreated fresh.
-String embeddingDropScript() => '::remove embedding';
+String embeddingDropScript() => _dropRelationScript('embedding');
 
 // --- Thing-level vector index (P16f) -------------------------------------
 //
@@ -195,30 +221,26 @@ String embeddingDropScript() => '::remove embedding';
 // your library". Same shape/dimension as `embedding`; it shares `embedding_meta`
 // (one embedder governs both), and `backfillEmbeddings` maintains it incrementally.
 
-/// The stored Thing-embedding relation (keyed by `things.id`), mirroring
-/// [embeddingCreateScript].
+/// The stored Thing-embedding relation (keyed by `things.id`).
 String thingEmbeddingCreateScript(int dim) =>
-    ':create thing_embedding { id: String => v: <F32; $dim>, textHash: String }';
+    _createEmbeddingScript('thing_embedding', dim);
 
 /// The HNSW index over the Thing-embedding vectors (cosine distance).
 String thingEmbeddingHnswScript(int dim) =>
-    '::hnsw create thing_embedding:idx { dim: $dim, dtype: F32, '
-    'fields: [v], distance: Cosine, m: 16, ef_construction: 50 }';
+    _hnswEmbeddingScript('thing_embedding', dim);
 
 /// Upserts `[id, v, textHash]` rows into the Thing-embedding relation.
-String thingEmbeddingPutScript() =>
-    '?[id, v, textHash] <- \$rows\n:put thing_embedding { id => v, textHash }';
+String thingEmbeddingPutScript() => _putEmbeddingScript('thing_embedding');
 
 /// Removes the ids bound to `\$rows` (`[id]`) from the Thing-embedding relation.
 String thingEmbeddingRemoveScript() =>
-    '?[id] <- \$rows\n:rm thing_embedding { id }';
+    _removeEmbeddingScript('thing_embedding');
 
 /// Reads the Thing-embedding cache: `[id, textHash]` for every stored vector.
-String thingEmbeddingPairsScript() =>
-    '?[id, textHash] := *thing_embedding{id, textHash}';
+String thingEmbeddingPairsScript() => _embeddingPairsScript('thing_embedding');
 
 /// Counts stored Thing embeddings (result has a single row `[n]`).
-String thingEmbeddingCountScript() => '?[count(id)] := *thing_embedding{id}';
+String thingEmbeddingCountScript() => _embeddingCountScript('thing_embedding');
 
 /// Drops the stored Thing-embedding relation (and its HNSW index).
-String thingEmbeddingDropScript() => '::remove thing_embedding';
+String thingEmbeddingDropScript() => _dropRelationScript('thing_embedding');

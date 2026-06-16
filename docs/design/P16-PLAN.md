@@ -196,16 +196,21 @@ Make "Ask your library" answer across every Thing type (BACKLOG "From P14e"). **
   citing it; generation stays tier-gated with the retrieval-only fallback on incapable devices.
   *(APK: real ask over a real library.)*
 
-### `[ ]` P16g — P16 + Things-Engine band phase close *(docs; APK)*
-Close the phase — and the band.
-- **Consolidated cross-feature on-device pass** in `docs/VERIFICATION.md`: each intake path →
-  typed Thing · bespoke cards + exporters · browser search/filter/relationship-nav · authored +
-  reified edges · GraphRAG over non-media Things · graceful gating on an incapable tier.
-- Flip the P16 markers per the §7 earned-`[x]` rule; update `docs/ROADMAP.md` /
-  `docs/things-engine.md` status (**Things Engine band P14–P16 complete**); route any deferrals
-  to `docs/BACKLOG.md`.
-- **Exit / review:** the consolidated on-device pass closes P16 and the Things Engine band
-  (→ **P17**, the Windows port).
+### `[x]` P16g — P16 + Things-Engine band phase close *(docs; CI)*
+Close the phase — and the band. **Authored** (docs/CI, discharged on merge); the band-level on-device
+pass it authored is **owed** to the maintainer before the batched subphases flip to `[x]`.
+- **Consolidated cross-feature on-device pass** authored in `docs/VERIFICATION.md`
+  ("**P14–P16 — Things Engine band: consolidated cross-feature on-device pass**"): each intake path →
+  typed Thing · bespoke cards + exporters · browser search/filter/relationship-nav · authored + reified
+  edges · GraphRAG over non-media Things · graceful gating on an incapable tier. It closes **P14, P15
+  and P16 together** (all three were pending exactly this band gate).
+- Per the §7 earned-`[x]` rule the batched **P16b–P16f stay `[~]`** (and P14/P15) until the maintainer
+  runs the pass; `docs/ROADMAP.md` / `docs/things-engine.md` record the band as **code-complete; the one
+  consolidated on-device pass owed**; deferrals are routed to `docs/BACKLOG.md`.
+- Also folds in a small **P16f cleanup** (DRY the embedding script builders + a shared count helper;
+  fix a stale "Windows in P8"→P17 string).
+- **Exit / review:** running the consolidated on-device pass closes P16 and the Things Engine band
+  (→ **P17**, the Windows port); a tiny follow-up then flips the band to `[x]` / **complete**.
 
 ---
 

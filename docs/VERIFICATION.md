@@ -1306,6 +1306,34 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
 - [ ] On an **embedder-off / low-tier** device, Ask degrades gracefully (retrieval-only / no sources),
       no crash — `thing_embedding` is simply absent.
 
+### P14–P16 — Things Engine band: consolidated cross-feature on-device pass  *(the band-close gate; run on one low-tier + one mid/high device)*
+The single owed verification that closes the whole **Things Engine band** (P14, P15 **and** P16). It
+exercises the band's features **together** on a **real** library (the per-subphase rows above stay as the
+granular per-feature reference). Running this pass discharges the batched P14/P15/P16 checks and closes
+the band. Everything **offline** (airplane mode) bar the one-time model/pack fetch; no crash anywhere.
+- [ ] **Every intake becomes a typed Thing:** a **download** projects to a `MediaObject` (P14c); **AI
+      extraction from a download** surfaces a suggested non-media Thing confirmed via the **Activity
+      Inbox** (P15); and each P16b path — **manual entry**, **web-article capture**, **file upload**,
+      **camera/barcode** — each lands its own typed Thing.
+- [ ] **Bespoke cards + exporters (P16c):** a priority-type Thing (Recipe/Event/Place/Article/Product)
+      shows its **bespoke card** and **exports** correctly; the long tail falls back to the generic
+      key/value view.
+- [ ] **Rich Things Browser (P16d):** browse/**search**/**filter** across every `@type`, the generic
+      key/value view renders unknown types, and **relationship-aware navigation** moves between linked
+      Things.
+- [ ] **Relationships moat (P16e):** **add a relationship** and **write a note** → a `Comment` Thing is
+      created and **linked from both** participants; provenance is visible; derived "Mentions" have **no**
+      remove affordance.
+- [ ] **GraphRAG over any Thing (P16f):** **Ask** answers from a **non-media** Thing (e.g. a Recipe) and
+      **cites** it with a real snippet; a mixed answer can cite **media + Things** together.
+- [ ] **Provenance + Cozo/GraphRAG over Things (P14d/e):** relationships, provenance and the typed-node
+      graph read coherently together on the real library (graph view, related, connection paths).
+- [ ] **Gating on an incapable tier:** on an **embedder-off / low-RAM** device every surface shows a
+      friendly floor — retrieval-only Ask, no AI extraction/suggestions, no crash or empty gap; the
+      deterministic intake/browse/relationship features keep working.
+- [ ] **Persistence:** opt-ins (auto-extract, the selected model) and authored relationships **persist
+      across restart**.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.
