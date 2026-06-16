@@ -10,9 +10,11 @@ import 'package:grabbit/core/widgets/content_bounds.dart';
 import 'package:grabbit/core/widgets/empty_state.dart';
 import 'package:grabbit/core/widgets/error_view.dart';
 import 'package:grabbit/core/widgets/section_header.dart';
+import 'package:grabbit/features/library/data/authored_edge_service.dart';
 import 'package:grabbit/features/library/data/thing_export_service.dart';
 import 'package:grabbit/features/library/data/thing_exporters.dart';
 import 'package:grabbit/features/library/data/things_browse_providers.dart';
+import 'package:grabbit/features/library/presentation/add_relationship_sheet.dart';
 import 'package:grabbit/features/library/presentation/thing_cards.dart';
 import 'package:grabbit/features/library/presentation/things_browser_screen.dart';
 import 'package:grabbit/features/settings/data/settings_model.dart';
@@ -38,6 +40,12 @@ class ThingDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Thing'),
         actions: [
+          if (loaded != null)
+            IconButton(
+              tooltip: 'Add relationship',
+              icon: const Icon(Icons.add_link),
+              onPressed: () => showAddRelationship(context, ref, loaded),
+            ),
           if (loaded != null && exportKindFor(loaded.type) != null)
             IconButton(
               tooltip: 'Share / export',
@@ -221,15 +229,23 @@ class _Relationships extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ..._section(context, 'Based on', Icons.link_outlined, rel.outgoing),
         ..._section(
           context,
+          ref,
+          'Based on',
+          Icons.link_outlined,
+          rel.outgoing,
+        ),
+        ..._section(
+          context,
+          ref,
           'Referenced by',
           Icons.call_received_outlined,
           rel.incoming,
         ),
         ..._section(
           context,
+          ref,
           'Mentions',
           Icons.alternate_email_outlined,
           rel.mentions,
@@ -240,6 +256,7 @@ class _Relationships extends ConsumerWidget {
 
   List<Widget> _section(
     BuildContext context,
+    WidgetRef ref,
     String title,
     IconData icon,
     List<ThingRelation> rels,
@@ -259,13 +276,57 @@ class _Relationships extends ConsumerWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          subtitle: Text(_humanizePredicate(r.predicate)),
-          trailing: const Icon(Icons.chevron_right),
+          subtitle: Text(
+            r.note == null
+                ? _humanizePredicate(r.predicate)
+                : '${_humanizePredicate(r.predicate)} · ${r.note}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          // The user's own authored edges can be removed; derived ones can't.
+          trailing: r.authored
+              ? IconButton(
+                  tooltip: 'Remove link',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => _confirmDelete(context, ref, r),
+                )
+              : const Icon(Icons.chevron_right),
           onTap: () => context.push(
             r.node.media != null ? '/item/${r.node.id}' : '/thing/${r.node.id}',
           ),
         ),
     ];
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    ThingRelation r,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove this link?'),
+        content: Text(
+          'Unlink "${r.node.title}" (${_humanizePredicate(r.predicate)}).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await ref
+        .read(authoredEdgeServiceProvider)
+        .deleteLink(r.subjectId!, r.predicate, r.objectId!);
+    ref.invalidate(thingRelationshipsProvider(thingId));
   }
 }
 

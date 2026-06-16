@@ -262,6 +262,7 @@ IconData iconForThingType(String type) => switch (type) {
   'Article' => Icons.article_outlined,
   'Product' => Icons.shopping_bag_outlined,
   'Book' => Icons.menu_book_outlined,
+  'Comment' => Icons.sticky_note_2_outlined,
   'Person' => Icons.person_outlined,
   _ => Icons.category_outlined,
 };

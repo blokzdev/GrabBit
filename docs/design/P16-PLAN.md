@@ -170,13 +170,16 @@ Deepen the P15 v1 into the everything-library's home. **Shipped.**
 - **Exit / review:** search + filter across a real mixed library; tap-through between linked
   Things; MediaObject Things still route to media detail. *(APK: over a real, mixed library.)*
 
-### `[ ]` P16e — Relationships moat: authored-edge UI + reified relationships *(UI; APK)*
-Surface the compounding asset — the links nobody else has (ADR-0004).
-- **Authored-edge authoring:** from a Thing, **"Link to…"** → pick another Thing → create a
-  `relatedTo` authored edge with a label + optional note (`upsertEdge`, provenance
-  `userAuthored`). **Reified relationships:** when the link carries content, promote it to a
-  `Comment`/`Note` Thing that `about`s both participants (edge kind 3).
-- Reuses `thing_edges`/`things` as-is — **no schema bump**.
+### `[~]` P16e — Relationships moat: authored-edge UI + reified relationships *(UI; APK)*
+Surface the compounding asset — the links nobody else has (ADR-0004). **Shipped.**
+- **Authored-edge authoring:** a Thing-detail **"Add relationship"** action → pick another Thing
+  (`thing_picker`) → a `relatedTo`-style edge with a **curated label (+ custom)** and optional note
+  (`AuthoredEdgeService.addLink` → `upsertEdge`, `userAuthored`); authored rows in `_Relationships`
+  are **deletable**. **Reified note:** "Write a note connecting two Things" → a `Comment` Thing
+  (`buildNoteThing`) linked to both participants via stored authored `about` edges (kind 3) — shows
+  instantly on both ("Referenced by") and is searchable in the browser. *(The Hybrid `@id`/JSON-LD
+  reification path is logged in BACKLOG.)*
+- Reuses `thing_edges`/`things` as-is — **no schema bump, no new deps**. *APK-owed.*
 - **Exit / review:** author an edge and a reified note across two Things; both persist and appear
   in the browser + graph. *(APK: authoring on device.)*
 

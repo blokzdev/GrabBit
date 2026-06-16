@@ -1287,6 +1287,16 @@ as the granular reference). Running this pass is what closes P15 (flips P15a/c/d
       "Referenced by" (and "Mentions" once Things carry `@id` refs); **tapping traverses** —
       Thing→Thing opens the Thing, Thing→media opens the media item.
 
+### P16e — Relationships moat: authored-edge UI + reified notes  *(install any debug APK; works offline)*
+- [ ] From a Thing, **Add relationship → Link to a Thing** → pick a target → choose a label (curated
+      chip or custom) + optional note → it appears on **both** ends ("Based on" / "Referenced by")
+      with the note, and survives reopening the app.
+- [ ] **Remove** an authored link (the × on a row, with confirm) → it disappears from both ends;
+      derived rows ("Mentions") have **no** remove affordance.
+- [ ] **Add relationship → Write a note connecting two Things** → pick the other Thing, type a note →
+      a `Comment` Thing is created (searchable in the Things Browser) and is **linked from both**
+      participants. All authoring is **offline**, no AI.
+
 ## P19 — v1 Beta, Production Readiness & Launch  *(v1)*
 - [ ] Large library (100s of items) scrolls smoothly; big playlist picker is responsive; the
       AI/graph index build doesn't jank the UI.
