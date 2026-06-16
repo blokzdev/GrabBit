@@ -41,20 +41,21 @@ class GraphQueryService {
 
   final GraphStore _store;
 
-  /// Nearest library items to [query] (a `dimension`-length embedding), ordered
-  /// nearest-first. Returns `[]` when the store is unavailable or the index is
-  /// empty.
+  /// Nearest nodes to [query] (a `dimension`-length embedding) in the given
+  /// [relation]'s HNSW index, ordered nearest-first. Defaults to the media
+  /// `embedding` index; pass `relation: 'thing_embedding'` for the P16f Thing
+  /// index. Returns `[]` when the store is unavailable or the index is empty.
   Future<List<VectorHit>> vectorSearch(
     List<double> query, {
     int k = 50,
     int ef = 100,
+    String relation = 'embedding',
   }) async {
     if (!_store.isAvailable) return const [];
-    final result = await _store.runScript(vectorSearchScript(), {
-      'q': query,
-      'k': k,
-      'ef': ef,
-    });
+    final result = await _store.runScript(
+      vectorSearchScript(relation: relation),
+      {'q': query, 'k': k, 'ef': ef},
+    );
     return [
       for (final row in decodeRows(result))
         if (row['id'] case final Object id)

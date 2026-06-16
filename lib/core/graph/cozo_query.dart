@@ -12,8 +12,8 @@ library;
 /// NOTE: the exact `~embedding:idx{…}` syntax is only exercisable on the arm64
 /// native engine (`cozo_android`), so it is confirmed on-device — this builder is
 /// the single place to adjust if the dialect differs.
-String vectorSearchScript() =>
-    '?[id, dist] := ~embedding:idx{ id | query: vec(\$q), k: \$k, ef: \$ef, '
+String vectorSearchScript({String relation = 'embedding'}) =>
+    '?[id, dist] := ~$relation:idx{ id | query: vec(\$q), k: \$k, ef: \$ef, '
     'bind_distance: dist }\n'
     ':order dist\n'
     ':limit \$k';

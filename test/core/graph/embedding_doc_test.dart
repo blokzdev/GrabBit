@@ -150,4 +150,63 @@ void main() {
       expect(diff.toRemove, unorderedEquals(['a', 'b']));
     });
   });
+
+  group('buildThingEmbeddingDocs', () {
+    Thing thing(String id, String type, String jsonld, {String? name}) => Thing(
+      id: id,
+      type: type,
+      jsonld: jsonld,
+      name: name,
+      createdAt: t0,
+      updatedAt: t0,
+    );
+
+    test('composes text from name + JSON-LD properties', () {
+      final docs = buildThingEmbeddingDocs([
+        thing(
+          'r',
+          'Recipe',
+          '{"@type":"Recipe","name":"Carbonara",'
+              '"recipeIngredient":["eggs","guanciale"],'
+              '"description":"Roman classic"}',
+          name: 'Carbonara',
+        ),
+      ], modelId: 'm1');
+      expect(docs.single.id, 'r');
+      expect(docs.single.text, contains('Carbonara'));
+      expect(docs.single.text, contains('eggs'));
+      expect(docs.single.text, contains('Roman classic'));
+      expect(docs.single.textHash, isNotEmpty);
+    });
+
+    test('excludes MediaObject types (already in the media index)', () {
+      final docs = buildThingEmbeddingDocs([
+        thing(
+          'v',
+          'VideoObject',
+          '{"@type":"VideoObject","name":"Clip"}',
+          name: 'Clip',
+        ),
+      ], modelId: 'm1');
+      expect(docs, isEmpty);
+    });
+
+    test('skips a Thing with no embeddable text', () {
+      final docs = buildThingEmbeddingDocs([
+        thing('e', 'Thing', '{"@type":"Thing"}'),
+      ], modelId: 'm1');
+      expect(docs, isEmpty);
+    });
+
+    test('re-keys the hash on a model change', () {
+      const jsonld = '{"@type":"Recipe","name":"X"}';
+      final a = buildThingEmbeddingDocs([
+        thing('r', 'Recipe', jsonld, name: 'X'),
+      ], modelId: 'm1').single;
+      final b = buildThingEmbeddingDocs([
+        thing('r', 'Recipe', jsonld, name: 'X'),
+      ], modelId: 'm2').single;
+      expect(a.textHash, isNot(b.textHash));
+    });
+  });
 }

@@ -186,3 +186,39 @@ String embeddingMetaPutScript() =>
 /// Drops the stored embedding relation (and its HNSW index) — used when the
 /// embedder model/dimension changes, so it's recreated fresh.
 String embeddingDropScript() => '::remove embedding';
+
+// --- Thing-level vector index (P16f) -------------------------------------
+//
+// A parallel HNSW relation keyed by `things.id`, built from each Thing's JSON-LD
+// text, so **non-MediaObject** Things (Recipe/Event/Place/… — a MediaObject's
+// vector already lives in `embedding` under the same id) are recalled by "Ask
+// your library". Same shape/dimension as `embedding`; it shares `embedding_meta`
+// (one embedder governs both), and `backfillEmbeddings` maintains it incrementally.
+
+/// The stored Thing-embedding relation (keyed by `things.id`), mirroring
+/// [embeddingCreateScript].
+String thingEmbeddingCreateScript(int dim) =>
+    ':create thing_embedding { id: String => v: <F32; $dim>, textHash: String }';
+
+/// The HNSW index over the Thing-embedding vectors (cosine distance).
+String thingEmbeddingHnswScript(int dim) =>
+    '::hnsw create thing_embedding:idx { dim: $dim, dtype: F32, '
+    'fields: [v], distance: Cosine, m: 16, ef_construction: 50 }';
+
+/// Upserts `[id, v, textHash]` rows into the Thing-embedding relation.
+String thingEmbeddingPutScript() =>
+    '?[id, v, textHash] <- \$rows\n:put thing_embedding { id => v, textHash }';
+
+/// Removes the ids bound to `\$rows` (`[id]`) from the Thing-embedding relation.
+String thingEmbeddingRemoveScript() =>
+    '?[id] <- \$rows\n:rm thing_embedding { id }';
+
+/// Reads the Thing-embedding cache: `[id, textHash]` for every stored vector.
+String thingEmbeddingPairsScript() =>
+    '?[id, textHash] := *thing_embedding{id, textHash}';
+
+/// Counts stored Thing embeddings (result has a single row `[n]`).
+String thingEmbeddingCountScript() => '?[count(id)] := *thing_embedding{id}';
+
+/// Drops the stored Thing-embedding relation (and its HNSW index).
+String thingEmbeddingDropScript() => '::remove thing_embedding';

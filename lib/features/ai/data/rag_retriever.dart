@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grabbit/core/ai/embedder_engine_provider.dart';
 import 'package:grabbit/core/graph/graph_query_provider.dart';
+import 'package:grabbit/core/graph/graph_query_service.dart';
+import 'package:grabbit/core/things/thing_doc.dart';
 import 'package:grabbit/core/things/thing_hydration.dart';
+import 'package:grabbit/core/things/thing_repository.dart';
 import 'package:grabbit/features/ai/data/rag_context.dart';
 import 'package:grabbit/features/library/data/metadata_repository.dart';
 import 'package:grabbit/features/library/presentation/semantic_search_provider.dart';
@@ -40,7 +43,12 @@ class RagRetriever {
 
     final vector = await _ref.read(embedderEngineProvider).embed(q);
     final query = _ref.read(graphQueryServiceProvider);
-    final hits = await query.vectorSearch(vector, k: k);
+    // Recall over the media `embedding` and the P16f `thing_embedding` indexes,
+    // merged nearest-first — so a non-media Thing (Recipe/Article/…) is recalled.
+    final hits = [
+      ...await query.vectorSearch(vector, k: k),
+      ...await _thingHits(query, vector, k),
+    ]..sort((a, b) => a.distance.compareTo(b.distance));
     if (hits.isEmpty) return empty;
 
     // Light graph re-rank: add a few items connected to the top hit so context
@@ -56,24 +64,33 @@ class RagRetriever {
     // keyed by the same id (thing.id == media_items.id for MediaObjects).
     final nodes = await _ref.read(nodeHydrationProvider).hydrateNodes(ids);
     final repo = _ref.read(metadataRepositoryProvider);
+    final things = _ref.read(thingRepositoryProvider);
     final sources = <RagSource>[];
     for (final node in nodes) {
-      final meta = await repo.metadataForItem(node.id);
-      final tags = await repo.tagNamesForItem(node.id);
+      // A media-backed node cites its rich metadata snippet; a non-media Thing
+      // (P16f) cites a snippet built from its own JSON-LD properties.
+      final String snippet;
+      if (node.media != null) {
+        final meta = await repo.metadataForItem(node.id);
+        final tags = await repo.tagNamesForItem(node.id);
+        snippet = buildSourceSnippet(
+          uploader: meta?.uploader,
+          tags: tags,
+          description: meta?.description,
+          transcript: meta?.transcript,
+          aiSummary: meta?.aiSummary,
+          ocrText: meta?.ocrText,
+        );
+      } else {
+        snippet = await _thingSnippet(things, node.id);
+      }
       sources.add(
         RagSource(
           index: sources.length + 1,
           itemId: node.id,
           title: node.title,
           type: node.type,
-          snippet: buildSourceSnippet(
-            uploader: meta?.uploader,
-            tags: tags,
-            description: meta?.description,
-            transcript: meta?.transcript,
-            aiSummary: meta?.aiSummary,
-            ocrText: meta?.ocrText,
-          ),
+          snippet: snippet,
         ),
       );
     }
@@ -89,6 +106,36 @@ class RagRetriever {
         historyCharBudget: historyCharBudget,
       ),
     );
+  }
+
+  /// Vector hits over the `thing_embedding` index, resilient to it not existing
+  /// yet (no Things embedded / a pre-P16f index) — returns `[]` rather than throw.
+  Future<List<VectorHit>> _thingHits(
+    GraphQueryService query,
+    List<double> vector,
+    int k,
+  ) async {
+    try {
+      return await query.vectorSearch(
+        vector,
+        k: k,
+        relation: 'thing_embedding',
+      );
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// The grounding snippet for a non-media Thing, from its JSON-LD; '' when the
+  /// Thing is gone or unparseable.
+  Future<String> _thingSnippet(ThingRepository things, String id) async {
+    final thing = await things.thingById(id);
+    if (thing == null) return '';
+    try {
+      return buildThingSnippet(ThingDoc.fromJsonString(thing.jsonld));
+    } on FormatException {
+      return '';
+    }
   }
 }
 

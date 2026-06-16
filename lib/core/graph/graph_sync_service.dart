@@ -83,7 +83,8 @@ class GraphSyncService {
   /// v2: `duplicateOf` + `coDownloadedWith` are now projected (P10b-3).
   /// v3: the embed doc now includes a transcript slice (P10g-1).
   /// v4: Thing nodes + Thing→Thing edges (vocabulary + authored) projected (P14e).
-  static const _edgeBuilderVersion = 4;
+  /// v5: a `thing_embedding` index over non-MediaObject Things is maintained (P16f).
+  static const _edgeBuilderVersion = 5;
 
   /// Identifies the shape of the projected graph; persisted to detect staleness.
   /// Includes the embedder model id so a model change trips the self-heal pass
@@ -197,43 +198,81 @@ class GraphSyncService {
     }
     await _ensureEmbeddingSchema(_engine.model.id, _engine.dimension);
 
-    final desired = buildEmbeddingDocs(
-      await _snapshot(),
-      modelId: _engine.model.id,
+    final snapshot = await _snapshot();
+    final modelId = _engine.model.id;
+    // The media `embedding` (keyed by media_items.id) and the P16f
+    // `thing_embedding` (keyed by things.id, non-MediaObject) are maintained in
+    // one pass — same diff/cache/embed pipeline, different relation.
+    final mediaDiff = diffEmbeddings(
+      current: await _embeddingPairs(),
+      desired: buildEmbeddingDocs(snapshot, modelId: modelId),
     );
-    final current = await _embeddingPairs();
-    final diff = diffEmbeddings(current: current, desired: desired);
+    final thingDiff = diffEmbeddings(
+      current: await _thingEmbeddingPairs(),
+      desired: buildThingEmbeddingDocs(snapshot.things, modelId: modelId),
+    );
 
-    final toEmbed = diff.toEmbed;
+    final total = mediaDiff.toEmbed.length + thingDiff.toEmbed.length;
     var done = 0;
+    done = await _embedAndPut(
+      mediaDiff.toEmbed,
+      embeddingPutScript(),
+      done: done,
+      total: total,
+      onProgress: onProgress,
+    );
+    done = await _embedAndPut(
+      thingDiff.toEmbed,
+      thingEmbeddingPutScript(),
+      done: done,
+      total: total,
+      onProgress: onProgress,
+    );
+    await _removeEmbeddings(mediaDiff.toRemove, embeddingRemoveScript());
+    await _removeEmbeddings(thingDiff.toRemove, thingEmbeddingRemoveScript());
+
+    return EmbeddingStats(
+      available: true,
+      embedded: total,
+      pruned: mediaDiff.toRemove.length + thingDiff.toRemove.length,
+      total: await _embeddingCount() + await _thingEmbeddingCount(),
+    );
+  }
+
+  /// Embeds [toEmbed] in chunks and `:put`s the vectors via [putScript],
+  /// reporting combined progress against [total]. Returns the running [done].
+  Future<int> _embedAndPut(
+    List<EmbeddingDoc> toEmbed,
+    String putScript, {
+    required int done,
+    required int total,
+    void Function(double progress)? onProgress,
+  }) async {
     for (var i = 0; i < toEmbed.length; i += _embedChunk) {
       final end = (i + _embedChunk < toEmbed.length)
           ? i + _embedChunk
           : toEmbed.length;
       final chunk = toEmbed.sublist(i, end);
       final vectors = await _engine.embedBatch([for (final d in chunk) d.text]);
-      await _store.runScript(embeddingPutScript(), {
+      await _store.runScript(putScript, {
         'rows': [
           for (var k = 0; k < chunk.length; k++)
             [chunk[k].id, vectors[k], chunk[k].textHash],
         ],
       });
       done += chunk.length;
-      onProgress?.call(done / toEmbed.length);
+      if (total > 0) onProgress?.call(done / total);
     }
-    if (diff.toRemove.isNotEmpty) {
-      await _store.runScript(embeddingRemoveScript(), {
-        'rows': [
-          for (final id in diff.toRemove) [id],
-        ],
-      });
-    }
-    return EmbeddingStats(
-      available: true,
-      embedded: diff.toEmbed.length,
-      pruned: diff.toRemove.length,
-      total: await _embeddingCount(),
-    );
+    return done;
+  }
+
+  Future<void> _removeEmbeddings(List<String> ids, String removeScript) async {
+    if (ids.isEmpty) return;
+    await _store.runScript(removeScript, {
+      'rows': [
+        for (final id in ids) [id],
+      ],
+    });
   }
 
   /// Ensures the embedding relation + HNSW index exist **for the current model**.
@@ -251,16 +290,37 @@ class GraphSyncService {
     final meta = await _readMeta();
     final matches = meta['model'] == modelId && meta['dim'] == '$dim';
     final hasEmbedding = relations.contains('embedding');
-    if (hasEmbedding && matches) return;
-    if (hasEmbedding) await _store.runScript(embeddingDropScript());
-    await _store.runScript(embeddingCreateScript(dim));
-    await _store.runScript(embeddingHnswScript(dim));
-    await _store.runScript(embeddingMetaPutScript(), {
-      'rows': [
-        ['model', modelId],
-        ['dim', '$dim'],
-      ],
-    });
+    final hasThingEmbedding = relations.contains('thing_embedding');
+
+    if (!matches) {
+      // Model/dim changed (or first ever) — drop both and recreate so no
+      // dimension/space ever mixes; the cache reset re-embeds everything.
+      if (hasEmbedding) await _store.runScript(embeddingDropScript());
+      if (hasThingEmbedding) {
+        await _store.runScript(thingEmbeddingDropScript());
+      }
+      await _store.runScript(embeddingCreateScript(dim));
+      await _store.runScript(embeddingHnswScript(dim));
+      await _store.runScript(thingEmbeddingCreateScript(dim));
+      await _store.runScript(thingEmbeddingHnswScript(dim));
+      await _store.runScript(embeddingMetaPutScript(), {
+        'rows': [
+          ['model', modelId],
+          ['dim', '$dim'],
+        ],
+      });
+      return;
+    }
+    // Model unchanged — create whichever relation is missing (e.g. the P16f
+    // `thing_embedding` on the first backfill after upgrading).
+    if (!hasEmbedding) {
+      await _store.runScript(embeddingCreateScript(dim));
+      await _store.runScript(embeddingHnswScript(dim));
+    }
+    if (!hasThingEmbedding) {
+      await _store.runScript(thingEmbeddingCreateScript(dim));
+      await _store.runScript(thingEmbeddingHnswScript(dim));
+    }
   }
 
   /// Names of the stored relations (`::relations`), empty on error.
@@ -314,6 +374,19 @@ class GraphSyncService {
     }
   }
 
+  Future<Map<String, String>> _thingEmbeddingPairs() async {
+    try {
+      final res = await _store.runScript(thingEmbeddingPairsScript());
+      final rows = (res['rows'] as List?) ?? const [];
+      return {
+        for (final r in rows)
+          if (r is List && r.length >= 2) '${r[0]}': '${r[1]}',
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<bool> _ensureOpen() async {
     if (_store.isAvailable) return true;
     try {
@@ -348,6 +421,20 @@ class GraphSyncService {
   Future<int> _embeddingCount() async {
     try {
       final res = await _store.runScript(embeddingCountScript());
+      final rows = (res['rows'] as List?) ?? const [];
+      if (rows.isEmpty) return 0;
+      final first = (rows.first as List?) ?? const [];
+      final n = first.isEmpty ? 0 : first.first;
+      return n is int ? n : (int.tryParse('$n') ?? 0);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Stored Thing-embedding count, or 0 when the relation doesn't exist yet.
+  Future<int> _thingEmbeddingCount() async {
+    try {
+      final res = await _store.runScript(thingEmbeddingCountScript());
       final rows = (res['rows'] as List?) ?? const [];
       if (rows.isEmpty) return 0;
       final first = (rows.first as List?) ?? const [];

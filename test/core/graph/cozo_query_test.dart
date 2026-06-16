@@ -13,6 +13,14 @@ void main() {
       expect(script, contains(':order dist'));
       expect(script, contains(r':limit $k'));
     });
+
+    test('targets the given relation index (P16f thing_embedding)', () {
+      expect(
+        vectorSearchScript(relation: 'thing_embedding'),
+        contains('~thing_embedding:idx'),
+      );
+      expect(vectorSearchScript(), contains('~embedding:idx'));
+    });
   });
 
   group('itemVectorScript', () {
