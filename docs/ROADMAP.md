@@ -402,6 +402,10 @@ per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 
 # Things Engine band (P14–P16) — the spine that makes GrabBit an "everything library"
 
+> **Band status: code-complete across all three phases (P14a–f · P15a–f · P16a–g); CI-green and merged.**
+> A single **consolidated cross-feature on-device pass** (`docs/VERIFICATION.md` — "P14–P16 — Things
+> Engine band") is the **one owed gate**: running it closes P14, P15 and P16 together → **P17** (Windows).
+>
 > The typed-graph pillar, split into three sequential phases (maintainer call). It promotes the library
 > from a media store into a domain-agnostic, on-device graph of **schema.org Things**, with downloaded media
 > as the **first** Thing type. Built on the P10–P13 AI/graph pillar; the inert seams shaped in P12–P13
@@ -411,7 +415,7 @@ per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 > `docs/decisions/` (ADR-0001–0004). Each phase authors its own `docs/design/P<N>-PLAN.md` map at its start.
 
 ## P14 — Things foundation + MediaObject projection
-**Status: foundation shipped (P14a–f); pending the consolidated on-device pass that closes the phase.** Next: P15.
+**Status: foundation shipped (P14a–f); pending the band's consolidated on-device pass (now authored in `docs/VERIFICATION.md`) that closes it alongside P15/P16.** Next: P15.
 **Goals:** lay the typed-graph **spine** so the library *is* a graph of Things, with media as the first type.
 **Deliverables (high level — subphase map in `docs/design/P14-PLAN.md` at phase start):**
 - **Generic Thing store**: schema.org vocabulary as a data asset; Things as JSON-LD + promoted columns in
@@ -425,7 +429,7 @@ per-subphase APK checks and closes P13. See `docs/design/P13-PLAN.md`.
 relationships and GraphRAG operate over Things; no regression to the media-first experience.
 
 ## P15 — Curator + AI Thing-extraction from downloads
-**Status: code-complete (P15a–f); pending the consolidated on-device pass that closes the phase.** Next: P16.
+**Status: code-complete (P15a–f); pending the band's consolidated on-device pass (now authored in `docs/VERIFICATION.md`) that closes it alongside P14/P16.** Next: P16.
 **Goals:** the marquee payoff — **on-device AI extracts structured Things from what you download** (a cooking
 video → a `Recipe`; a vlog → `Place`/`Event`).
 **Deliverables (high level — subphase map in `docs/design/P15-PLAN.md` at phase start):**
@@ -441,7 +445,7 @@ video → a `Recipe`; a vlog → `Place`/`Event`).
 fields, browsable in the Things Browser, fully on-device; ineligible devices degrade gracefully.
 
 ## P16 — Universal intake + typed types, UX & GraphRAG
-**Status: planning — the phase map `docs/design/P16-PLAN.md` is authored (P16a–P16g); subphases not yet built.**
+**Status: implemented across P16a–P16g; CI-green and merged. One **consolidated cross-feature on-device pass** (`docs/VERIFICATION.md` — the band gate, P14–P16 together) is owed before the band closes. Next: P17.**
 **Goals:** make GrabBit collect **anything**, not just downloads, and make the typed library first-class.
 **Deliverables (high level — subphase map in `docs/design/P16-PLAN.md` at phase start):**
 - **Universal "Grab anything" intake**: beyond URLs — **file upload, web-article capture, manual entry,

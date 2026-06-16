@@ -418,36 +418,20 @@ class GraphSyncService {
 
   /// Stored embedding count, or 0 when the relation doesn't exist yet (the query
   /// errors before the first backfill — treat that as zero).
-  Future<int> _embeddingCount() async {
-    try {
-      final res = await _store.runScript(embeddingCountScript());
-      final rows = (res['rows'] as List?) ?? const [];
-      if (rows.isEmpty) return 0;
-      final first = (rows.first as List?) ?? const [];
-      final n = first.isEmpty ? 0 : first.first;
-      return n is int ? n : (int.tryParse('$n') ?? 0);
-    } catch (_) {
-      return 0;
-    }
-  }
+  Future<int> _embeddingCount() => _extractCount(embeddingCountScript());
 
   /// Stored Thing-embedding count, or 0 when the relation doesn't exist yet.
-  Future<int> _thingEmbeddingCount() async {
-    try {
-      final res = await _store.runScript(thingEmbeddingCountScript());
-      final rows = (res['rows'] as List?) ?? const [];
-      if (rows.isEmpty) return 0;
-      final first = (rows.first as List?) ?? const [];
-      final n = first.isEmpty ? 0 : first.first;
-      return n is int ? n : (int.tryParse('$n') ?? 0);
-    } catch (_) {
-      return 0;
-    }
-  }
+  Future<int> _thingEmbeddingCount() =>
+      _extractCount(thingEmbeddingCountScript());
 
-  Future<int> _count(String relation) async {
+  Future<int> _count(String relation) => _extractCount(countScript(relation));
+
+  /// Runs a single-cell `[count]` [script] and reads the integer out of it,
+  /// returning 0 when the relation is absent (the query errors before the first
+  /// build) or the result is empty/non-numeric.
+  Future<int> _extractCount(String script) async {
     try {
-      final res = await _store.runScript(countScript(relation));
+      final res = await _store.runScript(script);
       final rows = (res['rows'] as List?) ?? const [];
       if (rows.isEmpty) return 0;
       final first = (rows.first as List?) ?? const [];
